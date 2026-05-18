@@ -2,12 +2,17 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../core/database/database_helper.dart';
+import '../../core/shortcut_helper.dart';
 import '../../models/book.dart';
+import '../../models/progress.dart';
 import '../../services/epub_parser.dart';
 import '../../services/tts_service.dart';
 import '../reader/reader_screen.dart';
+import '../../services/sync_service.dart';
+import 'sync_settings_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -24,7 +29,46 @@ class _LibraryScreenState extends State<LibraryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBooks();
+    _loadBooks().then((_) {
+      _triggerAutoSync();
+      // Tự động mở sách đọc gần nhất sau khi dựng xong frame đầu tiên để tránh lỗi thread điều hướng
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkAutoOpenLastRead();
+      });
+    });
+  }
+
+  Future<void> _checkAutoOpenLastRead() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    
+    if (settings.openLastReadOnLaunch) {
+      // Tìm tiến trình đọc gần đây nhất
+      final progressList = await db.isar.readingProgress
+          .where()
+          .sortByLastReadDesc()
+          .findAll();
+          
+      if (progressList.isNotEmpty) {
+        final lastProgress = progressList.first;
+        final book = await db.getBookByUuid(lastProgress.bookUuid);
+        if (book != null && mounted) {
+          _openBook(book);
+        }
+      }
+    }
+  }
+
+  Future<void> _triggerAutoSync() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (settings.webDavEnabled) {
+      SyncService.getInstance().sync().then((result) {
+        if (result.success && result.localChanged) {
+          _loadBooks();
+        }
+      });
+    }
   }
 
   Future<void> _loadBooks() async {
@@ -65,6 +109,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       await db.saveChapters(parsedData.chapters);
 
       await _loadBooks();
+      _triggerAutoSync();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,6 +142,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final db = await DatabaseHelper.getInstance();
     await db.deleteBook(book.uuid);
     await _loadBooks();
+
+    // Tự động kích hoạt xóa sách trên WebDAV đám mây nếu cấu hình bật
+    final settings = await db.getSettings();
+    if (settings.webDavEnabled) {
+      SyncService.getInstance().deleteBookFromCloud(book.uuid).then((result) {
+        print('[Sync] Cloud deletion result for "${book.title}": ${result.message}');
+      });
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Deleted "${book.title}"')),
@@ -138,8 +192,33 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ).then((_) {
         // Tải lại sách để cập nhật tiến độ đọc
         _loadBooks();
+        _triggerAutoSync();
       });
     }
+  }
+
+  // --- Hotkeys & Boss Key Handlers ---
+  Future<void> _handleOpenSettingShortcut() async {
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SyncSettingsScreen(),
+      ),
+    ).then((_) {
+      _loadBooks();
+      _triggerAutoSync();
+    });
+  }
+
+
+
+  Future<Map<ShortcutActivator, VoidCallback>> _buildLibraryShortcuts() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    return {
+      ShortcutHelper.parse(settings.hotkeyOpenSetting): _handleOpenSettingShortcut,
+    };
   }
 
   @override
@@ -153,7 +232,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
              (book.author?.toLowerCase().contains(searchLower) ?? false);
     }).toList();
 
-    return Scaffold(
+    final scaffoldContent = Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F7),
       appBar: AppBar(
         title: Row(
@@ -183,22 +262,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
         foregroundColor: isDark ? Colors.white : Colors.black87,
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.settings_rounded),
             onPressed: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'Novel Reader',
-                applicationVersion: '1.0.0',
-                applicationIcon: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 48,
-                    height: 48,
-                  ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SyncSettingsScreen(),
                 ),
-                applicationLegalese: 'A premium system TTS audio reader.',
-              );
+              ).then((_) {
+                _loadBooks();
+              });
             },
           ),
         ],
@@ -343,6 +416,24 @@ class _LibraryScreenState extends State<LibraryScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
+    );
+
+    return FutureBuilder<Map<ShortcutActivator, VoidCallback>>(
+      future: _buildLibraryShortcuts(),
+      builder: (context, snapshot) {
+        final bindings = snapshot.data;
+        if (bindings == null) {
+          return scaffoldContent;
+        }
+
+        return CallbackShortcuts(
+          bindings: bindings,
+          child: Focus(
+            autofocus: true,
+            child: scaffoldContent,
+          ),
+        );
+      },
     );
   }
 

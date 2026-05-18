@@ -14,4 +14,23 @@ class AppSettings {
 
   String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace'
   String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia'
+
+  bool webDavEnabled = false;
+  String webDavUrl = '';
+  String webDavUsername = '';
+  String webDavPassword = '';
+  DateTime? webDavLastSync;
+
+  bool openLastReadOnLaunch = false;
+
+  // --- Hotkeys & Boss Key Settings ---
+  String hotkeyNextParagraph = 'Arrow Down';
+  String hotkeyPrevParagraph = 'Arrow Up';
+  String hotkeyNextChapter = 'Control+Arrow Right';
+  String hotkeyPrevChapter = 'Control+Arrow Left';
+  String hotkeyPlayPauseTts = 'Space';
+  String hotkeyOpenChapter = 'Control+o';
+  String hotkeyOpenSetting = 'Control+comma';
+  String hotkeyBossKey = 'Control+b';
+  String bossKeyAction = 'minimize'; // 'minimize' or 'hide'
 }

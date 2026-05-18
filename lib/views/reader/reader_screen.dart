@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
@@ -15,6 +16,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _isInitialized = false;
   double _fontSize = 18.0;
   double _speechRate = 0.5; // FlutterTts standard rate is 0.5 for normal speed
+  final _speedController = TextEditingController();
   List<dynamic> _voices = [];
   Map<String, String>? _selectedVoice;
   String _fontFamily = 'System';
@@ -26,6 +28,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _initTtsService();
   }
 
+  @override
+  void dispose() {
+    _speedController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initTtsService() async {
     _ttsService = await TtsService.getInstance();
     final settings = await _ttsService.getSettings();
@@ -33,6 +41,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     setState(() {
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
+      _speedController.text = (_speechRate * 2).toStringAsFixed(3);
       
       dynamic rawFont = settings.fontFamily;
       _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty) ? 'System' : rawFont.toString();
@@ -79,6 +88,52 @@ class _ReaderScreenState extends State<ReaderScreen> {
     } catch (e) {
       print("Failed to load voices: $e");
     }
+  }
+
+  // --- Hotkeys & Boss Key Handlers ---
+  void _handleNextParagraph() {
+    _ttsService.nextParagraph();
+  }
+
+  void _handlePrevParagraph() {
+    _ttsService.previousParagraph();
+  }
+
+  void _handleNextChapter() {
+    if (_ttsService.currentChapterIndex < _ttsService.chapters.length - 1) {
+      _ttsService.nextChapter();
+    }
+  }
+
+  void _handlePrevChapter() {
+    if (_ttsService.currentChapterIndex > 0) {
+      _ttsService.previousChapter();
+    }
+  }
+
+  void _handlePlayPauseTts() {
+    _ttsService.togglePlayPause();
+  }
+
+  void _handleOpenChapter() {
+    _showChapterList(context);
+  }
+
+  void _handleOpenSetting() {
+    _showSettings();
+  }
+
+
+  Map<ShortcutActivator, VoidCallback> _buildShortcuts(AppSettings settings) {
+    return {
+      ShortcutHelper.parse(settings.hotkeyNextParagraph): _handleNextParagraph,
+      ShortcutHelper.parse(settings.hotkeyPrevParagraph): _handlePrevParagraph,
+      ShortcutHelper.parse(settings.hotkeyNextChapter): _handleNextChapter,
+      ShortcutHelper.parse(settings.hotkeyPrevChapter): _handlePrevChapter,
+      ShortcutHelper.parse(settings.hotkeyPlayPauseTts): _handlePlayPauseTts,
+      ShortcutHelper.parse(settings.hotkeyOpenChapter): _handleOpenChapter,
+      ShortcutHelper.parse(settings.hotkeyOpenSetting): _handleOpenSetting,
+    };
   }
 
   bool _getIsDark(BuildContext context) {
@@ -245,31 +300,72 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // TỐC ĐỘ NÓI
-                  Row(
-                    children: [
-                      const Icon(Icons.speed_rounded),
-                      const SizedBox(width: 12),
-                      Text('Reading Speed', style: TextStyle(color: labelColor)),
-                      Expanded(
-                        child: Slider(
-                          value: _speechRate,
-                          min: 0.25,
-                          max: 1.0, // Standard limit for flutter_tts
-                          divisions: 15,
-                          activeColor: Colors.amber[700],
-                          label: '${(_speechRate * 2).toStringAsFixed(2)}x',
-                          onChanged: (val) {
-                            setState(() {
-                              _speechRate = val;
-                            });
-                            setModalState(() {});
-                            _ttsService.updateSettings(speechRate: val);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                   // TỐC ĐỘ NÓI
+                   Row(
+                     children: [
+                       const Icon(Icons.speed_rounded),
+                       const SizedBox(width: 12),
+                       Text('Reading Speed', style: TextStyle(color: labelColor)),
+                       Expanded(
+                         child: Slider(
+                           value: _speechRate,
+                           min: 0.05,
+                           max: 1.0,
+                           activeColor: Colors.amber[700],
+                           onChanged: (val) {
+                             setState(() {
+                               _speechRate = val;
+                               _speedController.text = (val * 2).toStringAsFixed(3);
+                             });
+                             setModalState(() {});
+                             _ttsService.updateSettings(speechRate: val);
+                           },
+                         ),
+                       ),
+                       // Hộp nhập số tốc độ chính xác 3 số lẻ thập phân
+                       SizedBox(
+                         width: 85,
+                         height: 38,
+                         child: TextField(
+                           controller: _speedController,
+                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                           textAlign: TextAlign.center,
+                           style: TextStyle(
+                             fontSize: 12, 
+                             fontWeight: FontWeight.bold,
+                             color: labelColor,
+                           ),
+                           decoration: InputDecoration(
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                             suffixText: 'x',
+                             suffixStyle: TextStyle(
+                               fontSize: 11, 
+                               fontWeight: FontWeight.bold, 
+                               color: isDark ? Colors.amber[300] : Colors.amber[850]
+                             ),
+                             filled: true,
+                             fillColor: isDark ? Colors.white10 : Colors.black12,
+                             border: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(10),
+                               borderSide: BorderSide.none,
+                             ),
+                           ),
+                           onChanged: (text) {
+                             final double? val = double.tryParse(text);
+                             if (val != null) {
+                               final clampedMultiplier = val.clamp(0.1, 2.0);
+                               final newRate = clampedMultiplier / 2.0;
+                               setState(() {
+                                 _speechRate = newRate;
+                               });
+                               setModalState(() {});
+                               _ttsService.updateSettings(speechRate: newRate);
+                             }
+                           },
+                         ),
+                       ),
+                     ],
+                   ),
                   const SizedBox(height: 16),
 
                   // CHỌN PHÔNG CHỮ (Font Family Dropdown)
@@ -394,7 +490,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final book = _ttsService.activeBook;
         final chapters = _ttsService.chapters;
         final activeChapterIndex = _ttsService.currentChapterIndex;
-        final activeParagraphIndex = _ttsService.currentParagraphIndex;
 
         if (book == null || chapters.isEmpty) {
           return const Scaffold(
@@ -406,76 +501,91 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         final chapter = chapters[activeChapterIndex];
 
-        return Scaffold(
-          backgroundColor: backgroundColor,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            foregroundColor: textColor,
-            title: Text(
-              book.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.format_list_bulleted_rounded),
-                onPressed: () => _showChapterList(context),
+        return FutureBuilder<AppSettings>(
+          future: _ttsService.getSettings(),
+          builder: (context, snapshot) {
+            final settings = snapshot.data;
+            final Widget scaffoldContent = Scaffold(
+              backgroundColor: backgroundColor,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                foregroundColor: textColor,
+                title: Text(
+                  book.title,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.format_list_bulleted_rounded),
+                    onPressed: () => _showChapterList(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_rounded),
+                    onPressed: _showSettings,
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.settings_rounded),
-                onPressed: _showSettings,
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Tiêu đề chương
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    chapter.title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.amber[400] : Colors.amber[800],
-                      fontFamily: _fontFamily == 'System' ? null : _fontFamily.toLowerCase(),
+              body: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        chapter.title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.amber[400] : Colors.amber[800],
+                          fontFamily: _fontFamily == 'System' ? null : _fontFamily.toLowerCase(),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              // Vùng hiển thị nội dung đọc
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: List.generate(chapter.paragraphs.length, (index) {
-                      final paragraphText = chapter.paragraphs[index];
-                      final isActive = index == activeParagraphIndex;
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: List.generate(chapter.paragraphs.length, (index) {
+                          final paragraphText = chapter.paragraphs[index];
+                          final isActive = index == _ttsService.currentParagraphIndex;
 
-                      return ParagraphWidget(
-                        text: paragraphText,
-                        isActive: isActive,
-                        fontSize: _fontSize,
-                        wordStart: isActive ? _ttsService.wordStart : 0,
-                        wordEnd: isActive ? _ttsService.wordEnd : 0,
-                        isDark: isDark,
-                        fontFamily: _fontFamily,
-                        textColor: textColor,
-                        onTap: () {
-                          // Click vào đoạn văn bất kỳ để nhảy phát TTS ngay từ đoạn đó
-                          _ttsService.jumpToParagraph(index);
-                        },
-                      );
-                    }),
+                          return ParagraphWidget(
+                            text: paragraphText,
+                            isActive: isActive,
+                            fontSize: _fontSize,
+                            wordStart: isActive ? _ttsService.wordStart : 0,
+                            wordEnd: isActive ? _ttsService.wordEnd : 0,
+                            isDark: isDark,
+                            fontFamily: _fontFamily,
+                            textColor: textColor,
+                            onTap: () {
+                              _ttsService.jumpToParagraph(index);
+                            },
+                          );
+                        }),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-          bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark, textColor),
+              bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark, textColor),
+            );
+
+            if (settings == null) {
+              return scaffoldContent;
+            }
+
+            return CallbackShortcuts(
+              bindings: _buildShortcuts(settings),
+              child: Focus(
+                autofocus: true,
+                child: scaffoldContent,
+              ),
+            );
+          },
         );
       },
     );
@@ -503,14 +613,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Hiển thị vị trí câu đang đọc
-          Text(
-            'Paragraph ${_ttsService.currentParagraphIndex + 1} of ${chapter.paragraphs.length}',
-            style: TextStyle(
-              fontSize: 12,
-              color: textColor.withOpacity(0.6),
-              fontWeight: FontWeight.w600,
-            ),
+          // Hiển thị vị trí câu đang đọc, phần trăm tiến trình và chỉ số chương kèm phần trăm chương
+          Builder(
+            builder: (context) {
+              final totalParagraphs = chapter.paragraphs.length;
+              final currentParagraph = _ttsService.currentParagraphIndex + 1;
+              final double percent = totalParagraphs > 0 ? (currentParagraph / totalParagraphs * 100) : 0.0;
+              final percentStr = percent.toStringAsFixed(1);
+              final currentChapter = _ttsService.currentChapterIndex + 1;
+              final totalChapters = _ttsService.chapters.length;
+              final double chapterPercent = totalChapters > 0 ? (currentChapter / totalChapters * 100) : 0.0;
+              final chapterPercentStr = chapterPercent.round().toString();
+
+              return Text(
+                'Paragraph $currentParagraph of $totalParagraphs ($percentStr%) • Chapter $currentChapter/$totalChapters ($chapterPercentStr%)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.6),
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 10),
           Row(

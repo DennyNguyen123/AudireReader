@@ -22,6 +22,9 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   void _initTts() {
+    if (!Platform.isWindows) {
+      _tts.setSharedInstance(true);
+    }
     _tts.setProgressHandler((String text, int start, int end, String word) {
       _currentText = text;
       onWordProgress?.call(text, start, end, word);
@@ -154,7 +157,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> pause() async {
     _isSpeaking = false;
     _windowsTimer?.cancel();
-    await _tts.pause();
+    await _tts.stop(); // Sử dụng stop thay cho pause để tránh lỗi nghẽn (freeze/silence) của iOS AVSpeechSynthesizer khi nghỉ lâu
     playbackState.add(playbackState.value.copyWith(
       controls: [
         MediaControl.skipToPrevious,

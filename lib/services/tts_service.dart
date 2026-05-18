@@ -229,8 +229,8 @@ class TtsService extends ChangeNotifier {
 
   Future<void> jumpToParagraph(int index) async {
     _currentParagraphIndex = index;
-    // Bấm thủ công vào đoạn văn nào luôn luôn kích hoạt phát tiếng từ đó
-    await _onStateChanged(forceSpeak: true);
+    // Nếu đang phát tiếng thì tiếp tục phát ở đoạn mới, nếu không phát thì chỉ cập nhật vị trí
+    await _onStateChanged();
   }
 
   Future<void> jumpToChapter(int index) async {
