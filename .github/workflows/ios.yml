@@ -2,10 +2,6 @@ name: iOS Build (Manual)
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - test-ios-build
 
 jobs:
   build-ios:

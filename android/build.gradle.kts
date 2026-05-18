@@ -17,6 +17,23 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    
+    // Workaround for AGP 8 namespace issue in older plugins (like isar_flutter_libs)
+    afterEvaluate {
+        val android = project.extensions.findByName("android")
+        if (android != null) {
+            try {
+                val getNamespace = android.javaClass.getMethod("getNamespace")
+                val namespace = getNamespace.invoke(android)
+                if (namespace == null || namespace.toString().isEmpty()) {
+                    val setNamespace = android.javaClass.getMethod("setNamespace", String::class.java)
+                    setNamespace.invoke(android, project.group.toString())
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
