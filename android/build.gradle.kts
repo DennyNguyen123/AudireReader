@@ -30,6 +30,13 @@ subprojects {
             } catch (e: Exception) {
                 // Ignore
             }
+
+            try {
+                val compileSdkVersionMethod = android.javaClass.getMethod("compileSdkVersion", Int::class.java)
+                compileSdkVersionMethod.invoke(android, 34)
+            } catch (e: Exception) {
+                // Ignore
+            }
         }
     }
 

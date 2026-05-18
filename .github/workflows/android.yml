@@ -1,0 +1,54 @@
+name: Android Test Build
+
+on:
+  workflow_dispatch: # Cho phép kích hoạt thủ công (bấm nút) trên giao diện GitHub Actions
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Code Generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk NovelReader-Android-Test.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelReader-Android-APK
+          path: NovelReader-Android-Test.apk
+
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-test-build # Tự động đè lên tag này mỗi lần test
+          name: "Android Test Build"
+          prerelease: true # Đánh dấu là bản thử nghiệm
+          files: NovelReader-Android-Test.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
