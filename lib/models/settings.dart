@@ -33,4 +33,6 @@ class AppSettings {
   String hotkeyOpenSetting = 'Control+comma';
   String hotkeyBossKey = 'Control+b';
   String bossKeyAction = 'minimize'; // 'minimize' or 'hide'
+
+  bool autoCheckUpdate = true;
 }

@@ -4,9 +4,11 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_tts
+  hotkey_manager_windows
   isar_flutter_libs
   screen_retriever_windows
   tray_manager
+  url_launcher_windows
   window_manager
 )
 

@@ -12,6 +12,7 @@ import '../../services/epub_parser.dart';
 import '../../services/tts_service.dart';
 import '../reader/reader_screen.dart';
 import '../../services/sync_service.dart';
+import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -34,8 +35,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
       // Tự động mở sách đọc gần nhất sau khi dựng xong frame đầu tiên để tránh lỗi thread điều hướng
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkAutoOpenLastRead();
+        _checkUpdateOnLaunch();
       });
     });
+  }
+
+  Future<void> _checkUpdateOnLaunch() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (settings.autoCheckUpdate && mounted) {
+      UpdateService.checkForUpdate(context);
+    }
   }
 
   Future<void> _checkAutoOpenLastRead() async {

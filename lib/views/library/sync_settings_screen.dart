@@ -23,6 +23,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   
   bool _webDavEnabled = false;
   bool _openLastReadOnLaunch = false;
+  bool _autoCheckUpdate = true;
   final _urlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -78,6 +79,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     setState(() {
       _webDavEnabled = settings.webDavEnabled;
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
+      _autoCheckUpdate = settings.autoCheckUpdate;
       _urlController.text = settings.webDavUrl;
       _usernameController.text = settings.webDavUsername;
       _passwordController.text = settings.webDavPassword;
@@ -149,6 +151,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     settings.openLastReadOnLaunch = val;
+    await db.saveSettings(settings);
+  }
+
+  Future<void> _saveAutoCheckUpdatePreference(bool val) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    settings.autoCheckUpdate = val;
     await db.saveSettings(settings);
   }
 
@@ -699,6 +708,26 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                     _openLastReadOnLaunch = val;
                                   });
                                   _saveGeneralPreference(val);
+                                },
+                              ),
+                              const Divider(height: 1, thickness: 1),
+                              SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: const Text(
+                                  'Auto Check for Updates',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                subtitle: const Text(
+                                  'Automatically check for new versions from GitHub when the app starts.',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                value: _autoCheckUpdate,
+                                activeColor: Colors.amber[700],
+                                onChanged: (val) {
+                                  setState(() {
+                                    _autoCheckUpdate = val;
+                                  });
+                                  _saveAutoCheckUpdatePreference(val);
                                 },
                               ),
                             ],

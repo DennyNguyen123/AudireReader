@@ -1,0 +1,151 @@
+name: Auto Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags matching v*, e.g., v1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Code Generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk NovelReader-Android.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelReader-Android-APK
+          path: NovelReader-Android.apk
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Code Generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows App
+        run: flutter build windows --release
+
+      - name: Compress Windows Build
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath NovelReader-Windows.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelReader-Windows-ZIP
+          path: NovelReader-Windows.zip
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.9'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Code Generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Configure iOS Permissions
+        run: |
+          PLIST_PATH="ios/Runner/Info.plist"
+          plutil -insert UIBackgroundModes -xml "<array><string>audio</string></array>" $PLIST_PATH || true
+          plutil -replace UISupportsDocumentBrowser -bool true $PLIST_PATH || true
+          plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
+
+      - name: Build iOS Application (No Codesign)
+        run: flutter build ios --no-codesign --release
+
+      - name: Package into unsigned IPA
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r NovelReader-iOS.ipa Payload
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovelReader-iOS-IPA
+          path: NovelReader-iOS.ipa
+
+  release:
+    needs: [build-android, build-windows, build-ios]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: NovelReader-Android-APK
+
+      - name: Download Windows ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: NovelReader-Windows-ZIP
+
+      - name: Download iOS IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: NovelReader-iOS-IPA
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            NovelReader-Android.apk
+            NovelReader-Windows.zip
+            NovelReader-iOS.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
