@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'package:epubx/epubx.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
 import '../models/book.dart';
 import '../models/chapter.dart';
 
 class EpubParser {
-  static Future<ParsedBookData> parseEpubFile(String filePath) async {
+  static Future<ParsedBookData> parseEpubFile(String filePath, String documentsDirPath) async {
     final file = File(filePath);
     if (!await file.exists()) {
       throw Exception("File not found: $filePath");
@@ -23,10 +22,15 @@ class EpubParser {
 
     // 1. Save Cover Image
     String? coverPath;
+    
+    // Cách 1: Đọc ảnh bìa chuẩn qua metadata (CoverImage)
     try {
+      print("Total files in EPUB: ${epubBook.Content?.AllFiles?.length}");
+      print("Total images in EPUB: ${epubBook.Content?.Images?.length}");
+      
       final coverImage = epubBook.CoverImage;
       if (coverImage != null) {
-        final docDir = await getApplicationDocumentsDirectory();
+        final docDir = Directory(documentsDirPath);
         final coverDir = Directory(path.join(docDir.path, 'covers'));
         if (!await coverDir.exists()) {
           await coverDir.create(recursive: true);
@@ -35,9 +39,124 @@ class EpubParser {
         final pngBytes = img.encodePng(coverImage);
         await savedCoverFile.writeAsBytes(pngBytes);
         coverPath = savedCoverFile.path;
+        print("Method 1 (CoverImage) succeeded!");
       }
     } catch (e) {
-      print("Failed to parse cover image: $e");
+      print("Method 1 (epubBook.CoverImage) failed: $e");
+    }
+
+    // Cách 2: Quét file raw trong Content.Images nếu Cách 1 trống hoặc lỗi
+    if (coverPath == null) {
+      try {
+        if (epubBook.Content?.Images != null && epubBook.Content!.Images!.isNotEmpty) {
+          final images = epubBook.Content!.Images!;
+          String coverKey = images.keys.firstWhere(
+            (k) => k.toLowerCase().contains('cover'),
+            orElse: () => '',
+          );
+          
+          if (coverKey.isEmpty) {
+            coverKey = images.keys.firstWhere(
+              (k) => k.toLowerCase().contains('thumb') || k.toLowerCase().contains('image'),
+              orElse: () => images.keys.first,
+            );
+          }
+
+          final coverFile = images[coverKey];
+          if (coverFile != null) {
+            final contentBytes = coverFile.Content;
+            if (contentBytes != null && contentBytes.isNotEmpty) {
+              final docDir = Directory(documentsDirPath);
+              final coverDir = Directory(path.join(docDir.path, 'covers'));
+              if (!await coverDir.exists()) {
+                await coverDir.create(recursive: true);
+              }
+              
+              final ext = path.extension(coverKey).toLowerCase();
+              final fileExt = ext.isNotEmpty ? ext : '.png';
+              final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
+              await savedCoverFile.writeAsBytes(contentBytes);
+              coverPath = savedCoverFile.path;
+              print("Method 2 (Images scanning) succeeded with: $coverKey");
+            }
+          }
+        }
+      } catch (e) {
+        print("Method 2 (Images scanning) failed: $e");
+      }
+    }
+
+    // Cách 3 (Siêu dự phòng): Quét toàn bộ tệp tin trong EPUB (AllFiles) tìm tệp ảnh
+    if (coverPath == null) {
+      try {
+        if (epubBook.Content?.AllFiles != null && epubBook.Content!.AllFiles!.isNotEmpty) {
+          final allFiles = epubBook.Content!.AllFiles!;
+          
+          String coverKey = allFiles.keys.firstWhere(
+            (k) {
+              final lowerK = k.toLowerCase();
+              final isImage = lowerK.endsWith('.jpg') || 
+                              lowerK.endsWith('.jpeg') || 
+                              lowerK.endsWith('.png') || 
+                              lowerK.endsWith('.webp') ||
+                              lowerK.endsWith('.gif');
+              return isImage && lowerK.contains('cover');
+            },
+            orElse: () => '',
+          );
+          
+          if (coverKey.isEmpty) {
+            coverKey = allFiles.keys.firstWhere(
+              (k) {
+                final lowerK = k.toLowerCase();
+                final isImage = lowerK.endsWith('.jpg') || 
+                                lowerK.endsWith('.jpeg') || 
+                                lowerK.endsWith('.png') || 
+                                lowerK.endsWith('.webp') ||
+                                lowerK.endsWith('.gif');
+                return isImage && (lowerK.contains('thumb') || lowerK.contains('image') || lowerK.contains('avatar'));
+              },
+              orElse: () => '',
+            );
+          }
+          
+          if (coverKey.isEmpty) {
+            coverKey = allFiles.keys.firstWhere(
+              (k) {
+                final lowerK = k.toLowerCase();
+                return lowerK.endsWith('.jpg') || 
+                       lowerK.endsWith('.jpeg') || 
+                       lowerK.endsWith('.png') || 
+                       lowerK.endsWith('.webp') ||
+                       lowerK.endsWith('.gif');
+              },
+              orElse: () => '',
+            );
+          }
+
+          if (coverKey.isNotEmpty) {
+            final coverFile = allFiles[coverKey];
+            if (coverFile is EpubByteContentFile) {
+              final contentBytes = coverFile.Content;
+              if (contentBytes != null && contentBytes.isNotEmpty) {
+                final docDir = Directory(documentsDirPath);
+                final coverDir = Directory(path.join(docDir.path, 'covers'));
+                if (!await coverDir.exists()) {
+                  await coverDir.create(recursive: true);
+                }
+                final ext = path.extension(coverKey).toLowerCase();
+                final fileExt = ext.isNotEmpty ? ext : '.png';
+                final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
+                await savedCoverFile.writeAsBytes(contentBytes);
+                coverPath = savedCoverFile.path;
+                print("Method 3 (AllFiles scanning) succeeded with: $coverKey");
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print("Method 3 (AllFiles scanning) failed: $e");
+      }
     }
 
     // 2. Parse Chapters

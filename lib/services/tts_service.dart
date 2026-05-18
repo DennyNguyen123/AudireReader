@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/progress.dart';
+import '../models/settings.dart';
 import 'audio_handler.dart';
 import '../core/database/database_helper.dart';
 
@@ -68,6 +69,30 @@ class TtsService extends ChangeNotifier {
     audioHandler.playbackState.listen((state) {
       notifyListeners();
     });
+
+    // Áp dụng các cài đặt đã lưu tự động
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      await audioHandler.setSpeed(settings.speechRate);
+      
+      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
+        final voices = await audioHandler.getVoices();
+        final savedVoice = voices.firstWhere(
+          (v) => v['name']?.toString() == settings.selectedVoiceName &&
+                 v['locale']?.toString() == settings.selectedVoiceLocale,
+          orElse: () => null,
+        );
+        if (savedVoice != null) {
+          final voiceMap = Map<String, String>.from(
+            (savedVoice as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+          );
+          await audioHandler.setVoice(voiceMap);
+        }
+      }
+    } catch (e) {
+      print("Failed to restore TTS settings: $e");
+    }
   }
 
   Future<void> loadBook(Book book, List<Chapter> chapters, {int startChapter = 0, int startParagraph = 0}) async {
@@ -199,7 +224,62 @@ class TtsService extends ChangeNotifier {
     await startSpeaking();
   }
 
+  Future<void> jumpToChapter(int index) async {
+    if (_activeBook == null || _chapters.isEmpty) return;
+    if (index < 0 || index >= _chapters.length) return;
+
+    _currentChapterIndex = index;
+    _currentParagraphIndex = 0;
+    wordStart = 0;
+    wordEnd = 0;
+    currentWord = "";
+
+    if (isPlaying) {
+      await startSpeaking();
+    } else {
+      notifyListeners();
+      // Lưu tiến trình khi chuyển chương ở trạng thái dừng phát
+      final db = await DatabaseHelper.getInstance();
+      final progress = await db.getProgress(_activeBook!.uuid) ??
+          (ReadingProgress()..bookUuid = _activeBook!.uuid);
+
+      progress.currentChapterIndex = _currentChapterIndex;
+      progress.currentParagraphIndex = _currentParagraphIndex;
+      progress.currentCharacterOffset = 0;
+      progress.lastRead = DateTime.now();
+      await db.saveProgress(progress);
+    }
+  }
+
   void _onParagraphFinished() {
     nextParagraph();
+  }
+
+  Future<AppSettings> getSettings() async {
+    final db = await DatabaseHelper.getInstance();
+    return await db.getSettings();
+  }
+
+  Future<void> updateSettings({
+    double? fontSize,
+    double? speechRate,
+    Map<String, String>? voice,
+  }) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    
+    if (fontSize != null) settings.fontSize = fontSize;
+    if (speechRate != null) {
+      settings.speechRate = speechRate;
+      await audioHandler.setSpeed(speechRate);
+    }
+    if (voice != null) {
+      settings.selectedVoiceName = voice['name'];
+      settings.selectedVoiceLocale = voice['locale'];
+      await audioHandler.setVoice(voice);
+    }
+    
+    await db.saveSettings(settings);
+    notifyListeners();
   }
 }

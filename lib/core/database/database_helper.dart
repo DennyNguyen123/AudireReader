@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../models/book.dart';
 import '../../models/chapter.dart';
 import '../../models/progress.dart';
+import '../../models/settings.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
@@ -21,7 +22,7 @@ class DatabaseHelper {
   Future<void> _init() async {
     final dir = await getApplicationDocumentsDirectory();
     isar = await Isar.open(
-      [BookSchema, ChapterSchema, ReadingProgressSchema],
+      [BookSchema, ChapterSchema, ReadingProgressSchema, AppSettingsSchema],
       directory: dir.path,
     );
   }
@@ -91,5 +92,17 @@ class DatabaseHelper {
         .filter()
         .bookUuidEqualTo(bookUuid)
         .findFirst();
+  }
+
+  // --- App Settings Operations ---
+  Future<void> saveSettings(AppSettings settings) async {
+    await isar.writeTxn(() async {
+      await isar.appSettings.put(settings);
+    });
+  }
+
+  Future<AppSettings> getSettings() async {
+    final settings = await isar.appSettings.get(1);
+    return settings ?? AppSettings();
   }
 }

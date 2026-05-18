@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/tts_service.dart';
 import '../../models/chapter.dart';
+import '../../models/settings.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key});
@@ -25,13 +26,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Future<void> _initTtsService() async {
     _ttsService = await TtsService.getInstance();
+    final settings = await _ttsService.getSettings();
+
     setState(() {
+      _fontSize = settings.fontSize;
+      _speechRate = settings.speechRate;
       _isInitialized = true;
     });
-    _loadVoices();
+    _loadVoices(settings);
   }
 
-  Future<void> _loadVoices() async {
+  Future<void> _loadVoices(AppSettings settings) async {
     try {
       final voices = await _ttsService.audioHandler.getVoices();
       // Lọc ra các giọng đọc tiếng Việt hoặc tiếng Anh phổ biến
@@ -40,8 +45,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
         return lang.startsWith('vi') || lang.startsWith('en');
       }).toList();
 
+      final list = filteredVoices.isNotEmpty ? filteredVoices : voices;
+
+      Map<String, String>? initialVoice;
+      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
+        final matched = list.firstWhere(
+          (v) => v['name']?.toString() == settings.selectedVoiceName &&
+                 v['locale']?.toString() == settings.selectedVoiceLocale,
+          orElse: () => null,
+        );
+        if (matched != null) {
+          initialVoice = Map<String, String>.from(
+            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+          );
+        }
+      }
+
       setState(() {
-        _voices = filteredVoices.isNotEmpty ? filteredVoices : voices;
+        _voices = list;
+        if (initialVoice != null) {
+          _selectedVoice = initialVoice;
+        }
       });
     } catch (e) {
       print("Failed to load voices: $e");
@@ -90,6 +114,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             _fontSize = val;
                           });
                           setModalState(() {});
+                          _ttsService.updateSettings(fontSize: val);
                         },
                       ),
                     ),
@@ -113,8 +138,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           setState(() {
                             _speechRate = val;
                           });
-                          _ttsService.audioHandler.setSpeed(val);
                           setModalState(() {});
+                          _ttsService.updateSettings(speechRate: val);
                         },
                       ),
                     ),
@@ -125,8 +150,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   const SizedBox(height: 12),
                   const Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  DropdownButtonFormField<Map<String, String>>(
-                    value: _selectedVoice,
+                  DropdownButtonFormField<String>(
+                    value: _selectedVoice?['name'],
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -138,8 +163,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     items: _voices.map((v) {
                       final name = v['name']?.toString() ?? 'Unknown';
                       final locale = v['locale']?.toString() ?? '';
-                      return DropdownMenuItem<Map<String, String>>(
-                        value: Map<String, String>.from(v),
+                      return DropdownMenuItem<String>(
+                        value: name,
                         child: Text(
                           '$name ($locale)',
                           overflow: TextOverflow.ellipsis,
@@ -149,10 +174,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
-                        setState(() {
-                          _selectedVoice = val;
-                        });
-                        _ttsService.audioHandler.setVoice(val);
+                        final selectedMap = _voices.firstWhere(
+                          (v) => v['name']?.toString() == val,
+                          orElse: () => null,
+                        );
+                        if (selectedMap != null) {
+                          final voiceMap = Map<String, String>.from(
+                            (selectedMap as Map).map(
+                              (key, value) => MapEntry(key.toString(), value.toString()),
+                            ),
+                          );
+                          setState(() {
+                            _selectedVoice = voiceMap;
+                          });
+                          setModalState(() {});
+                          _ttsService.updateSettings(voice: voiceMap);
+                        }
                       }
                     },
                   ),
@@ -206,6 +243,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.format_list_bulleted_rounded),
+                onPressed: () => _showChapterList(context),
+              ),
               IconButton(
                 icon: const Icon(Icons.settings_rounded),
                 onPressed: _showSettings,
@@ -331,6 +372,106 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showChapterList(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chapters = _ttsService.chapters;
+    final currentChapterIdx = _ttsService.currentChapterIndex;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Chapters',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${chapters.length} chapters',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: chapters.length,
+                      itemBuilder: (context, index) {
+                        final chapter = chapters[index];
+                        final isCurrent = index == currentChapterIdx;
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                          title: Text(
+                            chapter.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrent 
+                                  ? (isDark ? Colors.amber[400] : Colors.amber[800])
+                                  : (isDark ? Colors.white70 : Colors.black87),
+                            ),
+                          ),
+                          trailing: isCurrent 
+                              ? Icon(
+                                  Icons.volume_up_rounded, 
+                                  color: isDark ? Colors.amber[400] : Colors.amber[800]
+                                ) 
+                              : null,
+                          tileColor: isCurrent 
+                              ? (isDark ? Colors.amber[900]!.withOpacity(0.1) : Colors.amber[50]!)
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _ttsService.jumpToChapter(index);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

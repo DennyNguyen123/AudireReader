@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/database/database_helper.dart';
 import '../../models/book.dart';
 import '../../services/epub_parser.dart';
@@ -47,11 +48,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
       });
 
       final filePath = result.files.single.path!;
+      final docDir = await getApplicationDocumentsDirectory();
 
       // Chạy parser trong background isolate để tránh đơ giao diện
       final parsedData = await compute(
         _parseEpubIsolate,
-        filePath,
+        {
+          'filePath': filePath,
+          'docDirPath': docDir.path,
+        },
       );
 
       final db = await DatabaseHelper.getInstance();
@@ -81,8 +86,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // Hàm chạy riêng trong isolate
-  static Future<ParsedBookData> _parseEpubIsolate(String path) async {
-    return await EpubParser.parseEpubFile(path);
+  static Future<ParsedBookData> _parseEpubIsolate(Map<String, String> args) async {
+    final filePath = args['filePath']!;
+    final docDirPath = args['docDirPath']!;
+    return await EpubParser.parseEpubFile(filePath, docDirPath);
   }
 
   Future<void> _deleteBook(Book book) async {
@@ -199,18 +206,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ],
                   ),
                 )
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.65,
-                  ),
-                  itemCount: _books.length,
-                  itemBuilder: (context, index) {
-                    final book = _books[index];
-                    return _buildBookCard(book, isDark);
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double width = constraints.maxWidth;
+                    // Tự động tính toán số cột dựa trên chiều rộng màn hình, mỗi card rộng tầm 150-180px
+                    final int crossAxisCount = (width / 160).floor().clamp(2, 8);
+                    
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.62,
+                      ),
+                      itemCount: _books.length,
+                      itemBuilder: (context, index) {
+                        final book = _books[index];
+                        return _buildBookCard(book, isDark);
+                      },
+                    );
                   },
                 ),
           if (_isLoading)
@@ -283,13 +298,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           color: isDark ? Colors.grey[850] : Colors.grey[300],
                           child: Icon(
                             Icons.book_rounded,
-                            size: 50,
+                            size: 40,
                             color: isDark ? Colors.white30 : Colors.black38,
                           ),
                         ),
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 4,
+                    right: 4,
                     child: PopupMenuButton<String>(
                       icon: Container(
                         padding: const EdgeInsets.all(4),
@@ -300,7 +315,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         child: const Icon(
                           Icons.more_vert_rounded,
                           color: Colors.white,
-                          size: 18,
+                          size: 14,
                         ),
                       ),
                       onSelected: (value) {
@@ -313,9 +328,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete_outline_rounded, color: Colors.red),
+                              Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
                               SizedBox(width: 8),
-                              Text('Delete Book', style: TextStyle(color: Colors.red)),
+                              Text('Delete Book', style: TextStyle(color: Colors.red, fontSize: 13)),
                             ],
                           ),
                         ),
@@ -325,44 +340,43 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ],
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        letterSpacing: -0.2,
-                      ),
+            Container(
+              height: 75,
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: -0.2,
+                      height: 1.2,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      book.author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white54 : Colors.black54,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    book.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.white54 : Colors.black54,
                     ),
-                    const Spacer(),
-                    Text(
-                      '${book.totalChapters} Chapters',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.amber[700],
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${book.totalChapters} Chapters',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.amber[700],
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
