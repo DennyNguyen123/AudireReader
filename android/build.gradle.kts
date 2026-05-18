@@ -30,13 +30,14 @@ subprojects {
             } catch (e: Exception) {
                 // Ignore
             }
+        }
+    }
 
-            try {
-                val compileSdkVersionMethod = android.javaClass.getMethod("compileSdkVersion", Int::class.java)
-                compileSdkVersionMethod.invoke(android, 34)
-            } catch (e: Exception) {
-                // Ignore
-            }
+    // Force older core versions to prevent "android:attr/lStar not found" error on older plugins
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.core:core:1.6.0")
+            force("androidx.core:core-ktx:1.6.0")
         }
     }
 
