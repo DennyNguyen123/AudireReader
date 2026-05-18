@@ -1,10 +1,18 @@
 subprojects {
-    project.pluginManager.withPlugin("com.android.library") {
-        project.android {
-            compileSdkVersion 34
-            if (namespace == null || namespace == "") {
-                namespace project.group.toString()
+    def configureAndroid = { project ->
+        if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
+            project.android {
+                compileSdkVersion 34
+                if (namespace == null || namespace == "") {
+                    namespace project.group.toString()
+                }
             }
         }
+    }
+    
+    if (state.executed) {
+        configureAndroid(it)
+    } else {
+        afterEvaluate { p -> configureAndroid(p) }
     }
 }
