@@ -16,10 +16,8 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
-    project.evaluationDependsOn(":app")
-    
     // Workaround for AGP 8 namespace issue in older plugins (like isar_flutter_libs)
-    afterEvaluate {
+    project.pluginManager.withPlugin("com.android.library") {
         val android = project.extensions.findByName("android")
         if (android != null) {
             try {
@@ -34,6 +32,8 @@ subprojects {
             }
         }
     }
+
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {
