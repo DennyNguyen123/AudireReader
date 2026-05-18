@@ -111,6 +111,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     _windowsTimer?.cancel();
     await _tts.stop();
     
+    // Chờ một khoảng ngắn (100ms) để bất kỳ callback hoàn thành giả nào (nếu có)
+    // từ cuộc gọi stop() ở trên được gửi từ native và xử lý xong trong Dart Event Loop
+    // trước khi chúng ta thiết lập _isSpeaking = true cho lượt đọc mới.
+    if (!Platform.isWindows) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
     _currentText = text;
     _isSpeaking = true;
     
