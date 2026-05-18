@@ -11,4 +11,7 @@ class AppSettings {
   
   String? selectedVoiceName;
   String? selectedVoiceLocale;
+
+  String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace'
+  String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia'
 }

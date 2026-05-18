@@ -19,6 +19,7 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   List<Book> _books = [];
   bool _isLoading = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -146,16 +147,36 @@ class _LibraryScreenState extends State<LibraryScreen> {
     // Tông màu tối hiện đại, cao cấp
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final filteredBooks = _books.where((book) {
+      final searchLower = _searchQuery.toLowerCase();
+      return book.title.toLowerCase().contains(searchLower) ||
+             (book.author?.toLowerCase().contains(searchLower) ?? false);
+    }).toList();
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: const Text(
-          'Novel Shelf',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 24,
-            letterSpacing: -0.5,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 32,
+                height: 32,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Novel Shelf',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -168,6 +189,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 context: context,
                 applicationName: 'Novel Reader',
                 applicationVersion: '1.0.0',
+                applicationIcon: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 48,
+                    height: 48,
+                  ),
+                ),
                 applicationLegalese: 'A premium system TTS audio reader.',
               );
             },
@@ -176,58 +205,110 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       body: Stack(
         children: [
-          _books.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.menu_book_rounded,
-                        size: 80,
-                        color: isDark ? Colors.white30 : Colors.black26,
+          Column(
+            children: [
+              if (_books.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: TextField(
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                    decoration: InputDecoration(
+                      hintText: 'Search book on shelf...',
+                      hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+                      prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white38 : Colors.black38),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Your shelf is empty',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white54 : Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap the "+" button to import an EPUB book',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                        ),
-                      ),
-                    ],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val;
+                      });
+                    },
                   ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double width = constraints.maxWidth;
-                    // Tự động tính toán số cột dựa trên chiều rộng màn hình, mỗi card rộng tầm 150-180px
-                    final int crossAxisCount = (width / 160).floor().clamp(2, 8);
-                    
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.62,
-                      ),
-                      itemCount: _books.length,
-                      itemBuilder: (context, index) {
-                        final book = _books[index];
-                        return _buildBookCard(book, isDark);
-                      },
-                    );
-                  },
                 ),
+              Expanded(
+                child: _books.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.menu_book_rounded,
+                              size: 80,
+                              color: isDark ? Colors.white30 : Colors.black26,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Your shelf is empty',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap the "+" button to import an EPUB book',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? Colors.white38 : Colors.black38,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : filteredBooks.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 80,
+                                  color: isDark ? Colors.white30 : Colors.black26,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No books match your search',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? Colors.white54 : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final double width = constraints.maxWidth;
+                              // Tự động tính toán số cột dựa trên chiều rộng màn hình, mỗi card rộng tầm 150-180px
+                              final int crossAxisCount = (width / 160).floor().clamp(2, 8);
+                              
+                              return GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 0.62,
+                                ),
+                                itemCount: filteredBooks.length,
+                                itemBuilder: (context, index) {
+                                  final book = filteredBooks[index];
+                                  return _buildBookCard(book, isDark);
+                                },
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
           if (_isLoading)
             Container(
               color: Colors.black45,

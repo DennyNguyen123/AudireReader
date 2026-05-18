@@ -17,6 +17,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   double _speechRate = 0.5; // FlutterTts standard rate is 0.5 for normal speed
   List<dynamic> _voices = [];
   Map<String, String>? _selectedVoice;
+  String _fontFamily = 'System';
+  String _themeMode = 'System';
 
   @override
   void initState() {
@@ -31,6 +33,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     setState(() {
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
+      
+      dynamic rawFont = settings.fontFamily;
+      _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty) ? 'System' : rawFont.toString();
+      
+      dynamic rawTheme = settings.themeMode;
+      _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty) ? 'System' : rawTheme.toString();
+      
       _isInitialized = true;
     });
     _loadVoices(settings);
@@ -72,86 +81,204 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
+  bool _getIsDark(BuildContext context) {
+    if (_themeMode == 'Dark') return true;
+    if (_themeMode == 'Light' || _themeMode == 'Sepia') return false;
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  Color _getBackgroundColor(bool isDark) {
+    if (_themeMode == 'Sepia') return const Color(0xFFF4ECD8);
+    return isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6);
+  }
+
+  Color _getTextColor(bool isDark) {
+    if (_themeMode == 'Sepia') return const Color(0xFF5B4636);
+    return isDark ? Colors.white70 : Colors.black87;
+  }
+
   void _showSettings() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          
+          final isDark = _getIsDark(context);
+          final sheetBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+          final labelColor = isDark ? Colors.white70 : Colors.black87;
+
           return Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              color: sheetBg,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Reader Settings',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                // Cỡ chữ
-                Row(
-                  children: [
-                    const Icon(Icons.format_size_rounded),
-                    const SizedBox(width: 12),
-                    const Text('Font Size'),
-                    Expanded(
-                      child: Slider(
-                        value: _fontSize,
-                        min: 14.0,
-                        max: 28.0,
-                        divisions: 7,
-                        activeColor: Colors.amber[700],
-                        label: _fontSize.round().toString(),
-                        onChanged: (val) {
-                          setState(() {
-                            _fontSize = val;
-                          });
-                          setModalState(() {});
-                          _ttsService.updateSettings(fontSize: val);
-                        },
+            padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Reader Settings',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
-                ),
-                // Tốc độ nói
-                Row(
-                  children: [
-                    const Icon(Icons.speed_rounded),
-                    const SizedBox(width: 12),
-                    const Text('Reading Speed'),
-                    Expanded(
-                      child: Slider(
-                        value: _speechRate,
-                        min: 0.25,
-                        max: 1.0, // Standard limit for flutter_tts
-                        divisions: 6,
-                        activeColor: Colors.amber[700],
-                        label: '${(_speechRate * 2).toStringAsFixed(1)}x',
-                        onChanged: (val) {
-                          setState(() {
-                            _speechRate = val;
-                          });
-                          setModalState(() {});
-                          _ttsService.updateSettings(speechRate: val);
-                        },
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
-                  ],
-                ),
-                // Chọn giọng đọc
-                if (_voices.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // CHỌN CHỦ ĐỀ ĐỌC (Theme Mode Row)
+                  Text('Reading Theme', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: ['System', 'Light', 'Dark', 'Sepia'].map((theme) {
+                      final isSelected = _themeMode == theme;
+                      Color btnBg;
+                      Color textCol;
+                      IconData icon;
+                      
+                      if (theme == 'System') {
+                        btnBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
+                        textCol = isDark ? Colors.white70 : Colors.black87;
+                        icon = Icons.brightness_auto_rounded;
+                      } else if (theme == 'Light') {
+                        btnBg = Colors.white;
+                        textCol = Colors.black87;
+                        icon = Icons.wb_sunny_rounded;
+                      } else if (theme == 'Dark') {
+                        btnBg = const Color(0xFF121212);
+                        textCol = Colors.white70;
+                        icon = Icons.nightlight_round;
+                      } else { // Sepia
+                        btnBg = const Color(0xFFF4ECD8);
+                        textCol = const Color(0xFF5B4636);
+                        icon = Icons.menu_book_rounded;
+                      }
+                      
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _themeMode = theme;
+                            });
+                            setModalState(() {});
+                            _ttsService.updateSettings(themeMode: theme);
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: btnBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected 
+                                    ? Colors.amber[700]! 
+                                    : (isDark ? Colors.white10 : Colors.black12),
+                                width: isSelected ? 2.5 : 1,
+                              ),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: Colors.amber[700]!.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                )
+                              ] : null,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  icon, 
+                                  color: isSelected ? Colors.amber[700] : textCol.withOpacity(0.8), 
+                                  size: 18
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  theme,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.amber[700] : textCol,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // CỠ CHỮ
+                  Row(
+                    children: [
+                      const Icon(Icons.format_size_rounded),
+                      const SizedBox(width: 12),
+                      Text('Font Size', style: TextStyle(color: labelColor)),
+                      Expanded(
+                        child: Slider(
+                          value: _fontSize,
+                          min: 14.0,
+                          max: 28.0,
+                          divisions: 7,
+                          activeColor: Colors.amber[700],
+                          label: _fontSize.round().toString(),
+                          onChanged: (val) {
+                            setState(() {
+                              _fontSize = val;
+                            });
+                            setModalState(() {});
+                            _ttsService.updateSettings(fontSize: val);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // TỐC ĐỘ NÓI
+                  Row(
+                    children: [
+                      const Icon(Icons.speed_rounded),
+                      const SizedBox(width: 12),
+                      Text('Reading Speed', style: TextStyle(color: labelColor)),
+                      Expanded(
+                        child: Slider(
+                          value: _speechRate,
+                          min: 0.25,
+                          max: 1.0, // Standard limit for flutter_tts
+                          divisions: 15,
+                          activeColor: Colors.amber[700],
+                          label: '${(_speechRate * 2).toStringAsFixed(2)}x',
+                          onChanged: (val) {
+                            setState(() {
+                              _speechRate = val;
+                            });
+                            setModalState(() {});
+                            _ttsService.updateSettings(speechRate: val);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // CHỌN PHÔNG CHỮ (Font Family Dropdown)
+                  Text('Font Style', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedVoice?['name'],
+                    value: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
+                        ? _fontFamily 
+                        : 'System',
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -159,42 +286,87 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
-                    items: _voices.map((v) {
-                      final name = v['name']?.toString() ?? 'Unknown';
-                      final locale = v['locale']?.toString() ?? '';
+                    dropdownColor: sheetBg,
+                    items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
                       return DropdownMenuItem<String>(
-                        value: name,
+                        value: font,
                         child: Text(
-                          '$name ($locale)',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13),
+                          font,
+                          style: TextStyle(
+                            color: labelColor,
+                            fontFamily: font == 'System' ? null : font.toLowerCase()
+                          ),
                         ),
                       );
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
-                        final selectedMap = _voices.firstWhere(
-                          (v) => v['name']?.toString() == val,
-                          orElse: () => null,
-                        );
-                        if (selectedMap != null) {
-                          final voiceMap = Map<String, String>.from(
-                            (selectedMap as Map).map(
-                              (key, value) => MapEntry(key.toString(), value.toString()),
-                            ),
-                          );
-                          setState(() {
-                            _selectedVoice = voiceMap;
-                          });
-                          setModalState(() {});
-                          _ttsService.updateSettings(voice: voiceMap);
-                        }
+                        setState(() {
+                          _fontFamily = val;
+                        });
+                        setModalState(() {});
+                        _ttsService.updateSettings(fontFamily: val);
                       }
                     },
                   ),
+                  const SizedBox(height: 16),
+
+                  // CHỌN GIỌNG ĐỌC
+                  if (_voices.isNotEmpty) ...[
+                    Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _voices.any((v) => v['name']?.toString() == _selectedVoice?['name'])
+                          ? (_selectedVoice?['name'])
+                          : null,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      dropdownColor: sheetBg,
+                      items: _voices.map((v) {
+                        final name = v['name']?.toString() ?? 'Unknown';
+                        final locale = v['locale']?.toString() ?? '';
+                        return DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(
+                            '$name ($locale)',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 13, color: labelColor),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          final selectedMap = _voices.firstWhere(
+                            (v) => v['name']?.toString() == val,
+                            orElse: () => null,
+                          );
+                          if (selectedMap != null) {
+                            final voiceMap = Map<String, String>.from(
+                              (selectedMap as Map).map(
+                                (key, value) => MapEntry(key.toString(), value.toString()),
+                              ),
+                            );
+                            setState(() {
+                              _selectedVoice = voiceMap;
+                            });
+                            setModalState(() {});
+                            _ttsService.updateSettings(voice: voiceMap);
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         },
@@ -212,7 +384,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _getIsDark(context);
+    final backgroundColor = _getBackgroundColor(isDark);
+    final textColor = _getTextColor(isDark);
 
     return ListenableBuilder(
       listenable: _ttsService,
@@ -233,11 +407,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final chapter = chapters[activeChapterIndex];
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6),
+          backgroundColor: backgroundColor,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            foregroundColor: isDark ? Colors.white : Colors.black87,
+            foregroundColor: textColor,
             title: Text(
               book.title,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -266,52 +440,62 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: isDark ? Colors.amber[400] : Colors.amber[800],
+                      fontFamily: _fontFamily == 'System' ? null : _fontFamily.toLowerCase(),
                     ),
                   ),
                 ),
               ),
               // Vùng hiển thị nội dung đọc
               Expanded(
-                child: ListView.builder(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
-                  itemCount: chapter.paragraphs.length,
-                  itemBuilder: (context, index) {
-                    final paragraphText = chapter.paragraphs[index];
-                    final isActive = index == activeParagraphIndex;
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: List.generate(chapter.paragraphs.length, (index) {
+                      final paragraphText = chapter.paragraphs[index];
+                      final isActive = index == activeParagraphIndex;
 
-                    return ParagraphWidget(
-                      text: paragraphText,
-                      isActive: isActive,
-                      fontSize: _fontSize,
-                      wordStart: isActive ? _ttsService.wordStart : 0,
-                      wordEnd: isActive ? _ttsService.wordEnd : 0,
-                      isDark: isDark,
-                      onTap: () {
-                        // Click vào đoạn văn bất kỳ để nhảy phát TTS ngay từ đoạn đó
-                        _ttsService.jumpToParagraph(index);
-                      },
-                    );
-                  },
+                      return ParagraphWidget(
+                        text: paragraphText,
+                        isActive: isActive,
+                        fontSize: _fontSize,
+                        wordStart: isActive ? _ttsService.wordStart : 0,
+                        wordEnd: isActive ? _ttsService.wordEnd : 0,
+                        isDark: isDark,
+                        fontFamily: _fontFamily,
+                        textColor: textColor,
+                        onTap: () {
+                          // Click vào đoạn văn bất kỳ để nhảy phát TTS ngay từ đoạn đó
+                          _ttsService.jumpToParagraph(index);
+                        },
+                      );
+                    }),
+                  ),
                 ),
               ),
             ],
           ),
-          bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark),
+          bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark, textColor),
         );
       },
     );
   }
 
-  Widget _buildBottomAudioPanel(Chapter chapter, bool isDark) {
+  Widget _buildBottomAudioPanel(Chapter chapter, bool isDark, Color textColor) {
+    Color panelBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    if (_themeMode == 'Sepia') {
+      panelBg = const Color(0xFFEAD8B1);
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: panelBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, -2),
+            offset: Offset(0, -2),
           ),
         ],
       ),
@@ -324,7 +508,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             'Paragraph ${_ttsService.currentParagraphIndex + 1} of ${chapter.paragraphs.length}',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : Colors.black38,
+              color: textColor.withOpacity(0.6),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -334,14 +518,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             children: [
               // Chương trước
               IconButton(
-                icon: const Icon(Icons.skip_previous_rounded, size: 32),
+                icon: Icon(Icons.skip_previous_rounded, size: 32, color: textColor),
                 onPressed: _ttsService.currentChapterIndex > 0
                     ? _ttsService.previousChapter
                     : null,
               ),
               // Đoạn trước
               IconButton(
-                icon: const Icon(Icons.fast_rewind_rounded, size: 28),
+                icon: Icon(Icons.fast_rewind_rounded, size: 28, color: textColor),
                 onPressed: _ttsService.previousParagraph,
               ),
               // Play/Pause
@@ -358,12 +542,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
               // Đoạn tiếp theo
               IconButton(
-                icon: const Icon(Icons.fast_forward_rounded, size: 28),
+                icon: Icon(Icons.fast_forward_rounded, size: 28, color: textColor),
                 onPressed: _ttsService.nextParagraph,
               ),
               // Chương tiếp theo
               IconButton(
-                icon: const Icon(Icons.skip_next_rounded, size: 32),
+                icon: Icon(Icons.skip_next_rounded, size: 32, color: textColor),
                 onPressed: _ttsService.currentChapterIndex < _ttsService.chapters.length - 1
                     ? _ttsService.nextChapter
                     : null,
@@ -376,7 +560,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _showChapterList(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _getIsDark(context);
+    final sheetBg = _getBackgroundColor(isDark);
+    final textColor = _getTextColor(isDark);
     final chapters = _ttsService.chapters;
     final currentChapterIdx = _ttsService.currentChapterIndex;
 
@@ -385,89 +571,134 @@ class _ReaderScreenState extends State<ReaderScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Chapters',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '${chapters.length} chapters',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.white38 : Colors.black38,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: chapters.length,
-                      itemBuilder: (context, index) {
-                        final chapter = chapters[index];
-                        final isCurrent = index == currentChapterIdx;
+        String chapterSearchQuery = '';
 
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                          title: Text(
-                            chapter.title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrent 
-                                  ? (isDark ? Colors.amber[400] : Colors.amber[800])
-                                  : (isDark ? Colors.white70 : Colors.black87),
-                            ),
-                          ),
-                          trailing: isCurrent 
-                              ? Icon(
-                                  Icons.volume_up_rounded, 
-                                  color: isDark ? Colors.amber[400] : Colors.amber[800]
-                                ) 
-                              : null,
-                          tileColor: isCurrent 
-                              ? (isDark ? Colors.amber[900]!.withOpacity(0.1) : Colors.amber[50]!)
-                              : null,
-                          onTap: () {
-                            Navigator.pop(context);
-                            _ttsService.jumpToChapter(index);
-                          },
-                        );
-                      },
-                    ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filteredChapters = chapters.asMap().entries.where((entry) {
+              final title = entry.value.title.toLowerCase();
+              final query = chapterSearchQuery.toLowerCase();
+              return title.contains(query);
+            }).toList();
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.5,
+              maxChildSize: 0.95,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: sheetBg,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   ),
-                ],
-              ),
+                  child: Column(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Chapters',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            Text(
+                              '${filteredChapters.length} of ${chapters.length}',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: textColor.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: TextField(
+                          style: TextStyle(color: textColor),
+                          decoration: InputDecoration(
+                            hintText: 'Search chapters...',
+                            hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                            prefixIcon: Icon(Icons.search_rounded, color: textColor.withOpacity(0.5)),
+                            filled: true,
+                            fillColor: isDark ? Colors.white10 : Colors.black12,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                          onChanged: (val) {
+                            setModalState(() {
+                              chapterSearchQuery = val;
+                            });
+                          },
+                        ),
+                      ),
+                      const Divider(),
+                      Expanded(
+                        child: filteredChapters.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No chapters match your search',
+                                  style: TextStyle(color: textColor.withOpacity(0.5)),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: filteredChapters.length,
+                                itemBuilder: (context, index) {
+                                  final entry = filteredChapters[index];
+                                  final originalIndex = entry.key;
+                                  final chapter = entry.value;
+                                  final isCurrent = originalIndex == currentChapterIdx;
+
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                                    title: Text(
+                                      chapter.title,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                        color: isCurrent 
+                                            ? (isDark ? Colors.amber[400] : Colors.amber[800])
+                                            : textColor,
+                                      ),
+                                    ),
+                                    trailing: isCurrent 
+                                        ? Icon(
+                                            Icons.volume_up_rounded, 
+                                            color: isDark ? Colors.amber[400] : Colors.amber[800]
+                                          ) 
+                                        : null,
+                                    tileColor: isCurrent 
+                                        ? (isDark ? Colors.amber[900]!.withOpacity(0.1) : Colors.amber[50]!)
+                                        : null,
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _ttsService.jumpToChapter(originalIndex);
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         );
@@ -483,6 +714,8 @@ class ParagraphWidget extends StatefulWidget {
   final int wordStart;
   final int wordEnd;
   final bool isDark;
+  final String fontFamily;
+  final Color textColor;
   final VoidCallback onTap;
 
   const ParagraphWidget({
@@ -493,6 +726,8 @@ class ParagraphWidget extends StatefulWidget {
     required this.wordStart,
     required this.wordEnd,
     required this.isDark,
+    required this.fontFamily,
+    required this.textColor,
     required this.onTap,
   });
 
@@ -502,27 +737,39 @@ class ParagraphWidget extends StatefulWidget {
 
 class _ParagraphWidgetState extends State<ParagraphWidget> {
   @override
+  void initState() {
+    super.initState();
+    // Tự động cuộn màn hình ngay khi widget được khởi tạo ở trạng thái active (ví dụ khi đổi chương)
+    if (widget.isActive) {
+      _scrollToVisible();
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant ParagraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Tự động cuộn màn hình để đưa đoạn văn đang được đọc vào vị trí trung tâm
+    // Tự động cuộn màn hình để đưa đoạn văn đang được đọc vào vị trí trung tâm khi trạng thái đổi thành active
     if (widget.isActive && !oldWidget.isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Scrollable.ensureVisible(
-            context,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            alignment: 0.3, // Cuộn hơi lùi lên trên một chút để dễ đọc
-          );
-        }
-      });
+      _scrollToVisible();
     }
+  }
+
+  void _scrollToVisible() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.3, // Cuộn hơi lùi lên trên một chút để dễ đọc
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final activeBgColor = widget.isDark ? Colors.amber[900]!.withOpacity(0.2) : Colors.amber[100]!;
-    final textColor = widget.isDark ? Colors.white : Colors.black87;
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -537,7 +784,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
               ? Border.all(color: Colors.amber[700]!.withOpacity(0.5), width: 1)
               : null,
         ),
-        child: _buildRichText(textColor),
+        child: _buildRichText(widget.textColor),
       ),
     );
   }
@@ -545,6 +792,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   Widget _buildRichText(Color defaultColor) {
     final style = TextStyle(
       fontSize: widget.fontSize,
+      fontFamily: widget.fontFamily == 'System' ? null : widget.fontFamily.toLowerCase(),
       height: 1.6,
       color: defaultColor,
       letterSpacing: 0.2,
@@ -555,6 +803,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       return Text(
         widget.text,
         style: style,
+        textAlign: TextAlign.left,
       );
     }
 
@@ -563,6 +812,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     final after = widget.text.substring(widget.wordEnd);
 
     return RichText(
+      textAlign: TextAlign.left,
       text: TextSpan(
         style: style,
         children: [
