@@ -19,7 +19,6 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-apply(from = "fix_plugins.gradle")
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

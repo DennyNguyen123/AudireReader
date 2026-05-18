@@ -28,6 +28,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch isar_flutter_libs Android SDK Version
+        run: |
+          for file in ~/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android/build.gradle; do
+            sed -i 's/compileSdkVersion 30/compileSdkVersion 34\n    namespace "dev.isar.isar_flutter_libs"/g' "$file"
+            sed -i 's/minSdkVersion 16/minSdkVersion 21/g' "$file"
+          done
+
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
 
