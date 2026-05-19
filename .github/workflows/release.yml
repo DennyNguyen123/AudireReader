@@ -41,16 +41,22 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
       - name: Rename APK
-        run: mv build/app/outputs/flutter-apk/app-release.apk NovelReader-Android.apk
+        run: |
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk NovelReader-Android-arm64.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk NovelReader-Android-arm32.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk NovelReader-Android-x64.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: NovelReader-Android-APK
-          path: NovelReader-Android.apk
+          path: |
+            NovelReader-Android-arm64.apk
+            NovelReader-Android-arm32.apk
+            NovelReader-Android-x64.apk
 
   build-windows:
     runs-on: windows-latest
@@ -151,7 +157,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            NovelReader-Android.apk
+            NovelReader-Android-arm64.apk
+            NovelReader-Android-arm32.apk
+            NovelReader-Android-x64.apk
             NovelReader-Windows.zip
             NovelReader-iOS.ipa
         env:
