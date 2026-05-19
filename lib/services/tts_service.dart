@@ -9,6 +9,7 @@ import '../models/settings.dart';
 import 'audio_handler.dart';
 import 'edge_tts_service.dart';
 import '../core/database/database_helper.dart';
+import 'sync_service.dart';
 
 class TtsService extends ChangeNotifier {
   static TtsService? _instance;
@@ -218,6 +219,7 @@ class TtsService extends ChangeNotifier {
       _currentChapterIndex++;
       _currentParagraphIndex = 0;
       await _onStateChanged();
+      SyncService.getInstance().syncBookProgress(_activeBook!.uuid);
     } else {
       // Đã hết sách
       await audioHandler.stop();
@@ -232,6 +234,7 @@ class TtsService extends ChangeNotifier {
       _currentChapterIndex--;
       _currentParagraphIndex = 0;
       await _onStateChanged();
+      SyncService.getInstance().syncBookProgress(_activeBook!.uuid);
     }
   }
 
@@ -248,6 +251,7 @@ class TtsService extends ChangeNotifier {
     _currentChapterIndex = index;
     _currentParagraphIndex = 0;
     await _onStateChanged();
+    SyncService.getInstance().syncBookProgress(_activeBook!.uuid);
   }
 
   void _onParagraphFinished() {

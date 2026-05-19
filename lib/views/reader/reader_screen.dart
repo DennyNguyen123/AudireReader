@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart';
+import '../../services/sync_service.dart';
+import '../../core/database/database_helper.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
 
@@ -12,7 +14,7 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver {
   late final TtsService _ttsService;
   bool _isInitialized = false;
   double _fontSize = 18.0;
@@ -30,14 +32,55 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initTtsService();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _speedController.dispose();
     _voiceSearchController.dispose();
+    _syncActiveBookProgressOnExit();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _syncActiveBookProgressOnExit();
+    }
+  }
+
+  void _syncActiveBookProgressOnExit() {
+    if (_isInitialized) {
+      final book = _ttsService.activeBook;
+      if (book != null) {
+        print('[ReaderScreen] Auto-syncing progress on exit/pause for "${book.title}"...');
+        SyncService.getInstance().syncBookProgress(book.uuid);
+      }
+    }
+  }
+
+  Future<void> _syncActiveBookProgressOnEntry() async {
+    final book = _ttsService.activeBook;
+    if (book != null) {
+      print('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...');
+      final localDatabaseChanged = await SyncService.getInstance().syncBookProgress(book.uuid);
+      if (localDatabaseChanged && mounted) {
+        print('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...');
+        final db = await DatabaseHelper.getInstance();
+        final progress = await db.getProgress(book.uuid);
+        if (progress != null) {
+          await _ttsService.loadBook(
+            book, 
+            _ttsService.chapters, 
+            startChapter: progress.currentChapterIndex, 
+            startParagraph: progress.currentParagraphIndex
+          );
+        }
+      }
+    }
   }
 
   Future<void> _initTtsService() async {
@@ -60,6 +103,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _isInitialized = true;
     });
     _loadVoices(settings);
+    
+    // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
+    _syncActiveBookProgressOnEntry();
   }
   Future<void> _loadVoices(AppSettings settings) async {
     try {

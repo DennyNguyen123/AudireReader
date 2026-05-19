@@ -23,13 +23,58 @@ class SyncService {
 
   bool get isSyncing => _isSyncing;
 
-  /// Thực hiện đồng bộ hóa toàn diện thư viện đám mây
+  /// Thực hiện đồng bộ hóa toàn diện (để tương thích ngược)
   Future<SyncResult> sync() async {
     if (_isSyncing) {
       return SyncResult(success: false, message: 'Sync is already in progress.');
     }
     _isSyncing = true;
-    print('[Sync] Starting synchronization process...');
+    print('[Sync] Starting overall synchronization...');
+
+    try {
+      // 1. Đồng bộ thư viện sách trước
+      _isSyncing = false; // tạm thời nhả lock để syncLibrary có thể chạy
+      final libResult = await syncLibrary();
+      _isSyncing = true; // khóa lại
+      
+      if (!libResult.success) {
+        _isSyncing = false;
+        return libResult;
+      }
+
+      // 2. Đồng bộ tiến trình đọc cho tất cả sách cục bộ
+      final db = await DatabaseHelper.getInstance();
+      final localBooks = await db.getAllBooks();
+      bool progressChanged = false;
+
+      for (final book in localBooks) {
+        final changed = await syncBookProgress(book.uuid);
+        if (changed) {
+          progressChanged = true;
+        }
+      }
+
+      _isSyncing = false;
+      return SyncResult(
+        success: true,
+        message: 'Sync completed successfully.',
+        localChanged: libResult.localChanged || progressChanged,
+      );
+    } catch (e) {
+      _isSyncing = false;
+      print('[Sync] Fatal error during overall sync: $e');
+      return SyncResult(success: false, message: 'Sync failed: $e');
+    }
+  }
+
+  /// 1. Đồng bộ Danh mục Sách và Trạng thái Xóa (sync_data.json)
+  /// Có hỗ trợ cơ chế Optimistic Locking chống ghi đè dữ liệu
+  Future<SyncResult> syncLibrary() async {
+    if (_isSyncing) {
+      return SyncResult(success: false, message: 'Sync is already in progress.');
+    }
+    _isSyncing = true;
+    print('[SyncLibrary] Starting library sync...');
 
     try {
       final db = await DatabaseHelper.getInstance();
@@ -55,326 +100,430 @@ class SyncService {
       await _webdav.mkdir('/NovelReader');
       await _webdav.mkdir('/NovelReader/covers');
       await _webdav.mkdir('/NovelReader/books');
+      await _webdav.mkdir('/NovelReader/progress');
 
-      // 3. Tải tệp chỉ mục sync_data.json từ đám mây
-      Map<String, dynamic> cloudSyncData = {
-        'version': 1,
-        'lastSyncTime': '',
-        'books': [],
-        'progress': [],
-        'deleted': []
-      };
+      // Tải và xử lý chỉ mục sách (có hỗ trợ Optimistic Locking retry tối đa 3 lần)
+      int retryCount = 0;
+      bool syncSuccess = false;
+      bool localDatabaseChanged = false;
+      String lastSyncError = '';
 
-      final hasSyncFile = await _webdav.fileExists('/NovelReader/sync_data.json');
-      if (hasSyncFile) {
-        final bytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
-        if (bytes != null && bytes.isNotEmpty) {
-          try {
-            final jsonStr = utf8.decode(bytes);
-            cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
-            print('[Sync] Loaded cloud index sync data.');
-          } catch (e) {
-            print('[Sync] Error decoding sync_data.json (creating new index): $e');
+      while (retryCount < 3 && !syncSuccess) {
+        retryCount++;
+        print('[SyncLibrary] Attempt $retryCount to sync library index...');
+
+        // Lấy thông tin metadata của file sync_data.json trên server trước để làm base
+        String baseLastSyncTime = '';
+        final fileMeta = await _webdav.getFileMetadata('/NovelReader/sync_data.json');
+        
+        Map<String, dynamic> cloudSyncData = {
+          'version': 1,
+          'lastSyncTime': '',
+          'books': [],
+          'deleted': []
+        };
+
+        final hasSyncFile = fileMeta != null;
+        if (hasSyncFile) {
+          final bytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+          if (bytes != null && bytes.isNotEmpty) {
+            try {
+              final jsonStr = utf8.decode(bytes);
+              cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
+              baseLastSyncTime = cloudSyncData['lastSyncTime'] ?? '';
+              print('[SyncLibrary] Loaded cloud index sync data. Base time: $baseLastSyncTime');
+            } catch (e) {
+              print('[SyncLibrary] Error decoding sync_data.json: $e');
+            }
           }
         }
-      }
 
-      // Lấy danh sách sách ban đầu dưới Local
-      var localBooks = await db.getAllBooks();
-      final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
-      final List<Map<String, dynamic>> cloudProgressList = List<Map<String, dynamic>>.from(cloudSyncData['progress'] ?? []);
-      final List<String> cloudDeletedList = List<String>.from(cloudSyncData['deleted'] ?? []);
-
-      bool localDatabaseChanged = false;
-      bool cloudDatabaseChanged = false;
-
-      // 3.5. XỬ LÝ ĐỒNG BỘ XÓA SÁCH (CLOUD -> LOCAL DELETION)
-      // Nếu mây báo cuốn sách này đã bị xóa ở thiết bị khác, tự động xóa ở local
-      for (final deletedUuid in cloudDeletedList) {
-        final hasLocalBook = localBooks.any((b) => b.uuid == deletedUuid);
-        if (hasLocalBook) {
-          print('[Sync] Deleting book UUID "$deletedUuid" locally as it was deleted on another device.');
-          await db.deleteBook(deletedUuid);
-          localDatabaseChanged = true;
-        }
-      }
-
-      // Load lại danh sách sách local nếu có thay đổi từ việc xóa đồng bộ
-      if (localDatabaseChanged) {
-        localBooks = await db.getAllBooks();
-      }
-
-      // 4. ĐỒNG BỘ SÁCH: LOCAL -> CLOUD (Tải sách mới lên mây)
-      for (final localBook in localBooks) {
-        // Không upload sách nếu sách này đang nằm trong danh sách đã xóa trên mây
-        if (cloudDeletedList.contains(localBook.uuid)) {
-          continue;
-        }
-        // Tìm xem sách đã có trên mây chưa (bằng uuid hoặc bằng title + author)
-        final bool existsOnCloud = cloudBooksList.any((b) =>
-            b['uuid'] == localBook.uuid ||
-            (b['title'] == localBook.title && b['author'] == localBook.author));
-
-        if (!existsOnCloud) {
-          print('[Sync] Uploading new local book to cloud: "${localBook.title}"');
-          try {
-            // A. Upload Ảnh bìa (nếu có)
-            bool hasCover = false;
-            if (localBook.coverPath != null) {
-              final coverFile = File(localBook.coverPath!);
-              if (await coverFile.exists()) {
-                final ext = p.extension(localBook.coverPath!);
-                // Đồng bộ tên ảnh bìa chuẩn theo UUID để dễ tải về sau này
-                final remoteCoverPath = '/NovelReader/covers/${localBook.uuid}$ext';
-                final uploadCoverOk = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
-                hasCover = uploadCoverOk;
+        // Tương thích ngược: Nếu file trên mây cũ có chứa 'progress' cũ, ta sẽ migrate chúng sang các file progress riêng lẻ
+        if (cloudSyncData.containsKey('progress')) {
+          print('[SyncLibrary] Migrating legacy progress list from sync_data.json to single files...');
+          final List<dynamic> legacyProgress = cloudSyncData['progress'] ?? [];
+          for (final prog in legacyProgress) {
+            if (prog is Map<String, dynamic>) {
+              final String bUuid = prog['bookUuid'] ?? '';
+              if (bUuid.isNotEmpty) {
+                // Tạo file progress riêng trên mây cho sách này
+                final jsonBytes = utf8.encode(json.encode(prog));
+                await _webdav.uploadBytes('/NovelReader/progress/$bUuid.json', jsonBytes);
               }
             }
+          }
+          // Xóa mảng progress cũ khỏi bộ nhớ chỉ mục
+          cloudSyncData.remove('progress');
+        }
 
-            // B. Đóng gói và Upload nội dung chương truyện
-            final chapters = await db.getChaptersForBook(localBook.uuid);
-            final bookContent = {
-              'uuid': localBook.uuid,
-              'title': localBook.title,
-              'author': localBook.author,
-              'totalChapters': localBook.totalChapters,
-              'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
-              'dateAdded': localBook.dateAdded.toIso8601String(),
-              'chapters': chapters.map((c) => {
-                'chapterIndex': c.chapterIndex,
-                'title': c.title,
-                'paragraphs': c.paragraphs
-              }).toList()
-            };
+        // Lấy danh sách sách ban đầu dưới Local
+        var localBooks = await db.getAllBooks();
+        final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+        final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
 
-            final jsonBytes = utf8.encode(json.encode(bookContent));
-            final uploadContentOk = await _webdav.uploadBytes('/NovelReader/books/${localBook.uuid}.json', jsonBytes);
+        // Dọn dẹp Tombstone (xóa các UUID đã xóa cũ hơn 30 ngày)
+        bool tombstoneCleaned = false;
+        final DateTime now = DateTime.now();
+        final List<Map<String, dynamic>> updatedDeletedList = [];
+        
+        // Cấu trúc lại deleted list thành dạng object nếu là danh sách String cũ
+        for (final item in cloudDeletedList) {
+          if (item is String) {
+            updatedDeletedList.add({
+              'uuid': item,
+              'deletedAt': now.toIso8601String()
+            });
+            tombstoneCleaned = true;
+          } else if (item is Map<String, dynamic>) {
+            final String deletedAtStr = item['deletedAt'] ?? '';
+            final DateTime deletedAt = DateTime.tryParse(deletedAtStr) ?? now;
+            if (now.difference(deletedAt).inDays < 30) {
+              updatedDeletedList.add(item);
+            } else {
+              tombstoneCleaned = true;
+              print('[SyncLibrary] Cleaned up expired tombstone UUID "${item['uuid']}"');
+            }
+          }
+        }
+        
+        final List<String> activeDeletedUuids = updatedDeletedList.map((e) => e['uuid'] as String).toList();
 
-            if (uploadContentOk) {
-              // C. Thêm vào danh mục sách mây
-              cloudBooksList.add({
+        // 3. XỬ LÝ ĐỒNG BỘ XÓA SÁCH (CLOUD -> LOCAL DELETION)
+        for (final deletedUuid in activeDeletedUuids) {
+          final hasLocalBook = localBooks.any((b) => b.uuid == deletedUuid);
+          if (hasLocalBook) {
+            print('[SyncLibrary] Deleting book UUID "$deletedUuid" locally (deleted on another device).');
+            await db.deleteBook(deletedUuid);
+            localDatabaseChanged = true;
+          }
+        }
+
+        if (localDatabaseChanged) {
+          localBooks = await db.getAllBooks();
+        }
+
+        bool cloudDatabaseChanged = tombstoneCleaned;
+
+        // 4. ĐỒNG BỘ SÁCH: LOCAL -> CLOUD (Tải sách mới lên mây)
+        for (final localBook in localBooks) {
+          if (activeDeletedUuids.contains(localBook.uuid)) {
+            continue;
+          }
+          final bool existsOnCloud = cloudBooksList.any((b) =>
+              b['uuid'] == localBook.uuid ||
+              (b['title'] == localBook.title && b['author'] == localBook.author));
+
+          if (!existsOnCloud) {
+            print('[SyncLibrary] Uploading new local book to cloud: "${localBook.title}"');
+            try {
+              // A. Upload Ảnh bìa
+              bool hasCover = false;
+              if (localBook.coverPath != null) {
+                final coverFile = File(localBook.coverPath!);
+                if (await coverFile.exists()) {
+                  final ext = p.extension(localBook.coverPath!);
+                  final remoteCoverPath = '/NovelReader/covers/${localBook.uuid}$ext';
+                  final uploadCoverOk = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
+                  hasCover = uploadCoverOk;
+                }
+              }
+
+              // B. Upload Nội dung chương truyện
+              final chapters = await db.getChaptersForBook(localBook.uuid);
+              final bookContent = {
                 'uuid': localBook.uuid,
                 'title': localBook.title,
                 'author': localBook.author,
                 'totalChapters': localBook.totalChapters,
-                'dateAdded': localBook.dateAdded.toIso8601String(),
-                'hasCover': hasCover,
                 'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
-              });
-              cloudDatabaseChanged = true;
-              print('[Sync] Successfully uploaded book: "${localBook.title}"');
-            }
-          } catch (e) {
-            print('[Sync] Error uploading book "${localBook.title}": $e');
-          }
-        }
-      }
+                'dateAdded': localBook.dateAdded.toIso8601String(),
+                'chapters': chapters.map((c) => {
+                  'chapterIndex': c.chapterIndex,
+                  'title': c.title,
+                  'paragraphs': c.paragraphs
+                }).toList()
+              };
 
-      // 5. ĐỒNG BỘ SÁCH: CLOUD -> LOCAL (Tải sách từ mây về máy mới)
-      final docDir = await getApplicationDocumentsDirectory();
-      for (final cloudBook in cloudBooksList) {
-        if (cloudDeletedList.contains(cloudBook['uuid'])) {
-          continue;
-        }
+              final jsonBytes = utf8.encode(json.encode(bookContent));
+              final uploadContentOk = await _webdav.uploadBytes('/NovelReader/books/${localBook.uuid}.json', jsonBytes);
 
-        // Tìm xem sách đã có ở local chưa (bằng uuid hoặc bằng title + author)
-        final bool existsLocally = localBooks.any((b) =>
-            b.uuid == cloudBook['uuid'] ||
-            (b.title == cloudBook['title'] && b.author == cloudBook['author']));
-
-        if (!existsLocally) {
-          print('[Sync] Downloading book content from cloud: "${cloudBook['title']}"');
-          try {
-            final bookUuid = cloudBook['uuid'];
-            final bytes = await _webdav.downloadBytes('/NovelReader/books/$bookUuid.json');
-            if (bytes != null && bytes.isNotEmpty) {
-              final jsonStr = utf8.decode(bytes);
-              final bookContent = json.decode(jsonStr) as Map<String, dynamic>;
-
-              // A. Tải ảnh bìa (nếu có)
-              String? localCoverPath;
-              if (cloudBook['hasCover'] == true) {
-                final ext = cloudBook['coverExtension'] ?? '.png';
-                final coverDir = Directory(p.join(docDir.path, 'covers'));
-                if (!await coverDir.exists()) {
-                  await coverDir.create(recursive: true);
-                }
-                final localPath = p.join(coverDir.path, '$bookUuid$ext');
-                final remotePath = '/NovelReader/covers/$bookUuid$ext';
-                
-                final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
-                if (downloadCoverOk) {
-                  localCoverPath = localPath;
-                }
-              }
-
-              // B. Lưu Book vào DB local
-              final newBook = Book()
-                ..uuid = bookUuid
-                ..title = cloudBook['title']
-                ..author = cloudBook['author']
-                ..coverPath = localCoverPath
-                ..totalChapters = cloudBook['totalChapters']
-                ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now();
-
-              // C. Lưu các Chapter vào DB local
-              final List<Chapter> newChapters = [];
-              final parsedChapters = bookContent['chapters'] as List<dynamic>;
-              for (final c in parsedChapters) {
-                final chMap = c as Map<String, dynamic>;
-                final newCh = Chapter()
-                  ..bookUuid = bookUuid
-                  ..chapterIndex = chMap['chapterIndex']
-                  ..title = chMap['title']
-                  ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
-                newChapters.add(newCh);
-              }
-
-              await db.saveBook(newBook);
-              await db.saveChapters(newChapters);
-              localDatabaseChanged = true;
-              print('[Sync] Successfully restored book locally: "${newBook.title}"');
-            }
-          } catch (e) {
-            print('[Sync] Error downloading book "${cloudBook['title']}": $e');
-          }
-        }
-      }
-
-      // Load lại danh sách sách local sau khi đã phục hồi/download thêm sách mới
-      final updatedLocalBooks = await db.getAllBooks();
-
-      // 6. ĐỒNG BỘ TIẾN TRÌNH ĐỌC (Merge Reading Progress)
-      // A. Duyệt tiến trình từ CLOUD cập nhật vào LOCAL
-      for (final cloudProg in cloudProgressList) {
-        final cloudBookUuid = cloudProg['bookUuid'];
-        
-        // Tìm sách cục bộ tương ứng (bằng uuid hoặc bằng tên + tác giả của sách trên mây)
-        final cloudBookMetadata = cloudBooksList.firstWhere(
-          (b) => b['uuid'] == cloudBookUuid,
-          orElse: () => <String, dynamic>{},
-        );
-
-        String? localBookUuid;
-        if (cloudBookMetadata.isNotEmpty) {
-          final matchingLocalBook = updatedLocalBooks.firstWhere(
-            (b) => b.uuid == cloudBookUuid || 
-                   (b.title == cloudBookMetadata['title'] && b.author == cloudBookMetadata['author']),
-            orElse: () => Book()..uuid = '',
-          );
-          if (matchingLocalBook.uuid.isNotEmpty) {
-            localBookUuid = matchingLocalBook.uuid;
-          }
-        }
-
-        // Nếu tìm thấy sách cục bộ tương ứng, xử lý đồng bộ tiến trình
-        if (localBookUuid != null) {
-          final localProg = await db.getProgress(localBookUuid);
-          final DateTime cloudLastRead = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-
-          if (localProg == null) {
-            // Local chưa có tiến trình đọc cuốn này -> Tạo mới
-            final newProg = ReadingProgress()
-              ..bookUuid = localBookUuid
-              ..currentChapterIndex = cloudProg['currentChapterIndex']
-              ..currentParagraphIndex = cloudProg['currentParagraphIndex']
-              ..currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0
-              ..lastRead = cloudLastRead;
-            await db.saveProgress(newProg);
-            localDatabaseChanged = true;
-            print('[Sync] Created local progress for book UUID "$localBookUuid" from cloud (Chapter: ${newProg.currentChapterIndex})');
-          } else {
-            // Cả hai đều có tiến trình -> So sánh thời gian
-            if (cloudLastRead.isAfter(localProg.lastRead)) {
-              // Tiến trình mây mới hơn -> Ghi đè local
-              localProg.currentChapterIndex = cloudProg['currentChapterIndex'];
-              localProg.currentParagraphIndex = cloudProg['currentParagraphIndex'];
-              localProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
-              localProg.lastRead = cloudLastRead;
-              await db.saveProgress(localProg);
-              localDatabaseChanged = true;
-              print('[Sync] Updated local progress for book UUID "$localBookUuid" (Cloud was newer: Chapter: ${localProg.currentChapterIndex})');
-            } else if (localProg.lastRead.isAfter(cloudLastRead)) {
-              // Tiến trình local mới hơn -> Sẽ cập nhật lên Cloud ở bước tiếp theo
-              // Cập nhật thông tin trong memory để tải lên
-              final idx = cloudProgressList.indexWhere((p) => p['bookUuid'] == cloudBookUuid);
-              if (idx != -1) {
-                cloudProgressList[idx] = {
-                  'bookUuid': cloudBookUuid,
-                  'currentChapterIndex': localProg.currentChapterIndex,
-                  'currentParagraphIndex': localProg.currentParagraphIndex,
-                  'currentCharacterOffset': localProg.currentCharacterOffset,
-                  'lastRead': localProg.lastRead.toIso8601String(),
-                };
+              if (uploadContentOk) {
+                cloudBooksList.add({
+                  'uuid': localBook.uuid,
+                  'title': localBook.title,
+                  'author': localBook.author,
+                  'totalChapters': localBook.totalChapters,
+                  'dateAdded': localBook.dateAdded.toIso8601String(),
+                  'hasCover': hasCover,
+                  'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+                });
                 cloudDatabaseChanged = true;
-                print('[Sync] Marked cloud progress for book UUID "$cloudBookUuid" to update (Local is newer: Chapter: ${localProg.currentChapterIndex})');
+                print('[SyncLibrary] Successfully uploaded book: "${localBook.title}"');
               }
+            } catch (e) {
+              print('[SyncLibrary] Error uploading book "${localBook.title}": $e');
             }
           }
         }
-      }
 
-      // B. Duyệt tiến trình từ LOCAL chưa có trên CLOUD cập nhật lên CLOUD
-      for (final localBook in updatedLocalBooks) {
-        final localProg = await db.getProgress(localBook.uuid);
-        if (localProg != null) {
-          // Kiểm tra xem mây đã có tiến trình của sách này chưa (bằng uuid hoặc đối khớp title + author)
-          final bool existsOnCloudProg = cloudProgressList.any((p) {
-            if (p['bookUuid'] == localBook.uuid) return true;
-            
-            final cloudB = cloudBooksList.firstWhere(
-              (b) => b['uuid'] == p['bookUuid'],
-              orElse: () => <String, dynamic>{},
-            );
-            return cloudB.isNotEmpty && cloudB['title'] == localBook.title && cloudB['author'] == localBook.author;
-          });
+        // 5. ĐỒNG BỘ SÁCH: CLOUD -> LOCAL (Tải sách từ mây về máy mới)
+        final docDir = await getApplicationDocumentsDirectory();
+        for (final cloudBook in cloudBooksList) {
+          if (activeDeletedUuids.contains(cloudBook['uuid'])) {
+            continue;
+          }
+          final bool existsLocally = localBooks.any((b) =>
+              b.uuid == cloudBook['uuid'] ||
+              (b.title == cloudBook['title'] && b.author == cloudBook['author']));
 
-          if (!existsOnCloudProg) {
-            // Mây chưa có tiến trình của sách này -> Thêm vào list mây để tải lên
-            cloudProgressList.add({
-              'bookUuid': localBook.uuid,
-              'currentChapterIndex': localProg.currentChapterIndex,
-              'currentParagraphIndex': localProg.currentParagraphIndex,
-              'currentCharacterOffset': localProg.currentCharacterOffset,
-              'lastRead': localProg.lastRead.toIso8601String(),
-            });
-            cloudDatabaseChanged = true;
-            print('[Sync] Uploading new progress for book "${localBook.title}" (Chapter: ${localProg.currentChapterIndex})');
+          if (!existsLocally) {
+            print('[SyncLibrary] Downloading book from cloud: "${cloudBook['title']}"');
+            try {
+              final bookUuid = cloudBook['uuid'];
+              final bytes = await _webdav.downloadBytes('/NovelReader/books/$bookUuid.json');
+              if (bytes != null && bytes.isNotEmpty) {
+                final jsonStr = utf8.decode(bytes);
+                final bookContent = json.decode(jsonStr) as Map<String, dynamic>;
+
+                // Tải ảnh bìa
+                String? localCoverPath;
+                if (cloudBook['hasCover'] == true) {
+                  final ext = cloudBook['coverExtension'] ?? '.png';
+                  final coverDir = Directory(p.join(docDir.path, 'covers'));
+                  if (!await coverDir.exists()) {
+                    await coverDir.create(recursive: true);
+                  }
+                  final localPath = p.join(coverDir.path, '$bookUuid$ext');
+                  final remotePath = '/NovelReader/covers/$bookUuid$ext';
+                  
+                  final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+                  if (downloadCoverOk) {
+                    localCoverPath = localPath;
+                  }
+                }
+
+                // Lưu Book
+                final newBook = Book()
+                  ..uuid = bookUuid
+                  ..title = cloudBook['title']
+                  ..author = cloudBook['author']
+                  ..coverPath = localCoverPath
+                  ..totalChapters = cloudBook['totalChapters']
+                  ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now();
+
+                // Lưu Chapters
+                final List<Chapter> newChapters = [];
+                final parsedChapters = bookContent['chapters'] as List<dynamic>;
+                for (final c in parsedChapters) {
+                  final chMap = c as Map<String, dynamic>;
+                  final newCh = Chapter()
+                    ..bookUuid = bookUuid
+                    ..chapterIndex = chMap['chapterIndex']
+                    ..title = chMap['title']
+                    ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+                  newChapters.add(newCh);
+                }
+
+                await db.saveBook(newBook);
+                await db.saveChapters(newChapters);
+                localDatabaseChanged = true;
+                print('[SyncLibrary] Restored book locally: "${newBook.title}"');
+              }
+            } catch (e) {
+              print('[SyncLibrary] Error downloading book "${cloudBook['title']}": $e');
+            }
           }
         }
-      }
 
-      // 7. GHI LẠI CHỈ MỤC MỚI LÊN ĐÁM MÂY (Nếu có thay đổi)
-      if (cloudDatabaseChanged || !hasSyncFile) {
-        cloudSyncData['books'] = cloudBooksList;
-        cloudSyncData['progress'] = cloudProgressList;
-        cloudSyncData['deleted'] = cloudDeletedList;
-        cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
+        // 6. GHI LẠI CHỈ MỤC MỚI (Optimistic Locking)
+        if (cloudDatabaseChanged || !hasSyncFile) {
+          // Kiểm tra xem trong thời gian ta sync, tệp trên server có bị thiết bị khác ghi đè hay chưa
+          final currentFileMeta = await _webdav.getFileMetadata('/NovelReader/sync_data.json');
+          String currentServerTime = '';
+          
+          if (currentFileMeta != null) {
+            // Tải nhanh file chỉ mục để so sánh lastSyncTime chuẩn xác nhất
+            final checkBytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+            if (checkBytes != null && checkBytes.isNotEmpty) {
+              try {
+                final checkJson = json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
+                currentServerTime = checkJson['lastSyncTime'] ?? '';
+              } catch (_) {}
+            }
+          }
 
-        final jsonBytes = utf8.encode(json.encode(cloudSyncData));
-        final uploadOk = await _webdav.uploadBytes('/NovelReader/sync_data.json', jsonBytes);
-        if (uploadOk) {
-          print('[Sync] Successfully uploaded new sync_data.json to cloud.');
+          if (currentServerTime != baseLastSyncTime) {
+            // Có xung đột ghi đè đồng thời!
+            print('[SyncLibrary] Conflict detected! Server index was updated (Server: $currentServerTime, Local Base: $baseLastSyncTime). Retrying merge...');
+            lastSyncError = 'Conflict detected. Retrying...';
+            // Tiếp tục vòng lặp while để tải dữ liệu mới nhất từ server và merge lại
+            continue;
+          }
+
+          // Không có xung đột, tiến hành upload ghi đè an toàn
+          cloudSyncData['books'] = cloudBooksList;
+          cloudSyncData['deleted'] = updatedDeletedList;
+          cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
+
+          final jsonBytes = utf8.encode(json.encode(cloudSyncData));
+          final uploadOk = await _webdav.uploadBytes('/NovelReader/sync_data.json', jsonBytes);
+          if (uploadOk) {
+            print('[SyncLibrary] Successfully uploaded sync_data.json to cloud.');
+            syncSuccess = true;
+          } else {
+            lastSyncError = 'Failed to upload sync_data.json to cloud.';
+          }
         } else {
-          print('[Sync] Failed to upload updated sync_data.json to cloud.');
+          // Không có thay đổi gì trên mây
+          syncSuccess = true;
         }
       }
 
-      // 8. CẬP NHẬT CẤU HÌNH CỤC BỘ (Last Sync Time)
+      if (!syncSuccess) {
+        _isSyncing = false;
+        return SyncResult(success: false, message: 'Sync failed: $lastSyncError');
+      }
+
+      // 7. CẬP NHẬT CẤU HÌNH CỤC BỘ
       settings.webDavLastSync = DateTime.now();
       await db.saveSettings(settings);
 
       _isSyncing = false;
       return SyncResult(
         success: true,
-        message: 'Sync completed successfully.',
+        message: 'Library sync completed successfully.',
         localChanged: localDatabaseChanged,
       );
     } catch (e) {
       _isSyncing = false;
-      print('[Sync] Fatal error during sync: $e');
-      return SyncResult(success: false, message: 'Sync failed: $e');
+      print('[SyncLibrary] Fatal error: $e');
+      return SyncResult(success: false, message: 'Library sync failed: $e');
     }
+  }
+
+  /// 2. Đồng bộ Tiến trình đọc của riêng một cuốn sách
+  /// Sử dụng tệp siêu nhẹ `/progress/{bookUuid}.json`
+  /// Trả về true nếu Local database được cập nhật dữ liệu mới từ Cloud
+  Future<bool> syncBookProgress(String bookUuid) async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+
+      if (!settings.webDavEnabled ||
+          settings.webDavUrl.isEmpty ||
+          settings.webDavUsername.isEmpty ||
+          settings.webDavPassword.isEmpty) {
+        return false;
+      }
+
+      // Đảm bảo client đã khởi tạo
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, settings.webDavPassword);
+
+      final localProg = await db.getProgress(bookUuid);
+      final String remotePath = '/NovelReader/progress/$bookUuid.json';
+
+      // 1. Tải tiến trình trên mây về (nếu có)
+      Map<String, dynamic>? cloudProg;
+      final fileMeta = await _webdav.getFileMetadata(remotePath);
+      
+      if (fileMeta != null) {
+        final bytes = await _webdav.downloadBytes(remotePath);
+        if (bytes != null && bytes.isNotEmpty) {
+          try {
+            cloudProg = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
+          } catch (e) {
+            print('[SyncProgress] Error decoding progress for book $bookUuid: $e');
+          }
+        }
+      }
+
+      // 2. So sánh và xử lý đồng bộ
+      if (cloudProg != null) {
+        // So sánh tiến trình mây với local bằng thuật toán thông minh chống lệch giờ
+        final bool cloudIsNewer = _isCloudProgressNewer(cloudProg, localProg);
+
+        if (cloudIsNewer) {
+          // Cloud mới hơn -> Ghi đè Local
+          final DateTime cloudLastRead = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
+          final targetProg = localProg ?? (ReadingProgress()..bookUuid = bookUuid);
+          targetProg.currentChapterIndex = cloudProg['currentChapterIndex'] ?? 0;
+          targetProg.currentParagraphIndex = cloudProg['currentParagraphIndex'] ?? 0;
+          targetProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
+          targetProg.lastRead = cloudLastRead;
+          await db.saveProgress(targetProg);
+          print('[SyncProgress] Updated local progress for book $bookUuid (Cloud was newer: Chapter: ${targetProg.currentChapterIndex})');
+          return true;
+        } else if (localProg != null) {
+          // Local mới hơn hoặc bằng -> Upload Local lên Cloud (nếu local thực sự mới hơn vị trí hoặc giờ)
+          final bool localIsNewer = !_isCloudProgressEqual(cloudProg, localProg);
+          if (localIsNewer) {
+            final localJson = {
+              'bookUuid': bookUuid,
+              'currentChapterIndex': localProg.currentChapterIndex,
+              'currentParagraphIndex': localProg.currentParagraphIndex,
+              'currentCharacterOffset': localProg.currentCharacterOffset,
+              'lastRead': localProg.lastRead.toIso8601String(),
+            };
+            final jsonBytes = utf8.encode(json.encode(localJson));
+            await _webdav.uploadBytes(remotePath, jsonBytes);
+            print('[SyncProgress] Uploaded local progress for book $bookUuid (Local is newer: Chapter: ${localProg.currentChapterIndex})');
+          }
+        }
+      } else {
+        // Mây chưa có tiến trình của sách này -> Đẩy Local lên mây nếu Local có dữ liệu
+        if (localProg != null) {
+          final localJson = {
+            'bookUuid': bookUuid,
+            'currentChapterIndex': localProg.currentChapterIndex,
+            'currentParagraphIndex': localProg.currentParagraphIndex,
+            'currentCharacterOffset': localProg.currentCharacterOffset,
+            'lastRead': localProg.lastRead.toIso8601String(),
+          };
+          final jsonBytes = utf8.encode(json.encode(localJson));
+          await _webdav.uploadBytes(remotePath, jsonBytes);
+          print('[SyncProgress] Created initial cloud progress for book $bookUuid');
+        }
+      }
+    } catch (e) {
+      print('[SyncProgress] Failed to sync progress for book $bookUuid: $e');
+    }
+    return false;
+  }
+
+  /// Thuật toán so sánh tiến trình đọc thông minh chống lệch giờ hệ thống
+  /// Ưu tiên vị trí chương/đoạn lớn hơn trước, nếu bằng nhau mới so timestamp
+  bool _isCloudProgressNewer(Map<String, dynamic> cloudProg, ReadingProgress? localProg) {
+    if (localProg == null) return true;
+
+    final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
+    final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
+    final DateTime cloudTime = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+    final int localCh = localProg.currentChapterIndex;
+    final int localPara = localProg.currentParagraphIndex;
+    final DateTime localTime = localProg.lastRead;
+
+    // 1. So sánh vị trí đọc (Chương)
+    if (cloudCh > localCh) return true;
+    if (cloudCh < localCh) return false;
+
+    // 2. So sánh vị trí đọc (Đoạn)
+    if (cloudPara > localPara) return true;
+    if (cloudPara < localPara) return false;
+
+    // 3. Nếu vị trí giống hệt nhau, so sánh timestamp lastRead
+    return cloudTime.isAfter(localTime);
+  }
+
+  /// Kiểm tra xem tiến trình mây và local có hoàn toàn giống hệt nhau không
+  bool _isCloudProgressEqual(Map<String, dynamic> cloudProg, ReadingProgress localProg) {
+    final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
+    final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
+    final int cloudOffset = cloudProg['currentCharacterOffset'] ?? 0;
+
+    return cloudCh == localProg.currentChapterIndex &&
+        cloudPara == localProg.currentParagraphIndex &&
+        cloudOffset == localProg.currentCharacterOffset;
   }
 
   /// Xóa thông tin sách trên đám mây WebDAV và ghi nhận trạng thái đã xóa
@@ -403,7 +552,6 @@ class SyncService {
         'version': 1,
         'lastSyncTime': '',
         'books': [],
-        'progress': [],
         'deleted': []
       };
 
@@ -415,40 +563,40 @@ class SyncService {
             final jsonStr = utf8.decode(bytes);
             cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
           } catch (e) {
-            print('[Sync] Error decoding sync_data.json during delete: $e');
+            print('[Sync] Error decoding sync_data.json: $e');
           }
         }
       }
 
       final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
-      final List<Map<String, dynamic>> cloudProgressList = List<Map<String, dynamic>>.from(cloudSyncData['progress'] ?? []);
-      final List<String> cloudDeletedList = List<String>.from(cloudSyncData['deleted'] ?? []);
+      final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
 
-      // 3. Loại bỏ sách và tiến trình tương ứng khỏi chỉ mục
+      // 3. Loại bỏ sách khỏi chỉ mục
       bool indexChanged = false;
-      
       final int initialBooksCount = cloudBooksList.length;
       cloudBooksList.removeWhere((b) => b['uuid'] == bookUuid);
       if (cloudBooksList.length < initialBooksCount) {
         indexChanged = true;
       }
 
-      final int initialProgressCount = cloudProgressList.length;
-      cloudProgressList.removeWhere((p) => p['bookUuid'] == bookUuid);
-      if (cloudProgressList.length < initialProgressCount) {
-        indexChanged = true;
-      }
+      // Thêm UUID vào danh sách đã xóa kèm theo thời gian để phục vụ dọn dẹp Tombstone sau này
+      final bool alreadyDeleted = cloudDeletedList.any((e) {
+        if (e is String) return e == bookUuid;
+        if (e is Map<String, dynamic>) return e['uuid'] == bookUuid;
+        return false;
+      });
 
-      // Thêm UUID vào danh sách đã xóa để đồng bộ cho các thiết bị khác
-      if (!cloudDeletedList.contains(bookUuid)) {
-        cloudDeletedList.add(bookUuid);
+      if (!alreadyDeleted) {
+        cloudDeletedList.add({
+          'uuid': bookUuid,
+          'deletedAt': DateTime.now().toIso8601String()
+        });
         indexChanged = true;
       }
 
       // 4. Nếu có thay đổi, lưu lại tệp chỉ mục sync_data.json mới
       if (indexChanged || !hasSyncFile) {
         cloudSyncData['books'] = cloudBooksList;
-        cloudSyncData['progress'] = cloudProgressList;
         cloudSyncData['deleted'] = cloudDeletedList;
         cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
 
@@ -457,7 +605,7 @@ class SyncService {
         print('[Sync] Updated sync_data.json to register book deletion.');
       }
 
-      // 5. Xóa tệp nội dung vật lý /NovelReader/books/{bookUuid}.json
+      // 5. Xóa file nội dung vật lý /NovelReader/books/{bookUuid}.json
       final String bookJsonPath = '/NovelReader/books/$bookUuid.json';
       if (await _webdav.fileExists(bookJsonPath)) {
         await _webdav.remove(bookJsonPath);
@@ -469,6 +617,12 @@ class SyncService {
         if (await _webdav.fileExists(coverPath)) {
           await _webdav.remove(coverPath);
         }
+      }
+
+      // 7. Xóa file tiến trình đọc riêng lẻ /NovelReader/progress/{bookUuid}.json
+      final String progressPath = '/NovelReader/progress/$bookUuid.json';
+      if (await _webdav.fileExists(progressPath)) {
+        await _webdav.remove(progressPath);
       }
 
       print('[Sync] Successfully cleaned up all cloud resources for deleted book UUID "$bookUuid"');

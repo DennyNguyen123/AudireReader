@@ -161,4 +161,15 @@ class WebDavService {
       return false;
     }
   }
+
+  /// Lấy thông tin thuộc tính (mTime, eTag, size, ...) của một file trên WebDAV
+  Future<webdav.File?> getFileMetadata(String remotePath) async {
+    if (_client == null) return null;
+    try {
+      return await _client!.readProps(remotePath);
+    } catch (e) {
+      print('WebDAV getFileMetadata info/error (file might not exist yet): $e');
+      return null;
+    }
+  }
 }
