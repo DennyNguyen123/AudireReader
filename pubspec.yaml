@@ -123,4 +123,4 @@ inno_bundle:
   publisher: NovelSpace
   installer_icon: assets/images/app_icon.ico
   languages:
-    - en
+    - english
