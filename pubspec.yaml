@@ -122,3 +122,5 @@ inno_bundle:
   name: NovelReader
   publisher: NovelSpace
   installer_icon: assets/images/app_icon.ico
+  languages:
+    - en
