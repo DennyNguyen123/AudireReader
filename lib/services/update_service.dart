@@ -67,12 +67,27 @@ class UpdateService {
 
   static String _getDownloadUrl(List<dynamic> assets) {
     String fallbackUrl = 'https://github.com/$owner/$repo/releases/latest';
+    
+    // Ưu tiên cho Windows: Tìm file cài đặt .exe trước, sau đó mới tìm file nén .zip
+    if (Platform.isWindows) {
+      for (var asset in assets) {
+        String name = asset['name'].toString().toLowerCase();
+        if (name.endsWith('.exe')) {
+          return asset['browser_download_url'];
+        }
+      }
+      for (var asset in assets) {
+        String name = asset['name'].toString().toLowerCase();
+        if (name.endsWith('.zip')) {
+          return asset['browser_download_url'];
+        }
+      }
+    }
+
     for (var asset in assets) {
       String name = asset['name'].toString().toLowerCase();
       String url = asset['browser_download_url'];
-      if (Platform.isWindows && (name.endsWith('.exe') || name.endsWith('.zip'))) {
-        return url;
-      } else if (Platform.isAndroid && name.endsWith('.apk')) {
+      if (Platform.isAndroid && name.endsWith('.apk')) {
         return url;
       } else if (Platform.isIOS && name.endsWith('.ipa')) {
         return url;
