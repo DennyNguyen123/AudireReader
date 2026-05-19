@@ -7,11 +7,18 @@ import 'package:flutter/services.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/webdav_service.dart';
-import '../../services/sync_service.dart';
-import '../../services/tts_service.dart';
+import '../../services/sync_service.dart' hide print;
+import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
 import '../../models/settings.dart';
+import '../../models/book.dart';
+import '../../models/chapter.dart';
+import '../../models/progress.dart';
 import '../../core/global_hotkey_manager.dart';
+import '../../core/theme_notifier.dart';
+import '../../services/logger_service.dart';
+import 'developer_console_screen.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SyncSettingsScreen extends StatefulWidget {
   const SyncSettingsScreen({super.key});
@@ -37,6 +44,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   bool _isCheckingUpdate = false;
   String? _testResult;
   bool _testSuccess = false;
+
+  bool _developerMode = false;
+  bool _enableDebugLogs = false;
+  bool _enableWebDavDebug = false;
 
   double _fontSize = 18.0;
   double _speechRate = 0.5;
@@ -112,6 +123,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _hotkeyOpenSetting = settings.hotkeyOpenSetting;
       _hotkeyBossKey = settings.hotkeyBossKey;
       _bossKeyAction = settings.bossKeyAction;
+
+      _developerMode = settings.developerMode;
+      _enableDebugLogs = settings.enableDebugLogs;
+      _enableWebDavDebug = settings.enableWebDavDebug;
+      LoggerService().init(
+        enableDebugLogs: _enableDebugLogs,
+        enableWebDavDebug: _enableWebDavDebug,
+      );
     });
 
     await _loadVoices(settings);
@@ -194,6 +213,176 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final settings = await db.getSettings();
     settings.autoCheckUpdate = val;
     await db.saveSettings(settings);
+  }
+
+  Future<void> _saveDeveloperModeSetting(bool val) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    settings.developerMode = val;
+    await db.saveSettings(settings);
+    setState(() {
+      _developerMode = val;
+    });
+  }
+
+  Future<void> _saveEnableDebugLogs(bool val) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    settings.enableDebugLogs = val;
+    await db.saveSettings(settings);
+    LoggerService().setEnableDebugLogs(val);
+    setState(() {
+      _enableDebugLogs = val;
+    });
+  }
+
+  Future<void> _saveEnableWebDavDebug(bool val) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    settings.enableWebDavDebug = val;
+    await db.saveSettings(settings);
+    LoggerService().setEnableWebDavDebug(val);
+    setState(() {
+      _enableWebDavDebug = val;
+    });
+  }
+
+  Future<void> _showDatabaseInspector() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final db = await DatabaseHelper.getInstance();
+      final booksCount = await db.isar.books.count();
+      final chaptersCount = await db.isar.chapters.count();
+      final progressCount = await db.isar.readingProgress.count();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Database Inspector', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Database Type: Isar NoSQL', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  const Text('Storage Path:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  SelectableText(docDir.path, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Books Count:'),
+                      Text('$booksCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Chapters Count:'),
+                      Text('$chaptersCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Progress Records:'),
+                      Text('$progressCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to inspect database: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _clearCacheAndResetSync() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final tempDir = await getTemporaryDirectory();
+      int deletedCount = 0;
+      if (await tempDir.exists()) {
+        final list = tempDir.listSync();
+        for (final file in list) {
+          try {
+            await file.delete(recursive: true);
+            deletedCount++;
+          } catch (_) {}
+        }
+      }
+
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      settings.webDavLastSync = null;
+      await db.saveSettings(settings);
+
+      setState(() {
+        _lastSync = null;
+      });
+
+      LoggerService().log('Cleared $deletedCount temporary files & reset WebDAV sync status', tag: 'SYNC', level: LogLevel.warning);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cache cleared and sync data reset successfully.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+    } catch (e) {
+      LoggerService().log('Failed to clear cache & reset sync', tag: 'SYNC', level: LogLevel.error, error: e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to clear cache: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _forceSyncNow() async {
+    LoggerService().log('Force sync triggered by developer', tag: 'SYNC', level: LogLevel.warning);
+    await _triggerManualSync();
   }
 
   Future<void> _saveReadingPreference({
@@ -686,7 +875,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Settings',
@@ -711,7 +900,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                       children: [
                         // Cấu hình chung
                         _buildGlassCard(
-                          isDark,
+                          context,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -811,7 +1000,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
                         // Thẻ Cài đặt Hiển thị & Kiểu chữ (Reading Appearance & Typography Card)
                         _buildGlassCard(
-                          isDark,
+                          context,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -870,6 +1059,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                           _themeMode = theme;
                                         });
                                         _saveReadingPreference(themeMode: theme);
+                                        ThemeNotifier.instance.updateTheme(theme);
                                       },
                                       child: Container(
                                         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -991,7 +1181,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
                         // Thẻ Cấu hình Giọng đọc (Text-to-Speech Configurations Card)
                         _buildGlassCard(
-                          isDark,
+                          context,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1290,7 +1480,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         // THẺ CẤU HÌNH PHÍM TẮT (Hotkey Configurations Card)
                         if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ...[
                           _buildGlassCard(
-                            isDark,
+                            context,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1416,7 +1606,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
                       // ĐỒNG BỘ THƯ VIỆN ĐÁM MÂY (Gộp toàn bộ thành 1 Card duy nhất giống General Preferences)
                         _buildGlassCard(
-                          isDark,
+                          context,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -1662,6 +1852,162 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
+                        _buildGlassCard(
+                          context,
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text(
+                              'Developer Mode',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            subtitle: const Text(
+                              'Unlock advanced diagnostic tools, database inspector, and system logs.',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                            value: _developerMode,
+                            activeColor: Colors.amber[700],
+                            onChanged: (val) {
+                              _saveDeveloperModeSetting(val);
+                            },
+                          ),
+                        ),
+                        if (_developerMode) ...[
+                          const SizedBox(height: 20),
+                          _buildGlassCard(
+                            context,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.developer_mode_rounded, color: Colors.amber[700], size: 28),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      'Developer Settings',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text(
+                                    'Enable Debug Logs',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  subtitle: const Text(
+                                    'Keep a history of application logs for troubleshooting.',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                  value: _enableDebugLogs,
+                                  activeColor: Colors.amber[700],
+                                  onChanged: (val) {
+                                    _saveEnableDebugLogs(val);
+                                  },
+                                ),
+                                const Divider(height: 1, thickness: 1),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text(
+                                    'WebDAV Debug Console',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  subtitle: const Text(
+                                    'Output raw WebDAV HTTP requests and responses to system log.',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                  value: _enableWebDavDebug,
+                                  activeColor: Colors.amber[700],
+                                  onChanged: (val) {
+                                    _saveEnableWebDavDebug(val);
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (context) => const DeveloperConsoleScreen()),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.terminal_rounded),
+                                        label: const Text('Open Debug Console', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.amber[700],
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _showDatabaseInspector,
+                                        icon: const Icon(Icons.storage_rounded),
+                                        label: const Text('Database Inspector', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.amber[700],
+                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _clearCacheAndResetSync,
+                                        icon: const Icon(Icons.cleaning_services_rounded),
+                                        label: const Text('Clear Cache & Reset Sync', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.amber[700],
+                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _forceSyncNow,
+                                        icon: const Icon(Icons.sync_problem_rounded),
+                                        label: const Text('Force Sync Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.amber[700],
+                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -1709,14 +2055,16 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     );
   }
 
-  Widget _buildGlassCard(bool isDark, {required Widget child, EdgeInsetsGeometry? padding}) {
+  Widget _buildGlassCard(BuildContext context, {required Widget child, EdgeInsetsGeometry? padding}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: padding ?? const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E).withOpacity(0.8) : Colors.white,
+        color: theme.cardColor.withOpacity(0.8),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+          color: theme.dividerColor,
           width: 1,
         ),
         boxShadow: [

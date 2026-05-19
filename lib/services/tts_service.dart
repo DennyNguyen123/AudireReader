@@ -10,6 +10,20 @@ import 'audio_handler.dart';
 import 'edge_tts_service.dart';
 import '../core/database/database_helper.dart';
 import 'sync_service.dart';
+import 'logger_service.dart';
+
+void print(Object? object) {
+  final message = object?.toString() ?? '';
+  LogLevel level = LogLevel.info;
+  if (message.toLowerCase().contains('error') || 
+      message.toLowerCase().contains('failed') || 
+      message.toLowerCase().contains('fatal')) {
+    level = LogLevel.error;
+  } else if (message.toLowerCase().contains('warning')) {
+    level = LogLevel.warning;
+  }
+  LoggerService().log(message, tag: 'TTS', level: level);
+}
 
 class TtsService extends ChangeNotifier {
   static TtsService? _instance;
@@ -70,6 +84,9 @@ class TtsService extends ChangeNotifier {
 
     // Lắng nghe thay đổi trạng thái phát từ OS (lock screen bấm dừng/phát)
     audioHandler.playbackState.listen((state) {
+      if (state.playing) {
+        _prefetchNextParagraphs();
+      }
       notifyListeners();
     });
 
@@ -105,6 +122,7 @@ class TtsService extends ChangeNotifier {
   }
 
   Future<void> loadBook(Book book, List<Chapter> chapters, {int startChapter = 0, int startParagraph = 0}) async {
+    LoggerService().log('Loading book "${book.title}" at Chapter $startChapter, Paragraph $startParagraph', tag: 'TTS', level: LogLevel.tts);
     _activeBook = book;
     _chapters = chapters;
     _currentChapterIndex = startChapter;
@@ -156,6 +174,7 @@ class TtsService extends ChangeNotifier {
     if (chapter.paragraphs.isEmpty) return;
 
     final text = chapter.paragraphs[_currentParagraphIndex];
+    LoggerService().log('TTS speaking Chapter $_currentChapterIndex, Paragraph $_currentParagraphIndex: "${text.substring(0, text.length > 30 ? 30 : text.length)}..."', tag: 'TTS', level: LogLevel.tts);
 
     await audioHandler.updateMetadata(
       bookTitle: _activeBook!.title,
@@ -169,9 +188,13 @@ class TtsService extends ChangeNotifier {
 
     // Lưu tiến độ đọc vào database tạm
     await _saveProgressLocally();
+
+    // Tải trước các đoạn văn tiếp theo
+    _prefetchNextParagraphs();
   }
 
   Future<void> pauseSpeaking() async {
+    LoggerService().log('TTS speaking paused', tag: 'TTS', level: LogLevel.tts);
     await audioHandler.pause();
     notifyListeners();
   }
@@ -252,6 +275,32 @@ class TtsService extends ChangeNotifier {
     _currentParagraphIndex = 0;
     await _onStateChanged();
     SyncService.getInstance().syncBookProgress(_activeBook!.uuid);
+  }
+
+  void _prefetchNextParagraphs() {
+    if (_activeBook == null || _chapters.isEmpty) return;
+    if (!isPlaying) return;
+
+    final nextParagraphs = <String>[];
+    int tempChIdx = _currentChapterIndex;
+    int tempPgIdx = _currentParagraphIndex + 1;
+
+    // Tải trước tối đa 2 đoạn văn tiếp theo
+    while (nextParagraphs.length < 2) {
+      if (tempChIdx >= _chapters.length) break;
+      final ch = _chapters[tempChIdx];
+      if (tempPgIdx < ch.paragraphs.length) {
+        nextParagraphs.add(ch.paragraphs[tempPgIdx]);
+        tempPgIdx++;
+      } else {
+        tempChIdx++;
+        tempPgIdx = 0;
+      }
+    }
+
+    if (nextParagraphs.isNotEmpty) {
+      audioHandler.prefetch(nextParagraphs);
+    }
   }
 
   void _onParagraphFinished() {

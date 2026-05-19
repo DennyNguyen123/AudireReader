@@ -8,6 +8,21 @@ import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/progress.dart';
 import 'webdav_service.dart';
+import 'logger_service.dart';
+
+void print(Object? object) {
+  final message = object?.toString() ?? '';
+  LogLevel level = LogLevel.info;
+  if (message.toLowerCase().contains('error') || 
+      message.toLowerCase().contains('failed') || 
+      message.toLowerCase().contains('fatal')) {
+    level = LogLevel.error;
+  } else if (message.toLowerCase().contains('warning') || 
+             message.toLowerCase().contains('conflict')) {
+    level = LogLevel.warning;
+  }
+  LoggerService().log(message, tag: 'SYNC', level: level);
+}
 
 class SyncService {
   static SyncService? _instance;

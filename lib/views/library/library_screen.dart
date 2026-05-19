@@ -10,9 +10,9 @@ import '../../core/shortcut_helper.dart';
 import '../../models/book.dart';
 import '../../models/progress.dart';
 import '../../services/epub_parser.dart';
-import '../../services/tts_service.dart';
+import '../../services/tts_service.dart' hide print;
 import '../reader/reader_screen.dart';
-import '../../services/sync_service.dart';
+import '../../services/sync_service.dart' hide print;
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
 
@@ -355,7 +355,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }).toList();
 
     final scaffoldContent = Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -382,10 +382,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                    color: Theme.of(context).dividerColor,
                   ),
                 ),
                 child: Row(
@@ -454,13 +454,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: TextField(
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                     decoration: InputDecoration(
                       hintText: 'Search book on shelf...',
-                      hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
-                      prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white38 : Colors.black38),
+                      hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
+                      prefixIcon: Icon(Icons.search_rounded, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
@@ -612,7 +612,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       onTap: () => _openBook(book),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(

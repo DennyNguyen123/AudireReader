@@ -36,4 +36,9 @@ class AppSettings {
   String bossKeyAction = 'minimize'; // 'minimize' or 'hide'
 
   bool autoCheckUpdate = true;
+
+  // --- Developer Settings ---
+  bool developerMode = false;
+  bool enableDebugLogs = false;
+  bool enableWebDavDebug = false;
 }

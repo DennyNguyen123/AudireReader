@@ -1,11 +1,12 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 import 'package:flutter/material.dart';
 import '../../core/shortcut_helper.dart';
-import '../../services/tts_service.dart';
-import '../../services/sync_service.dart';
+import '../../services/tts_service.dart' hide print;
+import '../../services/sync_service.dart' hide print;
 import '../../core/database/database_helper.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
+import '../../core/theme_notifier.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key});
@@ -305,6 +306,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                             });
                             setModalState(() {});
                             _ttsService.updateSettings(themeMode: theme);
+                            ThemeNotifier.instance.updateTheme(theme);
                           },
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),

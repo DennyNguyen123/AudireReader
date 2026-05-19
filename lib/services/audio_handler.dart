@@ -5,10 +5,18 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io' show Platform, File;
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../core/database/database_helper.dart';
 import 'edge_tts_service.dart';
 
 enum TtsEngineType { system, edge }
+
+class CachedAudio {
+  final String filePath;
+  final List<EdgeMetadataChunk> metadata;
+  CachedAudio(this.filePath, this.metadata);
+}
 
 class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   final FlutterTts _tts = FlutterTts();
@@ -32,6 +40,141 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
 
   StreamSubscription? _positionSub;
   StreamSubscription? _completeSub;
+
+  // Cache key helper and manager attributes
+  final Map<String, CachedAudio> _audioCache = {};
+  final Map<String, Future<CachedAudio>> _pendingPrefetches = {};
+  final Map<String, StreamSubscription> _activePrefetches = {};
+
+  String _computeSha256(String text) {
+    return sha256.convert(utf8.encode(text)).toString();
+  }
+
+  void _addToCache(String key, CachedAudio item) {
+    _audioCache[key] = item;
+    if (_audioCache.length > 15) {
+      final oldestKey = _audioCache.keys.first;
+      final oldestItem = _audioCache.remove(oldestKey);
+      if (oldestItem != null) {
+        try {
+          final file = File(oldestItem.filePath);
+          if (file.existsSync()) {
+            file.deleteSync();
+          }
+        } catch (e) {
+          debugPrint("Failed to delete cached audio file: $e");
+        }
+      }
+    }
+  }
+
+  Future<CachedAudio?> prefetchSingle(String text, String voice, double rate) async {
+    final cacheKey = _computeSha256("$text|$voice|$rate");
+    
+    if (_audioCache.containsKey(cacheKey)) {
+      return _audioCache[cacheKey];
+    }
+    
+    if (_pendingPrefetches.containsKey(cacheKey)) {
+      return _pendingPrefetches[cacheKey];
+    }
+    
+    final completer = Completer<CachedAudio>();
+    _pendingPrefetches[cacheKey] = completer.future;
+    
+    StreamSubscription? subscription;
+    try {
+      final audioBytes = <int>[];
+      final metadata = <EdgeMetadataChunk>[];
+      
+      final stream = EdgeTtsService.synthesize(
+        text: text,
+        voice: voice,
+        rate: rate,
+      );
+      
+      subscription = stream.listen(
+        (chunk) {
+          if (chunk is EdgeAudioChunk) {
+            audioBytes.addAll(chunk.data);
+          } else if (chunk is EdgeMetadataChunk) {
+            metadata.add(chunk);
+          }
+        },
+        onError: (err) {
+          _pendingPrefetches.remove(cacheKey);
+          _activePrefetches.remove(cacheKey);
+          completer.completeError(err);
+        },
+        onDone: () async {
+          _activePrefetches.remove(cacheKey);
+          try {
+            if (audioBytes.isEmpty) {
+              throw Exception("Empty audio bytes");
+            }
+            final tempDir = await getTemporaryDirectory();
+            final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+            await file.writeAsBytes(audioBytes, flush: true);
+            
+            final cached = CachedAudio(file.path, metadata);
+            _addToCache(cacheKey, cached);
+            _pendingPrefetches.remove(cacheKey);
+            completer.complete(cached);
+          } catch (e) {
+            _pendingPrefetches.remove(cacheKey);
+            completer.completeError(e);
+          }
+        },
+        cancelOnError: true,
+      );
+      
+      _activePrefetches[cacheKey] = subscription;
+      
+    } catch (e) {
+      _pendingPrefetches.remove(cacheKey);
+      _activePrefetches.remove(cacheKey);
+      completer.completeError(e);
+    }
+    
+    return completer.future;
+  }
+
+  Future<void> prefetch(List<String> texts) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+    
+    if (provider != 'microsoft_edge') return;
+    
+    final voice = settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural";
+    final rate = _speechRate;
+    
+    for (final text in texts) {
+      if (!playbackState.value.playing) break;
+      try {
+        await prefetchSingle(text, voice, rate);
+      } catch (e) {
+        debugPrint("Failed to prefetch text: $e");
+      }
+    }
+  }
+
+  void cancelOtherPrefetches(String activeCacheKey) {
+    final keysToCancel = _activePrefetches.keys.where((k) => k != activeCacheKey).toList();
+    for (final key in keysToCancel) {
+      _activePrefetches[key]?.cancel();
+      _activePrefetches.remove(key);
+      _pendingPrefetches.remove(key);
+    }
+  }
+
+  void cancelAllPrefetches() {
+    for (final sub in _activePrefetches.values) {
+      sub.cancel();
+    }
+    _activePrefetches.clear();
+    _pendingPrefetches.clear();
+  }
 
   MyAudioHandler() {
     _initTts();
@@ -210,35 +353,51 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     if (provider == 'microsoft_edge') {
       _activeEngine = TtsEngineType.edge;
       
-      final audioBytes = <int>[];
+      final voice = settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural";
+      final rate = _speechRate;
+      final cacheKey = _computeSha256("$text|$voice|$rate");
+      
+      cancelOtherPrefetches(cacheKey);
       _edgeMetadata.clear();
       
       try {
-        // Tải luồng byte âm thanh đám mây kèm theo Word boundaries
-        await for (final chunk in EdgeTtsService.synthesize(
-          text: text,
-          voice: settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural",
-          rate: _speechRate,
-        )) {
-          if (chunk is EdgeAudioChunk) {
-            audioBytes.addAll(chunk.data);
-          } else if (chunk is EdgeMetadataChunk) {
-            _edgeMetadata.add(chunk);
+        CachedAudio? cached;
+        if (_audioCache.containsKey(cacheKey)) {
+          cached = _audioCache[cacheKey];
+        } else if (_pendingPrefetches.containsKey(cacheKey)) {
+          cached = await _pendingPrefetches[cacheKey];
+        }
+
+        if (cached == null) {
+          final audioBytes = <int>[];
+          await for (final chunk in EdgeTtsService.synthesize(
+            text: text,
+            voice: voice,
+            rate: rate,
+          )) {
+            if (chunk is EdgeAudioChunk) {
+              audioBytes.addAll(chunk.data);
+            } else if (chunk is EdgeMetadataChunk) {
+              _edgeMetadata.add(chunk);
+            }
           }
+          
+          if (audioBytes.isEmpty) {
+            throw Exception("No audio bytes received from Microsoft Edge TTS");
+          }
+          
+          final tempDir = await getTemporaryDirectory();
+          final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+          await file.writeAsBytes(audioBytes, flush: true);
+          cached = CachedAudio(file.path, List.from(_edgeMetadata));
+          _addToCache(cacheKey, cached);
+        } else {
+          _edgeMetadata.addAll(cached.metadata);
         }
-        
-        if (audioBytes.isEmpty) {
-          throw Exception("No audio bytes received from Microsoft Edge TTS");
-        }
-        
-        // Ghi dữ liệu âm thanh MP3 ra file tạm thời
-        final tempDir = await getTemporaryDirectory();
-        final tempFile = File('${tempDir.path}/tts_temp.mp3');
-        await tempFile.writeAsBytes(audioBytes, flush: true);
         
         // Bắt đầu phát âm thanh bằng audioplayers
         _isSpeaking = true;
-        await _edgePlayer.play(DeviceFileSource(tempFile.path));
+        await _edgePlayer.play(DeviceFileSource(cached.filePath));
         await _edgePlayer.setPlaybackRate(_speechRate * 2.0); // Quy đổi 0.5 -> 1.0x tốc độ chuẩn
         
       } catch (e) {
@@ -290,6 +449,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> pause() async {
     _isSpeaking = false;
     _windowsTimer?.cancel();
+    cancelAllPrefetches();
     
     if (_activeEngine == TtsEngineType.edge) {
       await _edgePlayer.pause();
@@ -312,6 +472,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> stop() async {
     _isSpeaking = false;
     _windowsTimer?.cancel();
+    cancelAllPrefetches();
     
     if (_activeEngine == TtsEngineType.edge) {
       await _edgePlayer.stop();
@@ -350,6 +511,16 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> cleanUp() async {
     await _positionSub?.cancel();
     await _completeSub?.cancel();
+    cancelAllPrefetches();
+    for (final item in _audioCache.values) {
+      try {
+        final file = File(item.filePath);
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      } catch (_) {}
+    }
+    _audioCache.clear();
     await _edgePlayer.dispose();
   }
 }

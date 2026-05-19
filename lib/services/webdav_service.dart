@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
+import 'logger_service.dart';
 
 class WebDavService {
   static WebDavService? _instance;
@@ -20,17 +21,19 @@ class WebDavService {
 
   /// Khởi tạo kết nối WebDAV Client
   void init(String url, String username, String password) {
-    // Đảm bảo URL có định dạng hợp lệ
     String formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
       formattedUrl = 'https://$formattedUrl';
     }
 
+    final isDebugEnabled = LoggerService().enableWebDavDebug;
+    LoggerService().log('Initializing WebDAV client with debug=$isDebugEnabled', tag: 'WEBDAV', level: LogLevel.info);
+
     _client = webdav.newClient(
       formattedUrl,
       user: username.trim(),
       password: password,
-      debug: false,
+      debug: isDebugEnabled,
     );
     _isInitialized = true;
   }
@@ -38,12 +41,14 @@ class WebDavService {
   /// Kiểm tra kết nối tới máy chủ WebDAV
   Future<bool> testConnection() async {
     if (_client == null) return false;
+    LoggerService().log('Testing connection to WebDAV server...', tag: 'WEBDAV', level: LogLevel.info);
     try {
       // Thử đọc thư mục gốc để xác thực tài khoản và kiểm tra kết nối
       await _client!.readDir('/');
+      LoggerService().log('WebDAV connection verified successfully.', tag: 'WEBDAV', level: LogLevel.info);
       return true;
     } catch (e) {
-      print('WebDAV connection test failed: $e');
+      LoggerService().log('WebDAV connection test failed', tag: 'WEBDAV', level: LogLevel.error, error: e.toString());
       return false;
     }
   }
@@ -53,10 +58,10 @@ class WebDavService {
     if (_client == null) return false;
     try {
       await _client!.mkdir(remotePath);
+      LoggerService().log('Created directory (or verified it exists): $remotePath', tag: 'WEBDAV', level: LogLevel.info);
       return true;
     } catch (e) {
-      // Nếu thư mục đã tồn tại, WebDAV có thể trả về lỗi 405 hoặc tương tự, coi như thành công
-      print('WebDAV mkdir info/error (might already exist): $e');
+      LoggerService().log('WebDAV mkdir info/error (might already exist): $remotePath', tag: 'WEBDAV', level: LogLevel.warning, error: e.toString());
       return true;
     }
   }
@@ -71,10 +76,11 @@ class WebDavService {
       tempFile = File(p.join(tempDir.path, 'upload_$fileName'));
       await tempFile.writeAsBytes(bytes);
 
+      LoggerService().log('Uploading bytes (${bytes.length} bytes) to: $remotePath', tag: 'WEBDAV', level: LogLevel.info);
       await _client!.writeFromFile(tempFile.path, remotePath);
       return true;
     } catch (e) {
-      print('WebDAV uploadBytes failed: $e');
+      LoggerService().log('WebDAV uploadBytes failed for $remotePath', tag: 'WEBDAV', level: LogLevel.error, error: e.toString());
       return false;
     } finally {
       if (tempFile != null && await tempFile.exists()) {
@@ -89,13 +95,14 @@ class WebDavService {
     try {
       final file = File(localPath);
       if (!await file.exists()) {
-        print('Local file does not exist: $localPath');
+        LoggerService().log('Local file does not exist for upload: $localPath', tag: 'WEBDAV', level: LogLevel.warning);
         return false;
       }
+      LoggerService().log('Uploading local file ($localPath) to remote: $remotePath', tag: 'WEBDAV', level: LogLevel.info);
       await _client!.writeFromFile(localPath, remotePath);
       return true;
     } catch (e) {
-      print('WebDAV uploadLocalFile failed: $e');
+      LoggerService().log('WebDAV uploadLocalFile failed to $remotePath', tag: 'WEBDAV', level: LogLevel.error, error: e.toString());
       return false;
     }
   }
@@ -104,9 +111,10 @@ class WebDavService {
   Future<List<int>?> downloadBytes(String remotePath) async {
     if (_client == null) return null;
     try {
+      LoggerService().log('Downloading bytes from remote: $remotePath', tag: 'WEBDAV', level: LogLevel.info);
       return await _client!.read(remotePath);
     } catch (e) {
-      print('WebDAV downloadBytes failed (file might not exist): $e');
+      LoggerService().log('WebDAV downloadBytes failed (file might not exist): $remotePath', tag: 'WEBDAV', level: LogLevel.warning, error: e.toString());
       return null;
     }
   }
@@ -120,10 +128,11 @@ class WebDavService {
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
+      LoggerService().log('Downloading remote file ($remotePath) to local: $localPath', tag: 'WEBDAV', level: LogLevel.info);
       await _client!.read2File(remotePath, localPath);
       return true;
     } catch (e) {
-      print('WebDAV downloadToLocalFile failed: $e');
+      LoggerService().log('WebDAV downloadToLocalFile failed for $remotePath', tag: 'WEBDAV', level: LogLevel.error, error: e.toString());
       return false;
     }
   }
@@ -132,19 +141,16 @@ class WebDavService {
   Future<bool> fileExists(String remotePath) async {
     if (_client == null) return false;
     try {
-      // Cách kiểm tra tốt nhất là thử đọc thông tin thư mục chứa nó hoặc chính nó
       final list = await _client!.readDir(p.dirname(remotePath));
       final fileName = p.basename(remotePath);
       for (final f in list) {
-        // Tên file so khớp không phân biệt hoa thường hoặc khớp chính xác tên
         if (f.name == fileName || f.path?.endsWith(fileName) == true) {
           return true;
         }
       }
       return false;
     } catch (e) {
-      // Nếu thư mục cha không tồn tại hoặc lỗi, coi như file không tồn tại
-      print('WebDAV fileExists check failed (normal if folder/file not created yet): $e');
+      LoggerService().log('WebDAV fileExists check failed for $remotePath (normal if path does not exist yet)', tag: 'WEBDAV', level: LogLevel.warning, error: e.toString());
       return false;
     }
   }
@@ -154,10 +160,10 @@ class WebDavService {
     if (_client == null) return false;
     try {
       await _client!.remove(remotePath);
-      print('WebDAV successfully deleted file: $remotePath');
+      LoggerService().log('WebDAV successfully deleted file: $remotePath', tag: 'WEBDAV', level: LogLevel.info);
       return true;
     } catch (e) {
-      print('WebDAV remove failed for path $remotePath: $e');
+      LoggerService().log('WebDAV remove failed for path $remotePath', tag: 'WEBDAV', level: LogLevel.error, error: e.toString());
       return false;
     }
   }
@@ -168,7 +174,7 @@ class WebDavService {
     try {
       return await _client!.readProps(remotePath);
     } catch (e) {
-      print('WebDAV getFileMetadata info/error (file might not exist yet): $e');
+      LoggerService().log('WebDAV getFileMetadata info/error (file might not exist yet): $remotePath', tag: 'WEBDAV', level: LogLevel.warning, error: e.toString());
       return null;
     }
   }
