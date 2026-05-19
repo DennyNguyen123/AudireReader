@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import '../models/chapter.dart';
 import '../models/progress.dart';
 import '../models/settings.dart';
 import 'audio_handler.dart';
+import 'edge_tts_service.dart';
 import '../core/database/database_helper.dart';
 
 class TtsService extends ChangeNotifier {
@@ -76,13 +78,19 @@ class TtsService extends ChangeNotifier {
       final settings = await db.getSettings();
       await audioHandler.setSpeed(settings.speechRate);
       
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
+      final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+      if (provider == 'system' &&
+          settings.selectedVoiceName != null && 
+          settings.selectedVoiceLocale != null) {
         final voices = await audioHandler.getVoices();
-        final savedVoice = voices.firstWhere(
-          (v) => v['name']?.toString() == settings.selectedVoiceName &&
-                 v['locale']?.toString() == settings.selectedVoiceLocale,
-          orElse: () => null,
-        );
+        dynamic savedVoice;
+        for (final v in voices) {
+          if (v['name']?.toString() == settings.selectedVoiceName &&
+              v['locale']?.toString() == settings.selectedVoiceLocale) {
+            savedVoice = v;
+            break;
+          }
+        }
         if (savedVoice != null) {
           final voiceMap = Map<String, String>.from(
             (savedVoice as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
@@ -257,6 +265,7 @@ class TtsService extends ChangeNotifier {
     Map<String, String>? voice,
     String? fontFamily,
     String? themeMode,
+    String? ttsProvider,
   }) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -269,7 +278,9 @@ class TtsService extends ChangeNotifier {
     if (voice != null) {
       settings.selectedVoiceName = voice['name'];
       settings.selectedVoiceLocale = voice['locale'];
-      await audioHandler.setVoice(voice);
+      if (settings.ttsProvider == 'system') {
+        await audioHandler.setVoice(voice);
+      }
     }
     if (fontFamily != null) {
       settings.fontFamily = fontFamily;
@@ -277,8 +288,33 @@ class TtsService extends ChangeNotifier {
     if (themeMode != null) {
       settings.themeMode = themeMode;
     }
+    if (ttsProvider != null) {
+      settings.ttsProvider = ttsProvider;
+      settings.selectedVoiceName = null;
+      settings.selectedVoiceLocale = null;
+    }
     
     await db.saveSettings(settings);
     notifyListeners();
+  }
+
+  Future<List<dynamic>> getVoicesForProvider(String provider) async {
+    final normalizedProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+    if (normalizedProvider == 'microsoft_edge') {
+      try {
+        final rawVoices = await EdgeTtsService.listVoices();
+        // Chuẩn hóa danh sách giọng đọc từ Edge sang cấu trúc tương thích với FlutterTts
+        return rawVoices.map((v) => {
+          'name': v['ShortName'] ?? v['Name'] ?? '',
+          'locale': v['Locale'] ?? '',
+          'gender': v['Gender'] ?? '',
+        }).toList();
+      } catch (e) {
+        print("Error fetching edge voices: $e");
+        return [];
+      }
+    } else {
+      return await audioHandler.getVoices();
+    }
   }
 }

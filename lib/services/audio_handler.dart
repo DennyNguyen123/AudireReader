@@ -1,10 +1,18 @@
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, File;
+import '../core/database/database_helper.dart';
+import 'edge_tts_service.dart';
+
+enum TtsEngineType { system, edge }
 
 class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   final FlutterTts _tts = FlutterTts();
+  final AudioPlayer _edgePlayer = AudioPlayer();
   
   // Callback báo từ đang đọc về UI để highlight
   Function(String text, int start, int end, String word)? onWordProgress;
@@ -17,8 +25,17 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS (0.5 tương đương 1.0x)
   Timer? _windowsTimer; // Timer giả lập hoàn thành trên Windows
 
+  TtsEngineType _activeEngine = TtsEngineType.system;
+  final List<EdgeMetadataChunk> _edgeMetadata = [];
+  int _lastHighlightIndex = 0;
+  String _lastWord = "";
+
+  StreamSubscription? _positionSub;
+  StreamSubscription? _completeSub;
+
   MyAudioHandler() {
     _initTts();
+    _initEdgePlayer();
   }
 
   void _initTts() {
@@ -26,13 +43,14 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       _tts.setSharedInstance(true);
     }
     _tts.setProgressHandler((String text, int start, int end, String word) {
+      if (_activeEngine != TtsEngineType.system) return;
       _currentText = text;
       onWordProgress?.call(text, start, end, word);
     });
 
     _tts.setCompletionHandler(() {
-      // Trên Windows, cơ chế hoàn thành được giả lập qua WindowsTimer để tránh lỗi Threading và đảm bảo tính di động
       if (Platform.isWindows) return;
+      if (_activeEngine != TtsEngineType.system) return;
 
       // Nếu trạng thái phát đã bị dừng hoặc ngắt bởi mã nguồn, bỏ qua hoàn toàn sự kiện
       if (!_isSpeaking) return;
@@ -49,12 +67,58 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     });
 
     _tts.setErrorHandler((msg) {
+      if (_activeEngine != TtsEngineType.system) return;
       _isSpeaking = false;
       _windowsTimer?.cancel();
       playbackState.add(playbackState.value.copyWith(
         playing: false,
         processingState: AudioProcessingState.error,
       ));
+    });
+  }
+
+  void _initEdgePlayer() {
+    _positionSub = _edgePlayer.onPositionChanged.listen((duration) {
+      if (_activeEngine != TtsEngineType.edge || !_isSpeaking) return;
+
+      final currentMs = duration.inMilliseconds;
+      EdgeMetadataChunk? currentWordChunk;
+
+      for (final chunk in _edgeMetadata) {
+        if (currentMs >= chunk.offset && currentMs <= chunk.offset + chunk.duration) {
+          currentWordChunk = chunk;
+          break;
+        }
+      }
+
+      if (currentWordChunk != null && currentWordChunk.text != _lastWord) {
+        _lastWord = currentWordChunk.text;
+        
+        // Stateful search để tìm chính xác index của từ lặp lại trong chuỗi
+        int startIdx = _currentText.indexOf(_lastWord, _lastHighlightIndex);
+        if (startIdx == -1) {
+          // Fallback nếu không tìm thấy từ kế tiếp, tìm từ đầu
+          startIdx = _currentText.indexOf(_lastWord);
+        }
+        
+        if (startIdx != -1) {
+          _lastHighlightIndex = startIdx + _lastWord.length;
+          onWordProgress?.call(_currentText, startIdx, startIdx + _lastWord.length, _lastWord);
+        }
+      }
+    });
+
+    _completeSub = _edgePlayer.onPlayerComplete.listen((_) {
+      if (_activeEngine != TtsEngineType.edge || !_isSpeaking) return;
+
+      _isSpeaking = false;
+      playbackState.add(playbackState.value.copyWith(
+        processingState: AudioProcessingState.completed,
+      ));
+
+      Future.delayed(Duration.zero, () {
+        onParagraphComplete?.call();
+      });
     });
   }
 
@@ -79,7 +143,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     final durationMs = ((baseDurationMs + pauseDurationMs + 750.0) / speedMultiplier).round();
     
     _windowsTimer = Timer(Duration(milliseconds: durationMs), () {
-      if (_isSpeaking) {
+      if (_isSpeaking && _activeEngine == TtsEngineType.system) {
         _isSpeaking = false;
         playbackState.add(playbackState.value.copyWith(
           processingState: AudioProcessingState.completed,
@@ -109,20 +173,25 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   Future<void> speak(String text) async {
-    // Đặt speak = false trước khi stop để bỏ qua sự kiện completion giả do stop gây ra
+    // 1. Dừng mọi tác vụ phát cũ một cách an toàn và tuần tự
     _isSpeaking = false;
     _windowsTimer?.cancel();
-    await _tts.stop();
     
-    // Chờ một khoảng ngắn (100ms) để bất kỳ callback hoàn thành giả nào (nếu có)
-    // từ cuộc gọi stop() ở trên được gửi từ native và xử lý xong trong Dart Event Loop
-    // trước khi chúng ta thiết lập _isSpeaking = true cho lượt đọc mới.
+    await _tts.stop();
+    await _edgePlayer.stop();
+    
     if (!Platform.isWindows) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
     
     _currentText = text;
-    _isSpeaking = true;
+    _lastHighlightIndex = 0;
+    _lastWord = "";
+    
+    // 2. Đọc cấu hình nhà cung cấp từ cơ sở dữ liệu Isar
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
     
     playbackState.add(playbackState.value.copyWith(
       controls: [
@@ -138,18 +207,82 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       processingState: AudioProcessingState.ready,
     ));
 
-    await _tts.speak(text);
-
-    // Kích hoạt Timer giả lập trên Windows
-    if (Platform.isWindows) {
-      _startWindowsCompletionTimer(text);
+    if (provider == 'microsoft_edge') {
+      _activeEngine = TtsEngineType.edge;
+      
+      final audioBytes = <int>[];
+      _edgeMetadata.clear();
+      
+      try {
+        // Tải luồng byte âm thanh đám mây kèm theo Word boundaries
+        await for (final chunk in EdgeTtsService.synthesize(
+          text: text,
+          voice: settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural",
+          rate: _speechRate,
+        )) {
+          if (chunk is EdgeAudioChunk) {
+            audioBytes.addAll(chunk.data);
+          } else if (chunk is EdgeMetadataChunk) {
+            _edgeMetadata.add(chunk);
+          }
+        }
+        
+        if (audioBytes.isEmpty) {
+          throw Exception("No audio bytes received from Microsoft Edge TTS");
+        }
+        
+        // Ghi dữ liệu âm thanh MP3 ra file tạm thời
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File('${tempDir.path}/tts_temp.mp3');
+        await tempFile.writeAsBytes(audioBytes, flush: true);
+        
+        // Bắt đầu phát âm thanh bằng audioplayers
+        _isSpeaking = true;
+        await _edgePlayer.play(DeviceFileSource(tempFile.path));
+        await _edgePlayer.setPlaybackRate(_speechRate * 2.0); // Quy đổi 0.5 -> 1.0x tốc độ chuẩn
+        
+      } catch (e) {
+        debugPrint("Edge TTS failed, falling back to System TTS: $e");
+        
+        // HỆ THỐNG FALLBACK AN TOÀN: Chuyển về System TTS ngay lập tức
+        _activeEngine = TtsEngineType.system;
+        _isSpeaking = true;
+        
+        await _tts.speak(text);
+        if (Platform.isWindows) {
+          _startWindowsCompletionTimer(text);
+        }
+      }
+    } else {
+      // Luồng chạy mặc định sử dụng System TTS
+      _activeEngine = TtsEngineType.system;
+      _isSpeaking = true;
+      
+      await _tts.speak(text);
+      if (Platform.isWindows) {
+        _startWindowsCompletionTimer(text);
+      }
     }
   }
 
   @override
   Future<void> play() async {
     if (!_isSpeaking && _currentText.isNotEmpty) {
-      await speak(_currentText);
+      if (_activeEngine == TtsEngineType.edge) {
+        _isSpeaking = true;
+        playbackState.add(playbackState.value.copyWith(
+          controls: [
+            MediaControl.skipToPrevious,
+            MediaControl.pause,
+            MediaControl.skipToNext,
+          ],
+          playing: true,
+          processingState: AudioProcessingState.ready,
+        ));
+        await _edgePlayer.resume();
+      } else {
+        await speak(_currentText);
+      }
     }
   }
 
@@ -157,7 +290,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> pause() async {
     _isSpeaking = false;
     _windowsTimer?.cancel();
-    await _tts.stop(); // Sử dụng stop thay cho pause để tránh lỗi nghẽn (freeze/silence) của iOS AVSpeechSynthesizer khi nghỉ lâu
+    
+    if (_activeEngine == TtsEngineType.edge) {
+      await _edgePlayer.pause();
+    } else {
+      await _tts.stop();
+    }
+    
     playbackState.add(playbackState.value.copyWith(
       controls: [
         MediaControl.skipToPrevious,
@@ -173,7 +312,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> stop() async {
     _isSpeaking = false;
     _windowsTimer?.cancel();
-    await _tts.stop();
+    
+    if (_activeEngine == TtsEngineType.edge) {
+      await _edgePlayer.stop();
+    } else {
+      await _tts.stop();
+    }
+    
     playbackState.add(playbackState.value.copyWith(
       controls: [],
       playing: false,
@@ -181,9 +326,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     ));
   }
 
+  @override
   Future<void> setSpeed(double speed) async {
     _speechRate = speed;
     await _tts.setSpeechRate(speed);
+    if (_activeEngine == TtsEngineType.edge) {
+      await _edgePlayer.setPlaybackRate(speed * 2.0);
+    }
   }
 
   Future<void> setPitch(double pitch) async {
@@ -196,5 +345,11 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
 
   Future<List<dynamic>> getVoices() async {
     return await _tts.getVoices;
+  }
+
+  Future<void> cleanUp() async {
+    await _positionSub?.cancel();
+    await _completeSub?.cancel();
+    await _edgePlayer.dispose();
   }
 }

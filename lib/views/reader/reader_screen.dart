@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use, avoid_print
 import 'package:flutter/material.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart';
@@ -21,6 +22,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Map<String, String>? _selectedVoice;
   String _fontFamily = 'System';
   String _themeMode = 'System';
+  String _ttsProvider = 'system';
+  String _selectedLanguageFilter = 'all';
+  final _voiceSearchController = TextEditingController();
+  String _voiceSearchQuery = '';
 
   @override
   void initState() {
@@ -31,6 +36,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     _speedController.dispose();
+    _voiceSearchController.dispose();
     super.dispose();
   }
 
@@ -42,6 +48,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
+      final provider = settings.ttsProvider;
+      _ttsProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
       
       dynamic rawFont = settings.fontFamily;
       _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty) ? 'System' : rawFont.toString();
@@ -53,37 +61,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
     _loadVoices(settings);
   }
-
   Future<void> _loadVoices(AppSettings settings) async {
     try {
-      final voices = await _ttsService.audioHandler.getVoices();
-      // Lọc ra các giọng đọc tiếng Việt hoặc tiếng Anh phổ biến
-      final filteredVoices = voices.where((v) {
-        final lang = v['locale']?.toString().toLowerCase() ?? '';
-        return lang.startsWith('vi') || lang.startsWith('en');
-      }).toList();
-
-      final list = filteredVoices.isNotEmpty ? filteredVoices : voices;
+      final list = await _ttsService.getVoicesForProvider(settings.ttsProvider);
 
       Map<String, String>? initialVoice;
       if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
-        final matched = list.firstWhere(
-          (v) => v['name']?.toString() == settings.selectedVoiceName &&
-                 v['locale']?.toString() == settings.selectedVoiceLocale,
-          orElse: () => null,
-        );
+        dynamic matched;
+        for (final v in list) {
+          if (v['name']?.toString() == settings.selectedVoiceName &&
+              v['locale']?.toString() == settings.selectedVoiceLocale) {
+            matched = v;
+            break;
+          }
+        }
         if (matched != null) {
           initialVoice = Map<String, String>.from(
             (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
           );
         }
+      } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
+        // Tự động gán mặc định giọng HoaiMy cho Edge TTS
+        dynamic matched;
+        for (final v in list) {
+          if (v['name']?.toString() == 'vi-VN-HoaiMyNeural') {
+            matched = v;
+            break;
+          }
+        }
+        matched ??= list.first;
+        initialVoice = Map<String, String>.from(
+          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+        );
+        _ttsService.updateSettings(voice: initialVoice);
       }
 
       setState(() {
         _voices = list;
-        if (initialVoice != null) {
-          _selectedVoice = initialVoice;
-        }
+        _selectedVoice = initialVoice;
       });
     } catch (e) {
       print("Failed to load voices: $e");
@@ -184,6 +199,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       IconButton(
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 🎨 NHÓM 1: DISPLAY & TYPOGRAPHY
+                  Row(
+                    children: [
+                      Icon(Icons.format_paint_rounded, size: 16, color: Colors.amber[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'DISPLAY & TYPOGRAPHY',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
                       ),
                     ],
                   ),
@@ -298,7 +331,68 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+
+                  // CHỌN PHÔNG CHỮ (Font Family Dropdown)
+                  Text('Font Style', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
                   const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
+                        ? _fontFamily 
+                        : 'System',
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isDark ? Colors.white10 : Colors.black12,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    dropdownColor: sheetBg,
+                    items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
+                      return DropdownMenuItem<String>(
+                        value: font,
+                        child: Text(
+                          font,
+                          style: TextStyle(
+                            color: labelColor,
+                            fontFamily: font == 'System' ? null : font.toLowerCase()
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _fontFamily = val;
+                        });
+                        setModalState(() {});
+                        _ttsService.updateSettings(fontFamily: val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
+                  const SizedBox(height: 20),
+
+                  // 🗣️ NHÓM 2: TEXT-TO-SPEECH (TTS)
+                  Row(
+                    children: [
+                      Icon(Icons.volume_up_rounded, size: 16, color: Colors.amber[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'TEXT-TO-SPEECH (TTS)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
 
                    // TỐC ĐỘ NÓI
                    Row(
@@ -368,13 +462,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                    ),
                   const SizedBox(height: 16),
 
-                  // CHỌN PHÔNG CHỮ (Font Family Dropdown)
-                  Text('Font Style', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                  // CHỌN ĐỘNG CƠ TTS (TTS Provider Dropdown)
+                  Text('TTS Provider', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
-                        ? _fontFamily 
-                        : 'System',
+                    value: _ttsProvider,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -385,38 +477,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     dropdownColor: sheetBg,
-                    items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
-                      return DropdownMenuItem<String>(
-                        value: font,
-                        child: Text(
-                          font,
-                          style: TextStyle(
-                            color: labelColor,
-                            fontFamily: font == 'System' ? null : font.toLowerCase()
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
+                    items: const [
+                      DropdownMenuItem<String>(
+                        value: 'system',
+                        child: Text('System TTS (Offline)', style: TextStyle(fontSize: 13)),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: 'microsoft_edge',
+                        child: Text('Microsoft Edge TTS (Online)', style: TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                    onChanged: (val) async {
                       if (val != null) {
                         setState(() {
-                          _fontFamily = val;
+                          _ttsProvider = val;
+                          _voices = [];
+                          _selectedVoice = null;
                         });
                         setModalState(() {});
-                        _ttsService.updateSettings(fontFamily: val);
+
+                        await _ttsService.updateSettings(ttsProvider: val);
+                        final settings = await _ttsService.getSettings();
+                        await _loadVoices(settings);
+
+                        setModalState(() {});
                       }
                     },
                   ),
                   const SizedBox(height: 16),
 
-                  // CHỌN GIỌNG ĐỌC
+
+
+                  // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ
                   if (_voices.isNotEmpty) ...[
-                    Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                    // BỘ LỌC NGÔN NGỮ
+                    Text('Language Filter', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _voices.any((v) => v['name']?.toString() == _selectedVoice?['name'])
-                          ? (_selectedVoice?['name'])
-                          : null,
+                      value: _selectedLanguageFilter,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -427,39 +525,160 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       dropdownColor: sheetBg,
-                      items: _voices.map((v) {
-                        final name = v['name']?.toString() ?? 'Unknown';
-                        final locale = v['locale']?.toString() ?? '';
-                        return DropdownMenuItem<String>(
-                          value: name,
-                          child: Text(
-                            '$name ($locale)',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13, color: labelColor),
-                          ),
-                        );
-                      }).toList(),
+                      items: const [
+                        DropdownMenuItem<String>(
+                          value: 'all',
+                          child: Text('All Languages', style: TextStyle(fontSize: 13)),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'vi',
+                          child: Text('Vietnamese', style: TextStyle(fontSize: 13)),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'en',
+                          child: Text('English', style: TextStyle(fontSize: 13)),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'others',
+                          child: Text('Others (Japanese, French...)', style: TextStyle(fontSize: 13)),
+                        ),
+                      ],
                       onChanged: (val) {
                         if (val != null) {
-                          final selectedMap = _voices.firstWhere(
-                            (v) => v['name']?.toString() == val,
-                            orElse: () => null,
-                          );
-                          if (selectedMap != null) {
-                            final voiceMap = Map<String, String>.from(
-                              (selectedMap as Map).map(
-                                (key, value) => MapEntry(key.toString(), value.toString()),
-                              ),
-                            );
-                            setState(() {
-                              _selectedVoice = voiceMap;
-                            });
-                            setModalState(() {});
-                            _ttsService.updateSettings(voice: voiceMap);
-                          }
+                          setState(() {
+                            _selectedLanguageFilter = val;
+                          });
+                          setModalState(() {});
                         }
                       },
                     ),
+                    const SizedBox(height: 16),
+
+                    // Ô TÌM KIẾM GIỌNG ĐỌC (Bằng tiếng Anh)
+                    Text('Search Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _voiceSearchController,
+                      style: TextStyle(color: labelColor, fontSize: 13),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        hintText: 'Type to search voice name...',
+                        hintStyle: TextStyle(color: labelColor.withOpacity(0.5), fontSize: 13),
+                        prefixIcon: Icon(Icons.search_rounded, color: labelColor.withOpacity(0.6)),
+                        suffixIcon: _voiceSearchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(Icons.clear_rounded, color: labelColor.withOpacity(0.6)),
+                                onPressed: () {
+                                  _voiceSearchController.clear();
+                                  setState(() {
+                                    _voiceSearchQuery = '';
+                                  });
+                                  setModalState(() {});
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          _voiceSearchQuery = val.trim().toLowerCase();
+                        });
+                        setModalState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                    const SizedBox(height: 8),
+                    () {
+                      final filteredDisplayVoices = _voices.where((v) {
+                        final lang = v['locale']?.toString().toLowerCase() ?? '';
+                        final name = v['name']?.toString().toLowerCase() ?? '';
+
+                        // 1. Lọc theo ngôn ngữ
+                        bool matchesLang = true;
+                        if (_selectedLanguageFilter == 'vi') {
+                          matchesLang = lang.startsWith('vi');
+                        } else if (_selectedLanguageFilter == 'en') {
+                          matchesLang = lang.startsWith('en');
+                        } else if (_selectedLanguageFilter == 'others') {
+                          matchesLang = !lang.startsWith('vi') && !lang.startsWith('en');
+                        }
+
+                        if (!matchesLang) return false;
+
+                        // 2. Lọc theo ô tìm kiếm
+                        if (_voiceSearchQuery.isNotEmpty) {
+                          return name.contains(_voiceSearchQuery) || lang.contains(_voiceSearchQuery);
+                        }
+
+                        return true;
+                      }).toList();
+
+                      return DropdownButtonFormField<String>(
+                        value: filteredDisplayVoices.any((v) => v['name']?.toString() == _selectedVoice?['name'])
+                            ? (_selectedVoice?['name'])
+                            : null,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark ? Colors.white10 : Colors.black12,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        dropdownColor: sheetBg,
+                        items: () {
+                          final Set<String> seenNames = {};
+                          final List<DropdownMenuItem<String>> menuItems = [];
+                          for (final v in filteredDisplayVoices) {
+                            final name = v['name']?.toString() ?? 'Unknown';
+                            final locale = v['locale']?.toString() ?? '';
+                            if (!seenNames.contains(name)) {
+                              seenNames.add(name);
+                              menuItems.add(DropdownMenuItem<String>(
+                                value: name,
+                                child: Text(
+                                  '$name ($locale)',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 13, color: labelColor),
+                                ),
+                              ));
+                            }
+                          }
+                          return menuItems;
+                        }(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            dynamic selectedMap;
+                            for (final v in filteredDisplayVoices) {
+                              if (v['name']?.toString() == val) {
+                                selectedMap = v;
+                                break;
+                              }
+                            }
+                            if (selectedMap != null) {
+                              final voiceMap = Map<String, String>.from(
+                                (selectedMap as Map).map(
+                                  (key, value) => MapEntry(key.toString(), value.toString()),
+                                ),
+                              );
+                              setState(() {
+                                _selectedVoice = voiceMap;
+                              });
+                              setModalState(() {});
+                              _ttsService.updateSettings(voice: voiceMap);
+                            }
+                          }
+                        },
+                      );
+                    }(),
                   ],
                 ],
               ),

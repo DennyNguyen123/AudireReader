@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
@@ -6,7 +7,6 @@ import '../core/database/database_helper.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/progress.dart';
-import '../models/settings.dart';
 import 'webdav_service.dart';
 
 class SyncService {

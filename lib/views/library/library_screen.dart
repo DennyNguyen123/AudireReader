@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use, avoid_print
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -27,9 +28,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
   bool _isLoading = false;
   String _searchQuery = '';
 
+  // Trạng thái đồng bộ đám mây WebDAV
+  DateTime? _lastSyncTime;
+  bool _isSyncing = false;
+  bool _webDavEnabled = false;
+
   @override
   void initState() {
     super.initState();
+    _loadSyncStatus();
     _loadBooks().then((_) {
       _triggerAutoSync();
       // Tự động mở sách đọc gần nhất sau khi dựng xong frame đầu tiên để tránh lỗi thread điều hướng
@@ -38,6 +45,94 @@ class _LibraryScreenState extends State<LibraryScreen> {
         _checkUpdateOnLaunch();
       });
     });
+  }
+
+  Future<void> _loadSyncStatus() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (mounted) {
+      setState(() {
+        _lastSyncTime = settings.webDavLastSync;
+        _webDavEnabled = settings.webDavEnabled &&
+            settings.webDavUrl.trim().isNotEmpty &&
+            settings.webDavUsername.trim().isNotEmpty &&
+            settings.webDavPassword.trim().isNotEmpty;
+      });
+    }
+  }
+
+  String _formatLastSyncTime() {
+    if (_lastSyncTime == null) return 'Never synced';
+    final now = DateTime.now();
+    final difference = now.difference(_lastSyncTime!);
+    
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      final hh = _lastSyncTime!.hour.toString().padLeft(2, '0');
+      final mm = _lastSyncTime!.minute.toString().padLeft(2, '0');
+      return 'Today at $hh:$mm';
+    } else {
+      final yyyy = _lastSyncTime!.year;
+      final mm = _lastSyncTime!.month.toString().padLeft(2, '0');
+      final dd = _lastSyncTime!.day.toString().padLeft(2, '0');
+      final hour = _lastSyncTime!.hour.toString().padLeft(2, '0');
+      final min = _lastSyncTime!.minute.toString().padLeft(2, '0');
+      return '$yyyy-$mm-$dd $hour:$min';
+    }
+  }
+
+  Future<void> _startManualSync() async {
+    if (_isSyncing) return;
+    
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+    
+    setState(() {
+      _isSyncing = true;
+    });
+    
+    try {
+      final result = await SyncService.getInstance().sync();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success ? 'Sync completed successfully!' : 'Sync failed: ${result.message}'),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+      }
+      if (result.success && result.localChanged) {
+        await _loadBooks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sync error: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
   }
 
   Future<void> _checkUpdateOnLaunch() async {
@@ -73,9 +168,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     if (settings.webDavEnabled) {
+      setState(() {
+        _isSyncing = true;
+      });
       SyncService.getInstance().sync().then((result) {
         if (result.success && result.localChanged) {
           _loadBooks();
+        }
+        _loadSyncStatus();
+        if (mounted) {
+          setState(() {
+            _isSyncing = false;
+          });
+        }
+      }).catchError((e) {
+        _loadSyncStatus();
+        if (mounted) {
+          setState(() {
+            _isSyncing = false;
+          });
         }
       });
     }
@@ -217,6 +328,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     ).then((_) {
       _loadBooks();
+      _loadSyncStatus();
       _triggerAutoSync();
     });
   }
@@ -239,7 +351,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final filteredBooks = _books.where((book) {
       final searchLower = _searchQuery.toLowerCase();
       return book.title.toLowerCase().contains(searchLower) ||
-             (book.author?.toLowerCase().contains(searchLower) ?? false);
+             book.author.toLowerCase().contains(searchLower);
     }).toList();
 
     final scaffoldContent = Scaffold(
@@ -265,6 +377,53 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 letterSpacing: -0.5,
               ),
             ),
+            if (_webDavEnabled) ...[
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _isSyncing
+                        ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                            ),
+                          )
+                        : GestureDetector(
+                            onTap: _startManualSync,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Icon(
+                                Icons.sync_rounded,
+                                size: 16,
+                                color: Colors.amber[700],
+                              ),
+                            ),
+                          ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isSyncing ? 'Syncing...' : 'Sync: ${_formatLastSyncTime()}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         elevation: 0,
@@ -281,6 +440,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ).then((_) {
                 _loadBooks();
+                _loadSyncStatus();
               });
             },
           ),

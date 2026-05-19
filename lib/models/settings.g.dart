@@ -102,28 +102,33 @@ const AppSettingsSchema = CollectionSchema(
       name: r'themeMode',
       type: IsarType.string,
     ),
-    r'webDavEnabled': PropertySchema(
+    r'ttsProvider': PropertySchema(
       id: 17,
+      name: r'ttsProvider',
+      type: IsarType.string,
+    ),
+    r'webDavEnabled': PropertySchema(
+      id: 18,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavPassword': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'webDavPassword',
       type: IsarType.string,
     ),
     r'webDavUrl': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -171,6 +176,7 @@ int _appSettingsEstimateSize(
     }
   }
   bytesCount += 3 + object.themeMode.length * 3;
+  bytesCount += 3 + object.ttsProvider.length * 3;
   bytesCount += 3 + object.webDavPassword.length * 3;
   bytesCount += 3 + object.webDavUrl.length * 3;
   bytesCount += 3 + object.webDavUsername.length * 3;
@@ -200,11 +206,12 @@ void _appSettingsSerialize(
   writer.writeString(offsets[14], object.selectedVoiceName);
   writer.writeDouble(offsets[15], object.speechRate);
   writer.writeString(offsets[16], object.themeMode);
-  writer.writeBool(offsets[17], object.webDavEnabled);
-  writer.writeDateTime(offsets[18], object.webDavLastSync);
-  writer.writeString(offsets[19], object.webDavPassword);
-  writer.writeString(offsets[20], object.webDavUrl);
-  writer.writeString(offsets[21], object.webDavUsername);
+  writer.writeString(offsets[17], object.ttsProvider);
+  writer.writeBool(offsets[18], object.webDavEnabled);
+  writer.writeDateTime(offsets[19], object.webDavLastSync);
+  writer.writeString(offsets[20], object.webDavPassword);
+  writer.writeString(offsets[21], object.webDavUrl);
+  writer.writeString(offsets[22], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -232,11 +239,12 @@ AppSettings _appSettingsDeserialize(
   object.selectedVoiceName = reader.readStringOrNull(offsets[14]);
   object.speechRate = reader.readDouble(offsets[15]);
   object.themeMode = reader.readString(offsets[16]);
-  object.webDavEnabled = reader.readBool(offsets[17]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[18]);
-  object.webDavPassword = reader.readString(offsets[19]);
-  object.webDavUrl = reader.readString(offsets[20]);
-  object.webDavUsername = reader.readString(offsets[21]);
+  object.ttsProvider = reader.readString(offsets[17]);
+  object.webDavEnabled = reader.readBool(offsets[18]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[19]);
+  object.webDavPassword = reader.readString(offsets[20]);
+  object.webDavUrl = reader.readString(offsets[21]);
+  object.webDavUsername = reader.readString(offsets[22]);
   return object;
 }
 
@@ -282,14 +290,16 @@ P _appSettingsDeserializeProp<P>(
     case 16:
       return (reader.readString(offset)) as P;
     case 17:
-      return (reader.readBool(offset)) as P;
-    case 18:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 19:
       return (reader.readString(offset)) as P;
+    case 18:
+      return (reader.readBool(offset)) as P;
+    case 19:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 20:
       return (reader.readString(offset)) as P;
     case 21:
+      return (reader.readString(offset)) as P;
+    case 22:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2397,6 +2407,142 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ttsProvider',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ttsProvider',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ttsProvider',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ttsProvider',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsProviderIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ttsProvider',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       webDavEnabledEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -3124,6 +3270,18 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByTtsProvider() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsProvider', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByTtsProviderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsProvider', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByWebDavEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'webDavEnabled', Sort.asc);
@@ -3430,6 +3588,18 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByTtsProvider() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsProvider', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByTtsProviderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsProvider', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByWebDavEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'webDavEnabled', Sort.asc);
@@ -3625,6 +3795,13 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByTtsProvider(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ttsProvider', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByWebDavEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'webDavEnabled');
@@ -3778,6 +3955,12 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, String, QQueryOperations> themeModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'themeMode');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> ttsProviderProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ttsProvider');
     });
   }
 
