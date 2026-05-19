@@ -2,8 +2,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import '../core/database/database_helper.dart';
+import '../core/utils/path_helper.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/progress.dart';
@@ -282,7 +282,7 @@ class SyncService {
         }
 
         // 5. ĐỒNG BỘ SÁCH: CLOUD -> LOCAL (Tải sách từ mây về máy mới)
-        final docDir = await getApplicationDocumentsDirectory();
+        final docDir = await PathHelper.getAppDirectory();
         for (final cloudBook in cloudBooksList) {
           if (activeDeletedUuids.contains(cloudBook['uuid'])) {
             continue;

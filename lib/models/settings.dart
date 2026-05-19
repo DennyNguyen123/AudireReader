@@ -37,6 +37,9 @@ class AppSettings {
 
   bool autoCheckUpdate = true;
 
+  // Library Sorting Options: 'dateAdded', 'recentlyRead', 'title', 'author'
+  String sortBy = 'dateAdded';
+
   // --- Developer Settings ---
   bool developerMode = false;
   bool enableDebugLogs = false;

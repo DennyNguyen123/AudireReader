@@ -40,13 +40,13 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
   Color _getTagColor(String tag) {
     switch (tag.toUpperCase()) {
       case 'TTS':
-        return Colors.blue.withOpacity(0.2);
+        return Colors.blue.withValues(alpha: 0.2);
       case 'SYNC':
-        return Colors.green.withOpacity(0.2);
+        return Colors.green.withValues(alpha: 0.2);
       case 'WEBDAV':
-        return Colors.purple.withOpacity(0.2);
+        return Colors.purple.withValues(alpha: 0.2);
       default:
-        return Colors.grey.withOpacity(0.2);
+        return Colors.grey.withValues(alpha: 0.2);
     }
   }
 
@@ -120,7 +120,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.cardColor.withOpacity(0.6),
+                color: theme.cardColor.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: theme.dividerColor, width: 1),
               ),
@@ -178,7 +178,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                             ),
                             selected: isSelected,
                             selectedColor: Colors.amber,
-                            backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                            backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                             onSelected: (val) {
                               if (val) {
                                 setState(() {
@@ -232,11 +232,11 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.speaker_notes_off_rounded, size: 48, color: Colors.grey.withOpacity(0.5)),
+                        Icon(Icons.speaker_notes_off_rounded, size: 48, color: Colors.grey.withValues(alpha: 0.5)),
                         const SizedBox(height: 12),
                         Text(
                           'No matching logs found',
-                          style: TextStyle(color: Colors.grey.withOpacity(0.8), fontSize: 13),
+                          style: TextStyle(color: Colors.grey.withValues(alpha: 0.8), fontSize: 13),
                         ),
                       ],
                     ),
@@ -253,7 +253,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     final log = reversedLogs[index];
                     final time = log.timestamp.toLocal().toString().split(' ')[1].substring(0, 8);
                     return Card(
-                      color: theme.cardColor.withOpacity(0.5),
+                      color: theme.cardColor.withValues(alpha: 0.5),
                       margin: const EdgeInsets.only(bottom: 8),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -299,7 +299,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: _getLevelColor(log.level).withOpacity(0.1),
+                                    color: _getLevelColor(log.level).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -319,7 +319,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                               log.message,
                               style: TextStyle(
                                 fontSize: 12.5,
-                                color: isDark ? Colors.white.withOpacity(0.87) : Colors.black87,
+                                color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87,
                                 height: 1.4,
                               ),
                             ),
@@ -329,7 +329,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.08),
+                                  color: Colors.redAccent.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: SelectableText(

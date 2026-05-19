@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart' hide print;
 import '../../services/sync_service.dart' hide print;
@@ -7,6 +8,9 @@ import '../../core/database/database_helper.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
 import '../../core/theme_notifier.dart';
+import '../library/pronunciation_dictionary_screen.dart';
+import '../../models/bookmark.dart';
+import '../../models/highlight.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key});
@@ -30,6 +34,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   final _voiceSearchController = TextEditingController();
   String _voiceSearchQuery = '';
 
+  // Bookmarks, Highlights & Notes
+  bool _isBookmarked = false;
+  List<Bookmark> _bookmarks = [];
+  List<Highlight> _highlights = [];
+  Map<String, Highlight> _highlightsMap = {};
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +50,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (_isInitialized) {
+      _ttsService.removeListener(_onTtsServiceChanged);
+    }
     _speedController.dispose();
     _voiceSearchController.dispose();
     _syncActiveBookProgressOnExit();
@@ -84,6 +97,431 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     }
   }
 
+  void _onTtsServiceChanged() {
+    _updateBookmarkState();
+    _loadBookmarksAndHighlights();
+  }
+
+  Future<void> _updateBookmarkState() async {
+    final book = _ttsService.activeBook;
+    if (book == null) return;
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final bookmark = await db.getBookmarkAt(
+        book.uuid,
+        _ttsService.currentChapterIndex,
+        _ttsService.currentParagraphIndex,
+      );
+      if (mounted) {
+        setState(() {
+          _isBookmarked = bookmark != null;
+        });
+      }
+    } catch (e) {
+      print("Failed to update bookmark state: $e");
+    }
+  }
+
+  Future<void> _loadBookmarksAndHighlights() async {
+    final book = _ttsService.activeBook;
+    if (book == null) return;
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final bookmarks = await db.getBookmarksForBook(book.uuid);
+      final highlights = await db.getHighlightsForBook(book.uuid);
+      
+      final Map<String, Highlight> hMap = {};
+      for (final h in highlights) {
+        hMap['${h.chapterIndex}_${h.paragraphIndex}'] = h;
+      }
+      
+      if (mounted) {
+        setState(() {
+          _bookmarks = bookmarks;
+          _highlights = highlights;
+          _highlightsMap = hMap;
+        });
+      }
+    } catch (e) {
+      print("Failed to load bookmarks and highlights: $e");
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    final book = _ttsService.activeBook;
+    if (book == null) return;
+    try {
+      final db = await DatabaseHelper.getInstance();
+      if (_isBookmarked) {
+        await db.deleteBookmarkAt(book.uuid, _ttsService.currentChapterIndex, _ttsService.currentParagraphIndex);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bookmark removed'), duration: Duration(seconds: 1)),
+        );
+      } else {
+        final chapter = _ttsService.chapters[_ttsService.currentChapterIndex];
+        final snippet = chapter.paragraphs[_ttsService.currentParagraphIndex];
+        final bookmark = Bookmark()
+          ..bookUuid = book.uuid
+          ..chapterIndex = _ttsService.currentChapterIndex
+          ..paragraphIndex = _ttsService.currentParagraphIndex
+          ..contentSnippet = snippet.substring(0, snippet.length > 60 ? 60 : snippet.length)
+          ..dateAdded = DateTime.now();
+        await db.saveBookmark(bookmark);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bookmark added'), duration: Duration(seconds: 1)),
+        );
+      }
+      await _updateBookmarkState();
+      await _loadBookmarksAndHighlights();
+    } catch (e) {
+      print("Failed to toggle bookmark: $e");
+    }
+  }
+
+  void _showSearchInsideBook() {
+    final isDark = _getIsDark(context);
+    final textColor = _getTextColor(isDark);
+    final chapters = _ttsService.chapters;
+    final searchController = TextEditingController();
+    List<Map<String, dynamic>> results = [];
+    bool isSearching = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          void performSearch(String query) {
+            final trimmed = query.trim();
+            if (trimmed.isEmpty) {
+              setDialogState(() {
+                results = [];
+                isSearching = false;
+              });
+              return;
+            }
+            setDialogState(() {
+              isSearching = true;
+            });
+            final list = <Map<String, dynamic>>[];
+            final queryLower = trimmed.toLowerCase();
+            for (int cIdx = 0; cIdx < chapters.length; cIdx++) {
+              final ch = chapters[cIdx];
+              for (int pIdx = 0; pIdx < ch.paragraphs.length; pIdx++) {
+                final paragraph = ch.paragraphs[pIdx];
+                if (paragraph.toLowerCase().contains(queryLower)) {
+                  list.add({
+                    'chapterIndex': cIdx,
+                    'chapterTitle': ch.title,
+                    'paragraphIndex': pIdx,
+                    'text': paragraph,
+                  });
+                }
+              }
+            }
+            setDialogState(() {
+              results = list;
+              isSearching = false;
+            });
+          }
+
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Search Inside Book', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Type keyword...',
+                      hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                      prefixIcon: Icon(Icons.search_rounded, color: textColor.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: isDark ? Colors.white10 : Colors.black12,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (val) => performSearch(val),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: isSearching
+                        ? const Center(child: CircularProgressIndicator())
+                        : results.isEmpty
+                            ? Center(
+                                child: Text(
+                                  searchController.text.isEmpty
+                                      ? 'Enter a keyword to start searching'
+                                      : 'No results found',
+                                  style: TextStyle(color: textColor.withOpacity(0.5)),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: results.length,
+                                itemBuilder: (context, index) {
+                                  final res = results[index];
+                                  final text = res['text'] as String;
+                                  final query = searchController.text;
+                                  
+                                  final queryLower = query.toLowerCase();
+                                  final textLower = text.toLowerCase();
+                                  final startIdx = textLower.indexOf(queryLower);
+                                  
+                                  Widget textWidget;
+                                  if (startIdx != -1) {
+                                    final endIdx = startIdx + query.length;
+                                    final before = text.substring(0, startIdx);
+                                    final keyword = text.substring(startIdx, endIdx);
+                                    final after = text.substring(endIdx);
+                                    textWidget = RichText(
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      text: TextSpan(
+                                        style: TextStyle(color: textColor, fontSize: 13, height: 1.4),
+                                        children: [
+                                          TextSpan(text: before.length > 50 ? '...${before.substring(before.length - 40)}' : before),
+                                          TextSpan(
+                                            text: keyword,
+                                            style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                                          ),
+                                          TextSpan(text: after.length > 50 ? '${after.substring(0, 40)}...' : after),
+                                        ],
+                                      ),
+                                    );
+                                  } else {
+                                    textWidget = Text(
+                                      text,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: textColor, fontSize: 13),
+                                    );
+                                  }
+
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                    title: Text(
+                                      res['chapterTitle'],
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber),
+                                    ),
+                                    subtitle: Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: textWidget,
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _ttsService.jumpToChapter(res['chapterIndex']);
+                                      _ttsService.jumpToParagraph(res['paragraphIndex']);
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showParagraphMenu(int chapterIndex, int paragraphIndex, String paragraphText) async {
+    final isDark = _getIsDark(context);
+    final textColor = _getTextColor(isDark);
+    final key = '${chapterIndex}_$paragraphIndex';
+    final existingHighlight = _highlightsMap[key];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Paragraph Actions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildColorButton(context, Colors.yellow, '#FFFFEB3B', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                _buildColorButton(context, Colors.green, '#FF4CAF50', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                _buildColorButton(context, Colors.blue, '#FF2196F3', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            
+            ListTile(
+              leading: Icon(Icons.sticky_note_2_rounded, color: Colors.amber[700]),
+              title: Text(existingHighlight?.note != null ? 'Edit Note' : 'Add Note', style: TextStyle(color: textColor)),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddNoteDialog(chapterIndex, paragraphIndex, paragraphText, existingHighlight);
+              },
+            ),
+            
+            ListTile(
+              leading: Icon(Icons.copy_rounded, color: Colors.amber[700]),
+              title: Text('Copy Text', style: TextStyle(color: textColor)),
+              onTap: () {
+                Navigator.pop(context);
+                Clipboard.setData(ClipboardData(text: paragraphText));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copied to clipboard'), duration: Duration(seconds: 1)),
+                );
+              },
+            ),
+
+            if (existingHighlight != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                title: const Text('Remove Highlight', style: TextStyle(color: Colors.redAccent)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final db = await DatabaseHelper.getInstance();
+                  await db.deleteHighlight(existingHighlight.id);
+                  await _loadBookmarksAndHighlights();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Highlight removed'), duration: Duration(seconds: 1)),
+                    );
+                  }
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorButton(
+    BuildContext context, 
+    Color color, 
+    String hex, 
+    Highlight? existing, 
+    int chapterIndex, 
+    int paragraphIndex, 
+    String text
+  ) {
+    final isSelected = existing?.colorHex == hex;
+    return GestureDetector(
+      onTap: () async {
+        Navigator.pop(context);
+        final db = await DatabaseHelper.getInstance();
+        final book = _ttsService.activeBook;
+        if (book == null) return;
+        
+        final highlight = existing ?? Highlight()
+          ..bookUuid = book.uuid
+          ..chapterIndex = chapterIndex
+          ..paragraphIndex = paragraphIndex
+          ..text = text
+          ..dateAdded = DateTime.now();
+        
+        highlight.colorHex = hex;
+        await db.saveHighlight(highlight);
+        await _loadBookmarksAndHighlights();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Highlight saved'), duration: Duration(seconds: 1)),
+          );
+        }
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.3),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.amber[700]! : color,
+            width: isSelected ? 3 : 1.5,
+          ),
+        ),
+        child: isSelected ? Icon(Icons.check, color: Colors.amber[700], size: 20) : null,
+      ),
+    );
+  }
+
+  void _showAddNoteDialog(int chapterIndex, int paragraphIndex, String text, Highlight? existing) {
+    final isDark = _getIsDark(context);
+    final controller = TextEditingController(text: existing?.note);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: const Text('Add Note', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          style: TextStyle(color: _getTextColor(isDark)),
+          decoration: const InputDecoration(
+            hintText: 'Type your note here...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final noteText = controller.text.trim();
+              final db = await DatabaseHelper.getInstance();
+              final book = _ttsService.activeBook;
+              if (book == null) return;
+
+              final highlight = existing ?? Highlight()
+                ..bookUuid = book.uuid
+                ..chapterIndex = chapterIndex
+                ..paragraphIndex = paragraphIndex
+                ..text = text
+                ..colorHex = '#FFFFEB3B'
+                ..dateAdded = DateTime.now();
+
+              highlight.note = noteText;
+              await db.saveHighlight(highlight);
+              await _loadBookmarksAndHighlights();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Note saved'), duration: Duration(seconds: 1)),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _initTtsService() async {
     _ttsService = await TtsService.getInstance();
     final settings = await _ttsService.getSettings();
@@ -100,9 +538,16 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       
       dynamic rawTheme = settings.themeMode;
       _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty) ? 'System' : rawTheme.toString();
-      
+    });
+
+    _ttsService.addListener(_onTtsServiceChanged);
+    await _loadBookmarksAndHighlights();
+    await _updateBookmarkState();
+
+    setState(() {
       _isInitialized = true;
     });
+
     _loadVoices(settings);
     
     // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
@@ -441,6 +886,100 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     ],
                   ),
                   const SizedBox(height: 16),
+                  
+                  // SLEEP TIMER
+                  Text(
+                    _ttsService.isSleepTimerActive 
+                        ? 'Sleep Timer (${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')} remaining)'
+                        : _ttsService.stopAtEndOfChapter 
+                            ? 'Sleep Timer (Stop at end of chapter)'
+                            : 'Sleep Timer',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: labelColor),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Off', style: TextStyle(fontSize: 12)),
+                          selected: !_ttsService.isSleepTimerActive && !_ttsService.stopAtEndOfChapter,
+                          selectedColor: Colors.amber[700],
+                          labelStyle: TextStyle(
+                            color: (!_ttsService.isSleepTimerActive && !_ttsService.stopAtEndOfChapter) ? Colors.white : labelColor
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              _ttsService.cancelSleepTimer();
+                              _ttsService.enableStopAtEndOfChapter(false);
+                              setModalState(() {});
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text('15m', style: TextStyle(fontSize: 12)),
+                          selected: _ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 15,
+                          selectedColor: Colors.amber[700],
+                          labelStyle: TextStyle(
+                            color: (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 15) ? Colors.white : labelColor
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              _ttsService.startSleepTimer(15);
+                              setModalState(() {});
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text('30m', style: TextStyle(fontSize: 12)),
+                          selected: _ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 30,
+                          selectedColor: Colors.amber[700],
+                          labelStyle: TextStyle(
+                            color: (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 30) ? Colors.white : labelColor
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              _ttsService.startSleepTimer(30);
+                              setModalState(() {});
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text('45m', style: TextStyle(fontSize: 12)),
+                          selected: _ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 45,
+                          selectedColor: Colors.amber[700],
+                          labelStyle: TextStyle(
+                            color: (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration! ~/ 60 == 45) ? Colors.white : labelColor
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              _ttsService.startSleepTimer(45);
+                              setModalState(() {});
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          label: const Text('End Chapter', style: TextStyle(fontSize: 12)),
+                          selected: _ttsService.stopAtEndOfChapter,
+                          selectedColor: Colors.amber[700],
+                          labelStyle: TextStyle(
+                            color: _ttsService.stopAtEndOfChapter ? Colors.white : labelColor
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              _ttsService.enableStopAtEndOfChapter(true);
+                              setModalState(() {});
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                    // TỐC ĐỘ NÓI
                    Row(
@@ -553,6 +1092,26 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     },
                   ),
                   const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Đóng Bottom Sheet
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PronunciationDictionaryScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.record_voice_over_rounded),
+                    label: const Text('Manage Pronunciation Rules'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[700],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
 
 
@@ -784,6 +1343,15 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 ),
                 actions: [
                   IconButton(
+                    icon: const Icon(Icons.search_rounded),
+                    onPressed: _showSearchInsideBook,
+                  ),
+                  IconButton(
+                    icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
+                    color: _isBookmarked ? Colors.amber[700] : null,
+                    onPressed: _toggleBookmark,
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.format_list_bulleted_rounded),
                     onPressed: () => _showChapterList(context),
                   ),
@@ -819,6 +1387,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           final paragraphText = chapter.paragraphs[index];
                           final isActive = index == _ttsService.currentParagraphIndex;
 
+                          final key = '${activeChapterIndex}_$index';
+                          final highlight = _highlightsMap[key];
+
                           return ParagraphWidget(
                             text: paragraphText,
                             isActive: isActive,
@@ -828,8 +1399,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                             isDark: isDark,
                             fontFamily: _fontFamily,
                             textColor: textColor,
+                            highlightColorHex: highlight?.colorHex,
+                            hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
                             onTap: () {
                               _ttsService.jumpToParagraph(index);
+                            },
+                            onLongPress: () {
+                              _showParagraphMenu(activeChapterIndex, index, paragraphText);
                             },
                           );
                         }),
@@ -972,120 +1548,284 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             }).toList();
 
             return DraggableScrollableSheet(
-              initialChildSize: 0.7,
+              initialChildSize: 0.8,
               minChildSize: 0.5,
               maxChildSize: 0.95,
               builder: (context, scrollController) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: sheetBg,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.black12,
-                          borderRadius: BorderRadius.circular(2),
+                return DefaultTabController(
+                  length: 3,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: sheetBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Chapters',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            Text(
-                              '${filteredChapters.length} of ${chapters.length}',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: textColor.withOpacity(0.5),
-                              ),
-                            ),
+                        TabBar(
+                          labelColor: Colors.amber[700],
+                          unselectedLabelColor: textColor.withOpacity(0.6),
+                          indicatorColor: Colors.amber[700],
+                          indicatorWeight: 3,
+                          tabs: const [
+                            Tab(text: 'Chapters', icon: Icon(Icons.format_list_bulleted_rounded, size: 20)),
+                            Tab(text: 'Bookmarks', icon: Icon(Icons.bookmark_rounded, size: 20)),
+                            Tab(text: 'Highlights', icon: Icon(Icons.border_color_rounded, size: 20)),
                           ],
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: TextField(
-                          style: TextStyle(color: textColor),
-                          decoration: InputDecoration(
-                            hintText: 'Search chapters...',
-                            hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
-                            prefixIcon: Icon(Icons.search_rounded, color: textColor.withOpacity(0.5)),
-                            filled: true,
-                            fillColor: isDark ? Colors.white10 : Colors.black12,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                          onChanged: (val) {
-                            setModalState(() {
-                              chapterSearchQuery = val;
-                            });
-                          },
-                        ),
-                      ),
-                      const Divider(),
-                      Expanded(
-                        child: filteredChapters.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No chapters match your search',
-                                  style: TextStyle(color: textColor.withOpacity(0.5)),
-                                ),
-                              )
-                            : ListView.builder(
-                                controller: scrollController,
-                                itemCount: filteredChapters.length,
-                                itemBuilder: (context, index) {
-                                  final entry = filteredChapters[index];
-                                  final originalIndex = entry.key;
-                                  final chapter = entry.value;
-                                  final isCurrent = originalIndex == currentChapterIdx;
-
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                                    title: Text(
-                                      chapter.title,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                                        color: isCurrent 
-                                            ? (isDark ? Colors.amber[400] : Colors.amber[800])
-                                            : textColor,
+                        const Divider(height: 1),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: TextField(
+                                      style: TextStyle(color: textColor),
+                                      decoration: InputDecoration(
+                                        hintText: 'Search chapters...',
+                                        hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                                        prefixIcon: Icon(Icons.search_rounded, color: textColor.withOpacity(0.5)),
+                                        filled: true,
+                                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       ),
+                                      onChanged: (val) {
+                                        setModalState(() {
+                                          chapterSearchQuery = val;
+                                        });
+                                      },
                                     ),
-                                    trailing: isCurrent 
-                                        ? Icon(
-                                            Icons.volume_up_rounded, 
-                                            color: isDark ? Colors.amber[400] : Colors.amber[800]
-                                          ) 
-                                        : null,
-                                    tileColor: isCurrent 
-                                        ? (isDark ? Colors.amber[900]!.withOpacity(0.1) : Colors.amber[50]!)
-                                        : null,
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _ttsService.jumpToChapter(originalIndex);
-                                    },
-                                  );
-                                },
+                                  ),
+                                  Expanded(
+                                    child: filteredChapters.isEmpty
+                                        ? Center(
+                                            child: Text(
+                                              'No chapters match your search',
+                                              style: TextStyle(color: textColor.withOpacity(0.5)),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            controller: scrollController,
+                                            itemCount: filteredChapters.length,
+                                            itemBuilder: (context, index) {
+                                              final entry = filteredChapters[index];
+                                              final originalIndex = entry.key;
+                                              final chapter = entry.value;
+                                              final isCurrent = originalIndex == currentChapterIdx;
+
+                                              return ListTile(
+                                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                                                title: Text(
+                                                  chapter.title,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                                    color: isCurrent 
+                                                        ? (isDark ? Colors.amber[400] : Colors.amber[800])
+                                                        : textColor,
+                                                  ),
+                                                ),
+                                                trailing: isCurrent 
+                                                    ? Icon(
+                                                        Icons.volume_up_rounded, 
+                                                        color: isDark ? Colors.amber[400] : Colors.amber[800]
+                                                      ) 
+                                                    : null,
+                                                tileColor: isCurrent 
+                                                    ? (isDark ? Colors.amber[900]!.withOpacity(0.1) : Colors.amber[50]!)
+                                                    : null,
+                                                onTap: () {
+                                                  Navigator.pop(context);
+                                                  _ttsService.jumpToChapter(originalIndex);
+                                                },
+                                              );
+                                            },
+                                          ),
+                                  ),
+                                ],
                               ),
-                      ),
-                    ],
+                              _bookmarks.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No bookmarks saved yet',
+                                        style: TextStyle(color: textColor.withOpacity(0.5)),
+                                      ),
+                                    )
+                                  : ListView.separated(
+                                      controller: scrollController,
+                                      itemCount: _bookmarks.length,
+                                      separatorBuilder: (context, index) => Divider(color: isDark ? Colors.white10 : Colors.black12, height: 1),
+                                      itemBuilder: (context, index) {
+                                        final b = _bookmarks[index];
+                                        final chTitle = b.chapterIndex < chapters.length ? chapters[b.chapterIndex].title : 'Chapter ${b.chapterIndex + 1}';
+                                        return ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                          title: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  chTitle,
+                                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.amber),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Paragraph ${b.paragraphIndex + 1}',
+                                                style: TextStyle(fontSize: 11, color: textColor.withOpacity(0.5)),
+                                              ),
+                                            ],
+                                          ),
+                                          subtitle: Padding(
+                                            padding: const EdgeInsets.only(top: 6),
+                                            child: Text(
+                                              b.contentSnippet,
+                                              style: TextStyle(fontSize: 13, color: textColor, fontStyle: FontStyle.italic),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          trailing: IconButton(
+                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                            onPressed: () async {
+                                              final db = await DatabaseHelper.getInstance();
+                                              await db.deleteBookmark(b.id);
+                                              await _loadBookmarksAndHighlights();
+                                              await _updateBookmarkState();
+                                              setModalState(() {});
+                                            },
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            _ttsService.jumpToChapter(b.chapterIndex);
+                                            _ttsService.jumpToParagraph(b.paragraphIndex);
+                                          },
+                                        );
+                                      },
+                                    ),
+                              _highlights.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No highlights saved yet',
+                                        style: TextStyle(color: textColor.withOpacity(0.5)),
+                                      ),
+                                    )
+                                  : ListView.separated(
+                                      controller: scrollController,
+                                      itemCount: _highlights.length,
+                                      separatorBuilder: (context, index) => Divider(color: isDark ? Colors.white10 : Colors.black12, height: 1),
+                                      itemBuilder: (context, index) {
+                                        final h = _highlights[index];
+                                        final chTitle = h.chapterIndex < chapters.length ? chapters[h.chapterIndex].title : 'Chapter ${h.chapterIndex + 1}';
+                                        
+                                        Color hColor = Colors.yellow;
+                                        if (h.colorHex.toLowerCase() == '#ff4caf50' || h.colorHex.toLowerCase() == '0xff4caf50') {
+                                          hColor = Colors.green;
+                                        } else if (h.colorHex.toLowerCase() == '#ff2196f3' || h.colorHex.toLowerCase() == '0xff2196f3') {
+                                          hColor = Colors.blue;
+                                        }
+                                        
+                                        return ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                          title: Row(
+                                            children: [
+                                              Container(
+                                                width: 12,
+                                                height: 12,
+                                                decoration: BoxDecoration(
+                                                  color: hColor,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  chTitle,
+                                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Paragraph ${h.paragraphIndex + 1}',
+                                                style: TextStyle(fontSize: 11, color: textColor.withOpacity(0.5)),
+                                              ),
+                                            ],
+                                          ),
+                                          subtitle: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: hColor.withOpacity(0.15),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: hColor.withOpacity(0.3)),
+                                                  ),
+                                                  child: Text(
+                                                    h.text,
+                                                    style: TextStyle(fontSize: 13, color: textColor),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (h.note != null && h.note!.isNotEmpty) ...[
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Icon(Icons.sticky_note_2_rounded, size: 14, color: Colors.amber),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        h.note!,
+                                                        style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8), fontWeight: FontWeight.w500),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          trailing: IconButton(
+                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                            onPressed: () async {
+                                              final db = await DatabaseHelper.getInstance();
+                                              await db.deleteHighlight(h.id);
+                                              await _loadBookmarksAndHighlights();
+                                              setModalState(() {});
+                                            },
+                                          ),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            _ttsService.jumpToChapter(h.chapterIndex);
+                                            _ttsService.jumpToParagraph(h.paragraphIndex);
+                                          },
+                                        );
+                                      },
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -1106,7 +1846,10 @@ class ParagraphWidget extends StatefulWidget {
   final bool isDark;
   final String fontFamily;
   final Color textColor;
+  final String? highlightColorHex;
+  final bool hasNote;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const ParagraphWidget({
     super.key,
@@ -1118,7 +1861,10 @@ class ParagraphWidget extends StatefulWidget {
     required this.isDark,
     required this.fontFamily,
     required this.textColor,
+    this.highlightColorHex,
+    this.hasNote = false,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -1129,7 +1875,6 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   @override
   void initState() {
     super.initState();
-    // Tự động cuộn màn hình ngay khi widget được khởi tạo ở trạng thái active (ví dụ khi đổi chương)
     if (widget.isActive) {
       _scrollToVisible();
     }
@@ -1138,7 +1883,6 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   @override
   void didUpdateWidget(covariant ParagraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Tự động cuộn màn hình để đưa đoạn văn đang được đọc vào vị trí trung tâm khi trạng thái đổi thành active
     if (widget.isActive && !oldWidget.isActive) {
       _scrollToVisible();
     }
@@ -1151,30 +1895,85 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
           context,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          alignment: 0.3, // Cuộn hơi lùi lên trên một chút để dễ đọc
+          alignment: 0.3,
         );
       }
     });
+  }
+
+  Color _parseHexColor(String hexStr) {
+    String cleanHex = hexStr.replaceAll('#', '');
+    if (cleanHex.length == 8) {
+      return Color(int.parse(cleanHex, radix: 16));
+    }
+    if (cleanHex.length == 6) {
+      cleanHex = 'FF$cleanHex';
+    }
+    return Color(int.parse(cleanHex, radix: 16));
   }
 
   @override
   Widget build(BuildContext context) {
     final activeBgColor = widget.isDark ? Colors.amber[900]!.withOpacity(0.2) : Colors.amber[100]!;
 
+    Color? highlightBgColor;
+    if (widget.highlightColorHex != null) {
+      try {
+        final parsedColor = _parseHexColor(widget.highlightColorHex!);
+        highlightBgColor = parsedColor.withOpacity(widget.isDark ? 0.25 : 0.35);
+      } catch (e) {
+        highlightBgColor = Colors.yellow.withOpacity(0.3);
+      }
+    }
+
+    final bgColor = widget.isActive 
+        ? activeBgColor 
+        : (highlightBgColor ?? Colors.transparent);
+
+    final border = widget.isActive
+        ? Border.all(color: Colors.amber[700]!.withOpacity(0.5), width: 1)
+        : (widget.highlightColorHex != null 
+            ? Border.all(color: _parseHexColor(widget.highlightColorHex!).withOpacity(0.3), width: 1)
+            : null);
+
     return GestureDetector(
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: widget.isActive ? activeBgColor : Colors.transparent,
+          color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: widget.isActive
-              ? Border.all(color: Colors.amber[700]!.withOpacity(0.5), width: 1)
-              : null,
+          border: border,
         ),
-        child: _buildRichText(widget.textColor),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(right: widget.hasNote ? 24 : 0),
+              child: _buildRichText(widget.textColor),
+            ),
+            if (widget.hasNote)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[700],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.sticky_note_2_rounded, 
+                    size: 12, 
+                    color: Colors.white
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1188,7 +1987,6 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       letterSpacing: 0.2,
     );
 
-    // Không highlight nếu đoạn văn không hoạt động hoặc không có vị trí highlight hợp lệ
     if (!widget.isActive || widget.wordStart >= widget.wordEnd || widget.wordEnd > widget.text.length) {
       return Text(
         widget.text,

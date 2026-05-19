@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
+import '../../core/utils/path_helper.dart';
 import '../../services/webdav_service.dart';
 import '../../services/sync_service.dart' hide print;
 import '../../services/tts_service.dart' hide print;
@@ -18,6 +19,7 @@ import '../../core/global_hotkey_manager.dart';
 import '../../core/theme_notifier.dart';
 import '../../services/logger_service.dart';
 import 'developer_console_screen.dart';
+import 'pronunciation_dictionary_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 class SyncSettingsScreen extends StatefulWidget {
@@ -252,7 +254,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _isLoading = true;
     });
     try {
-      final docDir = await getApplicationDocumentsDirectory();
+      final docDir = await PathHelper.getAppDirectory();
       final db = await DatabaseHelper.getInstance();
       final booksCount = await db.isar.books.count();
       final chaptersCount = await db.isar.chapters.count();
@@ -333,9 +335,19 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     });
     try {
       final tempDir = await getTemporaryDirectory();
+      final appCacheDir = await PathHelper.getAppCacheDirectory();
       int deletedCount = 0;
       if (await tempDir.exists()) {
         final list = tempDir.listSync();
+        for (final file in list) {
+          try {
+            await file.delete(recursive: true);
+            deletedCount++;
+          } catch (_) {}
+        }
+      }
+      if (await appCacheDir.exists()) {
+        final list = appCacheDir.listSync();
         for (final file in list) {
           try {
             await file.delete(recursive: true);
@@ -1472,6 +1484,38 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   );
                                 }(),
                               ],
+                              const SizedBox(height: 16),
+                              const Divider(height: 1, thickness: 1),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const PronunciationDictionaryScreen(),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.record_voice_over_rounded),
+                                      label: const Text(
+                                        'Manage Pronunciation Rules',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.amber[700],
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

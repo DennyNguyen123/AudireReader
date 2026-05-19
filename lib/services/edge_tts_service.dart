@@ -197,19 +197,16 @@ class EdgeTtsService {
     return headers;
   }
 
-  /// Gửi yêu cầu WebSocket và stream dữ liệu nhị phân MP3 cùng với Word boundary metadata
-  static Stream<EdgeTtsChunk> synthesize({
+  /// Logic core của một lần synthesize
+  static Stream<EdgeTtsChunk> _synthesizeOnce({
     required String text,
     required String voice,
-    double rate = 0.5, // 0.5 tương ứng 1.0x tốc độ chuẩn
-    double pitch = 1.0,
+    required String rateStr,
+    required String pitchStr,
+    required String chromiumFullVersion,
+    required String chromiumMajorVersion,
   }) async* {
-    final rateStr = convertRate(rate);
-    final pitchStr = "+0Hz"; // Giữ pitch chuẩn
-
     final secMsGec = generateSecMsGec();
-    final chromiumFullVersion = "143.0.3650.75";
-    final chromiumMajorVersion = chromiumFullVersion.split(".")[0];
     final connectionId = generateUuid().replaceAll('-', '');
 
     final wsUrlStr =
@@ -217,7 +214,7 @@ class EdgeTtsService {
 
     WebSocket? ws;
     final client = HttpClient();
-    client.userAgent = null; // Vô hiệu hóa User-Agent mặc định của Dart (tránh bị chặn 403)
+    client.userAgent = null;
 
     try {
       try {
@@ -238,11 +235,11 @@ class EdgeTtsService {
       } catch (e) {
         print("EdgeTtsService: First connection attempt failed. Adjusting clock skew and retrying...");
         await adjustClockSkew();
-        
+
         final newSecMsGec = generateSecMsGec();
         final newWsUrlStr =
             "wss://$baseUri/edge/v1?TrustedClientToken=$trustedClientToken&ConnectionId=$connectionId&Sec-MS-GEC=$newSecMsGec&Sec-MS-GEC-Version=1-$chromiumFullVersion";
-            
+
         ws = await WebSocket.connect(
           newWsUrlStr,
           headers: {
@@ -261,20 +258,8 @@ class EdgeTtsService {
 
       // 1. Tạo chuỗi thời gian JavaScript
       final now = DateTime.now().toUtc();
-      final months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
+      final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
       String pad(int n) => n.toString().padLeft(2, '0');
       final jsDateStr =
@@ -317,13 +302,11 @@ class EdgeTtsService {
       // 4. Lắng nghe phản hồi từ WebSocket
       await for (final message in ws) {
         if (message is String) {
-          // Xử lý gói tin văn bản (Metadata)
           final splitIndex = message.indexOf("\r\n\r\n");
           if (splitIndex == -1) continue;
 
           final headersText = message.substring(0, splitIndex);
           final bodyText = message.substring(splitIndex + 4);
-
           final headers = parseHeaders(headersText);
           final path = headers["Path"];
 
@@ -338,8 +321,6 @@ class EdgeTtsService {
                     final offsetTicks = dataObj["Offset"] as int;
                     final durationTicks = dataObj["Duration"] as int;
                     final wordText = dataObj["text"]["Text"] as String;
-
-                    // Quy đổi ticks sang milliseconds (1 ms = 10,000 ticks)
                     yield EdgeMetadataChunk(
                       type: "WordBoundary",
                       offset: offsetTicks ~/ 10000,
@@ -353,29 +334,19 @@ class EdgeTtsService {
               print("Error parsing Edge TTS metadata JSON: $e");
             }
           } else if (path == "turn.end") {
-            // Nhận tín hiệu kết thúc phiên đọc
             break;
           }
         } else if (message is List<int>) {
-          // Xử lý gói tin nhị phân (Binary Frame - Audio)
           if (message.length < 2) continue;
-
-          // Đọc độ dài phần text header (2 byte đầu tiên, định dạng Big Endian)
           final headerLength = (message[0] << 8) | message[1];
           if (headerLength > message.length - 2) continue;
-
           final headerBytes = message.sublist(2, 2 + headerLength);
           final headerText = utf8.decode(headerBytes);
-
           final headers = parseHeaders(headerText);
           final path = headers["Path"];
-
           if (path == "audio") {
-            // Phần byte còn lại chính là dữ liệu file MP3
             final audioData = message.sublist(2 + headerLength);
-            if (audioData.isNotEmpty) {
-              yield EdgeAudioChunk(audioData);
-            }
+            if (audioData.isNotEmpty) yield EdgeAudioChunk(audioData);
           }
         }
       }
@@ -389,6 +360,32 @@ class EdgeTtsService {
           return null;
         });
       }
+    }
+  }
+
+  /// Gửi yêu cầu WebSocket và stream dữ liệu nhị phân MP3 cùng với Word boundary metadata
+  static Stream<EdgeTtsChunk> synthesize({
+    required String text,
+    required String voice,
+    double rate = 0.5,
+    double pitch = 1.0,
+  }) async* {
+    final rateStr = convertRate(rate);
+    const chromiumFullVersion = "143.0.3650.75";
+    final chromiumMajorVersion = chromiumFullVersion.split(".")[0];
+
+    try {
+      yield* _synthesizeOnce(
+        text: text,
+        voice: voice,
+        rateStr: rateStr,
+        pitchStr: "+0Hz",
+        chromiumFullVersion: chromiumFullVersion,
+        chromiumMajorVersion: chromiumMajorVersion,
+      );
+    } catch (e) {
+      print("EdgeTtsService.synthesize: Stream error caught: $e");
+      rethrow;
     }
   }
 }

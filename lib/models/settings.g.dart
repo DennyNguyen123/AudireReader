@@ -107,43 +107,48 @@ const AppSettingsSchema = CollectionSchema(
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
-    r'speechRate': PropertySchema(
+    r'sortBy': PropertySchema(
       id: 18,
+      name: r'sortBy',
+      type: IsarType.string,
+    ),
+    r'speechRate': PropertySchema(
+      id: 19,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'themeMode': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavPassword': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'webDavPassword',
       type: IsarType.string,
     ),
     r'webDavUrl': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -190,6 +195,7 @@ int _appSettingsEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.sortBy.length * 3;
   bytesCount += 3 + object.themeMode.length * 3;
   bytesCount += 3 + object.ttsProvider.length * 3;
   bytesCount += 3 + object.webDavPassword.length * 3;
@@ -222,14 +228,15 @@ void _appSettingsSerialize(
   writer.writeBool(offsets[15], object.openLastReadOnLaunch);
   writer.writeString(offsets[16], object.selectedVoiceLocale);
   writer.writeString(offsets[17], object.selectedVoiceName);
-  writer.writeDouble(offsets[18], object.speechRate);
-  writer.writeString(offsets[19], object.themeMode);
-  writer.writeString(offsets[20], object.ttsProvider);
-  writer.writeBool(offsets[21], object.webDavEnabled);
-  writer.writeDateTime(offsets[22], object.webDavLastSync);
-  writer.writeString(offsets[23], object.webDavPassword);
-  writer.writeString(offsets[24], object.webDavUrl);
-  writer.writeString(offsets[25], object.webDavUsername);
+  writer.writeString(offsets[18], object.sortBy);
+  writer.writeDouble(offsets[19], object.speechRate);
+  writer.writeString(offsets[20], object.themeMode);
+  writer.writeString(offsets[21], object.ttsProvider);
+  writer.writeBool(offsets[22], object.webDavEnabled);
+  writer.writeDateTime(offsets[23], object.webDavLastSync);
+  writer.writeString(offsets[24], object.webDavPassword);
+  writer.writeString(offsets[25], object.webDavUrl);
+  writer.writeString(offsets[26], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -258,14 +265,15 @@ AppSettings _appSettingsDeserialize(
   object.openLastReadOnLaunch = reader.readBool(offsets[15]);
   object.selectedVoiceLocale = reader.readStringOrNull(offsets[16]);
   object.selectedVoiceName = reader.readStringOrNull(offsets[17]);
-  object.speechRate = reader.readDouble(offsets[18]);
-  object.themeMode = reader.readString(offsets[19]);
-  object.ttsProvider = reader.readString(offsets[20]);
-  object.webDavEnabled = reader.readBool(offsets[21]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[22]);
-  object.webDavPassword = reader.readString(offsets[23]);
-  object.webDavUrl = reader.readString(offsets[24]);
-  object.webDavUsername = reader.readString(offsets[25]);
+  object.sortBy = reader.readString(offsets[18]);
+  object.speechRate = reader.readDouble(offsets[19]);
+  object.themeMode = reader.readString(offsets[20]);
+  object.ttsProvider = reader.readString(offsets[21]);
+  object.webDavEnabled = reader.readBool(offsets[22]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[23]);
+  object.webDavPassword = reader.readString(offsets[24]);
+  object.webDavUrl = reader.readString(offsets[25]);
+  object.webDavUsername = reader.readString(offsets[26]);
   return object;
 }
 
@@ -313,20 +321,22 @@ P _appSettingsDeserializeProp<P>(
     case 17:
       return (reader.readStringOrNull(offset)) as P;
     case 18:
-      return (reader.readDouble(offset)) as P;
-    case 19:
       return (reader.readString(offset)) as P;
+    case 19:
+      return (reader.readDouble(offset)) as P;
     case 20:
       return (reader.readString(offset)) as P;
     case 21:
-      return (reader.readBool(offset)) as P;
-    case 22:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 23:
       return (reader.readString(offset)) as P;
+    case 22:
+      return (reader.readBool(offset)) as P;
+    case 23:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 24:
       return (reader.readString(offset)) as P;
     case 25:
+      return (reader.readString(offset)) as P;
+    case 26:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2261,6 +2271,140 @@ extension AppSettingsQueryFilter
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sortByGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'sortBy',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sortByStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'sortBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'sortBy',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sortByIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sortBy',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sortByIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'sortBy',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       speechRateEqualTo(
     double value, {
@@ -3343,6 +3487,18 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySortBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySortByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortBy', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySpeechRate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'speechRate', Sort.asc);
@@ -3701,6 +3857,18 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySortBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySortByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortBy', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySpeechRate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'speechRate', Sort.asc);
@@ -3939,6 +4107,13 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySortBy(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sortBy', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySpeechRate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'speechRate');
@@ -4119,6 +4294,12 @@ extension AppSettingsQueryProperty
       selectedVoiceNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'selectedVoiceName');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> sortByProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sortBy');
     });
   }
 

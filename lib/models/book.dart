@@ -14,4 +14,10 @@ class Book {
   String? coverPath;
   late int totalChapters;
   late DateTime dateAdded;
+
+  // Reading status: 'unread', 'reading', 'completed'
+  String status = 'unread';
+
+  // Tags/Collections for classification
+  List<String> tags = [];
 }

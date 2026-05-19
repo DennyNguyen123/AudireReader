@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import '../core/utils/path_helper.dart';
 import 'dart:async';
-import 'dart:io' show Platform, File;
+import 'dart:io' show Platform, File, Process;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../core/database/database_helper.dart';
@@ -68,7 +69,125 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     }
   }
 
-  Future<CachedAudio?> prefetchSingle(String text, String voice, double rate) async {
+  Future<String> _synthesizeSystemTtsToWavWindows(String text, String voiceName, double rate) async {
+    final cacheKey = _computeSha256("$text|$voiceName|$rate");
+    final tempDir = await PathHelper.getAppCacheDirectory();
+    final wavPath = '${tempDir.path}\\sys_tts_$cacheKey.wav';
+    final wavFile = File(wavPath);
+    
+    if (wavFile.existsSync() && wavFile.lengthSync() > 0) {
+      return wavPath;
+    }
+    
+    final txtPath = '${tempDir.path}\\sys_text_$cacheKey.txt';
+    final ps1Path = '${tempDir.path}\\sys_synth_$cacheKey.ps1';
+    
+    // Ghi file text tạm (UTF-8)
+    await File(txtPath).writeAsString(text, encoding: utf8);
+    
+    // Tạo script powershell
+    final escapedWavPath = wavPath.replaceAll('\\', '\\\\');
+    final escapedTxtPath = txtPath.replaceAll('\\', '\\\\');
+    
+    final ps1Content = '''
+try {
+    [void][Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType=WindowsRuntime]
+    
+    # Load assembly chứa WindowsRuntimeSystemExtensions
+    \$assembly = [System.Reflection.Assembly]::Load("System.Runtime.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
+    \$extType = \$assembly.GetType("System.WindowsRuntimeSystemExtensions")
+    
+    \$synth = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer
+    
+    # Cấu hình giọng đọc
+    \$selectedVoice = '$voiceName'
+    \$voices = [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices
+    \$voice = \$null
+    
+    if (\$selectedVoice -ne '' -and \$selectedVoice -ne 'default') {
+        \$voice = \$voices | Where-Object { \$_.DisplayName -eq \$selectedVoice -or \$_.Id -eq \$selectedVoice -or \$_.DisplayName -like "*\$selectedVoice*" } | Select-Object -First 1
+    }
+    
+    if (\$voice -eq \$null) {
+        # Tự động tìm giọng tiếng Việt nếu chưa setup voice hoặc không tìm thấy voice đã chọn
+        \$voice = \$voices | Where-Object { \$_.Language -like '*vi*' -or \$_.DisplayName -like '*An*' } | Select-Object -First 1
+    }
+    
+    if (\$voice -ne \$null) {
+        \$synth.Voice = \$voice
+    }
+    
+    # Cấu hình Rate (Tốc độ đọc)
+    # WinRT SpeechRate từ 0.5 đến 6.0. Mặc định là 1.0 (tương đương với rate 0.5 từ Flutter)
+    \$winrtRate = $rate * 2.0
+    if (\$winrtRate -lt 0.5) { \$winrtRate = 0.5 }
+    if (\$winrtRate -gt 6.0) { \$winrtRate = 6.0 }
+    \$synth.Options.SpeakingRate = \$winrtRate
+    
+    # Đọc text từ file
+    \$text = Get-Content -Path '$escapedTxtPath' -Raw -Encoding UTF8
+    
+    \$asyncOp = \$synth.SynthesizeTextToStreamAsync(\$text)
+    
+    # Chuyển đổi AsTask
+    \$asTaskMethod = \$extType.GetMethods() | Where-Object { \$_.Name -eq 'AsTask' -and \$_.IsGenericMethodDefinition } | Select-Object -First 1
+    \$streamType = [Windows.Media.SpeechSynthesis.SpeechSynthesisStream, Windows.Media, ContentType=WindowsRuntime]
+    \$concreteMethod = \$asTaskMethod.MakeGenericMethod(\$streamType)
+    
+    \$task = \$concreteMethod.Invoke(\$null, @(\$asyncOp))
+    \$task.Wait()
+    \$stream = \$task.Result
+    
+    # Ghi file
+    \$fileStream = [System.IO.File]::Create('$escapedWavPath')
+    \$inputStream = \$stream.GetInputStreamAt(0)
+    \$reader = New-Object Windows.Storage.Streams.DataReader(\$inputStream)
+    
+    \$loadOp = \$reader.LoadAsync(\$stream.Size)
+    \$uintType = [System.UInt32]
+    \$concreteMethodLoad = \$asTaskMethod.MakeGenericMethod(\$uintType)
+    \$loadTask = \$concreteMethodLoad.Invoke(\$null, @(\$loadOp))
+    \$loadTask.Wait()
+    
+    \$bytes = New-Object Byte[](\$stream.Size)
+    \$reader.ReadBytes(\$bytes)
+    \$fileStream.Write(\$bytes, 0, \$bytes.Length)
+    \$fileStream.Close()
+    \$reader.Dispose()
+    \$stream.Dispose()
+    \$synth.Dispose()
+} catch {
+    Write-Error \$_
+    exit 1
+}
+''';
+    
+    await File(ps1Path).writeAsString(ps1Content, encoding: utf8);
+    
+    // Thực thi PowerShell ngầm
+    final result = await Process.run('powershell', [
+      '-ExecutionPolicy', 'Bypass',
+      '-File', ps1Path
+    ]);
+    
+    // Dọn dẹp files tạm
+    try {
+      await File(txtPath).delete();
+      await File(ps1Path).delete();
+    } catch (_) {}
+    
+    if (result.exitCode != 0) {
+      throw Exception("PowerShell SpeechSynthesis failed: ${result.stderr}");
+    }
+    
+    if (!wavFile.existsSync() || wavFile.lengthSync() == 0) {
+      throw Exception("Wav file was not generated or is empty");
+    }
+    
+    return wavPath;
+  }
+
+  Future<CachedAudio?> prefetchSingle(String text, String voice, double rate, String provider) async {
     final cacheKey = _computeSha256("$text|$voice|$rate");
     
     if (_audioCache.containsKey(cacheKey)) {
@@ -82,58 +201,71 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     final completer = Completer<CachedAudio>();
     _pendingPrefetches[cacheKey] = completer.future;
     
-    StreamSubscription? subscription;
-    try {
-      final audioBytes = <int>[];
-      final metadata = <EdgeMetadataChunk>[];
-      
-      final stream = EdgeTtsService.synthesize(
-        text: text,
-        voice: voice,
-        rate: rate,
-      );
-      
-      subscription = stream.listen(
-        (chunk) {
-          if (chunk is EdgeAudioChunk) {
-            audioBytes.addAll(chunk.data);
-          } else if (chunk is EdgeMetadataChunk) {
-            metadata.add(chunk);
-          }
-        },
-        onError: (err) {
-          _pendingPrefetches.remove(cacheKey);
-          _activePrefetches.remove(cacheKey);
-          completer.completeError(err);
-        },
-        onDone: () async {
-          _activePrefetches.remove(cacheKey);
-          try {
-            if (audioBytes.isEmpty) {
-              throw Exception("Empty audio bytes");
+    if (provider == 'system' && Platform.isWindows) {
+      // System TTS trên Windows: kết xuất bằng PowerShell ngầm
+      _synthesizeSystemTtsToWavWindows(text, voice, rate).then((filePath) {
+        final cached = CachedAudio(filePath, []);
+        _addToCache(cacheKey, cached);
+        _pendingPrefetches.remove(cacheKey);
+        completer.complete(cached);
+      }).catchError((err) {
+        _pendingPrefetches.remove(cacheKey);
+        completer.completeError(err);
+      });
+    } else {
+      // Edge TTS
+      StreamSubscription? subscription;
+      try {
+        final audioBytes = <int>[];
+        final metadata = <EdgeMetadataChunk>[];
+        
+        final stream = EdgeTtsService.synthesize(
+          text: text,
+          voice: voice,
+        );
+        
+        subscription = stream.listen(
+          (chunk) {
+            if (chunk is EdgeAudioChunk) {
+              audioBytes.addAll(chunk.data);
+            } else if (chunk is EdgeMetadataChunk) {
+              metadata.add(chunk);
             }
-            final tempDir = await getTemporaryDirectory();
-            final file = File('${tempDir.path}/tts_$cacheKey.mp3');
-            await file.writeAsBytes(audioBytes, flush: true);
-            
-            final cached = CachedAudio(file.path, metadata);
-            _addToCache(cacheKey, cached);
+          },
+          onError: (err) {
             _pendingPrefetches.remove(cacheKey);
-            completer.complete(cached);
-          } catch (e) {
-            _pendingPrefetches.remove(cacheKey);
-            completer.completeError(e);
-          }
-        },
-        cancelOnError: true,
-      );
-      
-      _activePrefetches[cacheKey] = subscription;
-      
-    } catch (e) {
-      _pendingPrefetches.remove(cacheKey);
-      _activePrefetches.remove(cacheKey);
-      completer.completeError(e);
+            _activePrefetches.remove(cacheKey);
+            completer.completeError(err);
+          },
+          onDone: () async {
+            _activePrefetches.remove(cacheKey);
+            try {
+              if (audioBytes.isEmpty) {
+                throw Exception("Empty audio bytes");
+              }
+              final tempDir = await PathHelper.getAppCacheDirectory();
+              final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+              await file.writeAsBytes(audioBytes, flush: true);
+              
+              final cached = CachedAudio(file.path, metadata);
+              _addToCache(cacheKey, cached);
+              _pendingPrefetches.remove(cacheKey);
+              completer.complete(cached);
+            } catch (e) {
+              _pendingPrefetches.remove(cacheKey);
+              completer.completeError(e);
+            }
+          },
+          cancelOnError: true,
+        );
+        
+        _activePrefetches[cacheKey] = subscription;
+        
+      } catch (e) {
+        _pendingPrefetches.remove(cacheKey);
+        _activePrefetches.remove(cacheKey);
+        completer.completeError(e);
+      }
     }
     
     return completer.future;
@@ -144,15 +276,19 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     final settings = await db.getSettings();
     final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
     
-    if (provider != 'microsoft_edge') return;
+    // Chỉ prefetch cho Edge TTS HOẶC System TTS trên Windows
+    if (provider != 'microsoft_edge' && !(provider == 'system' && Platform.isWindows)) return;
     
-    final voice = settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural";
+    String voice = settings.selectedVoiceName ?? (provider == 'microsoft_edge' ? "vi-VN-HoaiMyNeural" : "default");
+    if (provider == 'system' && (voice.contains('Neural') || voice.split('-').length > 2)) {
+      voice = "default";
+    }
     final rate = _speechRate;
     
     for (final text in texts) {
       if (!playbackState.value.playing) break;
       try {
-        await prefetchSingle(text, voice, rate);
+        await prefetchSingle(text, voice, rate, provider);
       } catch (e) {
         debugPrint("Failed to prefetch text: $e");
       }
@@ -252,7 +388,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     });
 
     _completeSub = _edgePlayer.onPlayerComplete.listen((_) {
-      if (_activeEngine != TtsEngineType.edge || !_isSpeaking) return;
+      if ((_activeEngine != TtsEngineType.edge && !(Platform.isWindows && _activeEngine == TtsEngineType.system)) || !_isSpeaking) return;
 
       _isSpeaking = false;
       playbackState.add(playbackState.value.copyWith(
@@ -264,25 +400,16 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       });
     });
   }
-
   void _startWindowsCompletionTimer(String text) {
     _windowsTimer?.cancel();
     
-    // Tốc độ chuẩn 1.0x tương ứng với speechRate = 0.5 trong flutter_tts
-    final speedMultiplier = _speechRate * 2.0; // Quy đổi về hệ số nhân (0.5 -> 1.0x, 0.75 -> 1.5x)
-    
-    // Đếm số lượng dấu câu ngắt câu (period, exclamation, question, ellipsis)
+    final speedMultiplier = _speechRate * 2.0; 
     final endPunctCount = RegExp(r'[.!?…]').allMatches(text).length;
-    // Đếm số lượng dấu câu ngắt hơi (comma, semicolon, colon, dash)
     final midPunctCount = RegExp(r'[,;:\-]').allMatches(text).length;
     
-    // SAPI Windows nói tiếng Việt chuẩn tự nhiên ở tốc độ ~80ms/ký tự
     final baseDurationMs = text.length * 80.0;
-    
-    // Cộng thêm các khoảng nghỉ tự nhiên của giọng đọc (300ms cho dấu chấm, 150ms cho dấu phẩy)
     final pauseDurationMs = (endPunctCount * 300.0) + (midPunctCount * 150.0);
     
-    // Tổng thời gian điều chỉnh theo tốc độ nói + đệm an toàn 750ms giúp dứt chữ hoàn hảo
     final durationMs = ((baseDurationMs + pauseDurationMs + 750.0) / speedMultiplier).round();
     
     _windowsTimer = Timer(Duration(milliseconds: durationMs), () {
@@ -292,14 +419,12 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
           processingState: AudioProcessingState.completed,
         ));
         
-        // Chuyển sang đoạn tiếp theo trên Platform Thread
         Future.delayed(Duration.zero, () {
           onParagraphComplete?.call();
         });
       }
     });
   }
-
   Future<void> updateMetadata({
     required String bookTitle,
     required String chapterTitle,
@@ -350,10 +475,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       processingState: AudioProcessingState.ready,
     ));
 
-    if (provider == 'microsoft_edge') {
-      _activeEngine = TtsEngineType.edge;
+    if (provider == 'microsoft_edge' || (provider == 'system' && Platform.isWindows)) {
+      _activeEngine = (provider == 'microsoft_edge') ? TtsEngineType.edge : TtsEngineType.system;
       
-      final voice = settings.selectedVoiceName ?? "vi-VN-HoaiMyNeural";
+      String voice = settings.selectedVoiceName ?? (provider == 'microsoft_edge' ? "vi-VN-HoaiMyNeural" : "default");
+      if (provider == 'system' && (voice.contains('Neural') || voice.split('-').length > 2)) {
+        voice = "default";
+      }
       final rate = _speechRate;
       final cacheKey = _computeSha256("$text|$voice|$rate");
       
@@ -369,28 +497,55 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
         }
 
         if (cached == null) {
-          final audioBytes = <int>[];
-          await for (final chunk in EdgeTtsService.synthesize(
-            text: text,
-            voice: voice,
-            rate: rate,
-          )) {
-            if (chunk is EdgeAudioChunk) {
-              audioBytes.addAll(chunk.data);
-            } else if (chunk is EdgeMetadataChunk) {
-              _edgeMetadata.add(chunk);
+          if (provider == 'microsoft_edge') {
+            final audioBytes = <int>[];
+            final completer = Completer<void>();
+            
+            final stream = EdgeTtsService.synthesize(
+              text: text,
+              voice: voice,
+            );
+
+            final subscription = stream.listen(
+              (chunk) {
+                if (chunk is EdgeAudioChunk) {
+                  audioBytes.addAll(chunk.data);
+                } else if (chunk is EdgeMetadataChunk) {
+                  _edgeMetadata.add(chunk);
+                }
+              },
+              onError: (err) {
+                debugPrint("MyAudioHandler.speak: Stream error occurred: $err");
+                completer.completeError(err);
+              },
+              onDone: () {
+                completer.complete();
+              },
+              cancelOnError: true,
+            );
+
+            try {
+              await completer.future;
+            } catch (e) {
+              subscription.cancel();
+              rethrow;
             }
+            
+            if (audioBytes.isEmpty) {
+              throw Exception("No audio bytes received from Microsoft Edge TTS");
+            }
+            
+            final tempDir = await getTemporaryDirectory();
+            final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+            await file.writeAsBytes(audioBytes, flush: true);
+            cached = CachedAudio(file.path, List.from(_edgeMetadata));
+            _addToCache(cacheKey, cached);
+          } else {
+            // Windows System TTS: sinh file wav qua PowerShell
+            final filePath = await _synthesizeSystemTtsToWavWindows(text, voice, rate);
+            cached = CachedAudio(filePath, []);
+            _addToCache(cacheKey, cached);
           }
-          
-          if (audioBytes.isEmpty) {
-            throw Exception("No audio bytes received from Microsoft Edge TTS");
-          }
-          
-          final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/tts_$cacheKey.mp3');
-          await file.writeAsBytes(audioBytes, flush: true);
-          cached = CachedAudio(file.path, List.from(_edgeMetadata));
-          _addToCache(cacheKey, cached);
         } else {
           _edgeMetadata.addAll(cached.metadata);
         }
@@ -401,33 +556,61 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
         await _edgePlayer.setPlaybackRate(_speechRate * 2.0); // Quy đổi 0.5 -> 1.0x tốc độ chuẩn
         
       } catch (e) {
-        debugPrint("Edge TTS failed, falling back to System TTS: $e");
+        debugPrint("TTS engine failed, falling back to direct System TTS: $e");
         
-        // HỆ THỐNG FALLBACK AN TOÀN: Chuyển về System TTS ngay lập tức
+        // HỆ THỐNG FALLBACK AN TOÀN: Chuyển về System TTS cùng ngôn ngữ
         _activeEngine = TtsEngineType.system;
         _isSpeaking = true;
-        
-        await _tts.speak(text);
+
+        // Tìm giọng System TTS cùng locale với Edge TTS voice đang dùng
+        String? matchedVoiceName;
+        try {
+          final localeParts = voice.split('-');
+          if (localeParts.length >= 2) {
+            final targetLocale = '${localeParts[0]}-${localeParts[1]}';
+            final systemVoices = await _tts.getVoices as List;
+            dynamic matchedVoice;
+            for (final v in systemVoices) {
+              final voiceLocale = v['locale']?.toString() ?? '';
+              if (voiceLocale.toLowerCase().startsWith(targetLocale.toLowerCase())) {
+                matchedVoice = v;
+                break;
+              }
+            }
+            if (matchedVoice != null) {
+              matchedVoiceName = matchedVoice['name'].toString();
+              await _tts.setVoice({
+                'name': matchedVoiceName,
+                'locale': matchedVoice['locale'].toString(),
+              });
+              debugPrint("Edge TTS fallback: using system voice '$matchedVoiceName' (${matchedVoice['locale']})");
+            } else {
+              debugPrint("Edge TTS fallback: no system voice found for locale '$targetLocale', using default");
+            }
+          }
+        } catch (voiceErr) {
+          debugPrint("Edge TTS fallback: failed to set matching system voice: $voiceErr");
+        }
+
         if (Platform.isWindows) {
+          await _tts.speak(text);
           _startWindowsCompletionTimer(text);
+        } else {
+          await _tts.speak(text);
         }
       }
     } else {
-      // Luồng chạy mặc định sử dụng System TTS
+      // Luồng chạy mặc định sử dụng System TTS trên Mobile
       _activeEngine = TtsEngineType.system;
       _isSpeaking = true;
-      
       await _tts.speak(text);
-      if (Platform.isWindows) {
-        _startWindowsCompletionTimer(text);
-      }
     }
   }
 
   @override
   Future<void> play() async {
     if (!_isSpeaking && _currentText.isNotEmpty) {
-      if (_activeEngine == TtsEngineType.edge) {
+      if (_activeEngine == TtsEngineType.edge || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
         _isSpeaking = true;
         playbackState.add(playbackState.value.copyWith(
           controls: [
@@ -451,7 +634,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     _windowsTimer?.cancel();
     cancelAllPrefetches();
     
-    if (_activeEngine == TtsEngineType.edge) {
+    if (_activeEngine == TtsEngineType.edge || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.pause();
     } else {
       await _tts.stop();
@@ -474,7 +657,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     _windowsTimer?.cancel();
     cancelAllPrefetches();
     
-    if (_activeEngine == TtsEngineType.edge) {
+    if (_activeEngine == TtsEngineType.edge || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.stop();
     } else {
       await _tts.stop();
@@ -491,7 +674,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Future<void> setSpeed(double speed) async {
     _speechRate = speed;
     await _tts.setSpeechRate(speed);
-    if (_activeEngine == TtsEngineType.edge) {
+    if (_activeEngine == TtsEngineType.edge || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.setPlaybackRate(speed * 2.0);
     }
   }

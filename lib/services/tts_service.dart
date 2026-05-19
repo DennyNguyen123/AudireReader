@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_print
+import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/progress.dart';
 import '../models/settings.dart';
+import '../models/pronunciation_rule.dart';
 import 'audio_handler.dart';
 import 'edge_tts_service.dart';
 import '../core/database/database_helper.dart';
@@ -33,17 +35,31 @@ class TtsService extends ChangeNotifier {
   List<Chapter> _chapters = [];
   int _currentChapterIndex = 0;
   int _currentParagraphIndex = 0;
+  bool _isPaused = false; // Phân biệt trạng thái pause (có thể resume) vs stop
 
   // Highlight vị trí từ đang đọc
   int wordStart = 0;
   int wordEnd = 0;
   String currentWord = "";
 
+  // Hẹn giờ tắt (Sleep Timer)
+  Timer? _sleepTimer;
+  int? _sleepTimerDuration; // giây
+  bool _stopAtEndOfChapter = false;
+
+  // Từ điển phát âm
+  List<PronunciationRule> _activeRules = [];
+
   bool get isPlaying => audioHandler.playbackState.value.playing;
   Book? get activeBook => _activeBook;
   List<Chapter> get chapters => _chapters;
   int get currentChapterIndex => _currentChapterIndex;
   int get currentParagraphIndex => _currentParagraphIndex;
+
+  int? get sleepTimerDuration => _sleepTimerDuration;
+  bool get isSleepTimerActive => _sleepTimer != null;
+  bool get stopAtEndOfChapter => _stopAtEndOfChapter;
+  List<PronunciationRule> get activeRules => _activeRules;
 
   TtsService._();
 
@@ -116,9 +132,78 @@ class TtsService extends ChangeNotifier {
           await audioHandler.setVoice(voiceMap);
         }
       }
+
+      // Tải từ điển phát âm
+      await loadPronunciationRules();
     } catch (e) {
       print("Failed to restore TTS settings: $e");
     }
+  }
+
+  // --- Pronunciation Dictionary Operations ---
+  Future<void> loadPronunciationRules() async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      _activeRules = await db.getActivePronunciationRules();
+      notifyListeners();
+    } catch (e) {
+      print("Failed to load pronunciation rules: $e");
+    }
+  }
+
+  String applyPronunciationRules(String text) {
+    if (_activeRules.isEmpty || text.isEmpty) return text;
+    String result = text;
+    for (final rule in _activeRules) {
+      if (rule.target.isEmpty) continue;
+      if (rule.isRegex) {
+        try {
+          final regex = RegExp(rule.target, caseSensitive: false, unicode: true);
+          result = result.replaceAll(regex, rule.replacement);
+        } catch (e) {
+          print("Invalid regex rule target '${rule.target}': $e");
+        }
+      } else {
+        try {
+          final regex = RegExp(RegExp.escape(rule.target), caseSensitive: false, unicode: true);
+          result = result.replaceAll(regex, rule.replacement);
+        } catch (e) {
+          result = result.replaceAll(rule.target, rule.replacement);
+        }
+      }
+    }
+    return result;
+  }
+
+  // --- Sleep Timer Operations ---
+  void startSleepTimer(int minutes) {
+    cancelSleepTimer();
+    _stopAtEndOfChapter = false;
+    _sleepTimerDuration = minutes * 60;
+    notifyListeners();
+
+    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_sleepTimerDuration != null && _sleepTimerDuration! > 0) {
+        _sleepTimerDuration = _sleepTimerDuration! - 1;
+        notifyListeners();
+      } else {
+        cancelSleepTimer();
+        pauseSpeaking();
+      }
+    });
+  }
+
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepTimerDuration = null;
+    notifyListeners();
+  }
+
+  void enableStopAtEndOfChapter(bool enable) {
+    cancelSleepTimer();
+    _stopAtEndOfChapter = enable;
+    notifyListeners();
   }
 
   Future<void> loadBook(Book book, List<Chapter> chapters, {int startChapter = 0, int startParagraph = 0}) async {
@@ -144,6 +229,16 @@ class TtsService extends ChangeNotifier {
     progress.currentCharacterOffset = 0;
     progress.lastRead = DateTime.now();
     await db.saveProgress(progress);
+
+    final isLastChapter = _currentChapterIndex >= _chapters.length - 1;
+    final isLastParagraph = _chapters.isEmpty || 
+        _currentParagraphIndex >= _chapters[_currentChapterIndex].paragraphs.length - 1;
+    final newStatus = (isLastChapter && isLastParagraph) ? 'completed' : 'reading';
+
+    if (_activeBook!.status != newStatus) {
+      _activeBook!.status = newStatus;
+      await db.saveBook(_activeBook!);
+    }
   }
 
   Future<void> _onStateChanged({bool forceSpeak = false}) async {
@@ -170,6 +265,8 @@ class TtsService extends ChangeNotifier {
   Future<void> startSpeaking() async {
     if (_activeBook == null || _chapters.isEmpty) return;
 
+    _isPaused = false; // Reset flag khi bắt đầu đọc đoạn mới
+
     final chapter = _chapters[_currentChapterIndex];
     if (chapter.paragraphs.isEmpty) return;
 
@@ -183,7 +280,9 @@ class TtsService extends ChangeNotifier {
       totalParagraphs: chapter.paragraphs.length,
     );
 
-    await audioHandler.speak(text);
+    // Áp dụng từ điển sửa phát âm
+    final processedText = applyPronunciationRules(text);
+    await audioHandler.speak(processedText);
     notifyListeners();
 
     // Lưu tiến độ đọc vào database tạm
@@ -195,6 +294,7 @@ class TtsService extends ChangeNotifier {
 
   Future<void> pauseSpeaking() async {
     LoggerService().log('TTS speaking paused', tag: 'TTS', level: LogLevel.tts);
+    _isPaused = true; // Đánh dấu đang pause để có thể resume
     await audioHandler.pause();
     notifyListeners();
   }
@@ -202,6 +302,12 @@ class TtsService extends ChangeNotifier {
   Future<void> togglePlayPause() async {
     if (isPlaying) {
       await pauseSpeaking();
+    } else if (_isPaused) {
+      // Resume từ chỗ đang dừng (Edge TTS: _edgePlayer.resume(), System TTS: re-speak)
+      LoggerService().log('TTS resuming from pause', tag: 'TTS', level: LogLevel.tts);
+      _isPaused = false;
+      await audioHandler.play();
+      notifyListeners();
     } else {
       await startSpeaking();
     }
@@ -290,7 +396,8 @@ class TtsService extends ChangeNotifier {
       if (tempChIdx >= _chapters.length) break;
       final ch = _chapters[tempChIdx];
       if (tempPgIdx < ch.paragraphs.length) {
-        nextParagraphs.add(ch.paragraphs[tempPgIdx]);
+        // Áp dụng từ điển sửa phát âm cho đoạn prefetch
+        nextParagraphs.add(applyPronunciationRules(ch.paragraphs[tempPgIdx]));
         tempPgIdx++;
       } else {
         tempChIdx++;
@@ -304,7 +411,21 @@ class TtsService extends ChangeNotifier {
   }
 
   void _onParagraphFinished() {
-    nextParagraph();
+    if (_activeBook == null || _chapters.isEmpty) return;
+    final chapter = _chapters[_currentChapterIndex];
+    if (_currentParagraphIndex >= chapter.paragraphs.length - 1 && _stopAtEndOfChapter) {
+      _stopAtEndOfChapter = false;
+      pauseSpeaking();
+      // Nhảy sang đầu chương tiếp theo nhưng không phát
+      if (_currentChapterIndex < _chapters.length - 1) {
+        _currentChapterIndex++;
+        _currentParagraphIndex = 0;
+        _onStateChanged(forceSpeak: false);
+      }
+      notifyListeners();
+    } else {
+      nextParagraph();
+    }
   }
 
   Future<AppSettings> getSettings() async {
