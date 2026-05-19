@@ -36,14 +36,78 @@ class EdgeTtsService {
   static const String voiceListUrl =
       "https://$baseUri/voices/list?trustedclienttoken=$trustedClientToken";
 
-  /// Sinh mã token bảo mật Sec-MS-GEC bằng Epoch Windows File Time (1601-01-01) làm tròn 5 phút
+  // Biến lưu độ lệch thời gian (clock skew) tính bằng giây
+  static double _clockSkewSeconds = 0.0;
+
+  /// Phân tích định dạng ngày Date chuẩn RFC 2616 sang DateTime
+  static DateTime? _parseRfc2616Date(String dateStr) {
+    try {
+      final parts = dateStr.split(' ');
+      if (parts.length < 5) return null;
+      
+      final day = int.parse(parts[1]);
+      final monthStr = parts[2];
+      final year = int.parse(parts[3]);
+      
+      final timeParts = parts[4].split(':');
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      final second = int.parse(timeParts[2]);
+      
+      const months = {
+        'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+        'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+      };
+      
+      final month = months[monthStr];
+      if (month == null) return null;
+      
+      return DateTime.utc(year, month, day, hour, minute, second);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Tự động đồng bộ hóa thời gian hệ thống với Bing Speech API để tính clock skew
+  static Future<void> adjustClockSkew() async {
+    try {
+      final chromiumFullVersion = "143.0.3650.75";
+      final chromiumMajorVersion = chromiumFullVersion.split(".")[0];
+      final url = Uri.parse(voiceListUrl);
+      
+      final response = await http.head(
+        url,
+        headers: {
+          "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajorVersion.0.0.0 Safari/537.36 Edg/$chromiumMajorVersion.0.0.0",
+        },
+      ).timeout(const Duration(seconds: 3));
+      
+      final serverDateHeader = response.headers['date'];
+      if (serverDateHeader != null) {
+        final serverTime = _parseRfc2616Date(serverDateHeader);
+        if (serverTime != null) {
+          final clientTime = DateTime.now().toUtc();
+          final diffMs = serverTime.difference(clientTime).inMilliseconds;
+          _clockSkewSeconds = diffMs / 1000.0;
+          print("EdgeTtsService: Adjusted clock skew by ${_clockSkewSeconds.toStringAsFixed(3)} seconds");
+        }
+      }
+    } catch (e) {
+      print("EdgeTtsService: Failed to adjust clock skew: $e");
+    }
+  }
+
+  /// Sinh mã token bảo mật Sec-MS-GEC bằng Epoch Windows File Time (1601-01-01) làm tròn 5 phút, có bù độ lệch thời gian
   static String generateSecMsGec() {
     const int winEpoch =
         11644473600; // Khoảng cách giây giữa Unix Epoch và Windows Epoch
 
-    // Lấy thời gian UTC hiện tại tính bằng giây
-    int ticks = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-    ticks += winEpoch;
+    // Lấy thời gian UTC hiện tại tính bằng giây và bù clock skew
+    double unixTimestamp = DateTime.now().toUtc().millisecondsSinceEpoch / 1000.0;
+    unixTimestamp += _clockSkewSeconds;
+
+    int ticks = unixTimestamp.toInt() + winEpoch;
     ticks -= ticks % 300; // Làm tròn xuống 5 phút (300 giây)
 
     // Đổi sang khoảng thời gian 100-nanosecond (Windows file time format)
@@ -152,20 +216,48 @@ class EdgeTtsService {
         "wss://$baseUri/edge/v1?TrustedClientToken=$trustedClientToken&ConnectionId=$connectionId&Sec-MS-GEC=$secMsGec&Sec-MS-GEC-Version=1-$chromiumFullVersion";
 
     WebSocket? ws;
+    final client = HttpClient();
+    client.userAgent = null; // Vô hiệu hóa User-Agent mặc định của Dart (tránh bị chặn 403)
+
     try {
-      ws = await WebSocket.connect(
-        wsUrlStr,
-        headers: {
-          "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajorVersion.0.0.0 Safari/537.36 Edg/$chromiumMajorVersion.0.0.0",
-          "Accept-Encoding": "gzip, deflate, br, zstd",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Pragma": "no-cache",
-          "Cache-Control": "no-cache",
-          "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
-          "Cookie": "muid=${generateMuid()};",
-        },
-      ).timeout(const Duration(seconds: 5));
+      try {
+        ws = await WebSocket.connect(
+          wsUrlStr,
+          headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajorVersion.0.0.0 Safari/537.36 Edg/$chromiumMajorVersion.0.0.0",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+            "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
+            "Cookie": "muid=${generateMuid()};",
+          },
+          customClient: client,
+        ).timeout(const Duration(seconds: 5));
+      } catch (e) {
+        print("EdgeTtsService: First connection attempt failed. Adjusting clock skew and retrying...");
+        await adjustClockSkew();
+        
+        final newSecMsGec = generateSecMsGec();
+        final newWsUrlStr =
+            "wss://$baseUri/edge/v1?TrustedClientToken=$trustedClientToken&ConnectionId=$connectionId&Sec-MS-GEC=$newSecMsGec&Sec-MS-GEC-Version=1-$chromiumFullVersion";
+            
+        ws = await WebSocket.connect(
+          newWsUrlStr,
+          headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$chromiumMajorVersion.0.0.0 Safari/537.36 Edg/$chromiumMajorVersion.0.0.0",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Pragma": "no-cache",
+            "Cache-Control": "no-cache",
+            "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
+            "Cookie": "muid=${generateMuid()};",
+          },
+          customClient: client,
+        ).timeout(const Duration(seconds: 5));
+      }
 
       // 1. Tạo chuỗi thời gian JavaScript
       final now = DateTime.now().toUtc();
