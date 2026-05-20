@@ -156,15 +156,22 @@ jobs:
 
       - name: Package into unsigned IPA
         run: |
+          APP_PATH=$(find build/ios -name "Runner.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: Runner.app not found. Available build output:"
+            find build/ios -type d | head -30
+            exit 1
+          fi
+          echo "Found Runner.app at: $APP_PATH"
           mkdir -p Payload
-          mv build/ios/iphoneos/Runner.app Payload/
-          zip -r NovelReader-iOS.ipa Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r AudireReader-iOS.ipa Payload
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NovelReader-iOS-IPA
-          path: NovelReader-iOS.ipa
+          name: AudireReader-iOS-IPA
+          path: AudireReader-iOS.ipa
 
   release:
     needs: [build-android, build-windows, build-ios]
@@ -173,27 +180,25 @@ jobs:
       - name: Download APK
         uses: actions/download-artifact@v4
         with:
-          name: NovelReader-Android-APK
+          name: AudireReader-Android-APK
 
       - name: Download Windows ZIP
         uses: actions/download-artifact@v4
         with:
-          name: NovelReader-Windows-ZIP
+          name: AudireReader-Windows-ZIP
 
       - name: Download iOS IPA
         uses: actions/download-artifact@v4
         with:
-          name: NovelReader-iOS-IPA
+          name: AudireReader-iOS-IPA
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            NovelReader-Android-arm64.apk
-            NovelReader-Android-arm32.apk
-            NovelReader-Android-x64.apk
-            NovelReader-Windows.zip
-            NovelReader-Windows-Setup.exe
-            NovelReader-iOS.ipa
+            AudireReader-Android-arm64.apk
+            AudireReader-Windows.zip
+            AudireReader-Windows-Setup.exe
+            AudireReader-iOS.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
