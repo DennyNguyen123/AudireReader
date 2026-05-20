@@ -110,6 +110,6 @@ jobs:
           plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
 
       - name: Patch iOS
-        run: shorebird patch ios
+        run: shorebird patch ios --no-codesign
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
