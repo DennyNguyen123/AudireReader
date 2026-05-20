@@ -33,6 +33,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch isar_flutter_libs Android SDK Version
+        run: |
+          for file in ~/.pub-cache/hosted/pub.dev/isar_flutter_libs-*/android/build.gradle; do
+            sed -i 's/compileSdkVersion 30/compileSdkVersion 34\n    namespace "dev.isar.isar_flutter_libs"/g' "$file"
+            sed -i 's/minSdkVersion 16/minSdkVersion 21/g' "$file"
+          done
+
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -46,6 +53,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Enable Git Long Paths
+        run: git config --system core.longpaths true
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -91,6 +101,13 @@ jobs:
 
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Configure iOS Permissions
+        run: |
+          PLIST_PATH="ios/Runner/Info.plist"
+          plutil -insert UIBackgroundModes -xml "<array><string>audio</string></array>" $PLIST_PATH || true
+          plutil -replace UISupportsDocumentBrowser -bool true $PLIST_PATH || true
+          plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
 
       - name: Patch iOS
         run: shorebird patch ios
