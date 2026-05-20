@@ -9,6 +9,7 @@ import '../models/chapter.dart';
 import '../models/progress.dart';
 import 'webdav_service.dart';
 import 'logger_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void print(Object? object) {
   final message = object?.toString() ?? '';
@@ -95,16 +96,19 @@ class SyncService {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
 
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
       if (!settings.webDavEnabled ||
           settings.webDavUrl.isEmpty ||
           settings.webDavUsername.isEmpty ||
-          settings.webDavPassword.isEmpty) {
+          webDavPassword.isEmpty) {
         _isSyncing = false;
         return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
       }
 
       // 1. Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, settings.webDavPassword);
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -424,15 +428,18 @@ class SyncService {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
 
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
       if (!settings.webDavEnabled ||
           settings.webDavUrl.isEmpty ||
           settings.webDavUsername.isEmpty ||
-          settings.webDavPassword.isEmpty) {
+          webDavPassword.isEmpty) {
         return false;
       }
 
       // Đảm bảo client đã khởi tạo
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, settings.webDavPassword);
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
 
       final localProg = await db.getProgress(bookUuid);
       final String remotePath = '/NovelReader/progress/$bookUuid.json';
@@ -548,15 +555,18 @@ class SyncService {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
 
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
       if (!settings.webDavEnabled ||
           settings.webDavUrl.isEmpty ||
           settings.webDavUsername.isEmpty ||
-          settings.webDavPassword.isEmpty) {
+          webDavPassword.isEmpty) {
         return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
       }
 
       // 1. Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, settings.webDavPassword);
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');

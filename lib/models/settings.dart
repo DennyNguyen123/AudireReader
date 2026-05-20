@@ -19,7 +19,6 @@ class AppSettings {
   bool webDavEnabled = false;
   String webDavUrl = '';
   String webDavUsername = '';
-  String webDavPassword = '';
   DateTime? webDavLastSync;
 
   bool openLastReadOnLaunch = false;

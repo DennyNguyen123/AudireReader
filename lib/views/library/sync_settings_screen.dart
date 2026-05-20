@@ -22,6 +22,7 @@ import 'developer_console_screen.dart';
 import 'pronunciation_dictionary_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SyncSettingsScreen extends StatefulWidget {
   const SyncSettingsScreen({super.key});
@@ -98,6 +99,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
+    const storage = FlutterSecureStorage();
+    final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
 
     setState(() {
       _webDavEnabled = settings.webDavEnabled;
@@ -105,7 +108,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _autoCheckUpdate = settings.autoCheckUpdate;
       _urlController.text = settings.webDavUrl;
       _usernameController.text = settings.webDavUsername;
-      _passwordController.text = settings.webDavPassword;
+      _passwordController.text = webDavPassword;
       _lastSync = settings.webDavLastSync;
 
       // Load cấu hình đọc sách
@@ -443,8 +446,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final settings = await db.getSettings();
     settings.webDavUrl = _urlController.text.trim();
     settings.webDavUsername = _usernameController.text.trim();
-    settings.webDavPassword = _passwordController.text;
     await db.saveSettings(settings);
+
+    const storage = FlutterSecureStorage();
+    await storage.write(key: 'webdav_password', value: _passwordController.text);
   }
 
   // --- Hotkeys Settings Operations ---

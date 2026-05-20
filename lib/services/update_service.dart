@@ -23,9 +23,9 @@ class UpdateService {
         final PackageInfo packageInfo = await PackageInfo.fromPlatform();
         final String currentVersion = packageInfo.version;
 
-        if (_isNewerVersion(currentVersion, latestVersion)) {
+        if (isNewerVersion(currentVersion, latestVersion)) {
           final String body = data['body'] ?? 'No release notes available.';
-          final String downloadUrl = _getDownloadUrl(data['assets'] ?? []);
+          final String downloadUrl = getDownloadUrl(data['assets'] ?? []);
           
           if (context.mounted) {
             _showUpdateDialog(context, latestVersion, body, downloadUrl);
@@ -51,7 +51,8 @@ class UpdateService {
     }
   }
 
-  static bool _isNewerVersion(String currentVersion, String latestVersion) {
+  @visibleForTesting
+  static bool isNewerVersion(String currentVersion, String latestVersion) {
     List<int> currentParts = currentVersion.split('+')[0].split('.').map(int.parse).toList();
     List<int> latestParts = latestVersion.split('+')[0].split('.').map(int.parse).toList();
 
@@ -65,7 +66,8 @@ class UpdateService {
     return latestParts.length > currentParts.length;
   }
 
-  static String _getDownloadUrl(List<dynamic> assets) {
+  @visibleForTesting
+  static String getDownloadUrl(List<dynamic> assets) {
     String fallbackUrl = 'https://github.com/$owner/$repo/releases/latest';
     
     // Ưu tiên cho Windows: Tìm file cài đặt .exe trước, sau đó mới tìm file nén .zip

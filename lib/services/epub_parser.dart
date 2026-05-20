@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:epubx/epubx.dart';
+import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
@@ -170,7 +171,7 @@ class EpubParser {
         final String htmlContent = epubChapter.HtmlContent ?? "";
 
         // Parse HTML to clean plain text paragraphs
-        final paragraphs = _parseHtmlToParagraphs(htmlContent);
+        final paragraphs = parseHtmlToParagraphs(htmlContent);
 
         if (paragraphs.isNotEmpty) {
           final chapter = Chapter()
@@ -203,7 +204,8 @@ class EpubParser {
     return ParsedBookData(book: book, chapters: chapters);
   }
 
-  static List<String> _parseHtmlToParagraphs(String htmlContent) {
+  @visibleForTesting
+  static List<String> parseHtmlToParagraphs(String htmlContent) {
     if (htmlContent.isEmpty) return [];
 
     final document = html_parser.parse(htmlContent);

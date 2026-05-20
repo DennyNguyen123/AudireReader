@@ -137,18 +137,13 @@ const AppSettingsSchema = CollectionSchema(
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
-    r'webDavPassword': PropertySchema(
-      id: 24,
-      name: r'webDavPassword',
-      type: IsarType.string,
-    ),
     r'webDavUrl': PropertySchema(
-      id: 25,
+      id: 24,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 26,
+      id: 25,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -198,7 +193,6 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.sortBy.length * 3;
   bytesCount += 3 + object.themeMode.length * 3;
   bytesCount += 3 + object.ttsProvider.length * 3;
-  bytesCount += 3 + object.webDavPassword.length * 3;
   bytesCount += 3 + object.webDavUrl.length * 3;
   bytesCount += 3 + object.webDavUsername.length * 3;
   return bytesCount;
@@ -234,9 +228,8 @@ void _appSettingsSerialize(
   writer.writeString(offsets[21], object.ttsProvider);
   writer.writeBool(offsets[22], object.webDavEnabled);
   writer.writeDateTime(offsets[23], object.webDavLastSync);
-  writer.writeString(offsets[24], object.webDavPassword);
-  writer.writeString(offsets[25], object.webDavUrl);
-  writer.writeString(offsets[26], object.webDavUsername);
+  writer.writeString(offsets[24], object.webDavUrl);
+  writer.writeString(offsets[25], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -271,9 +264,8 @@ AppSettings _appSettingsDeserialize(
   object.ttsProvider = reader.readString(offsets[21]);
   object.webDavEnabled = reader.readBool(offsets[22]);
   object.webDavLastSync = reader.readDateTimeOrNull(offsets[23]);
-  object.webDavPassword = reader.readString(offsets[24]);
-  object.webDavUrl = reader.readString(offsets[25]);
-  object.webDavUsername = reader.readString(offsets[26]);
+  object.webDavUrl = reader.readString(offsets[24]);
+  object.webDavUsername = reader.readString(offsets[25]);
   return object;
 }
 
@@ -335,8 +327,6 @@ P _appSettingsDeserializeProp<P>(
     case 24:
       return (reader.readString(offset)) as P;
     case 25:
-      return (reader.readString(offset)) as P;
-    case 26:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2828,142 +2818,6 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'webDavPassword',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'webDavPassword',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'webDavPassword',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'webDavPassword',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
-      webDavPasswordIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'webDavPassword',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       webDavUrlEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -3561,19 +3415,6 @@ extension AppSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByWebDavPassword() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'webDavPassword', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      sortByWebDavPasswordDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'webDavPassword', Sort.desc);
-    });
-  }
-
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByWebDavUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'webDavUrl', Sort.asc);
@@ -3931,19 +3772,6 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByWebDavPassword() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'webDavPassword', Sort.asc);
-    });
-  }
-
-  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
-      thenByWebDavPasswordDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'webDavPassword', Sort.desc);
-    });
-  }
-
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByWebDavUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'webDavUrl', Sort.asc);
@@ -4146,14 +3974,6 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
-  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByWebDavPassword(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'webDavPassword',
-          caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByWebDavUrl(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -4331,12 +4151,6 @@ extension AppSettingsQueryProperty
       webDavLastSyncProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'webDavLastSync');
-    });
-  }
-
-  QueryBuilder<AppSettings, String, QQueryOperations> webDavPasswordProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'webDavPassword');
     });
   }
 

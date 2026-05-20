@@ -17,6 +17,7 @@ import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -73,13 +74,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _loadSyncStatus() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
+    const storage = FlutterSecureStorage();
+    final password = await storage.read(key: 'webdav_password') ?? '';
     if (mounted) {
       setState(() {
         _lastSyncTime = settings.webDavLastSync;
         _webDavEnabled = settings.webDavEnabled &&
             settings.webDavUrl.trim().isNotEmpty &&
             settings.webDavUsername.trim().isNotEmpty &&
-            settings.webDavPassword.trim().isNotEmpty;
+            password.trim().isNotEmpty;
       });
     }
   }
@@ -474,7 +477,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     // Tông màu tối hiện đại, cao cấp
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     final filteredBooks = _books.where((book) {
       final searchLower = _searchQuery.toLowerCase();

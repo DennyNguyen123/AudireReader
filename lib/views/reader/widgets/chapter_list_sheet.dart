@@ -1,0 +1,354 @@
+import 'package:flutter/material.dart';
+import '../../../models/bookmark.dart';
+import '../../../models/highlight.dart';
+import '../../../services/tts_service.dart';
+import '../../../core/database/database_helper.dart';
+
+class ChapterListSheet extends StatefulWidget {
+  final TtsService ttsService;
+  final List<Bookmark> bookmarks;
+  final List<Highlight> highlights;
+  final bool isDark;
+  final Color textColor;
+  final Color sheetBg;
+  final Future<void> Function() onRefreshData; // Gọi khi xóa bookmark/highlight để load lại dữ liệu ở màn hình chính
+  final Future<void> Function() onUpdateBookmarkState; // Cập nhật lại icon bookmark ở AppBar
+  final ScrollController? scrollController;
+
+  const ChapterListSheet({
+    super.key,
+    required this.ttsService,
+    required this.bookmarks,
+    required this.highlights,
+    required this.isDark,
+    required this.textColor,
+    required this.sheetBg,
+    required this.onRefreshData,
+    required this.onUpdateBookmarkState,
+    this.scrollController,
+  });
+
+  @override
+  State<ChapterListSheet> createState() => _ChapterListSheetState();
+}
+
+class _ChapterListSheetState extends State<ChapterListSheet> {
+  String _chapterSearchQuery = '';
+  late List<Bookmark> _localBookmarks;
+  late List<Highlight> _localHighlights;
+
+  @override
+  void initState() {
+    super.initState();
+    _localBookmarks = List.from(widget.bookmarks);
+    _localHighlights = List.from(widget.highlights);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChapterListSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.bookmarks != oldWidget.bookmarks) {
+      _localBookmarks = List.from(widget.bookmarks);
+    }
+    if (widget.highlights != oldWidget.highlights) {
+      _localHighlights = List.from(widget.highlights);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chapters = widget.ttsService.chapters;
+    final currentChapterIdx = widget.ttsService.currentChapterIndex;
+
+    final filteredChapters = chapters.asMap().entries.where((entry) {
+      final title = entry.value.title.toLowerCase();
+      final query = _chapterSearchQuery.toLowerCase();
+      return title.contains(query);
+    }).toList();
+
+    return DefaultTabController(
+      length: 3,
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: widget.isDark ? Colors.white24 : Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            TabBar(
+              labelColor: Colors.amber[700],
+              unselectedLabelColor: widget.textColor.withValues(alpha: 0.6),
+              indicatorColor: Colors.amber[700],
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(text: 'Chapters', icon: Icon(Icons.format_list_bulleted_rounded, size: 20)),
+                Tab(text: 'Bookmarks', icon: Icon(Icons.bookmark_rounded, size: 20)),
+                Tab(text: 'Highlights', icon: Icon(Icons.border_color_rounded, size: 20)),
+              ],
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: TextField(
+                          style: TextStyle(color: widget.textColor),
+                          decoration: InputDecoration(
+                            hintText: 'Search chapters...',
+                            hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                            prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
+                            filled: true,
+                            fillColor: widget.isDark ? Colors.white10 : Colors.black12,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              _chapterSearchQuery = val;
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: filteredChapters.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No chapters match your search',
+                                  style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: widget.scrollController,
+                                itemCount: filteredChapters.length,
+                                itemBuilder: (context, index) {
+                                  final entry = filteredChapters[index];
+                                  final originalIndex = entry.key;
+                                  final chapter = entry.value;
+                                  final isCurrent = originalIndex == currentChapterIdx;
+
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                                    title: Text(
+                                      chapter.title,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                        color: isCurrent 
+                                            ? (widget.isDark ? Colors.amber[400] : Colors.amber[800])
+                                            : widget.textColor,
+                                      ),
+                                    ),
+                                    trailing: isCurrent 
+                                        ? Icon(
+                                            Icons.volume_up_rounded, 
+                                            color: widget.isDark ? Colors.amber[400] : Colors.amber[800]
+                                          ) 
+                                        : null,
+                                    tileColor: isCurrent 
+                                        ? (widget.isDark ? Colors.amber[900]!.withValues(alpha: 0.1) : Colors.amber[50]!)
+                                        : null,
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      widget.ttsService.jumpToChapter(originalIndex);
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                  _localBookmarks.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No bookmarks saved yet',
+                            style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: widget.scrollController,
+                          itemCount: _localBookmarks.length,
+                          separatorBuilder: (context, index) => Divider(color: widget.isDark ? Colors.white10 : Colors.black12, height: 1),
+                          itemBuilder: (context, index) {
+                            final b = _localBookmarks[index];
+                            final chTitle = b.chapterIndex < chapters.length ? chapters[b.chapterIndex].title : 'Chapter ${b.chapterIndex + 1}';
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              title: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      chTitle,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.amber),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Paragraph ${b.paragraphIndex + 1}',
+                                    style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  b.contentSnippet,
+                                  style: TextStyle(fontSize: 13, color: widget.textColor, fontStyle: FontStyle.italic),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                onPressed: () async {
+                                  final db = await DatabaseHelper.getInstance();
+                                  await db.deleteBookmark(b.id);
+                                  await widget.onRefreshData();
+                                  await widget.onUpdateBookmarkState();
+                                  if (mounted) {
+                                    setState(() {
+                                      _localBookmarks.removeAt(index);
+                                    });
+                                  }
+                                },
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                widget.ttsService.jumpToChapter(b.chapterIndex);
+                                widget.ttsService.jumpToParagraph(b.paragraphIndex);
+                              },
+                            );
+                          },
+                        ),
+                  _localHighlights.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No highlights saved yet',
+                            style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: widget.scrollController,
+                          itemCount: _localHighlights.length,
+                          separatorBuilder: (context, index) => Divider(color: widget.isDark ? Colors.white10 : Colors.black12, height: 1),
+                          itemBuilder: (context, index) {
+                            final h = _localHighlights[index];
+                            final chTitle = h.chapterIndex < chapters.length ? chapters[h.chapterIndex].title : 'Chapter ${h.chapterIndex + 1}';
+                            
+                            Color hColor = Colors.yellow;
+                            if (h.colorHex.toLowerCase() == '#ff4caf50' || h.colorHex.toLowerCase() == '0xff4caf50') {
+                              hColor = Colors.green;
+                            } else if (h.colorHex.toLowerCase() == '#ff2196f3' || h.colorHex.toLowerCase() == '0xff2196f3') {
+                              hColor = Colors.blue;
+                            }
+                            
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              title: Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: hColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      chTitle,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Paragraph ${h.paragraphIndex + 1}',
+                                    style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: hColor.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: hColor.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Text(
+                                        h.text,
+                                        style: TextStyle(fontSize: 13, color: widget.textColor),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  if (h.note != null && h.note!.isNotEmpty) ...[
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.sticky_note_2_rounded, size: 14, color: Colors.amber),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            h.note!,
+                                            style: TextStyle(fontSize: 12, color: widget.textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                onPressed: () async {
+                                  final db = await DatabaseHelper.getInstance();
+                                  await db.deleteHighlight(h.id);
+                                  await widget.onRefreshData();
+                                  if (mounted) {
+                                    setState(() {
+                                      _localHighlights.removeAt(index);
+                                    });
+                                  }
+                                },
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                widget.ttsService.jumpToChapter(h.chapterIndex);
+                                widget.ttsService.jumpToParagraph(h.paragraphIndex);
+                              },
+                            );
+                          },
+                        ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
