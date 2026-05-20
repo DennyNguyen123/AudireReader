@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.novelspace.reader" "\0"
-            VALUE "FileDescription", "novel_reader" "\0"
+            VALUE "CompanyName", "com.dennynguyen123" "\0"
+            VALUE "FileDescription", "AudireReader" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "novel_reader" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.novelspace.reader. All rights reserved." "\0"
-            VALUE "OriginalFilename", "novel_reader.exe" "\0"
-            VALUE "ProductName", "novel_reader" "\0"
+            VALUE "InternalName", "audire_reader" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.dennynguyen123. All rights reserved." "\0"
+            VALUE "OriginalFilename", "audire_reader.exe" "\0"
+            VALUE "ProductName", "AudireReader" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

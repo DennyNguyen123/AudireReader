@@ -58,7 +58,21 @@ class LoggerService extends ChangeNotifier {
       error: error,
     );
 
-    if (kDebugMode || _enableDebugLogs) {
+    bool shouldPrintToConsole = kDebugMode || _enableDebugLogs;
+    
+    // Các tag nội bộ chỉ in ra Console khi người dùng bật enableDebugLogs trong Developer Settings
+    // kDebugMode (môi trường flutter run) không tự động in các log này ra nữa
+    const suppressedTags = {'WEBDAV', 'SYNC', 'TTS'};
+    if (suppressedTags.contains(tag) && !_enableDebugLogs) {
+      // Ngoại lệ: WEBDAV chỉ in khi bật riêng cờ _enableWebDavDebug
+      if (tag == 'WEBDAV' && _enableWebDavDebug) {
+        shouldPrintToConsole = true;
+      } else {
+        shouldPrintToConsole = false;
+      }
+    }
+
+    if (shouldPrintToConsole) {
       final consoleMsg = '[$tag][${entry.levelName}] $message${error != null ? ' | Error: $error' : ''}';
       debugPrint(consoleMsg);
     }

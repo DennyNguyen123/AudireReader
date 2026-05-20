@@ -8,6 +8,7 @@ import 'core/theme_notifier.dart';
 import 'core/database/database_helper.dart';
 import 'views/library/library_screen.dart';
 import 'services/tts_service.dart';
+import 'services/logger_service.dart';
 
 void main() async {
   // Đảm bảo bindings được khởi tạo hoàn chỉnh trước khi chạy các service chạy nền
@@ -27,6 +28,10 @@ void main() async {
   final db = await DatabaseHelper.getInstance();
   final settings = await db.getSettings();
   ThemeNotifier.instance.init(settings.themeMode);
+  LoggerService().init(
+    enableDebugLogs: settings.enableDebugLogs,
+    enableWebDavDebug: settings.enableWebDavDebug,
+  );
 
   runApp(const AudireReaderApp());
 }

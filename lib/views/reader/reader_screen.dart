@@ -1,9 +1,10 @@
-// ignore_for_file: deprecated_member_use, avoid_print
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart' hide print;
 import '../../services/sync_service.dart' hide print;
+import '../../services/logger_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
@@ -71,7 +72,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     if (_isInitialized) {
       final book = _ttsService.activeBook;
       if (book != null) {
-        print('[ReaderScreen] Auto-syncing progress on exit/pause for "${book.title}"...');
+        LoggerService().log('[ReaderScreen] Auto-syncing progress on exit/pause for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
         SyncService.getInstance().syncBookProgress(book.uuid);
       }
     }
@@ -80,10 +81,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   Future<void> _syncActiveBookProgressOnEntry() async {
     final book = _ttsService.activeBook;
     if (book != null) {
-      print('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...');
+      LoggerService().log('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
       final localDatabaseChanged = await SyncService.getInstance().syncBookProgress(book.uuid);
       if (localDatabaseChanged && mounted) {
-        print('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...');
+        LoggerService().log('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...', tag: 'SYNC', level: LogLevel.info);
         final db = await DatabaseHelper.getInstance();
         final progress = await db.getProgress(book.uuid);
         if (progress != null) {
@@ -119,7 +120,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         });
       }
     } catch (e) {
-      print("Failed to update bookmark state: $e");
+      LoggerService().log('Failed to update bookmark state', tag: 'APP', level: LogLevel.error, error: e.toString());
     }
   }
 
@@ -144,7 +145,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         });
       }
     } catch (e) {
-      print("Failed to load bookmarks and highlights: $e");
+      LoggerService().log('Failed to load bookmarks and highlights', tag: 'APP', level: LogLevel.error, error: e.toString());
     }
   }
 
@@ -177,7 +178,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       await _updateBookmarkState();
       await _loadBookmarksAndHighlights();
     } catch (e) {
-      print("Failed to toggle bookmark: $e");
+      LoggerService().log('Failed to toggle bookmark', tag: 'APP', level: LogLevel.error, error: e.toString());
     }
   }
 
@@ -449,7 +450,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         _selectedVoice = initialVoice;
       });
     } catch (e) {
-      print("Failed to load voices: $e");
+      LoggerService().log('Failed to load voices', tag: 'APP', level: LogLevel.error, error: e.toString());
     }
   }
 

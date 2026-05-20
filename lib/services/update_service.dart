@@ -19,47 +19,11 @@ class UpdateService {
 
       final status = await _updater.checkForUpdate();
       if (status == UpdateStatus.outdated) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Downloading a background update patch, please wait...'),
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-
+        // Tải bản vá âm thầm trong background
+        // Bản vá sẽ tự động được áp dụng vào lần mở app (cold start) tiếp theo.
         await _updater.update();
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Update downloaded. Please restart the app to apply changes.'),
-              duration: const Duration(seconds: 15),
-              action: SnackBarAction(
-                label: 'RESTART NOW',
-                onPressed: () {
-                  exit(0);
-                },
-              ),
-            ),
-          );
-        }
-      } else if (status == UpdateStatus.restartRequired) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('An update is ready. Please restart the app to apply changes.'),
-              duration: const Duration(seconds: 15),
-              action: SnackBarAction(
-                label: 'RESTART NOW',
-                onPressed: () {
-                  exit(0);
-                },
-              ),
-            ),
-          );
-        }
       }
+      // Không cần hiển thị UI hay yêu cầu restart ép buộc người dùng.
     } catch (e) {
       debugPrint('Error checking Shorebird updates: $e');
     }

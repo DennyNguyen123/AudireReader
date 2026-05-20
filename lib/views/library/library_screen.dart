@@ -4,15 +4,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:isar/isar.dart';
+import 'package:path/path.dart' as path;
 import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
 import '../../core/utils/path_helper.dart';
 import '../../models/book.dart';
 import '../../models/progress.dart';
 import '../../services/epub_parser.dart';
+import '../../services/txt_parser.dart';
+import '../../services/pdf_parser.dart';
+import '../../services/docx_parser.dart';
 import '../../services/tts_service.dart' hide print;
 import '../reader/reader_screen.dart';
 import '../../services/sync_service.dart' hide print;
+import '../../services/logger_service.dart';
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -324,11 +329,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     await _loadBooks();
   }
 
-  Future<void> _importEpub() async {
+  Future<void> _importBook() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['epub'],
+        allowedExtensions: ['epub', 'txt', 'pdf', 'docx'],
       );
 
       if (result == null || result.files.single.path == null) return;
@@ -342,7 +347,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
       // Chạy parser trong background isolate để tránh đơ giao diện
       final parsedData = await compute(
-        _parseEpubIsolate,
+        _parseBookIsolate,
         {
           'filePath': filePath,
           'docDirPath': docDir.path,
@@ -364,7 +369,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import EPUB: $e')),
+          SnackBar(content: Text('Failed to import book: $e')),
         );
       }
     } finally {
@@ -377,10 +382,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // Hàm chạy riêng trong isolate
-  static Future<ParsedBookData> _parseEpubIsolate(Map<String, String> args) async {
+  static Future<ParsedBookData> _parseBookIsolate(Map<String, String> args) async {
     final filePath = args['filePath']!;
     final docDirPath = args['docDirPath']!;
-    return await EpubParser.parseEpubFile(filePath, docDirPath);
+    final extension = path.extension(filePath).toLowerCase();
+
+    if (extension == '.epub') {
+      return await EpubParser.parseEpubFile(filePath, docDirPath);
+    } else if (extension == '.txt') {
+      return await TxtParser.parseTxtFile(filePath);
+    } else if (extension == '.pdf') {
+      return await PdfParser.parsePdfFile(filePath);
+    } else if (extension == '.docx') {
+      return await DocxParser.parseDocxFile(filePath);
+    } else {
+      throw Exception("Unsupported file format");
+    }
   }
 
   Future<void> _deleteBook(Book book) async {
@@ -392,7 +409,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final settings = await db.getSettings();
     if (settings.webDavEnabled) {
       SyncService.getInstance().deleteBookFromCloud(book.uuid).then((result) {
-        print('[Sync] Cloud deletion result for "${book.title}": ${result.message}');
+        LoggerService().log('[Sync] Cloud deletion result for "${book.title}": ${result.message}', tag: 'SYNC', level: LogLevel.info);
       });
     }
 
@@ -713,7 +730,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Tap the "+" button to import an EPUB book',
+                              'Tap the "+" button to import a book (.epub, .txt, .pdf, .docx)',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark ? Colors.white38 : Colors.black38,
@@ -781,7 +798,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                     SizedBox(height: 16),
                     Text(
-                      'Parsing EPUB content...',
+                      'Parsing book content...',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -794,12 +811,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _importEpub,
+        onPressed: _importBook,
         backgroundColor: Colors.amber[700],
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
-          'Import EPUB',
+          'Import Book',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),

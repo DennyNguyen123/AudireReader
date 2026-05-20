@@ -27,8 +27,8 @@ class EpubParser {
     
     // Cách 1: Đọc ảnh bìa chuẩn qua metadata (CoverImage)
     try {
-      print("Total files in EPUB: ${epubBook.Content?.AllFiles?.length}");
-      print("Total images in EPUB: ${epubBook.Content?.Images?.length}");
+      if (kDebugMode) debugPrint("Total files in EPUB: ${epubBook.Content?.AllFiles?.length}");
+      if (kDebugMode) debugPrint("Total images in EPUB: ${epubBook.Content?.Images?.length}");
       
       final coverImage = epubBook.CoverImage;
       if (coverImage != null) {
@@ -41,10 +41,10 @@ class EpubParser {
         final pngBytes = img.encodePng(coverImage);
         await savedCoverFile.writeAsBytes(pngBytes);
         coverPath = savedCoverFile.path;
-        print("Method 1 (CoverImage) succeeded!");
+        if (kDebugMode) debugPrint("Method 1 (CoverImage) succeeded!");
       }
     } catch (e) {
-      print("Method 1 (epubBook.CoverImage) failed: $e");
+      if (kDebugMode) debugPrint("Method 1 (epubBook.CoverImage) failed: $e");
     }
 
     // Cách 2: Quét file raw trong Content.Images nếu Cách 1 trống hoặc lỗi
@@ -79,12 +79,12 @@ class EpubParser {
               final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
               await savedCoverFile.writeAsBytes(contentBytes);
               coverPath = savedCoverFile.path;
-              print("Method 2 (Images scanning) succeeded with: $coverKey");
+              if (kDebugMode) debugPrint("Method 2 (Images scanning) succeeded with: $coverKey");
             }
           }
         }
       } catch (e) {
-        print("Method 2 (Images scanning) failed: $e");
+        if (kDebugMode) debugPrint("Method 2 (Images scanning) failed: $e");
       }
     }
 
@@ -151,13 +151,13 @@ class EpubParser {
                 final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
                 await savedCoverFile.writeAsBytes(contentBytes);
                 coverPath = savedCoverFile.path;
-                print("Method 3 (AllFiles scanning) succeeded with: $coverKey");
+                if (kDebugMode) debugPrint("Method 3 (AllFiles scanning) succeeded with: $coverKey");
               }
             }
           }
         }
       } catch (e) {
-        print("Method 3 (AllFiles scanning) failed: $e");
+        if (kDebugMode) debugPrint("Method 3 (AllFiles scanning) failed: $e");
       }
     }
 
@@ -208,7 +208,15 @@ class EpubParser {
   static List<String> parseHtmlToParagraphs(String htmlContent) {
     if (htmlContent.isEmpty) return [];
 
-    final document = html_parser.parse(htmlContent);
+    // Chuyển đổi các thẻ ngắt dòng tự động hoặc kết thúc thẻ thành ký tự xuống dòng
+    // để tránh các dòng văn bản bị dính liền khi lấy text thô qua body.text
+    final formattedHtml = htmlContent
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'</p>', caseSensitive: false), '</p>\n')
+        .replaceAll(RegExp(r'</div>', caseSensitive: false), '</div>\n')
+        .replaceAll(RegExp(r'</span>', caseSensitive: false), '</span>\n');
+
+    final document = html_parser.parse(formattedHtml);
     final body = document.body;
     if (body == null) return [];
 
@@ -225,10 +233,19 @@ class EpubParser {
       }
     }
 
-    // Nếu không tìm thấy thẻ đoạn văn tiêu chuẩn nào, phân tách theo dòng
-    if (cleanParas.isEmpty) {
-      final txt = body.text.trim();
-      return txt
+    final rawText = body.text.trim();
+    final int totalCleanLength = cleanParas.fold<int>(0, (sum, p) => sum + p.length);
+
+    // Nếu không tìm thấy thẻ đoạn văn tiêu chuẩn nào,
+    // HOẶC nếu tìm thấy nhưng tổng lượng văn bản trích xuất được quá nhỏ so với văn bản thô của body
+    // (chênh lệch giữa văn bản thô và phần trích xuất > 40 ký tự, và phần trích xuất chiếm dưới 70% tổng văn bản thô),
+    // chứng tỏ nội dung truyện đang nằm ở các thẻ khác như div, span, text tự do...
+    // Chúng ta sẽ fallback sang phân tách toàn bộ văn bản thô theo dòng.
+    final bool isMissingSignificantContent = (rawText.length - totalCleanLength > 40) && 
+                                              (totalCleanLength < rawText.length * 0.7);
+
+    if (cleanParas.isEmpty || isMissingSignificantContent) {
+      return rawText
           .split('\n')
           .map((e) => e.trim().replaceAll(RegExp(r'\s+'), ' '))
           .where((e) => e.length > 2)

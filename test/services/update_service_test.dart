@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:novel_reader/services/update_service.dart';
+import 'package:audire_reader/services/update_service.dart';
 
 void main() {
   group('UpdateService.isNewerVersion', () {

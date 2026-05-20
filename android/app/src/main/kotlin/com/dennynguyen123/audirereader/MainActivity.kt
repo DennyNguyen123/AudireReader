@@ -1,4 +1,4 @@
-package com.novelspace.reader.novel_reader
+package com.dennynguyen123.audirereader
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

@@ -98,18 +98,18 @@ jobs:
         run: dart run inno_bundle --no-app
 
       - name: Compress Windows Build
-        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath NovelReader-Windows.zip
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AudireReader-Windows.zip
 
       - name: Rename Installer
-        run: Move-Item build\windows\x64\installer\Release\*.exe NovelReader-Windows-Setup.exe
+        run: Move-Item build\windows\x64\installer\Release\*.exe AudireReader-Windows-Setup.exe
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NovelReader-Windows-ZIP
+          name: AudireReader-Windows-ZIP
           path: |
-            NovelReader-Windows.zip
-            NovelReader-Windows-Setup.exe
+            AudireReader-Windows.zip
+            AudireReader-Windows-Setup.exe
 
   build-ios:
     runs-on: macos-latest
@@ -175,7 +175,7 @@ jobs:
       - name: Download Windows ZIP
         uses: actions/download-artifact@v4
         with:
-          name: NovelReader-Windows-ZIP
+          name: AudireReader-Windows-ZIP
 
       - name: Download iOS IPA
         uses: actions/download-artifact@v4
@@ -187,8 +187,8 @@ jobs:
         with:
           files: |
             AudireReader-Android-arm64.apk
-            NovelReader-Windows.zip
-            NovelReader-Windows-Setup.exe
+            AudireReader-Windows.zip
+            AudireReader-Windows-Setup.exe
             AudireReader-iOS.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
