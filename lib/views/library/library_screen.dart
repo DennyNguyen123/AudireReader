@@ -15,6 +15,8 @@ import '../reader/reader_screen.dart';
 import '../../services/sync_service.dart' hide print;
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -39,11 +41,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   DateTime? _lastSyncTime;
   bool _isSyncing = false;
   bool _webDavEnabled = false;
+  String _appVersion = '';
+  bool _syncFailed = false;
 
   @override
   void initState() {
     super.initState();
     _loadSyncStatus();
+    _loadAppVersion();
     _loadBooks().then((_) {
       _triggerAutoSync();
       // Tự động mở sách đọc gần nhất sau khi dựng xong frame đầu tiên để tránh lỗi thread điều hướng
@@ -52,6 +57,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
         _checkUpdateOnLaunch();
       });
     });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = packageInfo.version;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadSyncStatus() async {
@@ -66,6 +82,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
             settings.webDavPassword.trim().isNotEmpty;
       });
     }
+  }
+
+  Color _getSyncBadgeColor() {
+    if (_syncFailed) {
+      return Colors.redAccent;
+    }
+    if (_lastSyncTime == null) {
+      return Colors.amber;
+    }
+    final now = DateTime.now();
+    final difference = now.difference(_lastSyncTime!);
+    if (difference.inHours < 24) {
+      return Colors.green;
+    }
+    return Colors.amber;
   }
 
   String _formatLastSyncTime() {
@@ -111,6 +142,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     
     setState(() {
       _isSyncing = true;
+      _syncFailed = false;
     });
     
     try {
@@ -122,6 +154,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
+        setState(() {
+          _syncFailed = !result.success;
+        });
       }
       if (result.success && result.localChanged) {
         await _loadBooks();
@@ -131,6 +166,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sync error: $e'), backgroundColor: Colors.redAccent),
         );
+        setState(() {
+          _syncFailed = true;
+        });
       }
     } finally {
       await _loadSyncStatus();
@@ -436,6 +474,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     // Tông màu tối hiện đại, cao cấp
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     final filteredBooks = _books.where((book) {
       final searchLower = _searchQuery.toLowerCase();
@@ -458,71 +497,52 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Novel Shelf',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 24,
-                letterSpacing: -0.5,
+            Flexible(
+              child: const Text(
+                'Shelf',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
-            if (_webDavEnabled) ...[
-              const SizedBox(width: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _isSyncing
-                        ? SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
-                            ),
-                          )
-                        : GestureDetector(
-                            onTap: _startManualSync,
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Icon(
-                                Icons.sync_rounded,
-                                size: 16,
-                                color: Colors.amber[700],
-                              ),
-                            ),
-                          ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isSyncing ? 'Syncing...' : 'Sync: ${_formatLastSyncTime()}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white60 : Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sort_rounded),
-            onPressed: _showSortMenu,
-          ),
+          if (_webDavEnabled)
+            _isSyncing
+                ? SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                        ),
+                      ),
+                    ),
+                  )
+                : Tooltip(
+                    message: _lastSyncTime == null
+                        ? 'Never synced'
+                        : 'Last synced: ${_formatLastSyncTime()}',
+                    child: IconButton(
+                      icon: Badge(
+                        backgroundColor: _getSyncBadgeColor(),
+                        child: const Icon(Icons.sync_rounded),
+                      ),
+                      onPressed: _startManualSync,
+                    ),
+                  ),
           IconButton(
             icon: const Icon(Icons.settings_rounded),
             onPressed: () {
@@ -536,6 +556,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 _loadSyncStatus();
               });
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: _showAboutDialog,
           ),
         ],
       ),
@@ -569,48 +593,70 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         },
                       ),
                     ),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Row(
-                        children: [
-                          _buildFilterChip('All', _selectedStatus == 'All', (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedStatus = 'All';
-                              });
-                              _loadBooks();
-                            }
-                          }),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Unread', _selectedStatus == 'unread', (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedStatus = 'unread';
-                              });
-                              _loadBooks();
-                            }
-                          }),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Reading', _selectedStatus == 'reading', (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedStatus = 'reading';
-                              });
-                              _loadBooks();
-                            }
-                          }),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Completed', _selectedStatus == 'completed', (selected) {
-                            if (selected) {
-                              setState(() {
-                                _selectedStatus = 'completed';
-                              });
-                              _loadBooks();
-                            }
-                          }),
-                        ],
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            child: Row(
+                              children: [
+                                _buildFilterChip('All', _selectedStatus == 'All', (selected) {
+                                  if (selected) {
+                                    setState(() {
+                                      _selectedStatus = 'All';
+                                    });
+                                    _loadBooks();
+                                  }
+                                }),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Unread', _selectedStatus == 'unread', (selected) {
+                                  if (selected) {
+                                    setState(() {
+                                      _selectedStatus = 'unread';
+                                    });
+                                    _loadBooks();
+                                  }
+                                }),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Reading', _selectedStatus == 'reading', (selected) {
+                                  if (selected) {
+                                    setState(() {
+                                      _selectedStatus = 'reading';
+                                    });
+                                    _loadBooks();
+                                  }
+                                }),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Completed', _selectedStatus == 'completed', (selected) {
+                                  if (selected) {
+                                    setState(() {
+                                      _selectedStatus = 'completed';
+                                    });
+                                    _loadBooks();
+                                  }
+                                }),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: Tooltip(
+                            message: 'Sort options',
+                            child: IconButton(
+                              icon: const Icon(Icons.sort_rounded, size: 20),
+                              onPressed: _showSortMenu,
+                              style: IconButton.styleFrom(
+                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                                foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.all(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     if (_allTags.length > 1)
                       SingleChildScrollView(
@@ -979,6 +1025,130 @@ class _LibraryScreenState extends State<LibraryScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
       onSelected: onSelected,
+    );
+  }
+
+  void _showAboutDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 64,
+                  height: 64,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Audire Reader',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Version ${_appVersion.isEmpty ? '1.1.12' : _appVersion}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, thickness: 1),
+              const SizedBox(height: 16),
+              _buildInfoRow('Author', 'Denny Nguyen', isDark),
+              const SizedBox(height: 10),
+              _buildInfoRow('License', 'MIT License', isDark),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () async {
+                  final Uri url = Uri.parse('https://github.com/DennyNguyen123/AudireReader');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'GitHub',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'github.com/DennyNguyen123/AudireReader',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.amber[700],
+                            decoration: TextDecoration.underline,
+                          ),
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Close',
+                style: TextStyle(
+                  color: Colors.amber[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 }

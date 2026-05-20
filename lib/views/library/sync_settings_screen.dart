@@ -21,6 +21,7 @@ import '../../services/logger_service.dart';
 import 'developer_console_screen.dart';
 import 'pronunciation_dictionary_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SyncSettingsScreen extends StatefulWidget {
   const SyncSettingsScreen({super.key});
@@ -61,6 +62,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   String _selectedLanguageFilter = 'all';
   final _voiceSearchController = TextEditingController();
   String _voiceSearchQuery = '';
+  String _appVersion = '';
 
   // Hotkeys & Boss Key States
   String _hotkeyNextParagraph = 'Arrow Down';
@@ -136,6 +138,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     });
 
     await _loadVoices(settings);
+
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = packageInfo.version;
+        });
+      }
+    } catch (_) {}
 
     setState(() {
       _isLoading = false;
@@ -2052,6 +2063,20 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           ),
                         ],
                         const SizedBox(height: 20),
+                        if (_appVersion.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            child: Center(
+                              child: Text(
+                                'Version $_appVersion',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

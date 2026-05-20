@@ -81,7 +81,7 @@ class TtsService extends ChangeNotifier {
       builder: () => MyAudioHandler(),
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.novelspace.reader.channel.audio',
-        androidNotificationChannelName: 'Novel Reader Audio Playback',
+        androidNotificationChannelName: 'Audire Reader Audio Playback',
         androidNotificationOngoing: true,
       ),
     );

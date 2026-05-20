@@ -93,7 +93,7 @@ class NovelReaderApp extends StatelessWidget {
         }
 
         return MaterialApp(
-          title: 'Novel Reader',
+          title: 'Audire Reader',
           debugShowCheckedModeBanner: false,
           theme: customTheme ?? ThemeData(
             brightness: Brightness.light,

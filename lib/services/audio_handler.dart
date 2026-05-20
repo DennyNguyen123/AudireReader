@@ -435,7 +435,7 @@ try {
       id: 'tts_paragraph_$paragraphIndex',
       album: bookTitle,
       title: chapterTitle,
-      artist: 'Novel Reader',
+      artist: 'Audire Reader',
       duration: Duration(seconds: totalParagraphs), // Duration giả lập hiển thị
     ));
   }

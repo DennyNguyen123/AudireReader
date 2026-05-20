@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
   static const String owner = 'DennyNguyen123';
-  static const String repo = 'NovelReader';
+  static const String repo = 'AudireReader';
 
   static Future<void> checkForUpdate(BuildContext context, {bool showNoUpdateMessage = false}) async {
     try {

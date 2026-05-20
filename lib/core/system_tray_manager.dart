@@ -19,14 +19,14 @@ class AppTrayManager with TrayListener {
     );
     
     // Khắc phục triệt để lỗi hiển thị rác unicode (ToolTip bắt buộc phải set)
-    await trayManager.setToolTip('Novel Reader');
+    await trayManager.setToolTip('Audire Reader');
     
     // Tạo Context Menu (Menu chuột phải)
     Menu menu = Menu(
       items: [
         MenuItem(
           key: 'show_app',
-          label: 'Show Novel Reader',
+          label: 'Show Audire Reader',
         ),
         MenuItem.separator(),
         MenuItem(

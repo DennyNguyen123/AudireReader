@@ -1,6 +1,6 @@
-# NovelReader - Trình Đọc & Nghe Truyện EPUB Thông Minh
+# Audire Reader - Trình Đọc & Nghe Sách EPUB Thông Minh
 
-**NovelReader** là ứng dụng đọc truyện chữ và sách điện tử (định dạng EPUB) đa nền tảng, được thiết kế tối giản, hiện đại và tập trung hoàn toàn vào trải nghiệm đọc cũng như nghe truyện của bạn. Với công nghệ đọc thành tiếng (TTS) tiên tiến và khả năng đồng bộ đám mây mạnh mẽ, NovelReader là người bạn đồng hành hoàn hảo cho những tín đồ yêu thích truyện chữ.
+**Audire Reader** là ứng dụng đọc sách điện tử (định dạng EPUB) đa nền tảng, được thiết kế tối giản, hiện đại và tập trung hoàn toàn vào trải nghiệm đọc cũng như nghe sách của bạn. Với công nghệ đọc thành tiếng (TTS) tiên tiến và khả năng đồng bộ đám mây mạnh mẽ, Audire Reader là người bạn đồng hành hoàn hảo cho những tín đồ yêu thích đọc sách.
 
 ---
 
@@ -32,17 +32,17 @@
 
 ### 📱 Dành cho thiết bị Android
 Tải về file cài đặt `.apk` từ mục **Releases** của dự án:
-*   **NovelReader-Android-arm64.apk**: Khuyên dùng cho hầu hết các dòng điện thoại Android đời mới (dung lượng cực nhẹ ~15MB).
-*   **NovelReader-Android-arm32.apk**: Dành cho các thiết bị Android thế hệ cũ.
-*   **NovelReader-Android-x64.apk**: Dành cho các trình giả lập trên máy tính.
+*   **AudireReader-Android-arm64.apk**: Khuyên dùng cho hầu hết các dòng điện thoại Android đời mới (dung lượng cực nhẹ ~15MB).
+*   **AudireReader-Android-arm32.apk**: Dành cho các thiết bị Android thế hệ cũ.
+*   **AudireReader-Android-x64.apk**: Dành cho các trình giả lập trên máy tính.
 
 ### 💻 Dành cho máy tính Windows
-*   Tải file **`NovelReader-Windows-Setup.exe`** từ mục **Releases**.
+*   Tải file **`AudireReader-Windows-Setup.exe`** từ mục **Releases**.
 *   Nhấp đúp chuột vào file và làm theo hướng dẫn trên màn hình để cài đặt ứng dụng vào máy tính. Bản setup sẽ tự động cập nhật đè lên bản cũ khi bạn cài đặt phiên bản mới.
-*   *(Phương án phụ)*: Tải file nén `NovelReader-Windows.zip`, giải nén ra một thư mục bất kỳ và chạy trực tiếp file `NovelReader.exe`.
+*   *(Phương án phụ)*: Tải file nén `AudireReader-Windows.zip`, giải nén ra một thư mục bất kỳ và chạy trực tiếp file `AudireReader.exe`.
 
 ### 🍏 Dành cho thiết bị iOS (iPhone/iPad)
-*   Tải file **`NovelReader-iOS.ipa`** tại mục **Releases**.
+*   Tải file **`AudireReader-iOS.ipa`** tại mục **Releases**.
 *   Sử dụng các công cụ cài đặt ứng dụng ngoài (Sideload) như AltStore, SideStore, TrollStore hoặc các dịch vụ ký số để cài đặt file `.ipa` vào thiết bị của bạn.
 
 ---
