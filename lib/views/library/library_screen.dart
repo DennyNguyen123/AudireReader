@@ -501,7 +501,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             const SizedBox(width: 12),
             Flexible(
               child: const Text(
-                'Shelf',
+                'Audire Reader',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 24,
