@@ -48,8 +48,8 @@ jobs:
         with:
           cache: true
 
-      - name: Build APK via Shorebird
-        run: shorebird release android --artifact apk -- --split-per-abi
+      - name: Build APK via Shorebird (arm64)
+        run: shorebird release android --artifact apk --target-platform android-arm64
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
