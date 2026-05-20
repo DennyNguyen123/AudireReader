@@ -37,7 +37,9 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Android
-        run: shorebird patch android --auth-token=${{ secrets.SHOREBIRD_TOKEN }}
+        run: shorebird patch android
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
   patch-windows:
     runs-on: windows-latest
@@ -63,7 +65,9 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Windows
-        run: shorebird patch windows --auth-token=${{ secrets.SHOREBIRD_TOKEN }}
+        run: shorebird patch windows
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
   patch-ios:
     runs-on: macos-latest
@@ -89,4 +93,6 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch iOS
-        run: shorebird patch ios --auth-token=${{ secrets.SHOREBIRD_TOKEN }}
+        run: shorebird patch ios
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}

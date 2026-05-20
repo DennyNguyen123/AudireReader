@@ -28,11 +28,11 @@ void main() async {
   final settings = await db.getSettings();
   ThemeNotifier.instance.init(settings.themeMode);
 
-  runApp(const NovelReaderApp());
+  runApp(const AudireReaderApp());
 }
 
-class NovelReaderApp extends StatelessWidget {
-  const NovelReaderApp({super.key});
+class AudireReaderApp extends StatelessWidget {
+  const AudireReaderApp({super.key});
 
   @override
   Widget build(BuildContext context) {

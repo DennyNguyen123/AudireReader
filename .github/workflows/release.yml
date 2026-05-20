@@ -49,7 +49,9 @@ jobs:
           cache: true
 
       - name: Build APK via Shorebird
-        run: shorebird release android --artifact apk --auth-token=${{ secrets.SHOREBIRD_TOKEN }} -- --split-per-abi
+        run: shorebird release android --artifact apk -- --split-per-abi
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
       - name: Rename APK
         run: |
@@ -93,7 +95,9 @@ jobs:
           cache: true
 
       - name: Build Windows App via Shorebird
-        run: shorebird release windows --auth-token=${{ secrets.SHOREBIRD_TOKEN }}
+        run: shorebird release windows
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
       - name: Packaging Installer
         run: dart run inno_bundle --no-app
@@ -146,7 +150,9 @@ jobs:
           cache: true
 
       - name: Build iOS Application (No Codesign) via Shorebird
-        run: shorebird release ios --no-codesign --auth-token=${{ secrets.SHOREBIRD_TOKEN }}
+        run: shorebird release ios --no-codesign
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
       - name: Package into unsigned IPA
         run: |

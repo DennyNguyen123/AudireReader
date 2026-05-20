@@ -48,7 +48,8 @@ class DatabaseHelper {
         final path = book.coverPath;
         if (path != null && path.isNotEmpty) {
           final normalizedPath = path.replaceAll('\\', '/');
-          if (normalizedPath.contains('/covers/') && !normalizedPath.contains('/NovelReader/covers/')) {
+          final expectedPart = '/AudireReader/covers/';
+          if (!normalizedPath.contains(expectedPart)) {
             final fileName = p.basename(path);
             final newPath = p.join(newAppDirPath, 'covers', fileName);
             book.coverPath = newPath;

@@ -115,11 +115,23 @@ class SyncService {
         return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
       }
 
-      // 2. Đảm bảo các thư mục tồn tại trên WebDAV
-      await _webdav.mkdir('/NovelReader');
-      await _webdav.mkdir('/NovelReader/covers');
-      await _webdav.mkdir('/NovelReader/books');
-      await _webdav.mkdir('/NovelReader/progress');
+      // 2. Tự động di chuyển chỉ mục cũ trên WebDAV nếu có
+      final hasOldSyncFile = await _webdav.fileExists('/NovelReader/sync_data.json');
+      final hasNewSyncFile = await _webdav.fileExists('/AudireReader/sync_data.json');
+      if (hasOldSyncFile && !hasNewSyncFile) {
+        print('[SyncLibrary] Migrating legacy sync_data.json on WebDAV to AudireReader...');
+        final oldBytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+        if (oldBytes != null && oldBytes.isNotEmpty) {
+          await _webdav.mkdir('/AudireReader');
+          await _webdav.uploadBytes('/AudireReader/sync_data.json', oldBytes);
+        }
+      }
+
+      // 3. Đảm bảo các thư mục tồn tại trên WebDAV
+      await _webdav.mkdir('/AudireReader');
+      await _webdav.mkdir('/AudireReader/covers');
+      await _webdav.mkdir('/AudireReader/books');
+      await _webdav.mkdir('/AudireReader/progress');
 
       // Tải và xử lý chỉ mục sách (có hỗ trợ Optimistic Locking retry tối đa 3 lần)
       int retryCount = 0;
@@ -133,7 +145,7 @@ class SyncService {
 
         // Lấy thông tin metadata của file sync_data.json trên server trước để làm base
         String baseLastSyncTime = '';
-        final fileMeta = await _webdav.getFileMetadata('/NovelReader/sync_data.json');
+        final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
         
         Map<String, dynamic> cloudSyncData = {
           'version': 1,
@@ -144,7 +156,7 @@ class SyncService {
 
         final hasSyncFile = fileMeta != null;
         if (hasSyncFile) {
-          final bytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+          final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
           if (bytes != null && bytes.isNotEmpty) {
             try {
               final jsonStr = utf8.decode(bytes);
@@ -167,7 +179,7 @@ class SyncService {
               if (bUuid.isNotEmpty) {
                 // Tạo file progress riêng trên mây cho sách này
                 final jsonBytes = utf8.encode(json.encode(prog));
-                await _webdav.uploadBytes('/NovelReader/progress/$bUuid.json', jsonBytes);
+                await _webdav.uploadBytes('/AudireReader/progress/$bUuid.json', jsonBytes);
               }
             }
           }
@@ -241,7 +253,7 @@ class SyncService {
                 final coverFile = File(localBook.coverPath!);
                 if (await coverFile.exists()) {
                   final ext = p.extension(localBook.coverPath!);
-                  final remoteCoverPath = '/NovelReader/covers/${localBook.uuid}$ext';
+                  final remoteCoverPath = '/AudireReader/covers/${localBook.uuid}$ext';
                   final uploadCoverOk = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
                   hasCover = uploadCoverOk;
                 }
@@ -264,7 +276,7 @@ class SyncService {
               };
 
               final jsonBytes = utf8.encode(json.encode(bookContent));
-              final uploadContentOk = await _webdav.uploadBytes('/NovelReader/books/${localBook.uuid}.json', jsonBytes);
+              final uploadContentOk = await _webdav.uploadBytes('/AudireReader/books/${localBook.uuid}.json', jsonBytes);
 
               if (uploadContentOk) {
                 cloudBooksList.add({
@@ -299,7 +311,16 @@ class SyncService {
             print('[SyncLibrary] Downloading book from cloud: "${cloudBook['title']}"');
             try {
               final bookUuid = cloudBook['uuid'];
-              final bytes = await _webdav.downloadBytes('/NovelReader/books/$bookUuid.json');
+              var bytes = await _webdav.downloadBytes('/AudireReader/books/$bookUuid.json');
+              if (bytes == null || bytes.isEmpty) {
+                // Fallback sang NovelReader cũ trên WebDAV
+                bytes = await _webdav.downloadBytes('/NovelReader/books/$bookUuid.json');
+                if (bytes != null && bytes.isNotEmpty) {
+                  // Upload sang AudireReader mới để lưu trữ lại
+                  await _webdav.uploadBytes('/AudireReader/books/$bookUuid.json', bytes);
+                }
+              }
+
               if (bytes != null && bytes.isNotEmpty) {
                 final jsonStr = utf8.decode(bytes);
                 final bookContent = json.decode(jsonStr) as Map<String, dynamic>;
@@ -313,9 +334,17 @@ class SyncService {
                     await coverDir.create(recursive: true);
                   }
                   final localPath = p.join(coverDir.path, '$bookUuid$ext');
-                  final remotePath = '/NovelReader/covers/$bookUuid$ext';
+                  final remotePath = '/AudireReader/covers/$bookUuid$ext';
                   
-                  final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+                  var downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+                  if (!downloadCoverOk) {
+                    // Fallback sang NovelReader cũ
+                    final oldRemotePath = '/NovelReader/covers/$bookUuid$ext';
+                    downloadCoverOk = await _webdav.downloadToLocalFile(oldRemotePath, localPath);
+                    if (downloadCoverOk) {
+                      await _webdav.uploadLocalFile(localPath, remotePath);
+                    }
+                  }
                   if (downloadCoverOk) {
                     localCoverPath = localPath;
                   }
@@ -357,12 +386,12 @@ class SyncService {
         // 6. GHI LẠI CHỈ MỤC MỚI (Optimistic Locking)
         if (cloudDatabaseChanged || !hasSyncFile) {
           // Kiểm tra xem trong thời gian ta sync, tệp trên server có bị thiết bị khác ghi đè hay chưa
-          final currentFileMeta = await _webdav.getFileMetadata('/NovelReader/sync_data.json');
+          final currentFileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
           String currentServerTime = '';
           
           if (currentFileMeta != null) {
             // Tải nhanh file chỉ mục để so sánh lastSyncTime chuẩn xác nhất
-            final checkBytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+            final checkBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
             if (checkBytes != null && checkBytes.isNotEmpty) {
               try {
                 final checkJson = json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
@@ -385,7 +414,7 @@ class SyncService {
           cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
 
           final jsonBytes = utf8.encode(json.encode(cloudSyncData));
-          final uploadOk = await _webdav.uploadBytes('/NovelReader/sync_data.json', jsonBytes);
+          final uploadOk = await _webdav.uploadBytes('/AudireReader/sync_data.json', jsonBytes);
           if (uploadOk) {
             print('[SyncLibrary] Successfully uploaded sync_data.json to cloud.');
             syncSuccess = true;
@@ -442,13 +471,27 @@ class SyncService {
       _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
 
       final localProg = await db.getProgress(bookUuid);
-      final String remotePath = '/NovelReader/progress/$bookUuid.json';
+      final String remotePath = '/AudireReader/progress/$bookUuid.json';
+      final String oldRemotePath = '/NovelReader/progress/$bookUuid.json';
 
       // 1. Tải tiến trình trên mây về (nếu có)
       Map<String, dynamic>? cloudProg;
-      final fileMeta = await _webdav.getFileMetadata(remotePath);
+      var fileMeta = await _webdav.getFileMetadata(remotePath);
       
-      if (fileMeta != null) {
+      if (fileMeta == null) {
+        // Fallback NovelReader
+        final oldMeta = await _webdav.getFileMetadata(oldRemotePath);
+        if (oldMeta != null) {
+          final bytes = await _webdav.downloadBytes(oldRemotePath);
+          if (bytes != null && bytes.isNotEmpty) {
+            try {
+              cloudProg = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
+              // Đồng thời upload lên AudireReader để migrate
+              await _webdav.uploadBytes(remotePath, bytes);
+            } catch (_) {}
+          }
+        }
+      } else {
         final bytes = await _webdav.downloadBytes(remotePath);
         if (bytes != null && bytes.isNotEmpty) {
           try {
@@ -580,9 +623,9 @@ class SyncService {
         'deleted': []
       };
 
-      final hasSyncFile = await _webdav.fileExists('/NovelReader/sync_data.json');
+      final hasSyncFile = await _webdav.fileExists('/AudireReader/sync_data.json');
       if (hasSyncFile) {
-        final bytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+        final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
         if (bytes != null && bytes.isNotEmpty) {
           try {
             final jsonStr = utf8.decode(bytes);
@@ -626,26 +669,26 @@ class SyncService {
         cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
 
         final jsonBytes = utf8.encode(json.encode(cloudSyncData));
-        await _webdav.uploadBytes('/NovelReader/sync_data.json', jsonBytes);
+        await _webdav.uploadBytes('/AudireReader/sync_data.json', jsonBytes);
         print('[Sync] Updated sync_data.json to register book deletion.');
       }
 
-      // 5. Xóa file nội dung vật lý /NovelReader/books/{bookUuid}.json
-      final String bookJsonPath = '/NovelReader/books/$bookUuid.json';
+      // 5. Xóa file nội dung vật lý /AudireReader/books/{bookUuid}.json
+      final String bookJsonPath = '/AudireReader/books/$bookUuid.json';
       if (await _webdav.fileExists(bookJsonPath)) {
         await _webdav.remove(bookJsonPath);
       }
 
       // 6. Xóa các tệp ảnh bìa trong /covers
       for (final ext in ['.png', '.jpg', '.jpeg']) {
-        final String coverPath = '/NovelReader/covers/$bookUuid$ext';
+        final String coverPath = '/AudireReader/covers/$bookUuid$ext';
         if (await _webdav.fileExists(coverPath)) {
           await _webdav.remove(coverPath);
         }
       }
 
-      // 7. Xóa file tiến trình đọc riêng lẻ /NovelReader/progress/{bookUuid}.json
-      final String progressPath = '/NovelReader/progress/$bookUuid.json';
+      // 7. Xóa file tiến trình đọc riêng lẻ /AudireReader/progress/{bookUuid}.json
+      final String progressPath = '/AudireReader/progress/$bookUuid.json';
       if (await _webdav.fileExists(progressPath)) {
         await _webdav.remove(progressPath);
       }
