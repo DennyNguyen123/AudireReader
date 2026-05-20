@@ -4,12 +4,69 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shorebird_code_push/shorebird_code_push.dart';
 
 class UpdateService {
   static const String owner = 'DennyNguyen123';
   static const String repo = 'AudireReader';
+  static final ShorebirdUpdater _updater = ShorebirdUpdater();
+
+  static Future<void> checkAndDownloadShorebirdPatch(BuildContext context) async {
+    try {
+      if (!_updater.isAvailable) {
+        return;
+      }
+
+      final status = await _updater.checkForUpdate();
+      if (status == UpdateStatus.outdated) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Downloading a background update patch, please wait...'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+
+        await _updater.update();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Update downloaded. Please restart the app to apply changes.'),
+              duration: const Duration(seconds: 15),
+              action: SnackBarAction(
+                label: 'RESTART NOW',
+                onPressed: () {
+                  exit(0);
+                },
+              ),
+            ),
+          );
+        }
+      } else if (status == UpdateStatus.restartRequired) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('An update is ready. Please restart the app to apply changes.'),
+              duration: const Duration(seconds: 15),
+              action: SnackBarAction(
+                label: 'RESTART NOW',
+                onPressed: () {
+                  exit(0);
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking Shorebird updates: $e');
+    }
+  }
 
   static Future<void> checkForUpdate(BuildContext context, {bool showNoUpdateMessage = false}) async {
+    bool hasCheckedShorebird = false;
     try {
       final response = await http.get(
         Uri.parse('https://api.github.com/repos/$owner/$repo/releases/latest'),
@@ -30,12 +87,22 @@ class UpdateService {
           if (context.mounted) {
             _showUpdateDialog(context, latestVersion, body, downloadUrl);
           }
-        } else if (showNoUpdateMessage && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You are on the latest version.')),
-          );
+        } else {
+          hasCheckedShorebird = true;
+          if (context.mounted) {
+            await checkAndDownloadShorebirdPatch(context);
+          }
+          if (showNoUpdateMessage && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('You are on the latest version.')),
+            );
+          }
         }
       } else {
+        hasCheckedShorebird = true;
+        if (context.mounted) {
+          await checkAndDownloadShorebirdPatch(context);
+        }
         if (showNoUpdateMessage && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to check for updates.')),
@@ -43,6 +110,9 @@ class UpdateService {
         }
       }
     } catch (e) {
+      if (!hasCheckedShorebird && context.mounted) {
+        await checkAndDownloadShorebirdPatch(context);
+      }
       if (showNoUpdateMessage && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error checking for updates: $e')),
