@@ -55,18 +55,13 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk NovelReader-Android-arm64.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk NovelReader-Android-arm32.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk NovelReader-Android-x64.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk AudireReader-Android-arm64.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NovelReader-Android-APK
-          path: |
-            NovelReader-Android-arm64.apk
-            NovelReader-Android-arm32.apk
-            NovelReader-Android-x64.apk
+          name: AudireReader-Android-APK
+          path: AudireReader-Android-arm64.apk
 
   build-windows:
     runs-on: windows-latest
@@ -156,15 +151,10 @@ jobs:
 
       - name: Package into unsigned IPA
         run: |
-          APP_PATH=$(find build/ios -name "Runner.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "ERROR: Runner.app not found. Available build output:"
-            find build/ios -type d | head -30
-            exit 1
-          fi
-          echo "Found Runner.app at: $APP_PATH"
+          ARCHIVE_PATH=$(find build/ios/archive -name "*.xcarchive" | head -1)
+          echo "Found archive: $ARCHIVE_PATH"
           mkdir -p Payload
-          cp -r "$APP_PATH" Payload/
+          cp -r "$ARCHIVE_PATH/Products/Applications/Runner.app" Payload/
           zip -r AudireReader-iOS.ipa Payload
 
       - name: Upload iOS Artifact
@@ -185,7 +175,7 @@ jobs:
       - name: Download Windows ZIP
         uses: actions/download-artifact@v4
         with:
-          name: AudireReader-Windows-ZIP
+          name: NovelReader-Windows-ZIP
 
       - name: Download iOS IPA
         uses: actions/download-artifact@v4
@@ -197,8 +187,8 @@ jobs:
         with:
           files: |
             AudireReader-Android-arm64.apk
-            AudireReader-Windows.zip
-            AudireReader-Windows-Setup.exe
+            NovelReader-Windows.zip
+            NovelReader-Windows-Setup.exe
             AudireReader-iOS.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
