@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/shortcut_helper.dart';
 import '../../core/utils/path_helper.dart';
 import '../../services/webdav_service.dart';
 import '../../services/sync_service.dart' hide print;
@@ -22,6 +20,12 @@ import '../../l10n/app_localizations.dart';
 import '../../services/logger_service.dart';
 import 'developer_console_screen.dart';
 import 'pronunciation_dictionary_screen.dart';
+import 'widgets/settings/general_settings_section.dart';
+import 'widgets/settings/appearance_settings_section.dart';
+import 'widgets/settings/tts_settings_section.dart';
+import 'widgets/settings/hotkeys_settings_section.dart';
+import 'widgets/settings/webdav_settings_section.dart';
+import 'widgets/settings/developer_settings_section.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -548,271 +552,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     }
   }
 
-  void _showHotkeyRecorder(String keyName, String currentVal, Function(String) onSave) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        String recordedShortcut = '';
-        final List<String> pressedModifiers = [];
-        bool isRecording = true;
 
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            
-            return KeyboardListener(
-              focusNode: FocusNode()..requestFocus(),
-              onKeyEvent: (KeyEvent event) {
-                if (!isRecording) return;
-                
-                final isDown = event is KeyDownEvent || event is KeyRepeatEvent;
-                
-                if (isDown) {
-                  final Set<LogicalKeyboardKey> modifiers = HardwareKeyboard.instance.logicalKeysPressed;
-                  
-                  final List<String> mods = [];
-                  if (modifiers.contains(LogicalKeyboardKey.controlLeft) || 
-                      modifiers.contains(LogicalKeyboardKey.controlRight) ||
-                      HardwareKeyboard.instance.isControlPressed) {
-                    mods.add('Control');
-                  }
-                  if (modifiers.contains(LogicalKeyboardKey.shiftLeft) || 
-                      modifiers.contains(LogicalKeyboardKey.shiftRight) ||
-                      HardwareKeyboard.instance.isShiftPressed) {
-                    mods.add('Shift');
-                  }
-                  if (modifiers.contains(LogicalKeyboardKey.altLeft) || 
-                      modifiers.contains(LogicalKeyboardKey.altRight) ||
-                      HardwareKeyboard.instance.isAltPressed) {
-                    mods.add('Alt');
-                  }
-                  if (modifiers.contains(LogicalKeyboardKey.metaLeft) || 
-                      modifiers.contains(LogicalKeyboardKey.metaRight) ||
-                      HardwareKeyboard.instance.isMetaPressed) {
-                    mods.add('Meta');
-                  }
-                  
-                  final LogicalKeyboardKey mainKey = event.logicalKey;
-                  final bool isModifier = mainKey == LogicalKeyboardKey.control ||
-                      mainKey == LogicalKeyboardKey.controlLeft ||
-                      mainKey == LogicalKeyboardKey.controlRight ||
-                      mainKey == LogicalKeyboardKey.shift ||
-                      mainKey == LogicalKeyboardKey.shiftLeft ||
-                      mainKey == LogicalKeyboardKey.shiftRight ||
-                      mainKey == LogicalKeyboardKey.alt ||
-                      mainKey == LogicalKeyboardKey.altLeft ||
-                      mainKey == LogicalKeyboardKey.altRight ||
-                      mainKey == LogicalKeyboardKey.meta ||
-                      mainKey == LogicalKeyboardKey.metaLeft ||
-                      mainKey == LogicalKeyboardKey.metaRight;
-                  
-                  setDialogState(() {
-                    pressedModifiers.clear();
-                    pressedModifiers.addAll(mods);
-                    
-                    if (!isModifier) {
-                      final List<String> shortcutParts = [];
-                      shortcutParts.addAll(pressedModifiers);
-                      
-                      String keyLabel = mainKey.keyLabel;
-                      
-                      if (mainKey == LogicalKeyboardKey.arrowDown) {
-                        keyLabel = 'Arrow Down';
-                      } else if (mainKey == LogicalKeyboardKey.arrowUp) {
-                        keyLabel = 'Arrow Up';
-                      } else if (mainKey == LogicalKeyboardKey.arrowLeft) {
-                        keyLabel = 'Arrow Left';
-                      } else if (mainKey == LogicalKeyboardKey.arrowRight) {
-                        keyLabel = 'Arrow Right';
-                      } else if (mainKey == LogicalKeyboardKey.space) {
-                        keyLabel = 'Space';
-                      } else if (mainKey == LogicalKeyboardKey.enter) {
-                        keyLabel = 'Enter';
-                      } else if (mainKey == LogicalKeyboardKey.escape) {
-                        keyLabel = 'Escape';
-                      } else if (mainKey == LogicalKeyboardKey.comma) {
-                        keyLabel = 'comma';
-                      } else if (mainKey == LogicalKeyboardKey.period) {
-                        keyLabel = 'period';
-                      } else if (mainKey == LogicalKeyboardKey.slash) {
-                        keyLabel = 'slash';
-                      } else if (mainKey == LogicalKeyboardKey.tab) {
-                        keyLabel = 'Tab';
-                      } else if (mainKey == LogicalKeyboardKey.backspace) {
-                        keyLabel = 'Backspace';
-                      } else if (mainKey == LogicalKeyboardKey.delete) {
-                        keyLabel = 'Delete';
-                      }
-                      
-                      shortcutParts.add(keyLabel);
-                      recordedShortcut = shortcutParts.join('+');
-                      isRecording = false;
-                    } else {
-                      recordedShortcut = '${pressedModifiers.join(' + ')} + ...';
-                    }
-                  });
-                }
-              },
-              child: AlertDialog(
-                backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                title: Text(
-                  AppLocalizations.of(context)?.recordHotkey(keyName) ?? 'Record Hotkey: $keyName',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)?.pressHotkeyDesc ?? 'Press your keyboard combination. Avoid using system reserve keys.',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.black26 : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.amber.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          recordedShortcut.isEmpty
-                              ? (AppLocalizations.of(context)?.pressKeys ?? 'Press keys...')
-                              : ShortcutHelper.getDisplayLabel(recordedShortcut),
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: recordedShortcut.isEmpty 
-                                ? (isDark ? Colors.white30 : Colors.black26)
-                                : Colors.amber[700],
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (!isRecording)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            AppLocalizations.of(context)?.capturedSuccess ?? 'Captured successfully!',
-                            style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      )
-                    else
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber[700]),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            AppLocalizations.of(context)?.listeningKeystroke ?? 'Listening for keystroke...',
-                            style: const TextStyle(color: Colors.grey, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                  ),
-                  if (!isRecording)
-                    ElevatedButton(
-                      onPressed: () {
-                        onSave(recordedShortcut);
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[700],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Text(AppLocalizations.of(context)?.save ?? 'Save', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    )
-                  else
-                    ElevatedButton(
-                      onPressed: () {
-                        setDialogState(() {
-                          recordedShortcut = '';
-                          pressedModifiers.clear();
-                          isRecording = true;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[800],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Text(AppLocalizations.of(context)?.reset ?? 'Reset', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildHotkeyItem(String name, String currentShortcut, Function(String) onRecord) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            name,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _showHotkeyRecorder(name, currentShortcut, onRecord),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.amber.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  ShortcutHelper.getDisplayLabel(currentShortcut),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: Colors.amber[700],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _testConnection() async {
     if (_urlController.text.isEmpty || 
@@ -932,1194 +672,229 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Cấu hình chung
-                        _buildGlassCard(
-                          context,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.settings_suggest_rounded, color: Colors.amber[700], size: 28),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)?.generalPreferences ?? 'General Preferences',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  AppLocalizations.of(context)?.openLastReadOnLaunch ?? 'Auto-Open Last Read',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                                subtitle: Text(
-                                  AppLocalizations.of(context)?.openLastReadDesc ?? 'Automatically resume reading the most recently read book on launch.',
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                                value: _openLastReadOnLaunch,
-                                activeColor: Colors.amber[700],
-                                onChanged: (val) {
-                                  setState(() {
-                                    _openLastReadOnLaunch = val;
-                                  });
-                                  _saveGeneralPreference(val);
-                                },
-                              ),
-                              const Divider(height: 1, thickness: 1),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  AppLocalizations.of(context)?.autoCheckUpdate ?? 'Auto Check for Updates',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                                subtitle: Text(
-                                  AppLocalizations.of(context)?.autoCheckUpdateDesc ?? 'Automatically check for new versions from GitHub when the app starts.',
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                                value: _autoCheckUpdate,
-                                activeColor: Colors.amber[700],
-                                onChanged: (val) {
-                                  setState(() {
-                                    _autoCheckUpdate = val;
-                                  });
-                                  _saveAutoCheckUpdatePreference(val);
-                                },
-                              ),
-                              const Divider(height: 1, thickness: 1),
-                              const SizedBox(height: 12),
-                              Text(
-                                AppLocalizations.of(context)?.language ?? 'Language',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _appLocaleCode,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: 'en',
-                                    child: Text(AppLocalizations.of(context)?.english ?? 'English', style: const TextStyle(fontSize: 13)),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: 'vi',
-                                    child: Text(AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese', style: const TextStyle(fontSize: 13)),
-                                  ),
-                                ],
-                                onChanged: (val) async {
-                                  if (val != null) {
-                                    setState(() {
-                                      _appLocaleCode = val;
-                                    });
-                                    final db = await DatabaseHelper.getInstance();
-                                    final settings = await db.getSettings();
-                                    settings.appLocale = val;
-                                    await db.saveSettings(settings);
-                                    LocaleNotifier.instance.updateLocale(val);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _isCheckingUpdate ? null : _manuallyCheckForUpdates,
-                                      icon: _isCheckingUpdate
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-                                              ),
-                                            )
-                                          : const Icon(Icons.system_update_alt_rounded),
-                                      label: Text(
-                                        AppLocalizations.of(context)?.checkUpdates ?? 'Check for Updates',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.amber[700],
-                                        side: BorderSide(
-                                          color: Colors.amber[700]!.withOpacity(0.5),
-                                          width: 1.5,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        GeneralSettingsSection(
+                          openLastReadOnLaunch: _openLastReadOnLaunch,
+                          autoCheckUpdate: _autoCheckUpdate,
+                          appLocaleCode: _appLocaleCode,
+                          isCheckingUpdate: _isCheckingUpdate,
+                          onOpenLastReadChanged: (val) {
+                            setState(() {
+                              _openLastReadOnLaunch = val;
+                            });
+                            _saveGeneralPreference(val);
+                          },
+                          onAutoCheckUpdateChanged: (val) {
+                            setState(() {
+                              _autoCheckUpdate = val;
+                            });
+                            _saveAutoCheckUpdatePreference(val);
+                          },
+                          onLocaleChanged: (val) async {
+                            if (val != null) {
+                              setState(() {
+                                _appLocaleCode = val;
+                              });
+                              final db = await DatabaseHelper.getInstance();
+                              final settings = await db.getSettings();
+                              settings.appLocale = val;
+                              await db.saveSettings(settings);
+                              LocaleNotifier.instance.updateLocale(val);
+                            }
+                          },
+                          onCheckUpdates: _manuallyCheckForUpdates,
                         ),
                         const SizedBox(height: 20),
-
-                        // Thẻ Cài đặt Hiển thị & Kiểu chữ (Reading Appearance & Typography Card)
-                        _buildGlassCard(
-                          context,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.chrome_reader_mode_rounded, color: Colors.amber[700], size: 28),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)?.readingAppearance ?? 'Reading Appearance & Typography',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // CHỦ ĐỀ ĐỌC
-                              Text(
-                                AppLocalizations.of(context)?.readingTheme ?? 'Reading Theme',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: ['System', 'Light', 'Dark', 'Sepia'].map((theme) {
-                                  final isSelected = _themeMode == theme;
-                                  Color btnBg;
-                                  Color textCol;
-                                  IconData icon;
-                                  String displayTheme = theme;
-                                  
-                                  if (theme == 'System') {
-                                    btnBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
-                                    textCol = isDark ? Colors.white70 : Colors.black87;
-                                    icon = Icons.brightness_auto_rounded;
-                                    displayTheme = AppLocalizations.of(context)?.system ?? 'System';
-                                  } else if (theme == 'Light') {
-                                    btnBg = Colors.white;
-                                    textCol = Colors.black87;
-                                    icon = Icons.wb_sunny_rounded;
-                                    displayTheme = AppLocalizations.of(context)?.light ?? 'Light';
-                                  } else if (theme == 'Dark') {
-                                    btnBg = const Color(0xFF121212);
-                                    textCol = Colors.white70;
-                                    icon = Icons.nightlight_round;
-                                    displayTheme = AppLocalizations.of(context)?.dark ?? 'Dark';
-                                  } else { // Sepia
-                                    btnBg = const Color(0xFFF4ECD8);
-                                    textCol = const Color(0xFF5B4636);
-                                    icon = Icons.menu_book_rounded;
-                                    displayTheme = AppLocalizations.of(context)?.sepia ?? 'Sepia';
-                                  }
-                                  
-                                  return Expanded(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _themeMode = theme;
-                                        });
-                                        _saveReadingPreference(themeMode: theme);
-                                        ThemeNotifier.instance.updateTheme(theme);
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        padding: const EdgeInsets.symmetric(vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: btnBg,
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: isSelected 
-                                                ? Colors.amber[700]! 
-                                                : (isDark ? Colors.white10 : Colors.black12),
-                                            width: isSelected ? 2.5 : 1,
-                                          ),
-                                          boxShadow: isSelected ? [
-                                            BoxShadow(
-                                              color: Colors.amber[700]!.withOpacity(0.3),
-                                              blurRadius: 6,
-                                              offset: const Offset(0, 2),
-                                            )
-                                          ] : null,
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              icon, 
-                                              color: isSelected ? Colors.amber[700] : textCol.withOpacity(0.8), 
-                                              size: 18
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              displayTheme,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                                color: isSelected ? Colors.amber[700] : textCol,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 20),
-
-                              // CỠ CHỮ SLIDER
-                              Row(
-                                children: [
-                                  const Icon(Icons.format_size_rounded, size: 20),
-                                  const SizedBox(width: 12),
-                                  Text(AppLocalizations.of(context)?.fontSize ?? 'Font Size', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                  Expanded(
-                                    child: Slider(
-                                      value: _fontSize,
-                                      min: 14.0,
-                                      max: 28.0,
-                                      divisions: 7,
-                                      activeColor: Colors.amber[700],
-                                      label: _fontSize.round().toString(),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _fontSize = val;
-                                        });
-                                        _saveReadingPreference(fontSize: val);
-                                      },
-                                    ),
-                                  ),
-                                  Text(
-                                    '${_fontSize.round()}px',
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // CHỌN PHÔNG CHỮ DROPDOWN
-                              Text(AppLocalizations.of(context)?.fontStyle ?? 'Font Style', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
-                                    ? _fontFamily 
-                                    : 'System',
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
-                                  return DropdownMenuItem<String>(
-                                    value: font,
-                                    child: Text(
-                                      font,
-                                      style: TextStyle(
-                                        fontFamily: font == 'System' ? null : font.toLowerCase()
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() {
-                                      _fontFamily = val;
-                                    });
-                                    _saveReadingPreference(fontFamily: val);
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
+                        AppearanceSettingsSection(
+                          themeMode: _themeMode,
+                          fontSize: _fontSize,
+                          fontFamily: _fontFamily,
+                          onThemeModeChanged: (tMode) {
+                            setState(() {
+                              _themeMode = tMode;
+                            });
+                            _saveReadingPreference(themeMode: tMode);
+                            ThemeNotifier.instance.updateTheme(tMode);
+                          },
+                          onFontSizeChanged: (val) {
+                            setState(() {
+                              _fontSize = val;
+                            });
+                            _saveReadingPreference(fontSize: val);
+                          },
+                          onFontFamilyChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _fontFamily = val;
+                              });
+                              _saveReadingPreference(fontFamily: val);
+                            }
+                          },
                         ),
                         const SizedBox(height: 20),
-
-                        // Thẻ Cấu hình Giọng đọc (Text-to-Speech Configurations Card)
-                        _buildGlassCard(
-                          context,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.volume_up_rounded, color: Colors.amber[700], size: 28),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)?.ttsSettings ?? 'TTS Settings',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                ],
+                        TtsSettingsSection(
+                          speechRate: _speechRate,
+                          speedController: _speedController,
+                          ttsProvider: _ttsProvider,
+                          voices: _voices,
+                          selectedVoice: _selectedVoice,
+                          selectedLanguageFilter: _selectedLanguageFilter,
+                          voiceSearchController: _voiceSearchController,
+                          voiceSearchQuery: _voiceSearchQuery,
+                          onSpeechRateSliderChanged: (val) {
+                            setState(() {
+                              _speechRate = val;
+                              _speedController.text = (val * 2).toStringAsFixed(3);
+                            });
+                            _saveReadingPreference(speechRate: val);
+                          },
+                          onSpeechRateTextChanged: (text) {
+                            final double? val = double.tryParse(text);
+                            if (val != null) {
+                              final clampedMultiplier = val.clamp(0.1, 2.0);
+                              final newRate = clampedMultiplier / 2.0;
+                              setState(() {
+                                _speechRate = newRate;
+                              });
+                              _saveReadingPreference(speechRate: newRate);
+                            }
+                          },
+                          onTtsProviderChanged: (val) async {
+                            if (val != null) {
+                              setState(() {
+                                _ttsProvider = val;
+                              });
+                              await _saveReadingPreference(ttsProvider: val);
+                              final db = await DatabaseHelper.getInstance();
+                              final settings = await db.getSettings();
+                              await _loadVoices(settings);
+                            }
+                          },
+                          onLanguageFilterChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedLanguageFilter = val;
+                              });
+                            }
+                          },
+                          onVoiceSearchChanged: (val) {
+                            setState(() {
+                              _voiceSearchQuery = val.trim().toLowerCase();
+                            });
+                          },
+                          onClearVoiceSearch: () {
+                            _voiceSearchController.clear();
+                            setState(() {
+                              _voiceSearchQuery = '';
+                            });
+                          },
+                          onVoiceSelected: (voiceMap) {
+                            setState(() {
+                              _selectedVoice = voiceMap;
+                            });
+                            _saveReadingPreference(voice: voiceMap);
+                          },
+                          onManagePronunciation: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PronunciationDictionaryScreen(),
                               ),
-                              const SizedBox(height: 16),
-
-                              // TỐC ĐỘ ĐỌC TTS SLIDER
-                              Row(
-                                children: [
-                                  const Icon(Icons.speed_rounded, size: 20),
-                                  const SizedBox(width: 12),
-                                  Text(AppLocalizations.of(context)?.readingSpeed ?? 'Reading Speed', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                  Expanded(
-                                    child: Slider(
-                                      value: _speechRate,
-                                      min: 0.05,
-                                      max: 1.0,
-                                      activeColor: Colors.amber[700],
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _speechRate = val;
-                                          _speedController.text = (val * 2).toStringAsFixed(3);
-                                        });
-                                        _saveReadingPreference(speechRate: val);
-                                      },
-                                    ),
-                                  ),
-                                  // Hộp nhập số tốc độ chính xác 3 số lẻ thập phân
-                                  SizedBox(
-                                    width: 85,
-                                    height: 38,
-                                    child: TextField(
-                                      controller: _speedController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                      decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                                        suffixText: 'x',
-                                        suffixStyle: TextStyle(
-                                          fontSize: 11, 
-                                          fontWeight: FontWeight.bold, 
-                                          color: isDark ? Colors.amber[300] : Colors.amber[850]
-                                        ),
-                                        filled: true,
-                                        fillColor: isDark ? Colors.white10 : Colors.black12,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                      ),
-                                      onChanged: (text) {
-                                        final double? val = double.tryParse(text);
-                                        if (val != null) {
-                                          final clampedMultiplier = val.clamp(0.1, 2.0);
-                                          final newRate = clampedMultiplier / 2.0;
-                                          setState(() {
-                                            _speechRate = newRate;
-                                          });
-                                          _saveReadingPreference(speechRate: newRate);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // CHỌN TTS PROVIDER DROPDOWN (Bằng tiếng Anh)
-                              Text(AppLocalizations.of(context)?.ttsProvider ?? 'TTS Provider', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: _ttsProvider,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: 'system',
-                                    child: Text(AppLocalizations.of(context)?.systemTtsOffline ?? 'System TTS (Offline)', style: const TextStyle(fontSize: 13)),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: 'microsoft_edge',
-                                    child: Text(AppLocalizations.of(context)?.edgeTtsOnline ?? 'Microsoft Edge TTS (Online)', style: const TextStyle(fontSize: 13)),
-                                  ),
-                                ],
-                                onChanged: (val) async {
-                                  if (val != null) {
-                                    setState(() {
-                                      _ttsProvider = val;
-                                    });
-                                    await _saveReadingPreference(ttsProvider: val);
-                                    
-                                    // Tải lại danh sách giọng đọc của provider mới
-                                    final db = await DatabaseHelper.getInstance();
-                                    final settings = await db.getSettings();
-                                    await _loadVoices(settings);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-
-
-                              // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ DROPDOWN
-                              if (_voices.isNotEmpty) ...[
-                                // BỘ LỌC NGÔN NGỮ
-                                Text(AppLocalizations.of(context)?.languageFilter ?? 'Language Filter', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  value: _selectedLanguageFilter,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: isDark ? Colors.white10 : Colors.black12,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  ),
-                                  dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                  items: [
-                                    DropdownMenuItem<String>(
-                                      value: 'all',
-                                      child: Text(AppLocalizations.of(context)?.allLanguages ?? 'All Languages', style: const TextStyle(fontSize: 13)),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'vi',
-                                      child: Text(AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese', style: const TextStyle(fontSize: 13)),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'en',
-                                      child: Text(AppLocalizations.of(context)?.english ?? 'English', style: const TextStyle(fontSize: 13)),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'others',
-                                      child: Text(AppLocalizations.of(context)?.otherLanguages ?? 'Others (Japanese, French...)', style: const TextStyle(fontSize: 13)),
-                                    ),
-                                  ],
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedLanguageFilter = val;
-                                      });
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Ô TÌM KIẾM GIỌNG ĐỌC (Bằng tiếng Anh)
-                                Text(AppLocalizations.of(context)?.searchVoice ?? 'Search Voice', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: _voiceSearchController,
-                                  style: const TextStyle(fontSize: 13),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: isDark ? Colors.white10 : Colors.black12,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    hintText: AppLocalizations.of(context)?.searchVoiceHint ?? 'Type to search voice name...',
-                                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 13),
-                                    prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.withOpacity(0.8)),
-                                    suffixIcon: _voiceSearchQuery.isNotEmpty
-                                        ? IconButton(
-                                            icon: Icon(Icons.clear_rounded, color: Colors.grey.withOpacity(0.8)),
-                                            onPressed: () {
-                                              _voiceSearchController.clear();
-                                              setState(() {
-                                                _voiceSearchQuery = '';
-                                              });
-                                            },
-                                          )
-                                        : null,
-                                  ),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _voiceSearchQuery = val.trim().toLowerCase();
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-
-                                Text(AppLocalizations.of(context)?.selectVoice ?? 'Select Voice', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                const SizedBox(height: 8),
-                                () {
-                                  final filteredDisplayVoices = _voices.where((v) {
-                                    final lang = v['locale']?.toString().toLowerCase() ?? '';
-                                    final name = v['name']?.toString().toLowerCase() ?? '';
-
-                                    // 1. Lọc theo ngôn ngữ
-                                    bool matchesLang = true;
-                                    if (_selectedLanguageFilter == 'vi') {
-                                      matchesLang = lang.startsWith('vi');
-                                    } else if (_selectedLanguageFilter == 'en') {
-                                      matchesLang = lang.startsWith('en');
-                                    } else if (_selectedLanguageFilter == 'others') {
-                                      matchesLang = !lang.startsWith('vi') && !lang.startsWith('en');
-                                    }
-
-                                    if (!matchesLang) return false;
-
-                                    // 2. Lọc theo ô tìm kiếm
-                                    if (_voiceSearchQuery.isNotEmpty) {
-                                      return name.contains(_voiceSearchQuery) || lang.contains(_voiceSearchQuery);
-                                    }
-
-                                    return true;
-                                  }).toList();
-
-                                  return DropdownButtonFormField<String>(
-                                    value: filteredDisplayVoices.any((v) => v['name']?.toString() == _selectedVoice?['name'])
-                                        ? (_selectedVoice?['name'])
-                                        : null,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: isDark ? Colors.white10 : Colors.black12,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    ),
-                                    dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                    items: () {
-                                      final Set<String> seenNames = {};
-                                      final List<DropdownMenuItem<String>> menuItems = [];
-                                      for (final v in filteredDisplayVoices) {
-                                        final name = v['name']?.toString() ?? 'Unknown';
-                                        final locale = v['locale']?.toString() ?? '';
-                                        if (!seenNames.contains(name)) {
-                                          seenNames.add(name);
-                                          menuItems.add(DropdownMenuItem<String>(
-                                            value: name,
-                                            child: Text(
-                                              '$name ($locale)',
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(fontSize: 13),
-                                            ),
-                                          ));
-                                        }
-                                      }
-                                      return menuItems;
-                                    }(),
-                                    onChanged: (val) {
-                                      if (val != null) {
-                                        dynamic selectedMap;
-                                        for (final v in filteredDisplayVoices) {
-                                          if (v['name']?.toString() == val) {
-                                            selectedMap = v;
-                                            break;
-                                          }
-                                        }
-                                        if (selectedMap != null) {
-                                          final voiceMap = Map<String, String>.from(
-                                            (selectedMap as Map).map((k, v) => MapEntry(k.toString(), v.toString())),
-                                          );
-                                          setState(() {
-                                            _selectedVoice = voiceMap;
-                                          });
-                                          _saveReadingPreference(voice: voiceMap);
-                                        }
-                                      }
-                                    },
-                                  );
-                                }(),
-                              ],
-                              const SizedBox(height: 16),
-                              const Divider(height: 1, thickness: 1),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const PronunciationDictionaryScreen(),
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.record_voice_over_rounded),
-                                      label: Text(
-                                        AppLocalizations.of(context)?.managePronunciation ?? 'Manage Pronunciation Rules',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.amber[700],
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 20),
-
-                        // THẺ CẤU HÌNH PHÍM TẮT (Hotkey Configurations Card)
                         if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ...[
-                          _buildGlassCard(
-                            context,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.keyboard_rounded, color: Colors.amber[700], size: 28),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)?.hotkeyConfigurations ?? 'Hotkey Configurations',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                AppLocalizations.of(context)?.customizeHotkeysDesc ?? 'Customize keyboard shortcuts for system commands and reading controls.',
-                                style: const TextStyle(fontSize: 11, color: Colors.grey),
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              _buildHotkeyItem(AppLocalizations.of(context)?.nextParagraph ?? 'Next Paragraph', _hotkeyNextParagraph, (val) {
-                                setState(() => _hotkeyNextParagraph = val);
-                                _saveHotkeySetting('nextParagraph', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.prevParagraph ?? 'Previous Paragraph', _hotkeyPrevParagraph, (val) {
-                                setState(() => _hotkeyPrevParagraph = val);
-                                _saveHotkeySetting('prevParagraph', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.nextChapter ?? 'Next Chapter', _hotkeyNextChapter, (val) {
-                                setState(() => _hotkeyNextChapter = val);
-                                _saveHotkeySetting('nextChapter', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.prevChapter ?? 'Previous Chapter', _hotkeyPrevChapter, (val) {
-                                setState(() => _hotkeyPrevChapter = val);
-                                _saveHotkeySetting('prevChapter', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.playPauseTts ?? 'Play/Pause TTS', _hotkeyPlayPauseTts, (val) {
-                                setState(() => _hotkeyPlayPauseTts = val);
-                                _saveHotkeySetting('playPauseTts', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.openChapterShelf ?? 'Open Chapter Shelf', _hotkeyOpenChapter, (val) {
-                                setState(() => _hotkeyOpenChapter = val);
-                                _saveHotkeySetting('openChapter', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.openReaderSetting ?? 'Open Reader Setting', _hotkeyOpenSetting, (val) {
-                                setState(() => _hotkeyOpenSetting = val);
-                                _saveHotkeySetting('openSetting', val);
-                              }),
-                              _buildHotkeyItem(AppLocalizations.of(context)?.bossKey ?? 'Boss Key', _hotkeyBossKey, (val) {
-                                setState(() => _hotkeyBossKey = val);
-                                _saveHotkeySetting('bossKey', val);
-                              }),
-                              
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 12.0),
-                                child: Divider(height: 1, color: Colors.white10),
-                              ),
-                              
-                              Text(
-                                AppLocalizations.of(context)?.bossKeyActionLabel ?? 'Boss Key Action',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: ['minimize', 'hide'].contains(_bossKeyAction) ? _bossKeyAction : 'minimize',
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: [
-                                  DropdownMenuItem(
-                                    value: 'minimize',
-                                    child: Text(AppLocalizations.of(context)?.minimizeWindow ?? 'Minimize Window'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'hide',
-                                    child: Text(AppLocalizations.of(context)?.hideWindow ?? 'Hide Window (Completely invisible)'),
-                                  ),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() {
-                                      _bossKeyAction = val;
-                                    });
-                                    _saveHotkeySetting('bossKeyAction', val);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                              
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _resetHotkeysToDefault,
-                                      icon: const Icon(Icons.restore_rounded),
-                                      label: Text(AppLocalizations.of(context)?.resetHotkeys ?? 'Reset to Default Hotkeys', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.amber[700],
-                                        side: BorderSide(color: Colors.amber[700]!, width: 1.5),
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // ĐỒNG BỘ THƯ VIỆN ĐÁM MÂY (Gộp toàn bộ thành 1 Card duy nhất giống General Preferences)
-                        _buildGlassCard(
-                          context,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Tiêu đề & Mô tả chính
-                              Row(
-                                children: [
-                                  Icon(Icons.cloud_sync_rounded, color: Colors.amber[700], size: 28),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    AppLocalizations.of(context)?.cloudLibrarySync ?? 'Cloud Library Sync',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                AppLocalizations.of(context)?.cloudSyncDesc ?? 'Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? Colors.white70 : Colors.black87,
-                                  height: 1.4,
-                                ),
-                              ),
-                              
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16.0),
-                                child: Divider(height: 1, color: Colors.white10),
-                              ),
-
-                              // Switch bật/tắt WebDAV
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  AppLocalizations.of(context)?.enableWebdav ?? 'Enable WebDAV Sync',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                ),
-                                subtitle: Text(
-                                  AppLocalizations.of(context)?.autoSyncDesc ?? 'Auto-sync when launching or leaving a book',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                value: _webDavEnabled,
-                                activeColor: Colors.amber[700],
-                                onChanged: (val) {
-                                  setState(() {
-                                    _webDavEnabled = val;
-                                  });
-                                  _saveWebDavEnableSetting(val);
-                                },
-                              ),
-
-                              // Phần mở rộng cấu hình & trạng thái (chỉ hiện khi bật WebDAV)
-                              if (_webDavEnabled) ...[
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                                  child: Divider(height: 1, color: Colors.white10),
-                                ),
-                                
-                                Text(
-                                  AppLocalizations.of(context)?.webdavServerConfig ?? 'WebDAV Server Configuration',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                // URL Server WebDAV
-                                TextFormField(
-                                  controller: _urlController,
-                                  onChanged: (val) => _saveWebDavTextSettings(),
-                                  decoration: InputDecoration(
-                                    labelText: AppLocalizations.of(context)?.webdavServerUrl ?? 'WebDAV Server URL',
-                                    hintText: 'https://webdav.yandex.ru',
-                                    prefixIcon: const Icon(Icons.link_rounded),
-                                    filled: true,
-                                    fillColor: isDark ? Colors.black26 : Colors.grey[100],
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  validator: (val) {
-                                    if (_webDavEnabled && (val == null || val.trim().isEmpty)) {
-                                      return AppLocalizations.of(context)?.enterWebdavUrl ?? 'Please enter WebDAV URL';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Username
-                                TextFormField(
-                                  controller: _usernameController,
-                                  onChanged: (val) => _saveWebDavTextSettings(),
-                                  decoration: InputDecoration(
-                                    labelText: AppLocalizations.of(context)?.username ?? 'Username',
-                                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                                    filled: true,
-                                    fillColor: isDark ? Colors.black26 : Colors.grey[100],
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  validator: (val) {
-                                    if (_webDavEnabled && (val == null || val.trim().isEmpty)) {
-                                      return AppLocalizations.of(context)?.enterUsername ?? 'Please enter Username';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Password
-                                TextFormField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  onChanged: (val) => _saveWebDavTextSettings(),
-                                  decoration: InputDecoration(
-                                    labelText: AppLocalizations.of(context)?.passwordAppPassword ?? 'Password / App Password',
-                                    prefixIcon: const Icon(Icons.lock_outline_rounded),
-                                    filled: true,
-                                    fillColor: isDark ? Colors.black26 : Colors.grey[100],
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  validator: (val) {
-                                    if (_webDavEnabled && (val == null || val.isEmpty)) {
-                                      return AppLocalizations.of(context)?.enterPassword ?? 'Please enter Password';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 20),
-
-                                // Nút Test Connection
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: _isTestingConnection ? null : _testConnection,
-                                        icon: _isTestingConnection 
-                                            ? const SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                              )
-                                            : const Icon(Icons.network_ping_rounded),
-                                        label: Text(AppLocalizations.of(context)?.testConnection ?? 'Test Connection', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey[850],
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                
-                                // Hiển thị kết quả kiểm thử kết nối
-                                if (_testResult != null) ...[
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: _testSuccess 
-                                          ? Colors.green.withOpacity(0.15) 
-                                          : Colors.red.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: _testSuccess ? Colors.green : Colors.red,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          _testSuccess 
-                                              ? Icons.check_circle_outline_rounded 
-                                              : Icons.error_outline_rounded,
-                                          color: _testSuccess ? Colors.green : Colors.red,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            _testResult!,
-                                            style: TextStyle(
-                                              color: _testSuccess ? Colors.green[300] : Colors.red[300],
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                                  child: Divider(height: 1, color: Colors.white10),
-                                ),
-
-                                // Trạng thái Đồng bộ & Nút Sync Now
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      AppLocalizations.of(context)?.syncStatus ?? 'Sync Status',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                    ),
-                                    Text(
-                                      _lastSync != null 
-                                          ? (AppLocalizations.of(context)?.lastSyncedAt(_lastSync!.toLocal().toString().split('.')[0]) ?? 'Last Synced: ${_lastSync!.toLocal().toString().split('.')[0]}')
-                                          : (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never'),
-                                      style: const TextStyle(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton.icon(
-                                  onPressed: _isLoading ? null : _triggerManualSync,
-                                  icon: const Icon(Icons.sync_rounded),
-                                  label: Text(AppLocalizations.of(context)?.syncNow ?? 'Sync Now', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber[700],
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    elevation: 4,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildGlassCard(
-                          context,
-                          child: SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              AppLocalizations.of(context)?.developerMode ?? 'Developer Mode',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            subtitle: Text(
-                              AppLocalizations.of(context)?.developerModeDesc ?? 'Unlock advanced diagnostic tools, database inspector, and system logs.',
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                            value: _developerMode,
-                            activeColor: Colors.amber[700],
-                            onChanged: (val) {
-                              _saveDeveloperModeSetting(val);
+                          HotkeysSettingsSection(
+                            hotkeyNextParagraph: _hotkeyNextParagraph,
+                            hotkeyPrevParagraph: _hotkeyPrevParagraph,
+                            hotkeyNextChapter: _hotkeyNextChapter,
+                            hotkeyPrevChapter: _hotkeyPrevChapter,
+                            hotkeyPlayPauseTts: _hotkeyPlayPauseTts,
+                            hotkeyOpenChapter: _hotkeyOpenChapter,
+                            hotkeyOpenSetting: _hotkeyOpenSetting,
+                            hotkeyBossKey: _hotkeyBossKey,
+                            bossKeyAction: _bossKeyAction,
+                            onHotkeyRecordAndSave: (key, val) {
+                              setState(() {
+                                switch (key) {
+                                  case 'nextParagraph':
+                                    _hotkeyNextParagraph = val;
+                                    break;
+                                  case 'prevParagraph':
+                                    _hotkeyPrevParagraph = val;
+                                    break;
+                                  case 'nextChapter':
+                                    _hotkeyNextChapter = val;
+                                    break;
+                                  case 'prevChapter':
+                                    _hotkeyPrevChapter = val;
+                                    break;
+                                  case 'playPauseTts':
+                                    _hotkeyPlayPauseTts = val;
+                                    break;
+                                  case 'openChapter':
+                                    _hotkeyOpenChapter = val;
+                                    break;
+                                  case 'openSetting':
+                                    _hotkeyOpenSetting = val;
+                                    break;
+                                  case 'bossKey':
+                                    _hotkeyBossKey = val;
+                                    break;
+                                }
+                              });
+                              _saveHotkeySetting(key, val);
                             },
+                            onBossKeyActionChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _bossKeyAction = val;
+                                });
+                                _saveHotkeySetting('bossKeyAction', val);
+                              }
+                            },
+                            onResetHotkeys: _resetHotkeysToDefault,
                           ),
-                        ),
-                        if (_developerMode) ...[
                           const SizedBox(height: 20),
-                          _buildGlassCard(
-                            context,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.developer_mode_rounded, color: Colors.amber[700], size: 28),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      AppLocalizations.of(context)?.developerSettings ?? 'Developer Settings',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    AppLocalizations.of(context)?.enableDebugLogsLabel ?? 'Enable Debug Logs',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  ),
-                                  subtitle: Text(
-                                    AppLocalizations.of(context)?.debugLogsDesc ?? 'Keep a history of application logs for troubleshooting.',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  value: _enableDebugLogs,
-                                  activeColor: Colors.amber[700],
-                                  onChanged: (val) {
-                                    _saveEnableDebugLogs(val);
-                                  },
-                                ),
-                                const Divider(height: 1, thickness: 1),
-                                SwitchListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    AppLocalizations.of(context)?.webdavDebugConsole ?? 'WebDAV Debug Console',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  ),
-                                  subtitle: Text(
-                                    AppLocalizations.of(context)?.webdavDebugDesc ?? 'Output raw WebDAV HTTP requests and responses to system log.',
-                                    style: const TextStyle(fontSize: 11),
-                                  ),
-                                  value: _enableWebDavDebug,
-                                  activeColor: Colors.amber[700],
-                                  onChanged: (val) {
-                                    _saveEnableWebDavDebug(val);
-                                  },
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(builder: (context) => const DeveloperConsoleScreen()),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.terminal_rounded),
-                                        label: Text(AppLocalizations.of(context)?.openDebugConsole ?? 'Open Debug Console', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.amber[700],
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: _showDatabaseInspector,
-                                        icon: const Icon(Icons.storage_rounded),
-                                        label: Text(AppLocalizations.of(context)?.databaseInspector ?? 'Database Inspector', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.amber[700],
-                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: _clearCacheAndResetSync,
-                                        icon: const Icon(Icons.cleaning_services_rounded),
-                                        label: Text(AppLocalizations.of(context)?.clearCache ?? 'Clear Cache & Reset Sync', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.amber[700],
-                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: _forceSyncNow,
-                                        icon: const Icon(Icons.sync_problem_rounded),
-                                        label: Text(AppLocalizations.of(context)?.forceSyncNow ?? 'Force Sync Now', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.amber[700],
-                                          side: BorderSide(color: Colors.amber[700]!, width: 1.5),
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
+                        WebdavSettingsSection(
+                          webDavEnabled: _webDavEnabled,
+                          urlController: _urlController,
+                          usernameController: _usernameController,
+                          passwordController: _passwordController,
+                          isTestingConnection: _isTestingConnection,
+                          testResult: _testResult,
+                          testSuccess: _testSuccess,
+                          lastSync: _lastSync,
+                          isLoading: _isLoading,
+                          onWebDavEnabledChanged: (val) {
+                            setState(() {
+                              _webDavEnabled = val;
+                            });
+                            _saveWebDavEnableSetting(val);
+                          },
+                          onTestConnection: _testConnection,
+                          onSyncNow: _triggerManualSync,
+                          onSettingsChanged: _saveWebDavTextSettings,
+                        ),
+                        const SizedBox(height: 20),
+                        DeveloperSettingsSection(
+                          developerMode: _developerMode,
+                          enableDebugLogs: _enableDebugLogs,
+                          enableWebDavDebug: _enableWebDavDebug,
+                          onDeveloperModeChanged: _saveDeveloperModeSetting,
+                          onEnableDebugLogsChanged: _saveEnableDebugLogs,
+                          onEnableWebDavDebugChanged: _saveEnableWebDavDebug,
+                          onOpenDebugConsole: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const DeveloperConsoleScreen()),
+                            );
+                          },
+                          onShowDatabaseInspector: _showDatabaseInspector,
+                          onClearCacheAndResetSync: _clearCacheAndResetSync,
+                          onForceSyncNow: _forceSyncNow,
+                        ),
                         const SizedBox(height: 20),
                         if (_appVersion.isNotEmpty)
                           Padding(
@@ -2182,27 +957,4 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     );
   }
 
-  Widget _buildGlassCard(BuildContext context, {required Widget child, EdgeInsetsGeometry? padding}) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Container(
-      padding: padding ?? const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.dividerColor,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
 }

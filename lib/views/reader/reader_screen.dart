@@ -37,6 +37,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   String _themeMode = 'System';
   String _ttsProvider = 'system';
 
+  final ScrollController _scrollController = ScrollController();
+  int _lastParagraphIndex = -1;
+  int _lastChapterIndex = -1;
 
   // Bookmarks, Highlights & Notes
   bool _isBookmarked = false;
@@ -56,7 +59,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     if (_isInitialized) {
       _ttsService.removeListener(_onTtsServiceChanged);
+      _ttsService.removeListener(_handleParagraphScroll);
     }
+    _scrollController.dispose();
     _speedController.dispose();
     _syncActiveBookProgressOnExit();
     super.dispose();
@@ -403,18 +408,55 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
+    _ttsService.addListener(_handleParagraphScroll);
     await _loadBookmarksAndHighlights();
     await _updateBookmarkState();
 
     setState(() {
       _isInitialized = true;
+      _lastParagraphIndex = _ttsService.currentParagraphIndex;
+      _lastChapterIndex = _ttsService.currentChapterIndex;
     });
+
+    if (_ttsService.currentParagraphIndex > 0) {
+      _scrollToParagraphEstimated(_ttsService.currentParagraphIndex);
+    }
 
     _loadVoices(settings);
     
     // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
     _syncActiveBookProgressOnEntry();
   }
+
+  void _handleParagraphScroll() {
+    if (!mounted || !_isInitialized) return;
+    
+    final currentPara = _ttsService.currentParagraphIndex;
+    final currentChap = _ttsService.currentChapterIndex;
+    
+    if (currentChap != _lastChapterIndex) {
+      _lastChapterIndex = currentChap;
+      _lastParagraphIndex = currentPara;
+      _scrollToParagraphEstimated(currentPara);
+    } else if (currentPara != _lastParagraphIndex) {
+      final diff = (currentPara - _lastParagraphIndex).abs();
+      _lastParagraphIndex = currentPara;
+      if (diff > 1) {
+        _scrollToParagraphEstimated(currentPara);
+      }
+    }
+  }
+
+  void _scrollToParagraphEstimated(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final offset = (index * 120.0).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(offset);
+    });
+  }
+
   Future<void> _loadVoices(AppSettings settings) async {
     try {
       final list = await _ttsService.getVoicesForProvider(settings.ttsProvider);
@@ -649,43 +691,43 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           color: isDark ? Colors.amber[400] : Colors.amber[800],
-                          fontFamily: _fontFamily == 'System' ? null : _fontFamily.toLowerCase(),
+                          fontFamily: _fontFamily == 'System' ? null : _fontFamily,
                         ),
                       ),
                     ),
                   ),
                   Expanded(
-                    child: SingleChildScrollView(
+                    child: ListView.builder(
+                      controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: List.generate(chapter.paragraphs.length, (index) {
-                          final paragraphText = chapter.paragraphs[index];
-                          final isActive = index == _ttsService.currentParagraphIndex;
+                      itemCount: chapter.paragraphs.length,
+                      itemBuilder: (context, index) {
+                        final paragraphText = chapter.paragraphs[index];
+                        final isActive = index == _ttsService.currentParagraphIndex;
 
-                          final key = '${activeChapterIndex}_$index';
-                          final highlight = _highlightsMap[key];
+                        final key = '${activeChapterIndex}_$index';
+                        final highlight = _highlightsMap[key];
 
-                          return ParagraphWidget(
-                            text: paragraphText,
-                            isActive: isActive,
-                            fontSize: _fontSize,
-                            wordStart: isActive ? _ttsService.wordStart : 0,
-                            wordEnd: isActive ? _ttsService.wordEnd : 0,
-                            isDark: isDark,
-                            fontFamily: _fontFamily,
-                            textColor: textColor,
-                            highlightColorHex: highlight?.colorHex,
-                            hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
-                            onTap: () {
-                              _ttsService.jumpToParagraph(index);
-                            },
-                            onLongPress: () {
-                              _showParagraphMenu(activeChapterIndex, index, paragraphText);
-                            },
-                          );
-                        }),
-                      ),
+                        return ParagraphWidget(
+                          key: ValueKey(key),
+                          text: paragraphText,
+                          isActive: isActive,
+                          fontSize: _fontSize,
+                          wordStart: isActive ? _ttsService.wordStart : 0,
+                          wordEnd: isActive ? _ttsService.wordEnd : 0,
+                          isDark: isDark,
+                          fontFamily: _fontFamily,
+                          textColor: textColor,
+                          highlightColorHex: highlight?.colorHex,
+                          hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
+                          onTap: () {
+                            _ttsService.jumpToParagraph(index);
+                          },
+                          onLongPress: () {
+                            _showParagraphMenu(activeChapterIndex, index, paragraphText);
+                          },
+                        );
+                      },
                     ),
                   ),
                 ],

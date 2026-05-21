@@ -144,7 +144,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   Widget _buildRichText(Color defaultColor) {
     final style = TextStyle(
       fontSize: widget.fontSize,
-      fontFamily: widget.fontFamily == 'System' ? null : widget.fontFamily.toLowerCase(),
+      fontFamily: widget.fontFamily == 'System' ? null : widget.fontFamily,
       height: 1.6,
       color: defaultColor,
       letterSpacing: 0.2,
