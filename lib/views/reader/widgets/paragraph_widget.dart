@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class ParagraphWidget extends StatefulWidget {
   final String text;
   final bool isActive;
+  final bool isPlaying;
   final double fontSize;
   final int wordStart;
   final int wordEnd;
@@ -18,6 +19,7 @@ class ParagraphWidget extends StatefulWidget {
     super.key,
     required this.text,
     required this.isActive,
+    required this.isPlaying,
     required this.fontSize,
     required this.wordStart,
     required this.wordEnd,
@@ -46,7 +48,14 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   @override
   void didUpdateWidget(covariant ParagraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
+    
+    // Tự động cuộn khi:
+    // 1. Đoạn văn này vừa trở thành active (isActive: false -> true)
+    // 2. Đoạn văn này đang active và TTS bắt đầu phát (isPlaying: false -> true)
+    final becameActive = widget.isActive && !oldWidget.isActive;
+    final startedPlayingWhileActive = widget.isActive && widget.isPlaying && !oldWidget.isPlaying;
+    
+    if (becameActive || startedPlayingWhileActive) {
       _scrollToVisible();
     }
   }
@@ -77,39 +86,14 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final activeBgColor = widget.isDark ? Colors.amber[900]!.withValues(alpha: 0.2) : Colors.amber[100]!;
-
-    Color? highlightBgColor;
-    if (widget.highlightColorHex != null) {
-      try {
-        final parsedColor = _parseHexColor(widget.highlightColorHex!);
-        highlightBgColor = parsedColor.withValues(alpha: widget.isDark ? 0.25 : 0.35);
-      } catch (e) {
-        highlightBgColor = Colors.yellow.withValues(alpha: 0.3);
-      }
-    }
-
-    final bgColor = widget.isActive 
-        ? activeBgColor 
-        : (highlightBgColor ?? Colors.transparent);
-
-    final border = widget.isActive
-        ? Border.all(color: Colors.amber[700]!.withValues(alpha: 0.5), width: 1)
-        : (widget.highlightColorHex != null 
-            ? Border.all(color: _parseHexColor(widget.highlightColorHex!).withValues(alpha: 0.3), width: 1)
-            : null);
-
     return GestureDetector(
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: border,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: EdgeInsets.zero,
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: Stack(
           clipBehavior: Clip.none,
@@ -142,12 +126,27 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   }
 
   Widget _buildRichText(Color defaultColor) {
+    Color? textBgColor;
+    if (widget.isActive) {
+      textBgColor = widget.isDark 
+          ? Colors.amber[900]!.withValues(alpha: 0.15) 
+          : Colors.amber[100]!.withValues(alpha: 0.6);
+    } else if (widget.highlightColorHex != null) {
+      try {
+        final parsedColor = _parseHexColor(widget.highlightColorHex!);
+        textBgColor = parsedColor.withValues(alpha: widget.isDark ? 0.25 : 0.35);
+      } catch (e) {
+        textBgColor = Colors.yellow.withValues(alpha: 0.3);
+      }
+    }
+
     final style = TextStyle(
       fontSize: widget.fontSize,
       fontFamily: widget.fontFamily == 'System' ? null : widget.fontFamily,
       height: 1.6,
       color: defaultColor,
       letterSpacing: 0.2,
+      backgroundColor: textBgColor,
     );
 
     if (!widget.isActive || widget.wordStart >= widget.wordEnd || widget.wordEnd > widget.text.length) {
