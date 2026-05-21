@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/theme_notifier.dart';
 import '../../library/pronunciation_dictionary_screen.dart';
@@ -150,9 +151,9 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Reader Settings',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context)!.readerSettings,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -168,7 +169,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 Icon(Icons.format_paint_rounded, size: 16, color: Colors.amber[700]),
                 const SizedBox(width: 8),
                 Text(
-                  'DISPLAY & TYPOGRAPHY',
+                  AppLocalizations.of(context)!.displayTypography,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -181,7 +182,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             const SizedBox(height: 16),
             
             // CHỌN CHỦ ĐỀ ĐỌC (Theme Mode Row)
-            Text('Reading Theme', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+            Text(AppLocalizations.of(context)!.readingTheme, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,7 +250,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            theme,
+                            theme == 'System' 
+                                ? AppLocalizations.of(context)!.system 
+                                : theme == 'Light' 
+                                    ? AppLocalizations.of(context)!.light 
+                                    : theme == 'Dark' 
+                                        ? AppLocalizations.of(context)!.dark 
+                                        : AppLocalizations.of(context)!.sepia,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -270,7 +277,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               children: [
                 const Icon(Icons.format_size_rounded),
                 const SizedBox(width: 12),
-                Text('Font Size', style: TextStyle(color: labelColor)),
+                Text(AppLocalizations.of(context)!.fontSize, style: TextStyle(color: labelColor)),
                 Expanded(
                   child: Slider(
                     value: _fontSize,
@@ -293,7 +300,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             const SizedBox(height: 16),
 
             // CHỌN PHÔNG CHỮ (Font Family Dropdown)
-            Text('Font Style', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+            Text(AppLocalizations.of(context)!.fontStyle, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
@@ -341,7 +348,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 Icon(Icons.volume_up_rounded, size: 16, color: Colors.amber[700]),
                 const SizedBox(width: 8),
                 Text(
-                  'TEXT-TO-SPEECH (TTS)',
+                  AppLocalizations.of(context)!.textToSpeechTts,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -356,10 +363,10 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             // SLEEP TIMER
             Text(
               widget.ttsService.isSleepTimerActive 
-                  ? 'Sleep Timer (${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')} remaining)'
+                  ? AppLocalizations.of(context)!.sleepTimerRemaining('${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}')
                   : widget.ttsService.stopAtEndOfChapter 
-                      ? 'Sleep Timer (Stop at end of chapter)'
-                      : 'Sleep Timer',
+                      ? AppLocalizations.of(context)!.sleepTimerStopAtEnd
+                      : AppLocalizations.of(context)!.sleepTimer,
               style: TextStyle(fontWeight: FontWeight.bold, color: labelColor),
             ),
             const SizedBox(height: 8),
@@ -368,7 +375,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               child: Row(
                 children: [
                   ChoiceChip(
-                    label: const Text('Off', style: TextStyle(fontSize: 12)),
+                    label: Text(AppLocalizations.of(context)!.off, style: const TextStyle(fontSize: 12)),
                     selected: !widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter,
                     selectedColor: Colors.amber[700],
                     labelStyle: TextStyle(
@@ -429,7 +436,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: const Text('End Chapter', style: TextStyle(fontSize: 12)),
+                    label: Text(AppLocalizations.of(context)!.endChapter, style: const TextStyle(fontSize: 12)),
                     selected: widget.ttsService.stopAtEndOfChapter,
                     selectedColor: Colors.amber[700],
                     labelStyle: TextStyle(
@@ -452,7 +459,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                children: [
                  const Icon(Icons.speed_rounded),
                  const SizedBox(width: 12),
-                 Text('Reading Speed', style: TextStyle(color: labelColor)),
+                 Text(AppLocalizations.of(context)!.readingSpeed, style: TextStyle(color: labelColor)),
                  Expanded(
                    child: Slider(
                      value: _speechRate,
@@ -515,7 +522,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             const SizedBox(height: 16),
 
             // CHỌN ĐỘNG CƠ TTS (TTS Provider Dropdown)
-            Text('TTS Provider', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+            Text(AppLocalizations.of(context)!.ttsProvider, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: _ttsProvider,
@@ -529,14 +536,14 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               dropdownColor: sheetBg,
-              items: const [
+              items: [
                 DropdownMenuItem<String>(
                   value: 'system',
-                  child: Text('System TTS (Offline)', style: TextStyle(fontSize: 13)),
+                  child: Text(AppLocalizations.of(context)!.systemTtsOffline, style: const TextStyle(fontSize: 13)),
                 ),
                 DropdownMenuItem<String>(
                   value: 'microsoft_edge',
-                  child: Text('Microsoft Edge TTS (Online)', style: TextStyle(fontSize: 13)),
+                  child: Text(AppLocalizations.of(context)!.edgeTtsOnline, style: const TextStyle(fontSize: 13)),
                 ),
               ],
               onChanged: (val) async {
@@ -564,7 +571,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 );
               },
               icon: const Icon(Icons.record_voice_over_rounded),
-              label: const Text('Manage Pronunciation Rules'),
+              label: Text(AppLocalizations.of(context)!.managePronunciation),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber[700],
                 foregroundColor: Colors.white,
@@ -577,7 +584,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ
             if (_voices.isNotEmpty) ...[
               // BỘ LỌC NGÔN NGỮ
-              Text('Language Filter', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              Text(AppLocalizations.of(context)!.languageFilter, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _selectedLanguageFilter,
@@ -591,22 +598,22 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 dropdownColor: sheetBg,
-                items: const [
+                items: [
                   DropdownMenuItem<String>(
                     value: 'all',
-                    child: Text('All Languages', style: TextStyle(fontSize: 13)),
+                    child: Text(AppLocalizations.of(context)!.allLanguages, style: const TextStyle(fontSize: 13)),
                   ),
                   DropdownMenuItem<String>(
                     value: 'vi',
-                    child: Text('Vietnamese', style: TextStyle(fontSize: 13)),
+                    child: Text(AppLocalizations.of(context)!.vietnamese, style: const TextStyle(fontSize: 13)),
                   ),
                   DropdownMenuItem<String>(
                     value: 'en',
-                    child: Text('English', style: TextStyle(fontSize: 13)),
+                    child: Text(AppLocalizations.of(context)!.english, style: const TextStyle(fontSize: 13)),
                   ),
                   DropdownMenuItem<String>(
                     value: 'others',
-                    child: Text('Others (Japanese, French...)', style: TextStyle(fontSize: 13)),
+                    child: Text(AppLocalizations.of(context)!.otherLanguages, style: const TextStyle(fontSize: 13)),
                   ),
                 ],
                 onChanged: (val) {
@@ -620,7 +627,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               const SizedBox(height: 16),
 
               // Ô TÌM KIẾM GIỌNG ĐỌC (Bằng tiếng Anh)
-              Text('Search Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              Text(AppLocalizations.of(context)!.searchVoice, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
               const SizedBox(height: 8),
               TextField(
                 controller: _voiceSearchController,
@@ -633,7 +640,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  hintText: 'Type to search voice name...',
+                  hintText: AppLocalizations.of(context)!.searchVoiceHint,
                   hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.5), fontSize: 13),
                   prefixIcon: Icon(Icons.search_rounded, color: labelColor.withValues(alpha: 0.6)),
                   suffixIcon: _voiceSearchQuery.isNotEmpty
@@ -656,7 +663,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               ),
               const SizedBox(height: 16),
 
-              Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              Text(AppLocalizations.of(context)!.selectVoice, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
               const SizedBox(height: 8),
               () {
                 final filteredDisplayVoices = _voices.where((v) {

@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart' hide print;
 import '../../services/sync_service.dart' hide print;
@@ -152,13 +153,14 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   Future<void> _toggleBookmark() async {
     final book = _ttsService.activeBook;
     if (book == null) return;
+    final l10n = AppLocalizations.of(context)!;
     try {
       final db = await DatabaseHelper.getInstance();
       if (_isBookmarked) {
         await db.deleteBookmarkAt(book.uuid, _ttsService.currentChapterIndex, _ttsService.currentParagraphIndex);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bookmark removed'), duration: Duration(seconds: 1)),
+          SnackBar(content: Text(l10n.bookmarkRemoved), duration: const Duration(seconds: 1)),
         );
       } else {
         final chapter = _ttsService.chapters[_ttsService.currentChapterIndex];
@@ -172,7 +174,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         await db.saveBookmark(bookmark);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bookmark added'), duration: Duration(seconds: 1)),
+          SnackBar(content: Text(l10n.bookmarkAdded), duration: const Duration(seconds: 1)),
         );
       }
       await _updateBookmarkState();
@@ -202,6 +204,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     final key = '${chapterIndex}_$paragraphIndex';
     final existingHighlight = _highlightsMap[key];
 
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -215,9 +218,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Paragraph Actions',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.paragraphActions,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -235,7 +238,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             
             ListTile(
               leading: Icon(Icons.sticky_note_2_rounded, color: Colors.amber[700]),
-              title: Text(existingHighlight?.note != null ? 'Edit Note' : 'Add Note', style: TextStyle(color: textColor)),
+              title: Text(existingHighlight?.note != null ? l10n.editNote : l10n.addNote, style: TextStyle(color: textColor)),
               onTap: () {
                 Navigator.pop(context);
                 _showAddNoteDialog(chapterIndex, paragraphIndex, paragraphText, existingHighlight);
@@ -244,12 +247,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             
             ListTile(
               leading: Icon(Icons.copy_rounded, color: Colors.amber[700]),
-              title: Text('Copy Text', style: TextStyle(color: textColor)),
+              title: Text(l10n.copyText, style: TextStyle(color: textColor)),
               onTap: () {
                 Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: paragraphText));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Copied to clipboard'), duration: Duration(seconds: 1)),
+                  SnackBar(content: Text(l10n.copiedToClipboard), duration: const Duration(seconds: 1)),
                 );
               },
             ),
@@ -257,7 +260,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             if (existingHighlight != null)
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                title: const Text('Remove Highlight', style: TextStyle(color: Colors.redAccent)),
+                title: Text(l10n.removeHighlight, style: const TextStyle(color: Colors.redAccent)),
                 onTap: () async {
                   Navigator.pop(context);
                   final db = await DatabaseHelper.getInstance();
@@ -265,7 +268,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                   await _loadBookmarksAndHighlights();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Highlight removed'), duration: Duration(seconds: 1)),
+                      SnackBar(content: Text(l10n.highlightRemoved), duration: const Duration(seconds: 1)),
                     );
                   }
                 },
@@ -304,8 +307,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         await db.saveHighlight(highlight);
         await _loadBookmarksAndHighlights();
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Highlight saved'), duration: Duration(seconds: 1)),
+            SnackBar(content: Text(l10n.highlightSaved), duration: const Duration(seconds: 1)),
           );
         }
       },
@@ -328,24 +332,25 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   void _showAddNoteDialog(int chapterIndex, int paragraphIndex, String text, Highlight? existing) {
     final isDark = _getIsDark(context);
     final controller = TextEditingController(text: existing?.note);
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: const Text('Add Note', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(existing != null ? l10n.editNote : l10n.addNote, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           maxLines: 3,
           style: TextStyle(color: _getTextColor(isDark)),
-          decoration: const InputDecoration(
-            hintText: 'Type your note here...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: l10n.typeNoteHint,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -368,11 +373,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               await _loadBookmarksAndHighlights();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Note saved'), duration: Duration(seconds: 1)),
+                  SnackBar(content: Text(l10n.noteSaved), duration: const Duration(seconds: 1)),
                 );
               }
             },
-            child: const Text('Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -589,9 +594,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         final activeChapterIndex = _ttsService.currentChapterIndex;
 
         if (book == null || chapters.isEmpty) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
-              child: Text('No book active'),
+              child: Text(AppLocalizations.of(context)!.noBookActive),
             ),
           );
         }

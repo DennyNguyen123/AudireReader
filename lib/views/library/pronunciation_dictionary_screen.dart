@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/database/database_helper.dart';
 import '../../models/pronunciation_rule.dart';
 import '../../services/tts_service.dart';
+import '../../l10n/app_localizations.dart';
 
 class PronunciationDictionaryScreen extends StatefulWidget {
   const PronunciationDictionaryScreen({super.key});
@@ -34,7 +35,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load rules: $e'),
+            content: Text(AppLocalizations.of(context)?.failedToLoadRules(e.toString()) ?? 'Failed to load rules: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -60,8 +61,8 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
       _loadRules();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rule deleted successfully'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.ruleDeletedSuccessfully ?? 'Rule deleted successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -70,7 +71,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to delete rule: $e'),
+            content: Text(AppLocalizations.of(context)?.failedToDeleteRule(e.toString()) ?? 'Failed to delete rule: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -93,7 +94,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update rule: $e'),
+            content: Text(AppLocalizations.of(context)?.failedToUpdateRule(e.toString()) ?? 'Failed to update rule: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -117,7 +118,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
             backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
-              rule == null ? 'Add Pronunciation Rule' : 'Edit Pronunciation Rule',
+              rule == null ? (AppLocalizations.of(context)?.addPronunciationRule ?? 'Add Pronunciation Rule') : (AppLocalizations.of(context)?.editPronunciationRule ?? 'Edit Pronunciation Rule'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             content: SingleChildScrollView(
@@ -129,7 +130,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     controller: targetController,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
-                      labelText: 'Original Text (Target)',
+                      labelText: AppLocalizations.of(context)?.originalTextTarget ?? 'Original Text (Target)',
                       hintText: 'e.g. ko, main, nv',
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -144,7 +145,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     controller: replacementController,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
-                      labelText: 'Read As (Replacement)',
+                      labelText: AppLocalizations.of(context)?.readAsReplacement ?? 'Read As (Replacement)',
                       hintText: 'e.g. không, nhân vật chính',
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -156,8 +157,8 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                   ),
                   const SizedBox(height: 16),
                   SwitchListTile(
-                    title: const Text('Use Regular Expression (Regex)'),
-                    subtitle: const Text('Advanced pattern matching'),
+                    title: Text(AppLocalizations.of(context)?.useRegularExpressionRegex ?? 'Use Regular Expression (Regex)'),
+                    subtitle: Text(AppLocalizations.of(context)?.advancedPatternMatching ?? 'Advanced pattern matching'),
                     value: isRegex,
                     activeThumbColor: Colors.amber[700],
                     activeTrackColor: Colors.amber[700]?.withValues(alpha: 0.5),
@@ -174,7 +175,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -183,8 +184,8 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                   
                   if (target.isEmpty || replacement.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please fill in both fields'),
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)?.pleaseFillBothFields ?? 'Please fill in both fields'),
                         backgroundColor: Colors.amber,
                       ),
                     );
@@ -213,7 +214,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(rule == null ? 'Rule added successfully' : 'Rule updated successfully'),
+                          content: Text(rule == null ? (AppLocalizations.of(context)?.ruleAddedSuccessfully ?? 'Rule added successfully') : (AppLocalizations.of(context)?.ruleUpdatedSuccessfully ?? 'Rule updated successfully')),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -222,7 +223,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to save rule: $e'),
+                          content: Text(AppLocalizations.of(context)?.failedToSaveRule(e.toString()) ?? 'Failed to save rule: $e'),
                           backgroundColor: Colors.redAccent,
                         ),
                       );
@@ -234,7 +235,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('Save'),
+                child: Text(AppLocalizations.of(context)?.save ?? 'Save'),
               ),
             ],
           );
@@ -247,12 +248,12 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete the rule for "${rule.target}"?'),
+        title: Text(AppLocalizations.of(context)?.confirmDelete ?? 'Confirm Delete'),
+        content: Text(AppLocalizations.of(context)?.confirmDeleteRuleTarget(rule.target) ?? 'Are you sure you want to delete the rule for "${rule.target}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -260,7 +261,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
               _deleteRule(rule);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.delete ?? 'Delete'),
           ),
         ],
       ),
@@ -274,9 +275,9 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6),
       appBar: AppBar(
-        title: const Text(
-          'Pronunciation Dictionary',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)?.dictionary ?? 'Pronunciation Dictionary',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -296,7 +297,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No custom pronunciation rules',
+                        AppLocalizations.of(context)?.noCustomPronunciationRules ?? 'No custom pronunciation rules',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -305,7 +306,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Tap the "+" button to add your first rule',
+                        AppLocalizations.of(context)?.tapToAddFirstRule ?? 'Tap the "+" button to add your first rule',
                         style: TextStyle(
                           fontSize: 14,
                           color: isDark ? Colors.white38 : Colors.black38,
@@ -367,15 +368,15 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                                     color: Colors.purple.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Text(
-                                    'Regex',
-                                    style: TextStyle(color: Colors.purpleAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                                  child: Text(
+                                    AppLocalizations.of(context)?.regex ?? 'Regex',
+                                    style: const TextStyle(color: Colors.purpleAccent, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                               ],
                               Text(
-                                rule.active ? 'Active' : 'Inactive',
+                                rule.active ? (AppLocalizations.of(context)?.active ?? 'Active') : (AppLocalizations.of(context)?.inactive ?? 'Inactive'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: rule.active ? Colors.green : Colors.grey,

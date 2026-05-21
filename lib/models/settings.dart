@@ -15,6 +15,7 @@ class AppSettings {
 
   String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace'
   String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia'
+  String appLocale = 'en';      // 'en' hoặc 'vi'
 
   bool webDavEnabled = false;
   String webDavUrl = '';

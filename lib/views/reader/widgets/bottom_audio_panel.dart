@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/chapter.dart';
 import '../../../services/tts_service.dart';
 
@@ -54,7 +55,14 @@ class BottomAudioPanel extends StatelessWidget {
               final chapterPercentStr = chapterPercent.round().toString();
 
               return Text(
-                'Paragraph $currentParagraph of $totalParagraphs ($percentStr%) • Chapter $currentChapter/$totalChapters ($chapterPercentStr%)',
+                AppLocalizations.of(context)!.audioPanelProgress(
+                  currentParagraph,
+                  totalParagraphs,
+                  percentStr,
+                  currentChapter,
+                  totalChapters,
+                  chapterPercentStr,
+                ),
                 style: TextStyle(
                   fontSize: 12,
                   color: textColor.withValues(alpha: 0.6),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/chapter.dart';
 import '../../../services/tts_service.dart';
 
@@ -70,7 +71,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
     return AlertDialog(
       backgroundColor: widget.isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('Search Inside Book', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(AppLocalizations.of(context)!.searchInsideBook, style: const TextStyle(fontWeight: FontWeight.bold)),
       content: SizedBox(
         width: double.maxFinite,
         height: MediaQuery.of(context).size.height * 0.6,
@@ -80,7 +81,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
               controller: _searchController,
               style: TextStyle(color: widget.textColor),
               decoration: InputDecoration(
-                hintText: 'Type keyword...',
+                hintText: AppLocalizations.of(context)!.typeKeyword,
                 hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                 prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
                 filled: true,
@@ -100,8 +101,8 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                       ? Center(
                           child: Text(
                             _searchController.text.isEmpty
-                                ? 'Enter a keyword to start searching'
-                                : 'No results found',
+                                ? AppLocalizations.of(context)!.enterKeywordToSearch
+                                : AppLocalizations.of(context)!.noResultsFound,
                             style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                           ),
                         )
@@ -171,7 +172,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context)!.close),
         ),
       ],
     );

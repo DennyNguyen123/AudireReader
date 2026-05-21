@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/logger_service.dart';
+import '../../l10n/app_localizations.dart';
 
 class DeveloperConsoleScreen extends StatefulWidget {
   const DeveloperConsoleScreen({super.key});
@@ -71,9 +72,9 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Debug Console',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          AppLocalizations.of(context)?.debugConsole ?? 'Debug Console',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -81,7 +82,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.copy_all_rounded),
-            tooltip: 'Copy All Logs',
+            tooltip: AppLocalizations.of(context)?.copyAllLogs ?? 'Copy All Logs',
             onPressed: () {
               final allLogs = LoggerService().logs.map((log) {
                 final time = log.timestamp.toIso8601String().split('T')[1].substring(0, 8);
@@ -90,8 +91,8 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
               
               Clipboard.setData(ClipboardData(text: allLogs));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All logs copied to clipboard.'),
+                SnackBar(
+                  content: Text(AppLocalizations.of(context)?.allLogsCopied ?? 'All logs copied to clipboard.'),
                   backgroundColor: Colors.amber,
                 ),
               );
@@ -99,12 +100,12 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep_rounded),
-            tooltip: 'Clear Logs',
+            tooltip: AppLocalizations.of(context)?.clearLogs ?? 'Clear Logs',
             onPressed: () {
               LoggerService().clear();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Console logs cleared.'),
+                SnackBar(
+                  content: Text(AppLocalizations.of(context)?.consoleLogsCleared ?? 'Console logs cleared.'),
                   backgroundColor: Colors.amber,
                 ),
               );
@@ -131,7 +132,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     controller: _searchController,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Search logs...',
+                      hintText: AppLocalizations.of(context)?.searchLogsHint ?? 'Search logs...',
                       prefixIcon: const Icon(Icons.search_rounded, size: 18),
                       filled: true,
                       fillColor: isDark ? Colors.black26 : Colors.grey[100],
@@ -235,7 +236,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                         Icon(Icons.speaker_notes_off_rounded, size: 48, color: Colors.grey.withValues(alpha: 0.5)),
                         const SizedBox(height: 12),
                         Text(
-                          'No matching logs found',
+                          AppLocalizations.of(context)?.noMatchingLogs ?? 'No matching logs found',
                           style: TextStyle(color: Colors.grey.withValues(alpha: 0.8), fontSize: 13),
                         ),
                       ],

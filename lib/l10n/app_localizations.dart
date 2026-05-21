@@ -1,0 +1,1359 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_vi.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('vi'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audire Reader'**
+  String get appTitle;
+
+  /// No description provided for @library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get library;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @searchBookHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search book on shelf...'**
+  String get searchBookHint;
+
+  /// No description provided for @sortBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort Books'**
+  String get sortBooks;
+
+  /// No description provided for @sortByLastRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Last Read'**
+  String get sortByLastRead;
+
+  /// No description provided for @sortByTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Title'**
+  String get sortByTitle;
+
+  /// No description provided for @sortByDateAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Date Added'**
+  String get sortByDateAdded;
+
+  /// No description provided for @emptyShelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Your shelf is empty'**
+  String get emptyShelf;
+
+  /// No description provided for @importBookHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the \"+\" button to import a book (.epub, .txt, .pdf, .docx)'**
+  String get importBookHint;
+
+  /// No description provided for @noBooksMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No books match your search'**
+  String get noBooksMatch;
+
+  /// No description provided for @syncCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync completed successfully!'**
+  String get syncCompleted;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed: {message}'**
+  String syncFailed(String message);
+
+  /// No description provided for @syncError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync error: {error}'**
+  String syncError(String error);
+
+  /// No description provided for @pleaseConfigureWebdav.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable and configure WebDAV in Settings first.'**
+  String get pleaseConfigureWebdav;
+
+  /// No description provided for @neverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get neverSynced;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String minutesAgo(int count);
+
+  /// No description provided for @todayAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Today at {time}'**
+  String todayAt(String time);
+
+  /// No description provided for @deleteBookConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted \"{title}\"'**
+  String deleteBookConfirm(String title);
+
+  /// No description provided for @successfullyImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported \"{title}\"!'**
+  String successfullyImported(String title);
+
+  /// No description provided for @failedToImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import book: {error}'**
+  String failedToImport(String error);
+
+  /// No description provided for @unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get unread;
+
+  /// No description provided for @reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get reading;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @aboutApp.
+  ///
+  /// In en, this message translates to:
+  /// **'About App'**
+  String get aboutApp;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version: {version}'**
+  String version(String version);
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @vietnamese.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese'**
+  String get vietnamese;
+
+  /// No description provided for @developerMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Mode'**
+  String get developerMode;
+
+  /// No description provided for @debugLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Logs'**
+  String get debugLogs;
+
+  /// No description provided for @webdavDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Debug'**
+  String get webdavDebug;
+
+  /// No description provided for @databaseInspector.
+  ///
+  /// In en, this message translates to:
+  /// **'Database Inspector'**
+  String get databaseInspector;
+
+  /// No description provided for @clearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache & Reset Sync'**
+  String get clearCache;
+
+  /// No description provided for @clearCacheSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared and sync data reset successfully.'**
+  String get clearCacheSuccess;
+
+  /// No description provided for @clearCacheFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear cache: {error}'**
+  String clearCacheFailed(String error);
+
+  /// No description provided for @hotkeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotkeys & Shortcuts'**
+  String get hotkeys;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @generalPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'General Preferences'**
+  String get generalPreferences;
+
+  /// No description provided for @openLastReadOnLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Open last read book on launch'**
+  String get openLastReadOnLaunch;
+
+  /// No description provided for @autoCheckUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto check for updates'**
+  String get autoCheckUpdate;
+
+  /// No description provided for @ttsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS Settings'**
+  String get ttsSettings;
+
+  /// No description provided for @ttsProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS Provider'**
+  String get ttsProvider;
+
+  /// No description provided for @voice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get voice;
+
+  /// No description provided for @speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get speed;
+
+  /// No description provided for @fontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Font Size'**
+  String get fontSize;
+
+  /// No description provided for @fontFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'Font Family'**
+  String get fontFamily;
+
+  /// No description provided for @themeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Mode'**
+  String get themeMode;
+
+  /// No description provided for @webdavSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Sync Settings'**
+  String get webdavSettings;
+
+  /// No description provided for @enableWebdav.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable WebDAV Sync'**
+  String get enableWebdav;
+
+  /// No description provided for @webdavUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV URL'**
+  String get webdavUrl;
+
+  /// No description provided for @webdavUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Username'**
+  String get webdavUsername;
+
+  /// No description provided for @webdavPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Password'**
+  String get webdavPassword;
+
+  /// No description provided for @testConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Connection'**
+  String get testConnection;
+
+  /// No description provided for @connectionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection tested successfully!'**
+  String get connectionSuccess;
+
+  /// No description provided for @connectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection test failed: {error}'**
+  String connectionFailed(String error);
+
+  /// No description provided for @dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronunciation Dictionary'**
+  String get dictionary;
+
+  /// No description provided for @developerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer Settings'**
+  String get developerSettings;
+
+  /// No description provided for @checkUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for Updates'**
+  String get checkUpdates;
+
+  /// No description provided for @system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// No description provided for @light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// No description provided for @dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// No description provided for @sepia.
+  ///
+  /// In en, this message translates to:
+  /// **'Sepia'**
+  String get sepia;
+
+  /// No description provided for @sortOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort options'**
+  String get sortOptions;
+
+  /// No description provided for @deleteBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Book'**
+  String get deleteBook;
+
+  /// No description provided for @confirmDeleteBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{title}\"?'**
+  String confirmDeleteBook(String title);
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @readingAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Appearance & Typography'**
+  String get readingAppearance;
+
+  /// No description provided for @readingTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Theme'**
+  String get readingTheme;
+
+  /// No description provided for @fontStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Font Style'**
+  String get fontStyle;
+
+  /// No description provided for @readingSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Speed'**
+  String get readingSpeed;
+
+  /// No description provided for @languageFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Language Filter'**
+  String get languageFilter;
+
+  /// No description provided for @searchVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Voice'**
+  String get searchVoice;
+
+  /// No description provided for @selectVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Voice'**
+  String get selectVoice;
+
+  /// No description provided for @managePronunciation.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Pronunciation Rules'**
+  String get managePronunciation;
+
+  /// No description provided for @hotkeyConfigurations.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotkey Configurations'**
+  String get hotkeyConfigurations;
+
+  /// No description provided for @customizeHotkeysDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize keyboard shortcuts for system commands and reading controls.'**
+  String get customizeHotkeysDesc;
+
+  /// No description provided for @nextParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Paragraph'**
+  String get nextParagraph;
+
+  /// No description provided for @prevParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Paragraph'**
+  String get prevParagraph;
+
+  /// No description provided for @nextChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Chapter'**
+  String get nextChapter;
+
+  /// No description provided for @prevChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Chapter'**
+  String get prevChapter;
+
+  /// No description provided for @playPauseTts.
+  ///
+  /// In en, this message translates to:
+  /// **'Play/Pause TTS'**
+  String get playPauseTts;
+
+  /// No description provided for @openChapterShelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chapter Shelf'**
+  String get openChapterShelf;
+
+  /// No description provided for @openReaderSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Reader Setting'**
+  String get openReaderSetting;
+
+  /// No description provided for @bossKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss Key'**
+  String get bossKey;
+
+  /// No description provided for @bossKeyActionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss Key Action'**
+  String get bossKeyActionLabel;
+
+  /// No description provided for @minimizeWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize Window'**
+  String get minimizeWindow;
+
+  /// No description provided for @hideWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Window (Completely invisible)'**
+  String get hideWindow;
+
+  /// No description provided for @resetHotkeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Default Hotkeys'**
+  String get resetHotkeys;
+
+  /// No description provided for @cloudLibrarySync.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Library Sync'**
+  String get cloudLibrarySync;
+
+  /// No description provided for @cloudSyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.'**
+  String get cloudSyncDesc;
+
+  /// No description provided for @autoSyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-sync when launching or leaving a book'**
+  String get autoSyncDesc;
+
+  /// No description provided for @webdavServerConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Server Configuration'**
+  String get webdavServerConfig;
+
+  /// No description provided for @webdavServerUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Server URL'**
+  String get webdavServerUrl;
+
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// No description provided for @passwordAppPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password / App Password'**
+  String get passwordAppPassword;
+
+  /// No description provided for @syncStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Status'**
+  String get syncStatus;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get syncNow;
+
+  /// No description provided for @developerModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock advanced diagnostic tools, database inspector, and system logs.'**
+  String get developerModeDesc;
+
+  /// No description provided for @enableDebugLogsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Debug Logs'**
+  String get enableDebugLogsLabel;
+
+  /// No description provided for @debugLogsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a history of application logs for troubleshooting.'**
+  String get debugLogsDesc;
+
+  /// No description provided for @webdavDebugConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Debug Console'**
+  String get webdavDebugConsole;
+
+  /// No description provided for @webdavDebugDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Output raw WebDAV HTTP requests and responses to system log.'**
+  String get webdavDebugDesc;
+
+  /// No description provided for @openDebugConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Debug Console'**
+  String get openDebugConsole;
+
+  /// No description provided for @forceSyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Sync Now'**
+  String get forceSyncNow;
+
+  /// No description provided for @synchronizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing...'**
+  String get synchronizing;
+
+  /// No description provided for @processingSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing books, cover arts, and reading progress...'**
+  String get processingSync;
+
+  /// No description provided for @allLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'All Languages'**
+  String get allLanguages;
+
+  /// No description provided for @otherLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Others (Japanese, French...)'**
+  String get otherLanguages;
+
+  /// No description provided for @searchVoiceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type to search voice name...'**
+  String get searchVoiceHint;
+
+  /// No description provided for @systemTtsOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'System TTS (Offline)'**
+  String get systemTtsOffline;
+
+  /// No description provided for @edgeTtsOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Microsoft Edge TTS (Online)'**
+  String get edgeTtsOnline;
+
+  /// No description provided for @fillCredentialsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in all credentials first.'**
+  String get fillCredentialsHint;
+
+  /// No description provided for @connectionSuccessDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection successful! WebDAV server is active.'**
+  String get connectionSuccessDesc;
+
+  /// No description provided for @connectionFailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed. Please verify URL, username, and password.'**
+  String get connectionFailedDesc;
+
+  /// No description provided for @syncSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Successful'**
+  String get syncSuccessful;
+
+  /// No description provided for @resetHotkeysSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'All hotkeys reset to default values.'**
+  String get resetHotkeysSuccess;
+
+  /// No description provided for @recordHotkey.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Hotkey: {keyName}'**
+  String recordHotkey(String keyName);
+
+  /// No description provided for @pressHotkeyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Press your keyboard combination. Avoid using system reserve keys.'**
+  String get pressHotkeyDesc;
+
+  /// No description provided for @pressKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Press keys...'**
+  String get pressKeys;
+
+  /// No description provided for @capturedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Captured successfully!'**
+  String get capturedSuccess;
+
+  /// No description provided for @listeningKeystroke.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening for keystroke...'**
+  String get listeningKeystroke;
+
+  /// No description provided for @openLastReadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically resume reading the most recently read book on launch.'**
+  String get openLastReadDesc;
+
+  /// No description provided for @autoCheckUpdateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically check for new versions from GitHub when the app starts.'**
+  String get autoCheckUpdateDesc;
+
+  /// No description provided for @enableWebdavFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable WebDAV Sync first.'**
+  String get enableWebdavFirst;
+
+  /// No description provided for @lastSyncedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Synced: {time}'**
+  String lastSyncedAt(String time);
+
+  /// No description provided for @lastSyncedNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Synced: Never'**
+  String get lastSyncedNever;
+
+  /// No description provided for @enterWebdavUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter WebDAV URL'**
+  String get enterWebdavUrl;
+
+  /// No description provided for @enterUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter Username'**
+  String get enterUsername;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter Password'**
+  String get enterPassword;
+
+  /// No description provided for @parsingBookContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Parsing book content...'**
+  String get parsingBookContent;
+
+  /// No description provided for @importBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Book'**
+  String get importBook;
+
+  /// No description provided for @confirmDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Delete'**
+  String get confirmDelete;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @chaptersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Chapters'**
+  String chaptersCount(int count);
+
+  /// No description provided for @readPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% Read'**
+  String readPercent(String percent);
+
+  /// No description provided for @bookmarkRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark removed'**
+  String get bookmarkRemoved;
+
+  /// No description provided for @bookmarkAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark added'**
+  String get bookmarkAdded;
+
+  /// No description provided for @paragraphActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraph Actions'**
+  String get paragraphActions;
+
+  /// No description provided for @editNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Note'**
+  String get editNote;
+
+  /// No description provided for @addNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Note'**
+  String get addNote;
+
+  /// No description provided for @copyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Text'**
+  String get copyText;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @removeHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Highlight'**
+  String get removeHighlight;
+
+  /// No description provided for @highlightRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight removed'**
+  String get highlightRemoved;
+
+  /// No description provided for @highlightSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight saved'**
+  String get highlightSaved;
+
+  /// No description provided for @typeNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your note here...'**
+  String get typeNoteHint;
+
+  /// No description provided for @noteSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Note saved'**
+  String get noteSaved;
+
+  /// No description provided for @noBookActive.
+  ///
+  /// In en, this message translates to:
+  /// **'No book active'**
+  String get noBookActive;
+
+  /// No description provided for @readerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader Settings'**
+  String get readerSettings;
+
+  /// No description provided for @displayTypography.
+  ///
+  /// In en, this message translates to:
+  /// **'DISPLAY & TYPOGRAPHY'**
+  String get displayTypography;
+
+  /// No description provided for @textToSpeechTts.
+  ///
+  /// In en, this message translates to:
+  /// **'TEXT-TO-SPEECH (TTS)'**
+  String get textToSpeechTts;
+
+  /// No description provided for @sleepTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Timer'**
+  String get sleepTimer;
+
+  /// No description provided for @sleepTimerRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Timer ({time} remaining)'**
+  String sleepTimerRemaining(String time);
+
+  /// No description provided for @sleepTimerStopAtEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Timer (Stop at end of chapter)'**
+  String get sleepTimerStopAtEnd;
+
+  /// No description provided for @off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get off;
+
+  /// No description provided for @endChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'End Chapter'**
+  String get endChapter;
+
+  /// No description provided for @audioPanelProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraph {currentParagraph} of {totalParagraphs} ({percent}%) • Chapter {currentChapter}/{totalChapters} ({chapterPercent}%)'**
+  String audioPanelProgress(
+    int currentParagraph,
+    int totalParagraphs,
+    String percent,
+    int currentChapter,
+    int totalChapters,
+    String chapterPercent,
+  );
+
+  /// No description provided for @searchInsideBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Inside Book'**
+  String get searchInsideBook;
+
+  /// No description provided for @typeKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Type keyword...'**
+  String get typeKeyword;
+
+  /// No description provided for @enterKeywordToSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a keyword to start searching'**
+  String get enterKeywordToSearch;
+
+  /// No description provided for @noResultsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noResultsFound;
+
+  /// No description provided for @chaptersTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get chaptersTab;
+
+  /// No description provided for @bookmarksTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get bookmarksTab;
+
+  /// No description provided for @highlightsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get highlightsTab;
+
+  /// No description provided for @searchChaptersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chapters...'**
+  String get searchChaptersHint;
+
+  /// No description provided for @noChaptersMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No chapters match your search'**
+  String get noChaptersMatch;
+
+  /// No description provided for @noBookmarksSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No bookmarks saved yet'**
+  String get noBookmarksSaved;
+
+  /// No description provided for @paragraphIndexLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Paragraph {index}'**
+  String paragraphIndexLabel(int index);
+
+  /// No description provided for @noHighlightsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No highlights saved yet'**
+  String get noHighlightsSaved;
+
+  /// No description provided for @failedToLoadRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load rules: {error}'**
+  String failedToLoadRules(String error);
+
+  /// No description provided for @ruleDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule deleted successfully'**
+  String get ruleDeletedSuccessfully;
+
+  /// No description provided for @failedToDeleteRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete rule: {error}'**
+  String failedToDeleteRule(String error);
+
+  /// No description provided for @failedToUpdateRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update rule: {error}'**
+  String failedToUpdateRule(String error);
+
+  /// No description provided for @addPronunciationRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Pronunciation Rule'**
+  String get addPronunciationRule;
+
+  /// No description provided for @editPronunciationRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Pronunciation Rule'**
+  String get editPronunciationRule;
+
+  /// No description provided for @originalTextTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Text (Target)'**
+  String get originalTextTarget;
+
+  /// No description provided for @readAsReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Read As (Replacement)'**
+  String get readAsReplacement;
+
+  /// No description provided for @useRegularExpressionRegex.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Regular Expression (Regex)'**
+  String get useRegularExpressionRegex;
+
+  /// No description provided for @advancedPatternMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced pattern matching'**
+  String get advancedPatternMatching;
+
+  /// No description provided for @pleaseFillBothFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in both fields'**
+  String get pleaseFillBothFields;
+
+  /// No description provided for @ruleAddedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule added successfully'**
+  String get ruleAddedSuccessfully;
+
+  /// No description provided for @ruleUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule updated successfully'**
+  String get ruleUpdatedSuccessfully;
+
+  /// No description provided for @failedToSaveRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save rule: {error}'**
+  String failedToSaveRule(String error);
+
+  /// No description provided for @confirmDeleteRuleTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the rule for \"{target}\"?'**
+  String confirmDeleteRuleTarget(String target);
+
+  /// No description provided for @noCustomPronunciationRules.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom pronunciation rules'**
+  String get noCustomPronunciationRules;
+
+  /// No description provided for @tapToAddFirstRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the \"+\" button to add your first rule'**
+  String get tapToAddFirstRule;
+
+  /// No description provided for @regex.
+  ///
+  /// In en, this message translates to:
+  /// **'Regex'**
+  String get regex;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @inactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactive;
+
+  /// No description provided for @debugConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Console'**
+  String get debugConsole;
+
+  /// No description provided for @copyAllLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy All Logs'**
+  String get copyAllLogs;
+
+  /// No description provided for @allLogsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'All logs copied to clipboard.'**
+  String get allLogsCopied;
+
+  /// No description provided for @clearLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Logs'**
+  String get clearLogs;
+
+  /// No description provided for @consoleLogsCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Console logs cleared.'**
+  String get consoleLogsCleared;
+
+  /// No description provided for @searchLogsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search logs...'**
+  String get searchLogsHint;
+
+  /// No description provided for @noMatchingLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching logs found'**
+  String get noMatchingLogs;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'vi'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'vi':
+      return AppLocalizationsVi();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

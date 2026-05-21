@@ -1,0 +1,382 @@
+{
+  "@@locale": "en",
+  "appTitle": "Audire Reader",
+  "library": "Library",
+  "settings": "Settings",
+  "searchBookHint": "Search book on shelf...",
+  "sortBooks": "Sort Books",
+  "sortByLastRead": "Sort by Last Read",
+  "sortByTitle": "Sort by Title",
+  "sortByDateAdded": "Sort by Date Added",
+  "emptyShelf": "Your shelf is empty",
+  "importBookHint": "Tap the \"+\" button to import a book (.epub, .txt, .pdf, .docx)",
+  "noBooksMatch": "No books match your search",
+  "syncCompleted": "Sync completed successfully!",
+  "syncFailed": "Sync failed: {message}",
+  "@syncFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncError": "Sync error: {error}",
+  "@syncError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseConfigureWebdav": "Please enable and configure WebDAV in Settings first.",
+  "neverSynced": "Never synced",
+  "justNow": "Just now",
+  "minutesAgo": "{count}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayAt": "Today at {time}",
+  "@todayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteBookConfirm": "Deleted \"{title}\"",
+  "@deleteBookConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "successfullyImported": "Successfully imported \"{title}\"!",
+  "@successfullyImported": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToImport": "Failed to import book: {error}",
+  "@failedToImport": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unread": "Unread",
+  "reading": "Reading",
+  "completed": "Completed",
+  "all": "All",
+  "aboutApp": "About App",
+  "version": "Version: {version}",
+  "@version": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "language": "Language",
+  "english": "English",
+  "vietnamese": "Vietnamese",
+  "developerMode": "Developer Mode",
+  "debugLogs": "Debug Logs",
+  "webdavDebug": "WebDAV Debug",
+  "databaseInspector": "Database Inspector",
+  "clearCache": "Clear Cache & Reset Sync",
+  "clearCacheSuccess": "Cache cleared and sync data reset successfully.",
+  "clearCacheFailed": "Failed to clear cache: {error}",
+  "@clearCacheFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "hotkeys": "Hotkeys & Shortcuts",
+  "save": "Save",
+  "cancel": "Cancel",
+  "reset": "Reset",
+  "generalPreferences": "General Preferences",
+  "openLastReadOnLaunch": "Open last read book on launch",
+  "autoCheckUpdate": "Auto check for updates",
+  "ttsSettings": "TTS Settings",
+  "ttsProvider": "TTS Provider",
+  "voice": "Voice",
+  "speed": "Speed",
+  "fontSize": "Font Size",
+  "fontFamily": "Font Family",
+  "themeMode": "Theme Mode",
+  "webdavSettings": "WebDAV Sync Settings",
+  "enableWebdav": "Enable WebDAV Sync",
+  "webdavUrl": "WebDAV URL",
+  "webdavUsername": "WebDAV Username",
+  "webdavPassword": "WebDAV Password",
+  "testConnection": "Test Connection",
+  "connectionSuccess": "Connection tested successfully!",
+  "connectionFailed": "Connection test failed: {error}",
+  "@connectionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionary": "Pronunciation Dictionary",
+  "developerSettings": "Developer Settings",
+  "checkUpdates": "Check for Updates",
+  "system": "System",
+  "light": "Light",
+  "dark": "Dark",
+  "sepia": "Sepia",
+  "sortOptions": "Sort options",
+  "deleteBook": "Delete Book",
+  "confirmDeleteBook": "Are you sure you want to delete \"{title}\"?",
+  "@confirmDeleteBook": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "yes": "Yes",
+  "no": "No",
+  "readingAppearance": "Reading Appearance & Typography",
+  "readingTheme": "Reading Theme",
+  "fontStyle": "Font Style",
+  "readingSpeed": "Reading Speed",
+  "languageFilter": "Language Filter",
+  "searchVoice": "Search Voice",
+  "selectVoice": "Select Voice",
+  "managePronunciation": "Manage Pronunciation Rules",
+  "hotkeyConfigurations": "Hotkey Configurations",
+  "customizeHotkeysDesc": "Customize keyboard shortcuts for system commands and reading controls.",
+  "nextParagraph": "Next Paragraph",
+  "prevParagraph": "Previous Paragraph",
+  "nextChapter": "Next Chapter",
+  "prevChapter": "Previous Chapter",
+  "playPauseTts": "Play/Pause TTS",
+  "openChapterShelf": "Open Chapter Shelf",
+  "openReaderSetting": "Open Reader Setting",
+  "bossKey": "Boss Key",
+  "bossKeyActionLabel": "Boss Key Action",
+  "minimizeWindow": "Minimize Window",
+  "hideWindow": "Hide Window (Completely invisible)",
+  "resetHotkeys": "Reset to Default Hotkeys",
+  "cloudLibrarySync": "Cloud Library Sync",
+  "cloudSyncDesc": "Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.",
+  "autoSyncDesc": "Auto-sync when launching or leaving a book",
+  "webdavServerConfig": "WebDAV Server Configuration",
+  "webdavServerUrl": "WebDAV Server URL",
+  "username": "Username",
+  "passwordAppPassword": "Password / App Password",
+  "syncStatus": "Sync Status",
+  "syncNow": "Sync Now",
+  "developerModeDesc": "Unlock advanced diagnostic tools, database inspector, and system logs.",
+  "enableDebugLogsLabel": "Enable Debug Logs",
+  "debugLogsDesc": "Keep a history of application logs for troubleshooting.",
+  "webdavDebugConsole": "WebDAV Debug Console",
+  "webdavDebugDesc": "Output raw WebDAV HTTP requests and responses to system log.",
+  "openDebugConsole": "Open Debug Console",
+  "forceSyncNow": "Force Sync Now",
+  "synchronizing": "Synchronizing...",
+  "processingSync": "Processing books, cover arts, and reading progress...",
+  "allLanguages": "All Languages",
+  "otherLanguages": "Others (Japanese, French...)",
+  "searchVoiceHint": "Type to search voice name...",
+  "systemTtsOffline": "System TTS (Offline)",
+  "edgeTtsOnline": "Microsoft Edge TTS (Online)",
+  "fillCredentialsHint": "Please fill in all credentials first.",
+  "connectionSuccessDesc": "Connection successful! WebDAV server is active.",
+  "connectionFailedDesc": "Connection failed. Please verify URL, username, and password.",
+  "syncSuccessful": "Sync Successful",
+  "resetHotkeysSuccess": "All hotkeys reset to default values.",
+  "recordHotkey": "Record Hotkey: {keyName}",
+  "@recordHotkey": {
+    "placeholders": {
+      "keyName": {
+        "type": "String"
+      }
+    }
+  },
+  "pressHotkeyDesc": "Press your keyboard combination. Avoid using system reserve keys.",
+  "pressKeys": "Press keys...",
+  "capturedSuccess": "Captured successfully!",
+  "listeningKeystroke": "Listening for keystroke...",
+  "openLastReadDesc": "Automatically resume reading the most recently read book on launch.",
+  "autoCheckUpdateDesc": "Automatically check for new versions from GitHub when the app starts.",
+  "enableWebdavFirst": "Please enable WebDAV Sync first.",
+  "lastSyncedAt": "Last Synced: {time}",
+  "@lastSyncedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lastSyncedNever": "Last Synced: Never",
+  "enterWebdavUrl": "Please enter WebDAV URL",
+  "enterUsername": "Please enter Username",
+  "enterPassword": "Please enter Password",
+  "parsingBookContent": "Parsing book content...",
+  "importBook": "Import Book",
+  "confirmDelete": "Confirm Delete",
+  "delete": "Delete",
+  "close": "Close",
+  "chaptersCount": "{count} Chapters",
+  "@chaptersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readPercent": "{percent}% Read",
+  "@readPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "bookmarkRemoved": "Bookmark removed",
+  "bookmarkAdded": "Bookmark added",
+  "paragraphActions": "Paragraph Actions",
+  "editNote": "Edit Note",
+  "addNote": "Add Note",
+  "copyText": "Copy Text",
+  "copiedToClipboard": "Copied to clipboard",
+  "removeHighlight": "Remove Highlight",
+  "highlightRemoved": "Highlight removed",
+  "highlightSaved": "Highlight saved",
+  "typeNoteHint": "Type your note here...",
+  "noteSaved": "Note saved",
+  "noBookActive": "No book active",
+  "readerSettings": "Reader Settings",
+  "displayTypography": "DISPLAY & TYPOGRAPHY",
+  "textToSpeechTts": "TEXT-TO-SPEECH (TTS)",
+  "sleepTimer": "Sleep Timer",
+  "sleepTimerRemaining": "Sleep Timer ({time} remaining)",
+  "@sleepTimerRemaining": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepTimerStopAtEnd": "Sleep Timer (Stop at end of chapter)",
+  "off": "Off",
+  "endChapter": "End Chapter",
+  "audioPanelProgress": "Paragraph {currentParagraph} of {totalParagraphs} ({percent}%) • Chapter {currentChapter}/{totalChapters} ({chapterPercent}%)",
+  "@audioPanelProgress": {
+    "placeholders": {
+      "currentParagraph": {
+        "type": "int"
+      },
+      "totalParagraphs": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "currentChapter": {
+        "type": "int"
+      },
+      "totalChapters": {
+        "type": "int"
+      },
+      "chapterPercent": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInsideBook": "Search Inside Book",
+  "typeKeyword": "Type keyword...",
+  "enterKeywordToSearch": "Enter a keyword to start searching",
+  "noResultsFound": "No results found",
+  "chaptersTab": "Chapters",
+  "bookmarksTab": "Bookmarks",
+  "highlightsTab": "Highlights",
+  "searchChaptersHint": "Search chapters...",
+  "noChaptersMatch": "No chapters match your search",
+  "noBookmarksSaved": "No bookmarks saved yet",
+  "paragraphIndexLabel": "Paragraph {index}",
+  "@paragraphIndexLabel": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "noHighlightsSaved": "No highlights saved yet",
+  "failedToLoadRules": "Failed to load rules: {error}",
+  "@failedToLoadRules": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleDeletedSuccessfully": "Rule deleted successfully",
+  "failedToDeleteRule": "Failed to delete rule: {error}",
+  "@failedToDeleteRule": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateRule": "Failed to update rule: {error}",
+  "@failedToUpdateRule": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addPronunciationRule": "Add Pronunciation Rule",
+  "editPronunciationRule": "Edit Pronunciation Rule",
+  "originalTextTarget": "Original Text (Target)",
+  "readAsReplacement": "Read As (Replacement)",
+  "useRegularExpressionRegex": "Use Regular Expression (Regex)",
+  "advancedPatternMatching": "Advanced pattern matching",
+  "pleaseFillBothFields": "Please fill in both fields",
+  "ruleAddedSuccessfully": "Rule added successfully",
+  "ruleUpdatedSuccessfully": "Rule updated successfully",
+  "failedToSaveRule": "Failed to save rule: {error}",
+  "@failedToSaveRule": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmDeleteRuleTarget": "Are you sure you want to delete the rule for \"{target}\"?",
+  "@confirmDeleteRuleTarget": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "noCustomPronunciationRules": "No custom pronunciation rules",
+  "tapToAddFirstRule": "Tap the \"+\" button to add your first rule",
+  "regex": "Regex",
+  "active": "Active",
+  "inactive": "Inactive",
+  "debugConsole": "Debug Console",
+  "copyAllLogs": "Copy All Logs",
+  "allLogsCopied": "All logs copied to clipboard.",
+  "clearLogs": "Clear Logs",
+  "consoleLogsCleared": "Console logs cleared.",
+  "searchLogsHint": "Search logs...",
+  "noMatchingLogs": "No matching logs found"
+}

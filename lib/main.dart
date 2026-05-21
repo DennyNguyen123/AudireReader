@@ -2,9 +2,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'core/system_tray_manager.dart';
 import 'core/global_hotkey_manager.dart';
 import 'core/theme_notifier.dart';
+import 'core/locale_notifier.dart';
 import 'core/database/database_helper.dart';
 import 'views/library/library_screen.dart';
 import 'services/tts_service.dart';
@@ -28,6 +31,7 @@ void main() async {
   final db = await DatabaseHelper.getInstance();
   final settings = await db.getSettings();
   ThemeNotifier.instance.init(settings.themeMode);
+  LocaleNotifier.instance.init(settings.appLocale);
   LoggerService().init(
     enableDebugLogs: settings.enableDebugLogs,
     enableWebDavDebug: settings.enableWebDavDebug,
@@ -97,27 +101,43 @@ class AudireReaderApp extends StatelessWidget {
           appThemeMode = ThemeMode.system;
         }
 
-        return MaterialApp(
-          title: 'Audire Reader',
-          debugShowCheckedModeBanner: false,
-          theme: customTheme ?? ThemeData(
-            brightness: Brightness.light,
-            primarySwatch: Colors.amber,
-            scaffoldBackgroundColor: const Color(0xFFF5F5F7),
-            cardColor: Colors.white,
-            dividerColor: Colors.black.withValues(alpha: 0.06),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            primarySwatch: Colors.amber,
-            scaffoldBackgroundColor: const Color(0xFF121212),
-            cardColor: const Color(0xFF1E1E1E),
-            dividerColor: Colors.white.withValues(alpha: 0.1),
-            useMaterial3: true,
-          ),
-          themeMode: appThemeMode,
-          home: const LibraryScreen(),
+        return ListenableBuilder(
+          listenable: LocaleNotifier.instance,
+          builder: (context, _) {
+            return MaterialApp(
+              title: 'Audire Reader',
+              debugShowCheckedModeBanner: false,
+              theme: customTheme ?? ThemeData(
+                brightness: Brightness.light,
+                primarySwatch: Colors.amber,
+                scaffoldBackgroundColor: const Color(0xFFF5F5F7),
+                cardColor: Colors.white,
+                dividerColor: Colors.black.withValues(alpha: 0.06),
+                useMaterial3: true,
+              ),
+              darkTheme: ThemeData(
+                brightness: Brightness.dark,
+                primarySwatch: Colors.amber,
+                scaffoldBackgroundColor: const Color(0xFF121212),
+                cardColor: const Color(0xFF1E1E1E),
+                dividerColor: Colors.white.withValues(alpha: 0.1),
+                useMaterial3: true,
+              ),
+              themeMode: appThemeMode,
+              locale: LocaleNotifier.instance.locale,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en'),
+                Locale('vi'),
+              ],
+              home: const LibraryScreen(),
+            );
+          },
         );
       },
     );

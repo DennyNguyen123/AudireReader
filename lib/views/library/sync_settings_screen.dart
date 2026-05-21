@@ -17,6 +17,8 @@ import '../../models/chapter.dart';
 import '../../models/progress.dart';
 import '../../core/global_hotkey_manager.dart';
 import '../../core/theme_notifier.dart';
+import '../../core/locale_notifier.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/logger_service.dart';
 import 'developer_console_screen.dart';
 import 'pronunciation_dictionary_screen.dart';
@@ -37,6 +39,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   bool _webDavEnabled = false;
   bool _openLastReadOnLaunch = false;
   bool _autoCheckUpdate = true;
+  String _appLocaleCode = 'en';
   final _urlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -106,6 +109,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _webDavEnabled = settings.webDavEnabled;
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
       _autoCheckUpdate = settings.autoCheckUpdate;
+      _appLocaleCode = (settings.appLocale == 'vi' || settings.appLocale == 'en') ? settings.appLocale : 'en';
       _urlController.text = settings.webDavUrl;
       _usernameController.text = settings.webDavUsername;
       _passwordController.text = webDavPassword;
@@ -536,8 +540,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All hotkeys reset to default values.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.resetHotkeysSuccess ?? 'All hotkeys reset to default values.'),
           backgroundColor: Colors.amber,
         ),
       );
@@ -654,15 +658,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                 backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 title: Text(
-                  'Record Hotkey: $keyName',
+                  AppLocalizations.of(context)?.recordHotkey(keyName) ?? 'Record Hotkey: $keyName',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Press your keyboard combination. Avoid using system reserve keys.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    Text(
+                      AppLocalizations.of(context)?.pressHotkeyDesc ?? 'Press your keyboard combination. Avoid using system reserve keys.',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
@@ -680,7 +684,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                       child: Center(
                         child: Text(
                           recordedShortcut.isEmpty
-                              ? 'Press keys...'
+                              ? (AppLocalizations.of(context)?.pressKeys ?? 'Press keys...')
                               : ShortcutHelper.getDisplayLabel(recordedShortcut),
                           style: TextStyle(
                             fontSize: 20,
@@ -695,14 +699,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                     ),
                     const SizedBox(height: 12),
                     if (!isRecording)
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
-                          SizedBox(width: 6),
+                          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
+                          const SizedBox(width: 6),
                           Text(
-                            'Captured successfully!',
-                            style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
+                            AppLocalizations.of(context)?.capturedSuccess ?? 'Captured successfully!',
+                            style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         ],
                       )
@@ -716,9 +720,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber[700]),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'Listening for keystroke...',
-                            style: TextStyle(color: Colors.grey, fontSize: 11),
+                          Text(
+                            AppLocalizations.of(context)?.listeningKeystroke ?? 'Listening for keystroke...',
+                            style: const TextStyle(color: Colors.grey, fontSize: 11),
                           ),
                         ],
                       ),
@@ -727,7 +731,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                   ),
                   if (!isRecording)
                     ElevatedButton(
@@ -740,7 +744,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(AppLocalizations.of(context)?.save ?? 'Save', style: const TextStyle(fontWeight: FontWeight.bold)),
                     )
                   else
                     ElevatedButton(
@@ -756,7 +760,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Reset', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(AppLocalizations.of(context)?.reset ?? 'Reset', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -815,7 +819,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         _usernameController.text.isEmpty || 
         _passwordController.text.isEmpty) {
       setState(() {
-        _testResult = 'Please fill in all credentials first.';
+        _testResult = AppLocalizations.of(context)?.fillCredentialsHint ?? 'Please fill in all credentials first.';
         _testSuccess = false;
       });
       return;
@@ -841,8 +845,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         _isTestingConnection = false;
         _testSuccess = success;
         _testResult = success 
-            ? 'Connection successful! WebDAV server is active.'
-            : 'Connection failed. Please verify URL, username, and password.';
+            ? (AppLocalizations.of(context)?.connectionSuccessDesc ?? 'Connection successful! WebDAV server is active.')
+            : (AppLocalizations.of(context)?.connectionFailedDesc ?? 'Connection failed. Please verify URL, username, and password.');
       });
     }
   }
@@ -854,8 +858,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     if (!mounted) return;
     if (!_webDavEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enable WebDAV Sync first.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.enableWebdavFirst ?? 'Please enable WebDAV Sync first.'),
           backgroundColor: Colors.amber,
         ),
       );
@@ -885,7 +889,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(syncResult.success ? 'Sync Successful' : 'Sync Failed'),
+          title: Text(syncResult.success 
+              ? (AppLocalizations.of(context)?.syncSuccessful ?? 'Sync Successful') 
+              : (AppLocalizations.of(context)?.syncFailed(syncResult.message) ?? 'Sync Failed')),
           content: Text(syncResult.message),
           actions: [
             TextButton(
@@ -905,9 +911,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)?.settings ?? 'Settings',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -936,9 +942,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   Icon(Icons.settings_suggest_rounded, color: Colors.amber[700], size: 28),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'General Preferences',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)?.generalPreferences ?? 'General Preferences',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -949,13 +955,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               const SizedBox(height: 8),
                               SwitchListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'Auto-Open Last Read',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                title: Text(
+                                  AppLocalizations.of(context)?.openLastReadOnLaunch ?? 'Auto-Open Last Read',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
-                                subtitle: const Text(
-                                  'Automatically resume reading the most recently read book on launch.',
-                                  style: TextStyle(fontSize: 11),
+                                subtitle: Text(
+                                  AppLocalizations.of(context)?.openLastReadDesc ?? 'Automatically resume reading the most recently read book on launch.',
+                                  style: const TextStyle(fontSize: 11),
                                 ),
                                 value: _openLastReadOnLaunch,
                                 activeColor: Colors.amber[700],
@@ -969,13 +975,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               const Divider(height: 1, thickness: 1),
                               SwitchListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'Auto Check for Updates',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                title: Text(
+                                  AppLocalizations.of(context)?.autoCheckUpdate ?? 'Auto Check for Updates',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
-                                subtitle: const Text(
-                                  'Automatically check for new versions from GitHub when the app starts.',
-                                  style: TextStyle(fontSize: 11),
+                                subtitle: Text(
+                                  AppLocalizations.of(context)?.autoCheckUpdateDesc ?? 'Automatically check for new versions from GitHub when the app starts.',
+                                  style: const TextStyle(fontSize: 11),
                                 ),
                                 value: _autoCheckUpdate,
                                 activeColor: Colors.amber[700],
@@ -984,6 +990,48 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                     _autoCheckUpdate = val;
                                   });
                                   _saveAutoCheckUpdatePreference(val);
+                                },
+                              ),
+                              const Divider(height: 1, thickness: 1),
+                              const SizedBox(height: 12),
+                              Text(
+                                AppLocalizations.of(context)?.language ?? 'Language',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: _appLocaleCode,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: isDark ? Colors.white10 : Colors.black12,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                items: [
+                                  DropdownMenuItem<String>(
+                                    value: 'en',
+                                    child: Text(AppLocalizations.of(context)?.english ?? 'English', style: const TextStyle(fontSize: 13)),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: 'vi',
+                                    child: Text(AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese', style: const TextStyle(fontSize: 13)),
+                                  ),
+                                ],
+                                onChanged: (val) async {
+                                  if (val != null) {
+                                    setState(() {
+                                      _appLocaleCode = val;
+                                    });
+                                    final db = await DatabaseHelper.getInstance();
+                                    final settings = await db.getSettings();
+                                    settings.appLocale = val;
+                                    await db.saveSettings(settings);
+                                    LocaleNotifier.instance.updateLocale(val);
+                                  }
                                 },
                               ),
                               const SizedBox(height: 12),
@@ -1002,9 +1050,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                               ),
                                             )
                                           : const Icon(Icons.system_update_alt_rounded),
-                                      label: const Text(
-                                        'Check for Updates Now',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      label: Text(
+                                        AppLocalizations.of(context)?.checkUpdates ?? 'Check for Updates',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.amber[700],
@@ -1036,9 +1084,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   Icon(Icons.chrome_reader_mode_rounded, color: Colors.amber[700], size: 28),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Reading Appearance & Typography',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)?.readingAppearance ?? 'Reading Appearance & Typography',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -1049,9 +1097,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               const SizedBox(height: 16),
 
                               // CHỦ ĐỀ ĐỌC
-                              const Text(
-                                'Reading Theme',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              Text(
+                                AppLocalizations.of(context)?.readingTheme ?? 'Reading Theme',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                               const SizedBox(height: 8),
                               Row(
@@ -1061,23 +1109,28 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   Color btnBg;
                                   Color textCol;
                                   IconData icon;
+                                  String displayTheme = theme;
                                   
                                   if (theme == 'System') {
                                     btnBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
                                     textCol = isDark ? Colors.white70 : Colors.black87;
                                     icon = Icons.brightness_auto_rounded;
+                                    displayTheme = AppLocalizations.of(context)?.system ?? 'System';
                                   } else if (theme == 'Light') {
                                     btnBg = Colors.white;
                                     textCol = Colors.black87;
                                     icon = Icons.wb_sunny_rounded;
+                                    displayTheme = AppLocalizations.of(context)?.light ?? 'Light';
                                   } else if (theme == 'Dark') {
                                     btnBg = const Color(0xFF121212);
                                     textCol = Colors.white70;
                                     icon = Icons.nightlight_round;
+                                    displayTheme = AppLocalizations.of(context)?.dark ?? 'Dark';
                                   } else { // Sepia
                                     btnBg = const Color(0xFFF4ECD8);
                                     textCol = const Color(0xFF5B4636);
                                     icon = Icons.menu_book_rounded;
+                                    displayTheme = AppLocalizations.of(context)?.sepia ?? 'Sepia';
                                   }
                                   
                                   return Expanded(
@@ -1119,7 +1172,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              theme,
+                                              displayTheme,
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1140,7 +1193,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   const Icon(Icons.format_size_rounded, size: 20),
                                   const SizedBox(width: 12),
-                                  const Text('Font Size', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  Text(AppLocalizations.of(context)?.fontSize ?? 'Font Size', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                   Expanded(
                                     child: Slider(
                                       value: _fontSize,
@@ -1166,7 +1219,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               const SizedBox(height: 16),
 
                               // CHỌN PHÔNG CHỮ DROPDOWN
-                              const Text('Font Style', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(AppLocalizations.of(context)?.fontStyle ?? 'Font Style', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 value: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
@@ -1217,9 +1270,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   Icon(Icons.volume_up_rounded, color: Colors.amber[700], size: 28),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Text-to-Speech Configurations',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)?.ttsSettings ?? 'TTS Settings',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -1234,7 +1287,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   const Icon(Icons.speed_rounded, size: 20),
                                   const SizedBox(width: 12),
-                                  const Text('Reading Speed', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  Text(AppLocalizations.of(context)?.readingSpeed ?? 'Reading Speed', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                   Expanded(
                                     child: Slider(
                                       value: _speechRate,
@@ -1292,7 +1345,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               const SizedBox(height: 16),
 
                               // CHỌN TTS PROVIDER DROPDOWN (Bằng tiếng Anh)
-                              const Text('TTS Provider', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(AppLocalizations.of(context)?.ttsProvider ?? 'TTS Provider', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 value: _ttsProvider,
@@ -1306,14 +1359,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 ),
                                 dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: const [
+                                items: [
                                   DropdownMenuItem<String>(
                                     value: 'system',
-                                    child: Text('System TTS (Offline)', style: TextStyle(fontSize: 13)),
+                                    child: Text(AppLocalizations.of(context)?.systemTtsOffline ?? 'System TTS (Offline)', style: const TextStyle(fontSize: 13)),
                                   ),
                                   DropdownMenuItem<String>(
                                     value: 'microsoft_edge',
-                                    child: Text('Microsoft Edge TTS (Online)', style: TextStyle(fontSize: 13)),
+                                    child: Text(AppLocalizations.of(context)?.edgeTtsOnline ?? 'Microsoft Edge TTS (Online)', style: const TextStyle(fontSize: 13)),
                                   ),
                                 ],
                                 onChanged: (val) async {
@@ -1337,7 +1390,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ DROPDOWN
                               if (_voices.isNotEmpty) ...[
                                 // BỘ LỌC NGÔN NGỮ
-                                const Text('Language Filter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text(AppLocalizations.of(context)?.languageFilter ?? 'Language Filter', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   value: _selectedLanguageFilter,
@@ -1351,22 +1404,22 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   ),
                                   dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                  items: const [
+                                  items: [
                                     DropdownMenuItem<String>(
                                       value: 'all',
-                                      child: Text('All Languages', style: TextStyle(fontSize: 13)),
+                                      child: Text(AppLocalizations.of(context)?.allLanguages ?? 'All Languages', style: const TextStyle(fontSize: 13)),
                                     ),
                                     DropdownMenuItem<String>(
                                       value: 'vi',
-                                      child: Text('Vietnamese', style: TextStyle(fontSize: 13)),
+                                      child: Text(AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese', style: const TextStyle(fontSize: 13)),
                                     ),
                                     DropdownMenuItem<String>(
                                       value: 'en',
-                                      child: Text('English', style: TextStyle(fontSize: 13)),
+                                      child: Text(AppLocalizations.of(context)?.english ?? 'English', style: const TextStyle(fontSize: 13)),
                                     ),
                                     DropdownMenuItem<String>(
                                       value: 'others',
-                                      child: Text('Others (Japanese, French...)', style: TextStyle(fontSize: 13)),
+                                      child: Text(AppLocalizations.of(context)?.otherLanguages ?? 'Others (Japanese, French...)', style: const TextStyle(fontSize: 13)),
                                     ),
                                   ],
                                   onChanged: (val) {
@@ -1380,7 +1433,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 const SizedBox(height: 16),
 
                                 // Ô TÌM KIẾM GIỌNG ĐỌC (Bằng tiếng Anh)
-                                const Text('Search Voice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text(AppLocalizations.of(context)?.searchVoice ?? 'Search Voice', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: _voiceSearchController,
@@ -1393,7 +1446,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                       borderSide: BorderSide.none,
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    hintText: 'Type to search voice name...',
+                                    hintText: AppLocalizations.of(context)?.searchVoiceHint ?? 'Type to search voice name...',
                                     hintStyle: TextStyle(color: Colors.grey.withOpacity(0.7), fontSize: 13),
                                     prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.withOpacity(0.8)),
                                     suffixIcon: _voiceSearchQuery.isNotEmpty
@@ -1416,7 +1469,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                const Text('Select Voice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text(AppLocalizations.of(context)?.selectVoice ?? 'Select Voice', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                 const SizedBox(height: 8),
                                 () {
                                   final filteredDisplayVoices = _voices.where((v) {
@@ -1516,9 +1569,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                         );
                                       },
                                       icon: const Icon(Icons.record_voice_over_rounded),
-                                      label: const Text(
-                                        'Manage Pronunciation Rules',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      label: Text(
+                                        AppLocalizations.of(context)?.managePronunciation ?? 'Manage Pronunciation Rules',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.amber[700],
@@ -1548,9 +1601,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   Icon(Icons.keyboard_rounded, color: Colors.amber[700], size: 28),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Hotkey Configurations',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)?.hotkeyConfigurations ?? 'Hotkey Configurations',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -1559,41 +1612,41 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'Customize keyboard shortcuts for system commands and reading controls.',
-                                style: TextStyle(fontSize: 11, color: Colors.grey),
+                              Text(
+                                AppLocalizations.of(context)?.customizeHotkeysDesc ?? 'Customize keyboard shortcuts for system commands and reading controls.',
+                                style: const TextStyle(fontSize: 11, color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
                               
-                              _buildHotkeyItem('Next Paragraph', _hotkeyNextParagraph, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.nextParagraph ?? 'Next Paragraph', _hotkeyNextParagraph, (val) {
                                 setState(() => _hotkeyNextParagraph = val);
                                 _saveHotkeySetting('nextParagraph', val);
                               }),
-                              _buildHotkeyItem('Previous Paragraph', _hotkeyPrevParagraph, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.prevParagraph ?? 'Previous Paragraph', _hotkeyPrevParagraph, (val) {
                                 setState(() => _hotkeyPrevParagraph = val);
                                 _saveHotkeySetting('prevParagraph', val);
                               }),
-                              _buildHotkeyItem('Next Chapter', _hotkeyNextChapter, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.nextChapter ?? 'Next Chapter', _hotkeyNextChapter, (val) {
                                 setState(() => _hotkeyNextChapter = val);
                                 _saveHotkeySetting('nextChapter', val);
                               }),
-                              _buildHotkeyItem('Previous Chapter', _hotkeyPrevChapter, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.prevChapter ?? 'Previous Chapter', _hotkeyPrevChapter, (val) {
                                 setState(() => _hotkeyPrevChapter = val);
                                 _saveHotkeySetting('prevChapter', val);
                               }),
-                              _buildHotkeyItem('Play/Pause TTS', _hotkeyPlayPauseTts, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.playPauseTts ?? 'Play/Pause TTS', _hotkeyPlayPauseTts, (val) {
                                 setState(() => _hotkeyPlayPauseTts = val);
                                 _saveHotkeySetting('playPauseTts', val);
                               }),
-                              _buildHotkeyItem('Open Chapter Shelf', _hotkeyOpenChapter, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.openChapterShelf ?? 'Open Chapter Shelf', _hotkeyOpenChapter, (val) {
                                 setState(() => _hotkeyOpenChapter = val);
                                 _saveHotkeySetting('openChapter', val);
                               }),
-                              _buildHotkeyItem('Open Reader Setting', _hotkeyOpenSetting, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.openReaderSetting ?? 'Open Reader Setting', _hotkeyOpenSetting, (val) {
                                 setState(() => _hotkeyOpenSetting = val);
                                 _saveHotkeySetting('openSetting', val);
                               }),
-                              _buildHotkeyItem('Boss Key', _hotkeyBossKey, (val) {
+                              _buildHotkeyItem(AppLocalizations.of(context)?.bossKey ?? 'Boss Key', _hotkeyBossKey, (val) {
                                 setState(() => _hotkeyBossKey = val);
                                 _saveHotkeySetting('bossKey', val);
                               }),
@@ -1603,9 +1656,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 child: Divider(height: 1, color: Colors.white10),
                               ),
                               
-                              const Text(
-                                'Boss Key Action',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              Text(
+                                AppLocalizations.of(context)?.bossKeyActionLabel ?? 'Boss Key Action',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
@@ -1620,14 +1673,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 ),
                                 dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                items: const [
+                                items: [
                                   DropdownMenuItem(
                                     value: 'minimize',
-                                    child: Text('Minimize Window'),
+                                    child: Text(AppLocalizations.of(context)?.minimizeWindow ?? 'Minimize Window'),
                                   ),
                                   DropdownMenuItem(
                                     value: 'hide',
-                                    child: Text('Hide Window (Completely invisible)'),
+                                    child: Text(AppLocalizations.of(context)?.hideWindow ?? 'Hide Window (Completely invisible)'),
                                   ),
                                 ],
                                 onChanged: (val) {
@@ -1647,7 +1700,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                     child: OutlinedButton.icon(
                                       onPressed: _resetHotkeysToDefault,
                                       icon: const Icon(Icons.restore_rounded),
-                                      label: const Text('Reset to Default Hotkeys', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      label: Text(AppLocalizations.of(context)?.resetHotkeys ?? 'Reset to Default Hotkeys', style: const TextStyle(fontWeight: FontWeight.bold)),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.amber[700],
                                         side: BorderSide(color: Colors.amber[700]!, width: 1.5),
@@ -1675,9 +1728,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 children: [
                                   Icon(Icons.cloud_sync_rounded, color: Colors.amber[700], size: 28),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'Cloud Library Sync',
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(context)?.cloudLibrarySync ?? 'Cloud Library Sync',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: -0.5,
@@ -1687,7 +1740,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                'Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.',
+                                AppLocalizations.of(context)?.cloudSyncDesc ?? 'Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: isDark ? Colors.white70 : Colors.black87,
@@ -1703,13 +1756,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               // Switch bật/tắt WebDAV
                               SwitchListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'Enable WebDAV Sync',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                title: Text(
+                                  AppLocalizations.of(context)?.enableWebdav ?? 'Enable WebDAV Sync',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
-                                subtitle: const Text(
-                                  'Auto-sync when launching or leaving a book',
-                                  style: TextStyle(fontSize: 12),
+                                subtitle: Text(
+                                  AppLocalizations.of(context)?.autoSyncDesc ?? 'Auto-sync when launching or leaving a book',
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                                 value: _webDavEnabled,
                                 activeColor: Colors.amber[700],
@@ -1728,9 +1781,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   child: Divider(height: 1, color: Colors.white10),
                                 ),
                                 
-                                const Text(
-                                  'WebDAV Server Configuration',
-                                  style: TextStyle(
+                                Text(
+                                  AppLocalizations.of(context)?.webdavServerConfig ?? 'WebDAV Server Configuration',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                     color: Colors.amber,
@@ -1743,7 +1796,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   controller: _urlController,
                                   onChanged: (val) => _saveWebDavTextSettings(),
                                   decoration: InputDecoration(
-                                    labelText: 'WebDAV Server URL',
+                                    labelText: AppLocalizations.of(context)?.webdavServerUrl ?? 'WebDAV Server URL',
                                     hintText: 'https://webdav.yandex.ru',
                                     prefixIcon: const Icon(Icons.link_rounded),
                                     filled: true,
@@ -1755,7 +1808,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   ),
                                   validator: (val) {
                                     if (_webDavEnabled && (val == null || val.trim().isEmpty)) {
-                                      return 'Please enter WebDAV URL';
+                                      return AppLocalizations.of(context)?.enterWebdavUrl ?? 'Please enter WebDAV URL';
                                     }
                                     return null;
                                   },
@@ -1767,7 +1820,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   controller: _usernameController,
                                   onChanged: (val) => _saveWebDavTextSettings(),
                                   decoration: InputDecoration(
-                                    labelText: 'Username',
+                                    labelText: AppLocalizations.of(context)?.username ?? 'Username',
                                     prefixIcon: const Icon(Icons.person_outline_rounded),
                                     filled: true,
                                     fillColor: isDark ? Colors.black26 : Colors.grey[100],
@@ -1778,7 +1831,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   ),
                                   validator: (val) {
                                     if (_webDavEnabled && (val == null || val.trim().isEmpty)) {
-                                      return 'Please enter Username';
+                                      return AppLocalizations.of(context)?.enterUsername ?? 'Please enter Username';
                                     }
                                     return null;
                                   },
@@ -1791,7 +1844,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   obscureText: true,
                                   onChanged: (val) => _saveWebDavTextSettings(),
                                   decoration: InputDecoration(
-                                    labelText: 'Password / App Password',
+                                    labelText: AppLocalizations.of(context)?.passwordAppPassword ?? 'Password / App Password',
                                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                                     filled: true,
                                     fillColor: isDark ? Colors.black26 : Colors.grey[100],
@@ -1802,7 +1855,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   ),
                                   validator: (val) {
                                     if (_webDavEnabled && (val == null || val.isEmpty)) {
-                                      return 'Please enter Password';
+                                      return AppLocalizations.of(context)?.enterPassword ?? 'Please enter Password';
                                     }
                                     return null;
                                   },
@@ -1822,7 +1875,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                               )
                                             : const Icon(Icons.network_ping_rounded),
-                                        label: const Text('Test Connection', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        label: Text(AppLocalizations.of(context)?.testConnection ?? 'Test Connection', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.grey[850],
                                           foregroundColor: Colors.white,
@@ -1882,14 +1935,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      'Sync Status',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    Text(
+                                      AppLocalizations.of(context)?.syncStatus ?? 'Sync Status',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     ),
                                     Text(
                                       _lastSync != null 
-                                          ? 'Last Synced: ${_lastSync!.toLocal().toString().split('.')[0]}'
-                                          : 'Last Synced: Never',
+                                          ? (AppLocalizations.of(context)?.lastSyncedAt(_lastSync!.toLocal().toString().split('.')[0]) ?? 'Last Synced: ${_lastSync!.toLocal().toString().split('.')[0]}')
+                                          : (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never'),
                                       style: const TextStyle(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.w600),
                                     ),
                                   ],
@@ -1898,7 +1951,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 ElevatedButton.icon(
                                   onPressed: _isLoading ? null : _triggerManualSync,
                                   icon: const Icon(Icons.sync_rounded),
-                                  label: const Text('Sync Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  label: Text(AppLocalizations.of(context)?.syncNow ?? 'Sync Now', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.amber[700],
                                     foregroundColor: Colors.white,
@@ -1916,13 +1969,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           context,
                           child: SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text(
-                              'Developer Mode',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            title: Text(
+                              AppLocalizations.of(context)?.developerMode ?? 'Developer Mode',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
-                            subtitle: const Text(
-                              'Unlock advanced diagnostic tools, database inspector, and system logs.',
-                              style: TextStyle(fontSize: 11),
+                            subtitle: Text(
+                              AppLocalizations.of(context)?.developerModeDesc ?? 'Unlock advanced diagnostic tools, database inspector, and system logs.',
+                              style: const TextStyle(fontSize: 11),
                             ),
                             value: _developerMode,
                             activeColor: Colors.amber[700],
@@ -1942,9 +1995,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                   children: [
                                     Icon(Icons.developer_mode_rounded, color: Colors.amber[700], size: 28),
                                     const SizedBox(width: 12),
-                                    const Text(
-                                      'Developer Settings',
-                                      style: TextStyle(
+                                    Text(
+                                      AppLocalizations.of(context)?.developerSettings ?? 'Developer Settings',
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: -0.5,
@@ -1955,13 +2008,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 const SizedBox(height: 16),
                                 SwitchListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: const Text(
-                                    'Enable Debug Logs',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  title: Text(
+                                    AppLocalizations.of(context)?.enableDebugLogsLabel ?? 'Enable Debug Logs',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
-                                  subtitle: const Text(
-                                    'Keep a history of application logs for troubleshooting.',
-                                    style: TextStyle(fontSize: 11),
+                                  subtitle: Text(
+                                    AppLocalizations.of(context)?.debugLogsDesc ?? 'Keep a history of application logs for troubleshooting.',
+                                    style: const TextStyle(fontSize: 11),
                                   ),
                                   value: _enableDebugLogs,
                                   activeColor: Colors.amber[700],
@@ -1972,13 +2025,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 const Divider(height: 1, thickness: 1),
                                 SwitchListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: const Text(
-                                    'WebDAV Debug Console',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  title: Text(
+                                    AppLocalizations.of(context)?.webdavDebugConsole ?? 'WebDAV Debug Console',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                   ),
-                                  subtitle: const Text(
-                                    'Output raw WebDAV HTTP requests and responses to system log.',
-                                    style: TextStyle(fontSize: 11),
+                                  subtitle: Text(
+                                    AppLocalizations.of(context)?.webdavDebugDesc ?? 'Output raw WebDAV HTTP requests and responses to system log.',
+                                    style: const TextStyle(fontSize: 11),
                                   ),
                                   value: _enableWebDavDebug,
                                   activeColor: Colors.amber[700],
@@ -1998,7 +2051,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                           );
                                         },
                                         icon: const Icon(Icons.terminal_rounded),
-                                        label: const Text('Open Debug Console', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        label: Text(AppLocalizations.of(context)?.openDebugConsole ?? 'Open Debug Console', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.amber[700],
                                           foregroundColor: Colors.white,
@@ -2016,7 +2069,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                       child: OutlinedButton.icon(
                                         onPressed: _showDatabaseInspector,
                                         icon: const Icon(Icons.storage_rounded),
-                                        label: const Text('Database Inspector', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        label: Text(AppLocalizations.of(context)?.databaseInspector ?? 'Database Inspector', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: Colors.amber[700],
                                           side: BorderSide(color: Colors.amber[700]!, width: 1.5),
@@ -2034,7 +2087,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                       child: OutlinedButton.icon(
                                         onPressed: _clearCacheAndResetSync,
                                         icon: const Icon(Icons.cleaning_services_rounded),
-                                        label: const Text('Clear Cache & Reset Sync', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        label: Text(AppLocalizations.of(context)?.clearCache ?? 'Clear Cache & Reset Sync', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: Colors.amber[700],
                                           side: BorderSide(color: Colors.amber[700]!, width: 1.5),
@@ -2052,7 +2105,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                       child: OutlinedButton.icon(
                                         onPressed: _forceSyncNow,
                                         icon: const Icon(Icons.sync_problem_rounded),
-                                        label: const Text('Force Sync Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                                        label: Text(AppLocalizations.of(context)?.forceSyncNow ?? 'Force Sync Now', style: const TextStyle(fontWeight: FontWeight.bold)),
                                         style: OutlinedButton.styleFrom(
                                           foregroundColor: Colors.amber[700],
                                           side: BorderSide(color: Colors.amber[700]!, width: 1.5),
@@ -2073,7 +2126,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16.0),
                             child: Center(
                               child: Text(
-                                'Version $_appVersion',
+                                AppLocalizations.of(context)?.version(_appVersion) ?? 'Version $_appVersion',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark ? Colors.white38 : Colors.black38,
@@ -2102,9 +2155,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
                               ),
                               const SizedBox(height: 20),
-                              const Text(
-                                'Synchronizing...',
-                                style: TextStyle(
+                              Text(
+                                AppLocalizations.of(context)?.synchronizing ?? 'Synchronizing...',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -2112,7 +2165,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Processing books, cover arts, and reading progress...',
+                                AppLocalizations.of(context)?.processingSync ?? 'Processing books, cover arts, and reading progress...',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
                                   fontSize: 12,

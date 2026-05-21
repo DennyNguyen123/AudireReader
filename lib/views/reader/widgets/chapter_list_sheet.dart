@@ -3,6 +3,7 @@ import '../../../models/bookmark.dart';
 import '../../../models/highlight.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ChapterListSheet extends StatefulWidget {
   final TtsService ttsService;
@@ -89,10 +90,10 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
               unselectedLabelColor: widget.textColor.withValues(alpha: 0.6),
               indicatorColor: Colors.amber[700],
               indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'Chapters', icon: Icon(Icons.format_list_bulleted_rounded, size: 20)),
-                Tab(text: 'Bookmarks', icon: Icon(Icons.bookmark_rounded, size: 20)),
-                Tab(text: 'Highlights', icon: Icon(Icons.border_color_rounded, size: 20)),
+              tabs: [
+                Tab(text: AppLocalizations.of(context)?.chaptersTab ?? 'Chapters', icon: const Icon(Icons.format_list_bulleted_rounded, size: 20)),
+                Tab(text: AppLocalizations.of(context)?.bookmarksTab ?? 'Bookmarks', icon: const Icon(Icons.bookmark_rounded, size: 20)),
+                Tab(text: AppLocalizations.of(context)?.highlightsTab ?? 'Highlights', icon: const Icon(Icons.border_color_rounded, size: 20)),
               ],
             ),
             const Divider(height: 1),
@@ -106,7 +107,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                         child: TextField(
                           style: TextStyle(color: widget.textColor),
                           decoration: InputDecoration(
-                            hintText: 'Search chapters...',
+                            hintText: AppLocalizations.of(context)?.searchChaptersHint ?? 'Search chapters...',
                             hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                             prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
                             filled: true,
@@ -128,7 +129,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                         child: filteredChapters.isEmpty
                             ? Center(
                                 child: Text(
-                                  'No chapters match your search',
+                                  AppLocalizations.of(context)?.noChaptersMatch ?? 'No chapters match your search',
                                   style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                                 ),
                               )
@@ -175,7 +176,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                   _localBookmarks.isEmpty
                       ? Center(
                           child: Text(
-                            'No bookmarks saved yet',
+                            AppLocalizations.of(context)?.noBookmarksSaved ?? 'No bookmarks saved yet',
                             style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                           ),
                         )
@@ -199,7 +200,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     ),
                                   ),
                                   Text(
-                                    'Paragraph ${b.paragraphIndex + 1}',
+                                    AppLocalizations.of(context)?.paragraphIndexLabel(b.paragraphIndex + 1) ?? 'Paragraph ${b.paragraphIndex + 1}',
                                     style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
                                   ),
                                 ],
@@ -238,7 +239,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                   _localHighlights.isEmpty
                       ? Center(
                           child: Text(
-                            'No highlights saved yet',
+                            AppLocalizations.of(context)?.noHighlightsSaved ?? 'No highlights saved yet',
                             style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
                           ),
                         )
@@ -278,7 +279,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     ),
                                   ),
                                   Text(
-                                    'Paragraph ${h.paragraphIndex + 1}',
+                                    AppLocalizations.of(context)?.paragraphIndexLabel(h.paragraphIndex + 1) ?? 'Paragraph ${h.paragraphIndex + 1}',
                                     style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
                                   ),
                                 ],

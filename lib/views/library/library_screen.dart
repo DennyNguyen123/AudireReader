@@ -20,6 +20,7 @@ import '../../services/sync_service.dart' hide print;
 import '../../services/logger_service.dart';
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -108,18 +109,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   String _formatLastSyncTime() {
-    if (_lastSyncTime == null) return 'Never synced';
+    if (_lastSyncTime == null) return AppLocalizations.of(context)?.neverSynced ?? 'Never synced';
     final now = DateTime.now();
     final difference = now.difference(_lastSyncTime!);
     
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return AppLocalizations.of(context)?.justNow ?? 'Just now';
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return AppLocalizations.of(context)?.minutesAgo(difference.inMinutes) ?? '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
       final hh = _lastSyncTime!.hour.toString().padLeft(2, '0');
       final mm = _lastSyncTime!.minute.toString().padLeft(2, '0');
-      return 'Today at $hh:$mm';
+      return AppLocalizations.of(context)?.todayAt('$hh:$mm') ?? 'Today at $hh:$mm';
     } else {
       final yyyy = _lastSyncTime!.year;
       final mm = _lastSyncTime!.month.toString().padLeft(2, '0');
@@ -139,8 +140,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (!settings.webDavEnabled) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enable and configure WebDAV in Settings first.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
             backgroundColor: Colors.amber,
           ),
         );
@@ -158,7 +159,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success ? 'Sync completed successfully!' : 'Sync failed: ${result.message}'),
+            content: Text(result.success 
+                ? (AppLocalizations.of(context)?.syncCompleted ?? 'Sync completed successfully!') 
+                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Sync failed: ${result.message}')),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -172,7 +175,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'), 
+            backgroundColor: Colors.redAccent
+          ),
         );
         setState(() {
           _syncFailed = true;
@@ -293,25 +299,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Sort Books',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context)?.sortBooks ?? 'Sort Books',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ListTile(
               leading: Icon(Icons.access_time_rounded, color: _sortBy == 'lastRead' ? Colors.amber[700] : null),
-              title: Text('Sort by Last Read', style: TextStyle(color: _sortBy == 'lastRead' ? Colors.amber[700] : null, fontWeight: _sortBy == 'lastRead' ? FontWeight.bold : null)),
+              title: Text(AppLocalizations.of(context)?.sortByLastRead ?? 'Sort by Last Read', style: TextStyle(color: _sortBy == 'lastRead' ? Colors.amber[700] : null, fontWeight: _sortBy == 'lastRead' ? FontWeight.bold : null)),
               onTap: () => _updateSortBy('lastRead'),
             ),
             ListTile(
               leading: Icon(Icons.sort_by_alpha_rounded, color: _sortBy == 'title' ? Colors.amber[700] : null),
-              title: Text('Sort by Title', style: TextStyle(color: _sortBy == 'title' ? Colors.amber[700] : null, fontWeight: _sortBy == 'title' ? FontWeight.bold : null)),
+              title: Text(AppLocalizations.of(context)?.sortByTitle ?? 'Sort by Title', style: TextStyle(color: _sortBy == 'title' ? Colors.amber[700] : null, fontWeight: _sortBy == 'title' ? FontWeight.bold : null)),
               onTap: () => _updateSortBy('title'),
             ),
             ListTile(
               leading: Icon(Icons.calendar_today_rounded, color: _sortBy == 'dateAdded' ? Colors.amber[700] : null),
-              title: Text('Sort by Date Added', style: TextStyle(color: _sortBy == 'dateAdded' ? Colors.amber[700] : null, fontWeight: _sortBy == 'dateAdded' ? FontWeight.bold : null)),
+              title: Text(AppLocalizations.of(context)?.sortByDateAdded ?? 'Sort by Date Added', style: TextStyle(color: _sortBy == 'dateAdded' ? Colors.amber[700] : null, fontWeight: _sortBy == 'dateAdded' ? FontWeight.bold : null)),
               onTap: () => _updateSortBy('dateAdded'),
             ),
           ],
@@ -363,13 +369,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Successfully imported "${parsedData.book.title}"!')),
+          SnackBar(content: Text(AppLocalizations.of(context)?.successfullyImported(parsedData.book.title) ?? 'Successfully imported "${parsedData.book.title}"!')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import book: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)?.failedToImport(e.toString()) ?? 'Failed to import book: $e')),
         );
       }
     } finally {
@@ -415,7 +421,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Deleted "${book.title}"')),
+        SnackBar(content: Text(AppLocalizations.of(context)?.deleteBookConfirm(book.title) ?? 'Deleted "${book.title}"')),
       );
     }
   }
@@ -517,9 +523,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
             const SizedBox(width: 12),
             Flexible(
-              child: const Text(
-                'Audire Reader',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)?.appTitle ?? 'Audire Reader',
+                style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 24,
                   letterSpacing: -0.5,
@@ -552,8 +558,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   )
                 : Tooltip(
                     message: _lastSyncTime == null
-                        ? 'Never synced'
-                        : 'Last synced: ${_formatLastSyncTime()}',
+                        ? (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never')
+                        : (AppLocalizations.of(context)?.lastSyncedAt(_formatLastSyncTime()) ?? 'Last Synced: ${_formatLastSyncTime()}'),
                     child: IconButton(
                       icon: Badge(
                         backgroundColor: _getSyncBadgeColor(),
@@ -594,7 +600,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       child: TextField(
                         style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                         decoration: InputDecoration(
-                          hintText: 'Search book on shelf...',
+                          hintText: AppLocalizations.of(context)?.searchBookHint ?? 'Search book on shelf...',
                           hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
                           prefixIcon: Icon(Icons.search_rounded, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
                           filled: true,
@@ -620,7 +626,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                             child: Row(
                               children: [
-                                _buildFilterChip('All', _selectedStatus == 'All', (selected) {
+                                _buildFilterChip(AppLocalizations.of(context)?.all ?? 'All', _selectedStatus == 'All', (selected) {
                                   if (selected) {
                                     setState(() {
                                       _selectedStatus = 'All';
@@ -629,7 +635,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                   }
                                 }),
                                 const SizedBox(width: 8),
-                                _buildFilterChip('Unread', _selectedStatus == 'unread', (selected) {
+                                _buildFilterChip(AppLocalizations.of(context)?.unread ?? 'Unread', _selectedStatus == 'unread', (selected) {
                                   if (selected) {
                                     setState(() {
                                       _selectedStatus = 'unread';
@@ -638,7 +644,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                   }
                                 }),
                                 const SizedBox(width: 8),
-                                _buildFilterChip('Reading', _selectedStatus == 'reading', (selected) {
+                                _buildFilterChip(AppLocalizations.of(context)?.reading ?? 'Reading', _selectedStatus == 'reading', (selected) {
                                   if (selected) {
                                     setState(() {
                                       _selectedStatus = 'reading';
@@ -647,7 +653,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                   }
                                 }),
                                 const SizedBox(width: 8),
-                                _buildFilterChip('Completed', _selectedStatus == 'completed', (selected) {
+                                _buildFilterChip(AppLocalizations.of(context)?.completed ?? 'Completed', _selectedStatus == 'completed', (selected) {
                                   if (selected) {
                                     setState(() {
                                       _selectedStatus = 'completed';
@@ -662,7 +668,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         Padding(
                           padding: const EdgeInsets.only(right: 16),
                           child: Tooltip(
-                            message: 'Sort options',
+                            message: AppLocalizations.of(context)?.sortOptions ?? 'Sort options',
                             child: IconButton(
                               icon: const Icon(Icons.sort_rounded, size: 20),
                               onPressed: _showSortMenu,
@@ -721,7 +727,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Your shelf is empty',
+                              AppLocalizations.of(context)?.emptyShelf ?? 'Your shelf is empty',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -730,7 +736,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Tap the "+" button to import a book (.epub, .txt, .pdf, .docx)',
+                              AppLocalizations.of(context)?.importBookHint ?? 'Tap the "+" button to import a book (.epub, .txt, .pdf, .docx)',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark ? Colors.white38 : Colors.black38,
@@ -751,7 +757,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No books match your search',
+                                  AppLocalizations.of(context)?.noBooksMatch ?? 'No books match your search',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -789,17 +795,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
           if (_isLoading)
             Container(
               color: Colors.black45,
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(
+                    const CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
-                      'Parsing book content...',
-                      style: TextStyle(
+                      AppLocalizations.of(context)?.parsingBookContent ?? 'Parsing book content...',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -815,9 +821,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         backgroundColor: Colors.amber[700],
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Import Book',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        label: Text(
+          AppLocalizations.of(context)?.importBook ?? 'Import Book',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -926,13 +932,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                              SizedBox(width: 8),
-                              Text('Delete Book', style: TextStyle(color: Colors.red, fontSize: 13)),
+                              const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                                style: const TextStyle(color: Colors.red, fontSize: 13),
+                              ),
                             ],
                           ),
                         ),
@@ -985,14 +994,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${book.totalChapters} Chapters',
+                        AppLocalizations.of(context)?.chaptersCount(book.totalChapters) ?? '${book.totalChapters} Chapters',
                         style: TextStyle(
                           fontSize: 9,
                           color: isDark ? Colors.white54 : Colors.black54,
                         ),
                       ),
                       Text(
-                        '${progressPercent.toStringAsFixed(0)}% Read',
+                        AppLocalizations.of(context)?.readPercent(progressPercent.toStringAsFixed(0)) ?? '${progressPercent.toStringAsFixed(0)}% Read',
                         style: TextStyle(
                           fontSize: 9,
                           color: Colors.amber[700],
@@ -1014,12 +1023,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${book.title}"? This will erase all chapter caches and reading progress.'),
+        title: Text(AppLocalizations.of(context)?.confirmDelete ?? 'Confirm Delete'),
+        content: Text(AppLocalizations.of(context)?.confirmDeleteBook(book.title) ?? 'Are you sure you want to delete "${book.title}"? This will erase all chapter caches and reading progress.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -1027,7 +1036,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               _deleteBook(book);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.delete ?? 'Delete'),
           ),
         ],
       ),
@@ -1071,9 +1080,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Audire Reader',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)?.appTitle ?? 'Audire Reader',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -1081,7 +1090,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Version ${_appVersion.isEmpty ? '1.1.12' : _appVersion}',
+                AppLocalizations.of(context)?.version(_appVersion.isEmpty ? '1.1.12' : _appVersion) ?? 'Version ${_appVersion.isEmpty ? '1.1.12' : _appVersion}',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.white54 : Colors.black54,
@@ -1136,7 +1145,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Close',
+                AppLocalizations.of(context)?.close ?? 'Close',
                 style: TextStyle(
                   color: Colors.amber[700],
                   fontWeight: FontWeight.bold,
