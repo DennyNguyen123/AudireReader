@@ -1,0 +1,365 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import '../core/database/database_helper.dart';
+import '../core/utils/path_helper.dart';
+import '../models/bgm_track.dart';
+import 'logger_service.dart';
+
+class BgmService extends ChangeNotifier {
+  static BgmService? _instance;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final Completer<void> _initCompleter = Completer<void>();
+
+  bool _bgmEnabled = false;
+  double _bgmVolume = 0.15;
+  String _bgmLoopMode = 'all'; // 'none', 'one', 'all'
+  int? _currentBgmTrackId;
+
+  List<BgmTrack> _bgmPlaylist = [];
+  BgmTrack? _currentTrack;
+  bool _isPlaying = false;
+  bool _isInit = false;
+  bool _hasSource = false;
+
+  bool get bgmEnabled => _bgmEnabled;
+  double get bgmVolume => _bgmVolume;
+  String get bgmLoopMode => _bgmLoopMode;
+  int? get currentBgmTrackId => _currentBgmTrackId;
+  List<BgmTrack> get bgmPlaylist => _bgmPlaylist;
+  BgmTrack? get currentTrack => _currentTrack;
+  bool get isPlaying => _isPlaying;
+
+  BgmService._() {
+    LoggerService().log("Constructor started", tag: 'BGM');
+    _init();
+  }
+
+  static BgmService getInstance() {
+    _instance ??= BgmService._();
+    return _instance!;
+  }
+
+  Future<void> _init() async {
+    LoggerService().log("_init started", tag: 'BGM');
+    if (_isInit) return;
+    
+    // Lắng nghe sự kiện phát hết nhạc
+    _audioPlayer.onPlayerComplete.listen((_) {
+      _onTrackComplete();
+    });
+
+    try {
+      await loadSettingsAndPlaylist();
+      _isInit = true;
+      LoggerService().log("_init completed", tag: 'BGM');
+    } catch (e) {
+      LoggerService().log("init error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+    } finally {
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.complete();
+      }
+    }
+  }
+
+  Future<void> loadSettingsAndPlaylist() async {
+    try {
+      LoggerService().log("loadSettingsAndPlaylist started, getting DatabaseHelper", tag: 'BGM');
+      final db = await DatabaseHelper.getInstance();
+      
+      // Load playlist
+      LoggerService().log("loadSettingsAndPlaylist, getting all BgmTracks", tag: 'BGM');
+      _bgmPlaylist = await db.getAllBgmTracks();
+
+      // Load settings
+      LoggerService().log("loadSettingsAndPlaylist, getting settings", tag: 'BGM');
+      final settings = await db.getSettings();
+      
+      // Sửa lỗi Isar deserialize trường double mới thành NaN trên bản ghi cũ
+      if (settings.bgmVolume.isNaN || settings.bgmVolume < 0.0 || settings.bgmVolume > 1.0) {
+        settings.bgmVolume = 0.15;
+        await db.saveSettings(settings);
+      }
+      
+      _bgmEnabled = settings.bgmEnabled;
+      _bgmVolume = settings.bgmVolume;
+      
+      // Cú pháp an toàn phòng khi Isar deserialize ra null
+      dynamic rawLoopMode = settings.bgmLoopMode;
+      _bgmLoopMode = (rawLoopMode == null || rawLoopMode.toString().isEmpty) ? 'all' : rawLoopMode.toString();
+      if (rawLoopMode == null) {
+        settings.bgmLoopMode = _bgmLoopMode;
+        await db.saveSettings(settings);
+      }
+
+      _currentBgmTrackId = settings.currentBgmTrackId;
+
+      LoggerService().log("loadSettingsAndPlaylist, setting audio volume to $_bgmVolume", tag: 'BGM');
+      try {
+        if (!_bgmVolume.isNaN) {
+          await _audioPlayer.setVolume(_bgmVolume);
+          LoggerService().log("loadSettingsAndPlaylist, setVolume completed", tag: 'BGM');
+        } else {
+          _bgmVolume = 0.15;
+          await _audioPlayer.setVolume(0.15);
+        }
+      } catch (volErr) {
+        LoggerService().log("loadSettingsAndPlaylist, setVolume error", tag: 'BGM', level: LogLevel.error, error: volErr.toString());
+      }
+
+      // Thiết lập currentTrack
+      if (_currentBgmTrackId != null && _bgmPlaylist.isNotEmpty) {
+        final matches = _bgmPlaylist.where((t) => t.id == _currentBgmTrackId);
+        if (matches.isNotEmpty) {
+          _currentTrack = matches.first;
+        } else {
+          _currentTrack = _bgmPlaylist.first;
+          _currentBgmTrackId = _currentTrack?.id;
+        }
+      } else if (_bgmPlaylist.isNotEmpty) {
+        _currentTrack = _bgmPlaylist.first;
+        _currentBgmTrackId = _currentTrack?.id;
+      } else {
+        _currentTrack = null;
+        _currentBgmTrackId = null;
+      }
+      
+      LoggerService().log("loadSettingsAndPlaylist, calling notifyListeners", tag: 'BGM');
+      notifyListeners();
+      LoggerService().log("loadSettingsAndPlaylist completed successfully", tag: 'BGM');
+    } catch (e) {
+      LoggerService().log("init error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+    }
+  }
+
+  Future<void> updateSettings({
+    bool? bgmEnabled,
+    double? bgmVolume,
+    String? bgmLoopMode,
+    int? currentBgmTrackId,
+  }) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (bgmEnabled != null) {
+      _bgmEnabled = bgmEnabled;
+      settings.bgmEnabled = bgmEnabled;
+      if (!bgmEnabled) {
+        await stopBgm();
+      }
+    }
+    if (bgmVolume != null) {
+      _bgmVolume = bgmVolume;
+      settings.bgmVolume = bgmVolume;
+      await _audioPlayer.setVolume(bgmVolume);
+    }
+    if (bgmLoopMode != null) {
+      _bgmLoopMode = bgmLoopMode;
+      settings.bgmLoopMode = bgmLoopMode;
+    }
+    if (currentBgmTrackId != null) {
+      _currentBgmTrackId = currentBgmTrackId;
+      settings.currentBgmTrackId = currentBgmTrackId;
+      final matches = _bgmPlaylist.where((t) => t.id == currentBgmTrackId);
+      if (matches.isNotEmpty) {
+        _currentTrack = matches.first;
+      }
+    }
+
+    await db.saveSettings(settings);
+    notifyListeners();
+  }
+
+  void updateVolumeInMemory(double volume) {
+    if (volume.isNaN || volume < 0.0 || volume > 1.0) return;
+    _bgmVolume = volume;
+    _audioPlayer.setVolume(volume).catchError((_) {});
+    notifyListeners();
+  }
+
+  // --- Phát nhạc ---
+  Future<void> playTrack(BgmTrack track) async {
+    await _audioPlayer.stop();
+    _currentTrack = track;
+    _currentBgmTrackId = track.id;
+    await updateSettings(currentBgmTrackId: track.id);
+
+    if (!_bgmEnabled) {
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _isPlaying = true;
+      notifyListeners();
+
+      if (track.sourceType == 'local') {
+        final file = File(track.sourcePath);
+        if (await file.exists()) {
+          await _audioPlayer.play(DeviceFileSource(track.sourcePath));
+          _hasSource = true;
+        } else {
+          throw Exception("Local BGM file does not exist: ${track.sourcePath}");
+        }
+      } else {
+        throw Exception("Unsupported BGM source type: ${track.sourceType}");
+      }
+      
+      await _audioPlayer.setVolume(_bgmVolume);
+    } catch (e) {
+      _isPlaying = false;
+      _hasSource = false;
+      LoggerService().log("Error playing BGM", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      notifyListeners();
+    }
+  }
+
+  Future<void> resumeBgm() async {
+    // Chờ quá trình khởi nạp settings từ database hoàn tất
+    if (!_isInit) {
+      await _initCompleter.future;
+    }
+
+    if (!_bgmEnabled || _isPlaying) return;
+    
+    if (_currentTrack != null) {
+      if (_currentTrack!.sourceType == 'local') {
+        final file = File(_currentTrack!.sourcePath);
+        if (await file.exists()) {
+          if (_hasSource) {
+            _isPlaying = true;
+            await _audioPlayer.resume();
+            notifyListeners();
+          } else {
+            // Lần đầu tiên phát nhạc nền, nạp nguồn âm thanh từ đầu
+            await playTrack(_currentTrack!);
+          }
+        } else {
+          await playTrack(_currentTrack!);
+        }
+      } else {
+        await playTrack(_currentTrack!);
+      }
+    } else if (_bgmPlaylist.isNotEmpty) {
+      await playTrack(_bgmPlaylist.first);
+    }
+  }
+
+  Future<void> pauseBgm() async {
+    if (!_isPlaying) return;
+    _isPlaying = false;
+    await _audioPlayer.pause();
+    notifyListeners();
+  }
+
+  Future<void> stopBgm() async {
+    _isPlaying = false;
+    _hasSource = false; // Reset nguồn khi dừng hẳn nhạc
+    await _audioPlayer.stop();
+    notifyListeners();
+  }
+
+  Future<void> nextTrack() async {
+    if (_bgmPlaylist.isEmpty) return;
+    if (_currentTrack == null) {
+      await playTrack(_bgmPlaylist.first);
+      return;
+    }
+
+    final currentIndex = _bgmPlaylist.indexWhere((t) => t.id == _currentTrack!.id);
+    if (currentIndex == -1 || currentIndex >= _bgmPlaylist.length - 1) {
+      await playTrack(_bgmPlaylist.first);
+    } else {
+      await playTrack(_bgmPlaylist[currentIndex + 1]);
+    }
+  }
+
+  Future<void> previousTrack() async {
+    if (_bgmPlaylist.isEmpty) return;
+    if (_currentTrack == null) {
+      await playTrack(_bgmPlaylist.first);
+      return;
+    }
+
+    final currentIndex = _bgmPlaylist.indexWhere((t) => t.id == _currentTrack!.id);
+    if (currentIndex == -1 || currentIndex == 0) {
+      await playTrack(_bgmPlaylist.last);
+    } else {
+      await playTrack(_bgmPlaylist[currentIndex - 1]);
+    }
+  }
+
+  void _onTrackComplete() {
+    if (!_isPlaying) return;
+    
+    if (_bgmLoopMode == 'one') {
+      if (_currentTrack != null) {
+        playTrack(_currentTrack!);
+      }
+    } else if (_bgmLoopMode == 'all') {
+      nextTrack();
+    } else {
+      stopBgm();
+    }
+  }
+
+  // --- Quản lý dữ liệu bài hát ---
+  Future<void> addTrackFromLocal(String name, String originalFilePath) async {
+    try {
+      final appDir = await PathHelper.getAppDirectory();
+      final bgmDir = Directory(p.join(appDir.path, 'bgm'));
+      if (!bgmDir.existsSync()) {
+        bgmDir.createSync(recursive: true);
+      }
+
+      final ext = p.extension(originalFilePath);
+      final uniqueName = 'bgm_${DateTime.now().millisecondsSinceEpoch}$ext';
+      final destPath = p.join(bgmDir.path, uniqueName);
+
+      // Copy file vào thư mục ứng dụng
+      final sourceFile = File(originalFilePath);
+      if (await sourceFile.exists()) {
+        await sourceFile.copy(destPath);
+      } else {
+        throw Exception("Source file does not exist: $originalFilePath");
+      }
+
+      final track = BgmTrack()
+        ..name = name.trim().isEmpty ? p.basenameWithoutExtension(originalFilePath) : name
+        ..sourceType = 'local'
+        ..sourcePath = destPath
+        ..dateAdded = DateTime.now();
+
+      final db = await DatabaseHelper.getInstance();
+      await db.saveBgmTrack(track);
+      await loadSettingsAndPlaylist();
+    } catch (e) {
+      LoggerService().log("Add local track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTrack(BgmTrack track) async {
+    try {
+      if (_currentTrack?.id == track.id) {
+        await stopBgm();
+      }
+
+      // Xóa file vật lý nếu nguồn là file local
+      if (track.sourceType == 'local') {
+        final file = File(track.sourcePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+
+      final db = await DatabaseHelper.getInstance();
+      await db.deleteBgmTrack(track.id);
+      await loadSettingsAndPlaylist();
+    } catch (e) {
+      LoggerService().log("Delete track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+    }
+  }
+}

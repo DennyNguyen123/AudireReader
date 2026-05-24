@@ -683,4 +683,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMatchingLogs => 'No matching logs found';
+
+  @override
+  String get backgroundMusic => 'BACKGROUND MUSIC (BGM)';
+
+  @override
+  String get enableBgm => 'Enable Background Music';
+
+  @override
+  String get bgmVolume => 'BGM Volume';
+
+  @override
+  String get bgmLoopMode => 'BGM Loop Mode';
+
+  @override
+  String get bgmSourceType => 'Source Type';
+
+  @override
+  String get bgmSourceUrl => 'BGM Link / Video ID';
+
+  @override
+  String get bgmSourceUrlHint => 'Enter URL or video ID...';
+
+  @override
+  String get addBgmTrack => 'Add BGM Track';
+
+  @override
+  String get trackName => 'Track Name';
+
+  @override
+  String get selectLocalFile => 'Select File';
+
+  @override
+  String get addOnline => 'Add Online (Stream)';
+
+  @override
+  String get downloadOffline => 'Download Offline';
+
+  @override
+  String get noLoop => 'No Loop';
+
+  @override
+  String get loopOne => 'Loop One Track';
+
+  @override
+  String get loopPlaylist => 'Loop Playlist';
+
+  @override
+  String get noBgmTracks => 'No background music tracks added yet';
+
+  @override
+  String downloading(String percent) {
+    return 'Downloading... $percent%';
+  }
+
+  @override
+  String get success => 'Success';
+
+  @override
+  String get error => 'Error';
 }

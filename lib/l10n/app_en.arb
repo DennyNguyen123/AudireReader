@@ -378,5 +378,31 @@
   "clearLogs": "Clear Logs",
   "consoleLogsCleared": "Console logs cleared.",
   "searchLogsHint": "Search logs...",
-  "noMatchingLogs": "No matching logs found"
+  "noMatchingLogs": "No matching logs found",
+  "backgroundMusic": "BACKGROUND MUSIC (BGM)",
+  "enableBgm": "Enable Background Music",
+  "bgmVolume": "BGM Volume",
+  "bgmLoopMode": "BGM Loop Mode",
+  "bgmSourceType": "Source Type",
+  "bgmSourceUrl": "BGM Link / Video ID",
+  "bgmSourceUrlHint": "Enter URL or video ID...",
+  "addBgmTrack": "Add BGM Track",
+  "trackName": "Track Name",
+  "selectLocalFile": "Select File",
+  "addOnline": "Add Online (Stream)",
+  "downloadOffline": "Download Offline",
+  "noLoop": "No Loop",
+  "loopOne": "Loop One Track",
+  "loopPlaylist": "Loop Playlist",
+  "noBgmTracks": "No background music tracks added yet",
+  "downloading": "Downloading... {percent}%",
+  "@downloading": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "success": "Success",
+  "error": "Error"
 }

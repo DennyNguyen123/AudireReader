@@ -48,23 +48,21 @@ class SyncService {
     print('[Sync] Starting overall synchronization...');
 
     try {
-      // 1. Đồng bộ thư viện sách trước
-      _isSyncing = false; // tạm thời nhả lock để syncLibrary có thể chạy
-      final libResult = await syncLibrary();
-      _isSyncing = true; // khóa lại
+      // 1. Đồng bộ thư viện sách trước thông qua hàm internal không check lock
+      final libResult = await _syncLibraryInternal();
       
       if (!libResult.success) {
         _isSyncing = false;
         return libResult;
       }
 
-      // 2. Đồng bộ tiến trình đọc cho tất cả sách cục bộ
+      // 2. Đồng bộ tiến trình đọc cho tất cả sách cục bộ thông qua hàm internal
       final db = await DatabaseHelper.getInstance();
       final localBooks = await db.getAllBooks();
       bool progressChanged = false;
 
       for (final book in localBooks) {
-        final changed = await syncBookProgress(book.uuid);
+        final changed = await _syncBookProgressInternal(book.uuid);
         if (changed) {
           progressChanged = true;
         }
@@ -83,15 +81,26 @@ class SyncService {
     }
   }
 
-  /// 1. Đồng bộ Danh mục Sách và Trạng thái Xóa (sync_data.json)
-  /// Có hỗ trợ cơ chế Optimistic Locking chống ghi đè dữ liệu
+  /// 1. Đồng bộ Danh mục Sách và Trạng thái Xóa (sync_data.json) công khai (có check lock)
   Future<SyncResult> syncLibrary() async {
     if (_isSyncing) {
       return SyncResult(success: false, message: 'Sync is already in progress.');
     }
     _isSyncing = true;
     print('[SyncLibrary] Starting library sync...');
+    try {
+      final result = await _syncLibraryInternal();
+      _isSyncing = false;
+      return result;
+    } catch (e) {
+      _isSyncing = false;
+      print('[SyncLibrary] Fatal error: $e');
+      return SyncResult(success: false, message: 'Library sync failed: $e');
+    }
+  }
 
+  /// Hàm nội bộ thực hiện đồng bộ Danh mục Sách (không kiểm tra biến _isSyncing)
+  Future<SyncResult> _syncLibraryInternal() async {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
@@ -428,7 +437,6 @@ class SyncService {
       }
 
       if (!syncSuccess) {
-        _isSyncing = false;
         return SyncResult(success: false, message: 'Sync failed: $lastSyncError');
       }
 
@@ -436,14 +444,12 @@ class SyncService {
       settings.webDavLastSync = DateTime.now();
       await db.saveSettings(settings);
 
-      _isSyncing = false;
       return SyncResult(
         success: true,
         message: 'Library sync completed successfully.',
         localChanged: localDatabaseChanged,
       );
     } catch (e) {
-      _isSyncing = false;
       print('[SyncLibrary] Fatal error: $e');
       return SyncResult(success: false, message: 'Library sync failed: $e');
     }
@@ -453,6 +459,11 @@ class SyncService {
   /// Sử dụng tệp siêu nhẹ `/progress/{bookUuid}.json`
   /// Trả về true nếu Local database được cập nhật dữ liệu mới từ Cloud
   Future<bool> syncBookProgress(String bookUuid) async {
+    return await _syncBookProgressInternal(bookUuid);
+  }
+
+  /// Hàm nội bộ thực hiện đồng bộ Tiến trình đọc (không check lock)
+  Future<bool> _syncBookProgressInternal(String bookUuid) async {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();

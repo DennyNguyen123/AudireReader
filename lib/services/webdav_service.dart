@@ -9,6 +9,9 @@ class WebDavService {
   static WebDavService? _instance;
   webdav.Client? _client;
   bool _isInitialized = false;
+  String? _lastUrl;
+  String? _lastUsername;
+  String? _lastPassword;
 
   WebDavService._();
 
@@ -25,6 +28,18 @@ class WebDavService {
     if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
       formattedUrl = 'https://$formattedUrl';
     }
+
+    if (_client != null &&
+        _lastUrl == formattedUrl &&
+        _lastUsername == username.trim() &&
+        _lastPassword == password) {
+      // Cấu hình kết nối giữ nguyên, tái sử dụng client hiện tại
+      return;
+    }
+
+    _lastUrl = formattedUrl;
+    _lastUsername = username.trim();
+    _lastPassword = password;
 
     final isDebugEnabled = LoggerService().enableWebDavDebug;
     LoggerService().log('Initializing WebDAV client with debug=$isDebugEnabled', tag: 'WEBDAV', level: LogLevel.info);

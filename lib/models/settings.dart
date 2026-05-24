@@ -37,6 +37,12 @@ class AppSettings {
 
   bool autoCheckUpdate = true;
 
+  // --- Background Music (BGM) Settings ---
+  bool bgmEnabled = false;
+  double bgmVolume = 0.15;
+  int? currentBgmTrackId;
+  String bgmLoopMode = 'all'; // 'none', 'one', 'all'
+
   // Library Sorting Options: 'dateAdded', 'recentlyRead', 'title', 'author'
   String sortBy = 'dateAdded';
 

@@ -243,30 +243,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     settings.developerMode = val;
-    await db.saveSettings(settings);
-    setState(() {
-      _developerMode = val;
-    });
-  }
-
-  Future<void> _saveEnableDebugLogs(bool val) async {
-    final db = await DatabaseHelper.getInstance();
-    final settings = await db.getSettings();
     settings.enableDebugLogs = val;
-    await db.saveSettings(settings);
-    LoggerService().setEnableDebugLogs(val);
-    setState(() {
-      _enableDebugLogs = val;
-    });
-  }
-
-  Future<void> _saveEnableWebDavDebug(bool val) async {
-    final db = await DatabaseHelper.getInstance();
-    final settings = await db.getSettings();
     settings.enableWebDavDebug = val;
     await db.saveSettings(settings);
+    LoggerService().setEnableDebugLogs(val);
     LoggerService().setEnableWebDavDebug(val);
     setState(() {
+      _developerMode = val;
+      _enableDebugLogs = val;
       _enableWebDavDebug = val;
     });
   }
@@ -880,11 +864,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         const SizedBox(height: 20),
                         DeveloperSettingsSection(
                           developerMode: _developerMode,
-                          enableDebugLogs: _enableDebugLogs,
-                          enableWebDavDebug: _enableWebDavDebug,
                           onDeveloperModeChanged: _saveDeveloperModeSetting,
-                          onEnableDebugLogsChanged: _saveEnableDebugLogs,
-                          onEnableWebDavDebugChanged: _saveEnableWebDavDebug,
                           onOpenDebugConsole: () {
                             Navigator.push(
                               context,

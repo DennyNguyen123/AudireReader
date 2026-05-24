@@ -8,6 +8,7 @@ import '../../models/settings.dart';
 import '../../models/pronunciation_rule.dart';
 import '../../models/bookmark.dart';
 import '../../models/highlight.dart';
+import '../../models/bgm_track.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
@@ -34,6 +35,7 @@ class DatabaseHelper {
         PronunciationRuleSchema,
         BookmarkSchema,
         HighlightSchema,
+        BgmTrackSchema,
       ],
       directory: dir.path,
     );
@@ -310,6 +312,27 @@ class DatabaseHelper {
           .and()
           .paragraphIndexEqualTo(paragraphIndex)
           .deleteAll();
+    });
+  }
+
+  // --- Background Music (BGM) Track Operations ---
+  Future<void> saveBgmTrack(BgmTrack track) async {
+    await isar.writeTxn(() async {
+      await isar.bgmTracks.put(track);
+    });
+  }
+
+  Future<List<BgmTrack>> getAllBgmTracks() async {
+    return await isar.bgmTracks.where().sortByDateAddedDesc().findAll();
+  }
+
+  Future<BgmTrack?> getBgmTrack(int id) async {
+    return await isar.bgmTracks.get(id);
+  }
+
+  Future<void> deleteBgmTrack(int id) async {
+    await isar.writeTxn(() async {
+      await isar.bgmTracks.delete(id);
     });
   }
 }

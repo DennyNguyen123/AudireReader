@@ -686,4 +686,63 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get noMatchingLogs => 'Không tìm thấy log phù hợp';
+
+  @override
+  String get backgroundMusic => 'Nhạc nền (BGM)';
+
+  @override
+  String get enableBgm => 'Bật nhạc nền';
+
+  @override
+  String get bgmVolume => 'Âm lượng nhạc nền';
+
+  @override
+  String get bgmLoopMode => 'Chế độ lặp BGM';
+
+  @override
+  String get bgmSourceType => 'Loại nguồn';
+
+  @override
+  String get bgmSourceUrl => 'Liên kết / Mã Video BGM';
+
+  @override
+  String get bgmSourceUrlHint => 'Nhập link hoặc video ID...';
+
+  @override
+  String get addBgmTrack => 'Thêm bài BGM';
+
+  @override
+  String get trackName => 'Tên bài hát';
+
+  @override
+  String get selectLocalFile => 'Chọn file';
+
+  @override
+  String get addOnline => 'Thêm Online (Stream)';
+
+  @override
+  String get downloadOffline => 'Tải Offline';
+
+  @override
+  String get noLoop => 'Không lặp';
+
+  @override
+  String get loopOne => 'Lặp một bài';
+
+  @override
+  String get loopPlaylist => 'Lặp toàn danh sách';
+
+  @override
+  String get noBgmTracks => 'Chưa có bài nhạc nền nào được thêm';
+
+  @override
+  String downloading(String percent) {
+    return 'Đang tải xuống... $percent%';
+  }
+
+  @override
+  String get success => 'Thành công';
+
+  @override
+  String get error => 'Lỗi';
 }

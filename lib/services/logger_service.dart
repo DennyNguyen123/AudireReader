@@ -58,25 +58,27 @@ class LoggerService extends ChangeNotifier {
       error: error,
     );
 
-    bool shouldPrintToConsole = kDebugMode || _enableDebugLogs;
-    
-    // Các tag nội bộ chỉ in ra Console khi người dùng bật enableDebugLogs trong Developer Settings
-    // kDebugMode (môi trường flutter run) không tự động in các log này ra nữa
-    const suppressedTags = {'WEBDAV', 'SYNC', 'TTS'};
-    if (suppressedTags.contains(tag) && !_enableDebugLogs) {
-      // Ngoại lệ: WEBDAV chỉ in khi bật riêng cờ _enableWebDavDebug
-      if (tag == 'WEBDAV' && _enableWebDavDebug) {
-        shouldPrintToConsole = true;
-      } else {
-        shouldPrintToConsole = false;
-      }
+    // 1. Xác định xem log này có được phép ghi nhận hay không
+    bool shouldLog = false;
+    if (level == LogLevel.error || level == LogLevel.warning || error != null) {
+      // Luôn ghi log lỗi hoặc cảnh báo để hỗ trợ chẩn đoán
+      shouldLog = true;
+    } else {
+      // Chỉ ghi nhận log debug khi Developer Mode được bật (được đồng bộ qua cờ _enableDebugLogs)
+      shouldLog = _enableDebugLogs;
     }
 
+    if (!shouldLog) return;
+
+    // 2. Quyết định in ra Console của terminal gỡ lỗi
+    // Đối với môi trường debug (kDebugMode), luôn in ra console các log được phép ghi nhận
+    bool shouldPrintToConsole = kDebugMode || _enableDebugLogs;
     if (shouldPrintToConsole) {
       final consoleMsg = '[$tag][${entry.levelName}] $message${error != null ? ' | Error: $error' : ''}';
       debugPrint(consoleMsg);
     }
 
+    // 3. Thêm vào danh sách log trong RAM của ứng dụng
     _logs.add(entry);
 
     if (_logs.length > 1000) {

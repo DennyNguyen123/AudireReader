@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/bgm_service.dart';
 import '../../../core/theme_notifier.dart';
 import '../../library/pronunciation_dictionary_screen.dart';
 
@@ -57,6 +60,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   String _selectedLanguageFilter = 'all';
   String _voiceSearchQuery = '';
 
+  // Background Music (BGM) UI state variables
+  bool _showAddBgmForm = false;
+  final _bgmNameController = TextEditingController();
+  String? _bgmLocalPath;
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +83,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   void dispose() {
     _speedController.dispose();
     _voiceSearchController.dispose();
+    _bgmNameController.dispose();
     super.dispose();
   }
 
@@ -749,6 +758,352 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   },
                 );
               }(),
+              
+              const SizedBox(height: 20),
+              Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
+              const SizedBox(height: 20),
+
+              // 🎵 GROUP 3: BACKGROUND MUSIC (BGM)
+              Row(
+                children: [
+                  Icon(Icons.music_note_rounded, size: 16, color: Colors.amber[700]),
+                  const SizedBox(width: 8),
+                  Text(
+                    "BACKGROUND MUSIC (BGM)",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              ListenableBuilder(
+                listenable: BgmService.getInstance(),
+                builder: (context, _) {
+                  final bgmService = BgmService.getInstance();
+                  
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ENABLE BGM SWITCH
+                      SwitchListTile(
+                        title: Text(
+                          "Enable Background Music",
+                          style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 14),
+                        ),
+                        value: bgmService.bgmEnabled,
+                        activeThumbColor: Colors.amber[700],
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (val) async {
+                          await bgmService.updateSettings(bgmEnabled: val);
+                          if (val && bgmService.currentTrack != null) {
+                            await bgmService.playTrack(bgmService.currentTrack!);
+                          }
+                        },
+                      ),
+
+                      if (bgmService.bgmEnabled) ...[
+                        const SizedBox(height: 10),
+                        // VOLUME SLIDER
+                        Row(
+                          children: [
+                            const Icon(Icons.volume_down_rounded, size: 20),
+                            const SizedBox(width: 12),
+                            Text("BGM Volume", style: TextStyle(color: labelColor, fontSize: 13)),
+                            Expanded(
+                              child: Slider(
+                                value: bgmService.bgmVolume,
+                                min: 0.0,
+                                max: 0.5, // Giới hạn max 0.5 để nhạc nền không lấn át TTS
+                                activeColor: Colors.amber[700],
+                                onChanged: (val) {
+                                  bgmService.updateVolumeInMemory(val);
+                                },
+                                onChangeEnd: (val) {
+                                  bgmService.updateSettings(bgmVolume: val);
+                                },
+                              ),
+                            ),
+                            Text(
+                              "${(bgmService.bgmVolume * 200).round()}%",
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: labelColor),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // LOOP MODE DROPDOWN
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Loop Mode", style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 13)),
+                            SizedBox(
+                              width: 180,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: bgmService.bgmLoopMode,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: isDark ? Colors.white10 : Colors.black12,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                dropdownColor: sheetBg,
+                                style: TextStyle(color: labelColor, fontSize: 13),
+                                items: const [
+                                  DropdownMenuItem(value: 'none', child: Text('No Loop')),
+                                  DropdownMenuItem(value: 'one', child: Text('Loop One Track')),
+                                  DropdownMenuItem(value: 'all', child: Text('Loop Playlist')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    bgmService.updateSettings(bgmLoopMode: val);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // PLAYLIST MANAGER
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "BGM Playlist",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 14),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _showAddBgmForm ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded,
+                              color: Colors.amber[700],
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showAddBgmForm = !_showAddBgmForm;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Add Track Form (Local Only)
+                      if (_showAddBgmForm) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                "Add BGM Track",
+                                style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 13),
+                              ),
+                              const SizedBox(height: 12),
+                              
+                              // Track Name Input
+                              TextField(
+                                controller: _bgmNameController,
+                                style: TextStyle(color: labelColor, fontSize: 13),
+                                decoration: InputDecoration(
+                                  labelText: "Track Name (Optional)",
+                                  labelStyle: TextStyle(color: labelColor.withValues(alpha: 0.6), fontSize: 12),
+                                  border: const OutlineInputBorder(),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Local Audio Picker Button
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                                  foregroundColor: labelColor,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.folder_open_rounded, size: 16),
+                                label: Text(
+                                  _bgmLocalPath != null
+                                      ? p.basename(_bgmLocalPath!)
+                                      : "Select Audio File",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                onPressed: () async {
+                                  final result = await FilePicker.platform.pickFiles(
+                                    type: FileType.audio,
+                                    allowMultiple: false,
+                                  );
+                                  if (result != null && result.files.single.path != null) {
+                                    setState(() {
+                                      _bgmLocalPath = result.files.single.path;
+                                      if (_bgmNameController.text.trim().isEmpty) {
+                                        _bgmNameController.text = p.basenameWithoutExtension(_bgmLocalPath!);
+                                      }
+                                    });
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber[700],
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: _bgmLocalPath == null
+                                    ? null
+                                    : () async {
+                                        try {
+                                          await bgmService.addTrackFromLocal(
+                                            _bgmNameController.text,
+                                            _bgmLocalPath!,
+                                          );
+                                          setState(() {
+                                            _showAddBgmForm = false;
+                                            _bgmNameController.clear();
+                                            _bgmLocalPath = null;
+                                          });
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text("BGM Track added successfully!")),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text("Failed to add track: $e")),
+                                          );
+                                        }
+                                      },
+                                child: const Text("Import Local File", style: TextStyle(fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // PLAYLIST TRACKS LIST
+                      if (bgmService.bgmPlaylist.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(
+                            "No background music tracks added yet.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: labelColor.withValues(alpha: 0.5), fontSize: 13, fontStyle: FontStyle.italic),
+                          ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: bgmService.bgmPlaylist.length,
+                          itemBuilder: (context, index) {
+                            final track = bgmService.bgmPlaylist[index];
+                            final isCurrent = bgmService.currentTrack?.id == track.id;
+                            const IconData sourceIcon = Icons.insert_drive_file_rounded;
+
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isCurrent
+                                    ? Colors.amber[700]!.withValues(alpha: isDark ? 0.2 : 0.1)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isCurrent
+                                      ? Colors.amber[700]!.withValues(alpha: 0.3)
+                                      : Colors.transparent,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    sourceIcon,
+                                    size: 18,
+                                    color: isCurrent ? Colors.amber[700] : labelColor.withValues(alpha: 0.6),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      track.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                        color: isCurrent ? (isDark ? Colors.amber[200] : Colors.amber[900]) : labelColor,
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  // Play/Pause Button
+                                  IconButton(
+                                    icon: Icon(
+                                      isCurrent && bgmService.isPlaying
+                                          ? Icons.pause_circle_outline_rounded
+                                          : Icons.play_circle_outline_rounded,
+                                      size: 20,
+                                      color: isCurrent ? Colors.amber[700] : labelColor.withValues(alpha: 0.7),
+                                    ),
+                                    onPressed: () {
+                                      if (isCurrent && bgmService.isPlaying) {
+                                        bgmService.pauseBgm();
+                                      } else {
+                                        bgmService.playTrack(track);
+                                      }
+                                    },
+                                  ),
+
+                                  // Delete Button
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: sheetBg,
+                                          title: const Text("Delete Track", style: TextStyle(fontWeight: FontWeight.bold)),
+                                          content: Text("Are you sure you want to delete '${track.name}'?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                bgmService.deleteTrack(track);
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text("Delete", style: TextStyle(color: Colors.redAccent)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                },
+              ),
             ],
           ],
         ),

@@ -1322,6 +1322,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching logs found'**
   String get noMatchingLogs;
+
+  /// No description provided for @backgroundMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'BACKGROUND MUSIC (BGM)'**
+  String get backgroundMusic;
+
+  /// No description provided for @enableBgm.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Background Music'**
+  String get enableBgm;
+
+  /// No description provided for @bgmVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'BGM Volume'**
+  String get bgmVolume;
+
+  /// No description provided for @bgmLoopMode.
+  ///
+  /// In en, this message translates to:
+  /// **'BGM Loop Mode'**
+  String get bgmLoopMode;
+
+  /// No description provided for @bgmSourceType.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Type'**
+  String get bgmSourceType;
+
+  /// No description provided for @bgmSourceUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'BGM Link / Video ID'**
+  String get bgmSourceUrl;
+
+  /// No description provided for @bgmSourceUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter URL or video ID...'**
+  String get bgmSourceUrlHint;
+
+  /// No description provided for @addBgmTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Add BGM Track'**
+  String get addBgmTrack;
+
+  /// No description provided for @trackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Name'**
+  String get trackName;
+
+  /// No description provided for @selectLocalFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Select File'**
+  String get selectLocalFile;
+
+  /// No description provided for @addOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Online (Stream)'**
+  String get addOnline;
+
+  /// No description provided for @downloadOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Offline'**
+  String get downloadOffline;
+
+  /// No description provided for @noLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'No Loop'**
+  String get noLoop;
+
+  /// No description provided for @loopOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop One Track'**
+  String get loopOne;
+
+  /// No description provided for @loopPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop Playlist'**
+  String get loopPlaylist;
+
+  /// No description provided for @noBgmTracks.
+  ///
+  /// In en, this message translates to:
+  /// **'No background music tracks added yet'**
+  String get noBgmTracks;
+
+  /// No description provided for @downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {percent}%'**
+  String downloading(String percent);
+
+  /// No description provided for @success.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get success;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
 }
 
 class _AppLocalizationsDelegate

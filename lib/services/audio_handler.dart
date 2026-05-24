@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../core/utils/path_helper.dart';
 import 'dart:async';
 import 'dart:io' show Platform, File, Process;
@@ -10,6 +11,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../core/database/database_helper.dart';
 import 'edge_tts_service.dart';
+import 'bgm_service.dart';
 
 enum TtsEngineType { system, edge }
 
@@ -315,6 +317,7 @@ try {
   MyAudioHandler() {
     _initTts();
     _initEdgePlayer();
+    _cleanOldCacheFiles();
   }
 
   void _initTts() {
@@ -441,6 +444,9 @@ try {
   }
 
   Future<void> speak(String text) async {
+    // Gọi resume nhạc nền nếu được bật
+    BgmService.getInstance().resumeBgm();
+    
     // 1. Dừng mọi tác vụ phát cũ một cách an toàn và tuần tự
     _isSpeaking = false;
     _windowsTimer?.cancel();
@@ -609,6 +615,7 @@ try {
 
   @override
   Future<void> play() async {
+    BgmService.getInstance().resumeBgm();
     if (!_isSpeaking && _currentText.isNotEmpty) {
       if (_activeEngine == TtsEngineType.edge || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
         _isSpeaking = true;
@@ -630,6 +637,7 @@ try {
 
   @override
   Future<void> pause() async {
+    BgmService.getInstance().pauseBgm();
     _isSpeaking = false;
     _windowsTimer?.cancel();
     cancelAllPrefetches();
@@ -653,6 +661,7 @@ try {
 
   @override
   Future<void> stop() async {
+    BgmService.getInstance().stopBgm();
     _isSpeaking = false;
     _windowsTimer?.cancel();
     cancelAllPrefetches();
@@ -705,5 +714,33 @@ try {
     }
     _audioCache.clear();
     await _edgePlayer.dispose();
+  }
+
+  Future<void> _cleanOldCacheFiles() async {
+    try {
+      final cacheDir = await PathHelper.getAppCacheDirectory();
+      if (await cacheDir.exists()) {
+        final now = DateTime.now();
+        final files = cacheDir.listSync();
+        for (final file in files) {
+          if (file is File) {
+            final fileName = p.basename(file.path);
+            if (fileName.startsWith('sys_tts_') ||
+                fileName.startsWith('sys_text_') ||
+                fileName.startsWith('sys_synth_') ||
+                fileName.startsWith('tts_')) {
+              final stat = await file.stat();
+              if (now.difference(stat.modified).inDays >= 1) {
+                try {
+                  await file.delete();
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Failed to clean old cache files: $e");
+    }
   }
 }

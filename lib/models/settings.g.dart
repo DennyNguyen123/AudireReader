@@ -27,128 +27,148 @@ const AppSettingsSchema = CollectionSchema(
       name: r'autoCheckUpdate',
       type: IsarType.bool,
     ),
-    r'bossKeyAction': PropertySchema(
+    r'bgmEnabled': PropertySchema(
       id: 2,
+      name: r'bgmEnabled',
+      type: IsarType.bool,
+    ),
+    r'bgmLoopMode': PropertySchema(
+      id: 3,
+      name: r'bgmLoopMode',
+      type: IsarType.string,
+    ),
+    r'bgmVolume': PropertySchema(
+      id: 4,
+      name: r'bgmVolume',
+      type: IsarType.double,
+    ),
+    r'bossKeyAction': PropertySchema(
+      id: 5,
       name: r'bossKeyAction',
       type: IsarType.string,
     ),
+    r'currentBgmTrackId': PropertySchema(
+      id: 6,
+      name: r'currentBgmTrackId',
+      type: IsarType.long,
+    ),
     r'developerMode': PropertySchema(
-      id: 3,
+      id: 7,
       name: r'developerMode',
       type: IsarType.bool,
     ),
     r'enableDebugLogs': PropertySchema(
-      id: 4,
+      id: 8,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 5,
+      id: 9,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 6,
+      id: 10,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 7,
+      id: 11,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 9,
+      id: 13,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 10,
+      id: 14,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 11,
+      id: 15,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 12,
+      id: 16,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 13,
+      id: 17,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 14,
+      id: 18,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 15,
+      id: 19,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 16,
+      id: 20,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 17,
+      id: 21,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 18,
+      id: 22,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
     r'sortBy': PropertySchema(
-      id: 19,
+      id: 23,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 20,
+      id: 24,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'themeMode': PropertySchema(
-      id: 21,
+      id: 25,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 22,
+      id: 26,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 23,
+      id: 27,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 24,
+      id: 28,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 25,
+      id: 29,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 26,
+      id: 30,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -174,6 +194,7 @@ int _appSettingsEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.appLocale.length * 3;
+  bytesCount += 3 + object.bgmLoopMode.length * 3;
   bytesCount += 3 + object.bossKeyAction.length * 3;
   bytesCount += 3 + object.fontFamily.length * 3;
   bytesCount += 3 + object.hotkeyBossKey.length * 3;
@@ -212,31 +233,35 @@ void _appSettingsSerialize(
 ) {
   writer.writeString(offsets[0], object.appLocale);
   writer.writeBool(offsets[1], object.autoCheckUpdate);
-  writer.writeString(offsets[2], object.bossKeyAction);
-  writer.writeBool(offsets[3], object.developerMode);
-  writer.writeBool(offsets[4], object.enableDebugLogs);
-  writer.writeBool(offsets[5], object.enableWebDavDebug);
-  writer.writeString(offsets[6], object.fontFamily);
-  writer.writeDouble(offsets[7], object.fontSize);
-  writer.writeString(offsets[8], object.hotkeyBossKey);
-  writer.writeString(offsets[9], object.hotkeyNextChapter);
-  writer.writeString(offsets[10], object.hotkeyNextParagraph);
-  writer.writeString(offsets[11], object.hotkeyOpenChapter);
-  writer.writeString(offsets[12], object.hotkeyOpenSetting);
-  writer.writeString(offsets[13], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[14], object.hotkeyPrevChapter);
-  writer.writeString(offsets[15], object.hotkeyPrevParagraph);
-  writer.writeBool(offsets[16], object.openLastReadOnLaunch);
-  writer.writeString(offsets[17], object.selectedVoiceLocale);
-  writer.writeString(offsets[18], object.selectedVoiceName);
-  writer.writeString(offsets[19], object.sortBy);
-  writer.writeDouble(offsets[20], object.speechRate);
-  writer.writeString(offsets[21], object.themeMode);
-  writer.writeString(offsets[22], object.ttsProvider);
-  writer.writeBool(offsets[23], object.webDavEnabled);
-  writer.writeDateTime(offsets[24], object.webDavLastSync);
-  writer.writeString(offsets[25], object.webDavUrl);
-  writer.writeString(offsets[26], object.webDavUsername);
+  writer.writeBool(offsets[2], object.bgmEnabled);
+  writer.writeString(offsets[3], object.bgmLoopMode);
+  writer.writeDouble(offsets[4], object.bgmVolume);
+  writer.writeString(offsets[5], object.bossKeyAction);
+  writer.writeLong(offsets[6], object.currentBgmTrackId);
+  writer.writeBool(offsets[7], object.developerMode);
+  writer.writeBool(offsets[8], object.enableDebugLogs);
+  writer.writeBool(offsets[9], object.enableWebDavDebug);
+  writer.writeString(offsets[10], object.fontFamily);
+  writer.writeDouble(offsets[11], object.fontSize);
+  writer.writeString(offsets[12], object.hotkeyBossKey);
+  writer.writeString(offsets[13], object.hotkeyNextChapter);
+  writer.writeString(offsets[14], object.hotkeyNextParagraph);
+  writer.writeString(offsets[15], object.hotkeyOpenChapter);
+  writer.writeString(offsets[16], object.hotkeyOpenSetting);
+  writer.writeString(offsets[17], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[18], object.hotkeyPrevChapter);
+  writer.writeString(offsets[19], object.hotkeyPrevParagraph);
+  writer.writeBool(offsets[20], object.openLastReadOnLaunch);
+  writer.writeString(offsets[21], object.selectedVoiceLocale);
+  writer.writeString(offsets[22], object.selectedVoiceName);
+  writer.writeString(offsets[23], object.sortBy);
+  writer.writeDouble(offsets[24], object.speechRate);
+  writer.writeString(offsets[25], object.themeMode);
+  writer.writeString(offsets[26], object.ttsProvider);
+  writer.writeBool(offsets[27], object.webDavEnabled);
+  writer.writeDateTime(offsets[28], object.webDavLastSync);
+  writer.writeString(offsets[29], object.webDavUrl);
+  writer.writeString(offsets[30], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -248,32 +273,36 @@ AppSettings _appSettingsDeserialize(
   final object = AppSettings();
   object.appLocale = reader.readString(offsets[0]);
   object.autoCheckUpdate = reader.readBool(offsets[1]);
-  object.bossKeyAction = reader.readString(offsets[2]);
-  object.developerMode = reader.readBool(offsets[3]);
-  object.enableDebugLogs = reader.readBool(offsets[4]);
-  object.enableWebDavDebug = reader.readBool(offsets[5]);
-  object.fontFamily = reader.readString(offsets[6]);
-  object.fontSize = reader.readDouble(offsets[7]);
-  object.hotkeyBossKey = reader.readString(offsets[8]);
-  object.hotkeyNextChapter = reader.readString(offsets[9]);
-  object.hotkeyNextParagraph = reader.readString(offsets[10]);
-  object.hotkeyOpenChapter = reader.readString(offsets[11]);
-  object.hotkeyOpenSetting = reader.readString(offsets[12]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[13]);
-  object.hotkeyPrevChapter = reader.readString(offsets[14]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[15]);
+  object.bgmEnabled = reader.readBool(offsets[2]);
+  object.bgmLoopMode = reader.readString(offsets[3]);
+  object.bgmVolume = reader.readDouble(offsets[4]);
+  object.bossKeyAction = reader.readString(offsets[5]);
+  object.currentBgmTrackId = reader.readLongOrNull(offsets[6]);
+  object.developerMode = reader.readBool(offsets[7]);
+  object.enableDebugLogs = reader.readBool(offsets[8]);
+  object.enableWebDavDebug = reader.readBool(offsets[9]);
+  object.fontFamily = reader.readString(offsets[10]);
+  object.fontSize = reader.readDouble(offsets[11]);
+  object.hotkeyBossKey = reader.readString(offsets[12]);
+  object.hotkeyNextChapter = reader.readString(offsets[13]);
+  object.hotkeyNextParagraph = reader.readString(offsets[14]);
+  object.hotkeyOpenChapter = reader.readString(offsets[15]);
+  object.hotkeyOpenSetting = reader.readString(offsets[16]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[17]);
+  object.hotkeyPrevChapter = reader.readString(offsets[18]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[19]);
   object.id = id;
-  object.openLastReadOnLaunch = reader.readBool(offsets[16]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[17]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[18]);
-  object.sortBy = reader.readString(offsets[19]);
-  object.speechRate = reader.readDouble(offsets[20]);
-  object.themeMode = reader.readString(offsets[21]);
-  object.ttsProvider = reader.readString(offsets[22]);
-  object.webDavEnabled = reader.readBool(offsets[23]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[24]);
-  object.webDavUrl = reader.readString(offsets[25]);
-  object.webDavUsername = reader.readString(offsets[26]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[20]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[21]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[22]);
+  object.sortBy = reader.readString(offsets[23]);
+  object.speechRate = reader.readDouble(offsets[24]);
+  object.themeMode = reader.readString(offsets[25]);
+  object.ttsProvider = reader.readString(offsets[26]);
+  object.webDavEnabled = reader.readBool(offsets[27]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[28]);
+  object.webDavUrl = reader.readString(offsets[29]);
+  object.webDavUsername = reader.readString(offsets[30]);
   return object;
 }
 
@@ -289,25 +318,25 @@ P _appSettingsDeserializeProp<P>(
     case 1:
       return (reader.readBool(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
-    case 5:
-      return (reader.readBool(offset)) as P;
-    case 6:
-      return (reader.readString(offset)) as P;
-    case 7:
       return (reader.readDouble(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readLongOrNull(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 10:
       return (reader.readString(offset)) as P;
     case 11:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 12:
       return (reader.readString(offset)) as P;
     case 13:
@@ -317,26 +346,34 @@ P _appSettingsDeserializeProp<P>(
     case 15:
       return (reader.readString(offset)) as P;
     case 16:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 17:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 18:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 19:
       return (reader.readString(offset)) as P;
     case 20:
-      return (reader.readDouble(offset)) as P;
-    case 21:
-      return (reader.readString(offset)) as P;
-    case 22:
-      return (reader.readString(offset)) as P;
-    case 23:
       return (reader.readBool(offset)) as P;
+    case 21:
+      return (reader.readStringOrNull(offset)) as P;
+    case 22:
+      return (reader.readStringOrNull(offset)) as P;
+    case 23:
+      return (reader.readString(offset)) as P;
     case 24:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 25:
       return (reader.readString(offset)) as P;
     case 26:
+      return (reader.readString(offset)) as P;
+    case 27:
+      return (reader.readBool(offset)) as P;
+    case 28:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 29:
+      return (reader.readString(offset)) as P;
+    case 30:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -583,6 +620,218 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmEnabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmEnabled',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bgmLoopMode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'bgmLoopMode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'bgmLoopMode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmLoopMode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmLoopModeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'bgmLoopMode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmVolumeEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmVolume',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmVolumeGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bgmVolume',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmVolumeLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bgmVolume',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmVolumeBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bgmVolume',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       bossKeyActionEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -714,6 +963,80 @@ extension AppSettingsQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'bossKeyAction',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'currentBgmTrackId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'currentBgmTrackId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentBgmTrackId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentBgmTrackId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentBgmTrackId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentBgmTrackId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -3269,6 +3592,42 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmLoopMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmLoopMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmLoopModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmLoopMode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmVolume() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmVolume', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmVolumeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmVolume', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBossKeyAction() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bossKeyAction', Sort.asc);
@@ -3279,6 +3638,20 @@ extension AppSettingsQuerySortBy
       sortByBossKeyActionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bossKeyAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackId', Sort.desc);
     });
   }
 
@@ -3626,6 +3999,42 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmEnabled', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmLoopMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmLoopMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmLoopModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmLoopMode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmVolume() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmVolume', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmVolumeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmVolume', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBossKeyAction() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bossKeyAction', Sort.asc);
@@ -3636,6 +4045,20 @@ extension AppSettingsQuerySortThenBy
       thenByBossKeyActionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bossKeyAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackId', Sort.desc);
     });
   }
 
@@ -3984,11 +4407,37 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBgmEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bgmEnabled');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBgmLoopMode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bgmLoopMode', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBgmVolume() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bgmVolume');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBossKeyAction(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'bossKeyAction',
           caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByCurrentBgmTrackId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentBgmTrackId');
     });
   }
 
@@ -4187,9 +4636,34 @@ extension AppSettingsQueryProperty
     });
   }
 
+  QueryBuilder<AppSettings, bool, QQueryOperations> bgmEnabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bgmEnabled');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> bgmLoopModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bgmLoopMode');
+    });
+  }
+
+  QueryBuilder<AppSettings, double, QQueryOperations> bgmVolumeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bgmVolume');
+    });
+  }
+
   QueryBuilder<AppSettings, String, QQueryOperations> bossKeyActionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'bossKeyAction');
+    });
+  }
+
+  QueryBuilder<AppSettings, int?, QQueryOperations>
+      currentBgmTrackIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentBgmTrackId');
     });
   }
 
