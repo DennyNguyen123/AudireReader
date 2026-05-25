@@ -127,12 +127,14 @@ jobs:
         run: |
           sudo gem uninstall cocoapods --all --ignore-dependencies || true
           sudo gem install cocoapods
+          pod setup
           pod repo update
 
       - name: Clear CocoaPods Cache
         run: |
           rm -rf ~/Library/Developer/Xcode/DerivedData/*
-          rm -rf ~/.cocoapods/repos/trunk
+          rm -rf ~/.cocoapods/repos
+          rm -rf ~/Library/Caches/CocoaPods
 
       - name: Install dependencies
         run: flutter pub get
