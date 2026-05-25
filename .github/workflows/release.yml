@@ -126,6 +126,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch flutter_onnxruntime Podspec
+        run: |
+          for file in ~/.pub-cache/hosted/pub.dev/flutter_onnxruntime-*/ios/flutter_onnxruntime.podspec; do
+            sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
+          done
+
       - name: Run Tests
         run: flutter test
 
