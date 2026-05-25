@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../l10n/app_localizations.dart';
+import 'package:audio_service/audio_service.dart';
 import '../../../models/chapter.dart';
 import '../../../services/tts_service.dart';
 
-class BottomAudioPanel extends StatelessWidget {
+class BottomAudioPanel extends StatefulWidget {
   final TtsService ttsService;
   final Chapter chapter;
   final bool isDark;
@@ -20,11 +20,29 @@ class BottomAudioPanel extends StatelessWidget {
   });
 
   @override
+  State<BottomAudioPanel> createState() => _BottomAudioPanelState();
+}
+
+class _BottomAudioPanelState extends State<BottomAudioPanel> {
+  bool _isDragging = false;
+  double _dragValue = 0.0;
+
+  @override
   Widget build(BuildContext context) {
-    Color panelBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    if (themeMode == 'Sepia') {
+    Color panelBg = widget.isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    if (widget.themeMode == 'Sepia') {
       panelBg = const Color(0xFFEAD8B1);
     }
+
+    final tts = widget.ttsService;
+    final totalParagraphs = widget.chapter.paragraphs.length;
+    final currentParagraph = tts.currentParagraphIndex + 1;
+    final double percent = totalParagraphs > 0 ? (currentParagraph / totalParagraphs * 100) : 0.0;
+    final percentStr = percent.toStringAsFixed(1);
+    final currentChapter = tts.currentChapterIndex + 1;
+    final totalChapters = tts.chapters.length;
+
+    final chapterDuration = tts.getChapterDuration();
 
     return Container(
       decoration: BoxDecoration(
@@ -38,62 +56,131 @@ class BottomAudioPanel extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Hiển thị vị trí câu đang đọc, phần trăm tiến trình và chỉ số chương kèm phần trăm chương
-          Builder(
-            builder: (context) {
-              final totalParagraphs = chapter.paragraphs.length;
-              final currentParagraph = ttsService.currentParagraphIndex + 1;
-              final double percent = totalParagraphs > 0 ? (currentParagraph / totalParagraphs * 100) : 0.0;
-              final percentStr = percent.toStringAsFixed(1);
-              final currentChapter = ttsService.currentChapterIndex + 1;
-              final totalChapters = ttsService.chapters.length;
-              final double chapterPercent = totalChapters > 0 ? (currentChapter / totalChapters * 100) : 0.0;
-              final chapterPercentStr = chapterPercent.round().toString();
+          // 1. Slider thanh trượt tiến trình chương
+          StreamBuilder<Duration>(
+            stream: AudioService.position,
+            builder: (context, snapshot) {
+              final position = snapshot.data ?? Duration.zero;
+              final currentPositionSec = position.inSeconds.toDouble();
+              
+              double sliderValue = _isDragging ? _dragValue : currentPositionSec;
+              if (sliderValue < 0) sliderValue = 0.0;
+              if (sliderValue > chapterDuration) sliderValue = chapterDuration;
 
-              return Text(
-                AppLocalizations.of(context)!.audioPanelProgress(
-                  currentParagraph,
-                  totalParagraphs,
-                  percentStr,
-                  currentChapter,
-                  totalChapters,
-                  chapterPercentStr,
-                ),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: textColor.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w600,
-                ),
+              return Column(
+                children: [
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                      activeTrackColor: Colors.amber[700],
+                      inactiveTrackColor: widget.textColor.withValues(alpha: 0.2),
+                      thumbColor: Colors.amber[700],
+                    ),
+                    child: Slider(
+                      value: chapterDuration > 0 ? sliderValue : 0.0,
+                      min: 0.0,
+                      max: chapterDuration > 0 ? chapterDuration : 1.0,
+                      onChanged: chapterDuration > 0
+                          ? (value) {
+                              setState(() {
+                                _isDragging = true;
+                                _dragValue = value;
+                              });
+                            }
+                          : null,
+                      onChangeEnd: chapterDuration > 0
+                          ? (value) {
+                              setState(() {
+                                _isDragging = false;
+                              });
+                              // Tìm paragraph tương ứng
+                              final charPerSec = tts.getCharsPerSecond();
+                              if (charPerSec > 0) {
+                                double total = 0.0;
+                                int targetIndex = 0;
+                                final paragraphs = widget.chapter.paragraphs;
+                                for (int i = 0; i < paragraphs.length; i++) {
+                                  final dur = paragraphs[i].length / charPerSec;
+                                  if (value <= total + dur) {
+                                    targetIndex = i;
+                                    break;
+                                  }
+                                  total += dur;
+                                  targetIndex = i;
+                                }
+                                tts.jumpToParagraph(targetIndex);
+                              }
+                            }
+                          : null,
+                    ),
+                  ),
+                ],
               );
             },
           ),
-          const SizedBox(height: 10),
+
+          // 2. Thông tin thời gian bằng Tiếng Anh
+          Column(
+            children: [
+              Text(
+                "Paragraph: $currentParagraph / $totalParagraphs ($percentStr%)",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: widget.textColor.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "Chapter: ${tts.chapterProgressTimeStr} ($currentChapter / $totalChapters)",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: widget.textColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "Book: ${tts.bookProgressTimeStr}",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: widget.textColor.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // 3. Các nút bấm điều khiển
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               // Chương trước
               IconButton(
-                icon: Icon(Icons.skip_previous_rounded, size: 32, color: textColor),
-                onPressed: ttsService.currentChapterIndex > 0
-                    ? ttsService.previousChapter
+                icon: Icon(Icons.skip_previous_rounded, size: 32, color: widget.textColor),
+                onPressed: tts.currentChapterIndex > 0
+                    ? tts.previousChapter
                     : null,
               ),
               // Đoạn trước
               IconButton(
-                icon: Icon(Icons.fast_rewind_rounded, size: 28, color: textColor),
-                onPressed: ttsService.previousParagraph,
+                icon: Icon(Icons.fast_rewind_rounded, size: 28, color: widget.textColor),
+                onPressed: tts.previousParagraph,
               ),
               // Play/Pause
               FloatingActionButton(
-                onPressed: ttsService.togglePlayPause,
+                onPressed: tts.togglePlayPause,
                 backgroundColor: Colors.amber[700],
                 foregroundColor: Colors.white,
                 child: Icon(
-                  ttsService.isPlaying
+                  tts.isPlaying
                       ? Icons.pause_rounded
                       : Icons.play_arrow_rounded,
                   size: 36,
@@ -101,14 +188,14 @@ class BottomAudioPanel extends StatelessWidget {
               ),
               // Đoạn tiếp theo
               IconButton(
-                icon: Icon(Icons.fast_forward_rounded, size: 28, color: textColor),
-                onPressed: ttsService.nextParagraph,
+                icon: Icon(Icons.fast_forward_rounded, size: 28, color: widget.textColor),
+                onPressed: tts.nextParagraph,
               ),
               // Chương tiếp theo
               IconButton(
-                icon: Icon(Icons.skip_next_rounded, size: 32, color: textColor),
-                onPressed: ttsService.currentChapterIndex < ttsService.chapters.length - 1
-                    ? ttsService.nextChapter
+                icon: Icon(Icons.skip_next_rounded, size: 32, color: widget.textColor),
+                onPressed: tts.currentChapterIndex < tts.chapters.length - 1
+                    ? tts.nextChapter
                     : null,
               ),
             ],

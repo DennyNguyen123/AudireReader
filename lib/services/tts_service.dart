@@ -37,6 +37,7 @@ class TtsService extends ChangeNotifier {
   int _currentChapterIndex = 0;
   int _currentParagraphIndex = 0;
   bool _isPaused = false; // Phân biệt trạng thái pause (có thể resume) vs stop
+  double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS
 
   // Highlight vị trí từ đang đọc
   int wordStart = 0;
@@ -107,10 +108,23 @@ class TtsService extends ChangeNotifier {
       notifyListeners();
     });
 
+    audioHandler.onSkipToNext = () {
+      nextParagraph();
+    };
+
+    audioHandler.onSkipToPrevious = () {
+      previousParagraph();
+    };
+
+    audioHandler.onSeekToParagraph = (index) {
+      jumpToParagraph(index);
+    };
+
     // Áp dụng các cài đặt đã lưu tự động
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
+      _speechRate = settings.speechRate;
       await audioHandler.setSpeed(settings.speechRate);
       
       final provider = settings.ttsProvider;
@@ -258,11 +272,26 @@ class TtsService extends ChangeNotifier {
     } else {
       if (_activeBook == null || _chapters.isEmpty) return;
       final chapter = _chapters[_currentChapterIndex];
+
+      final charPerSec = getCharsPerSecond();
+      final chapterDuration = getChapterDuration();
+      final startPos = getParagraphStartPos(_currentParagraphIndex);
+
+      audioHandler.setChapterData(
+        chapter.paragraphs,
+        chapterDuration,
+        startPos,
+        charPerSec,
+      );
+
       await audioHandler.updateMetadata(
         bookTitle: _activeBook!.title,
         chapterTitle: chapter.title,
         paragraphIndex: _currentParagraphIndex,
         totalParagraphs: chapter.paragraphs.length,
+        coverPath: _activeBook!.coverPath,
+        chapterDuration: chapterDuration,
+        chapterPosition: startPos,
       );
       notifyListeners();
       await _saveProgressLocally();
@@ -280,11 +309,25 @@ class TtsService extends ChangeNotifier {
     final text = chapter.paragraphs[_currentParagraphIndex];
     LoggerService().log('TTS speaking Chapter $_currentChapterIndex, Paragraph $_currentParagraphIndex: "${text.substring(0, text.length > 30 ? 30 : text.length)}..."', tag: 'TTS', level: LogLevel.tts);
 
+    final charPerSec = getCharsPerSecond();
+    final chapterDuration = getChapterDuration();
+    final startPos = getParagraphStartPos(_currentParagraphIndex);
+
+    audioHandler.setChapterData(
+      chapter.paragraphs,
+      chapterDuration,
+      startPos,
+      charPerSec,
+    );
+
     await audioHandler.updateMetadata(
       bookTitle: _activeBook!.title,
       chapterTitle: chapter.title,
       paragraphIndex: _currentParagraphIndex,
       totalParagraphs: chapter.paragraphs.length,
+      coverPath: _activeBook!.coverPath,
+      chapterDuration: chapterDuration,
+      chapterPosition: startPos,
     );
 
     // Áp dụng từ điển sửa phát âm
@@ -453,6 +496,7 @@ class TtsService extends ChangeNotifier {
     
     if (fontSize != null) settings.fontSize = fontSize;
     if (speechRate != null) {
+      _speechRate = speechRate;
       settings.speechRate = speechRate;
       await audioHandler.setSpeed(speechRate);
     }
@@ -521,4 +565,88 @@ class TtsService extends ChangeNotifier {
       return await audioHandler.getVoices();
     }
   }
+
+  // --- TTS Duration & Progress Calculations ---
+  double getSpeechRateMultiplier() {
+    return _speechRate * 2.0;
+  }
+
+  double getCharsPerSecond() {
+    return 15.0 * getSpeechRateMultiplier();
+  }
+
+  double estimateParagraphDuration(String text) {
+    if (text.isEmpty) return 0.0;
+    return text.length / getCharsPerSecond();
+  }
+
+  double getChapterDuration() {
+    if (_activeBook == null || _chapters.isEmpty) return 0.0;
+    final chapter = _chapters[_currentChapterIndex];
+    double total = 0.0;
+    for (final p in chapter.paragraphs) {
+      total += estimateParagraphDuration(p);
+    }
+    return total;
+  }
+
+  double getChapterPosition() {
+    if (_activeBook == null || _chapters.isEmpty) return 0.0;
+    final pos = audioHandler.playbackState.value.position.inSeconds.toDouble();
+    final duration = getChapterDuration();
+    if (pos > duration) return duration;
+    if (pos < 0) return 0.0;
+    return pos;
+  }
+
+  double getParagraphStartPos(int paragraphIndex) {
+    if (_activeBook == null || _chapters.isEmpty) return 0.0;
+    final chapter = _chapters[_currentChapterIndex];
+    double pos = 0.0;
+    for (int i = 0; i < paragraphIndex; i++) {
+      pos += estimateParagraphDuration(chapter.paragraphs[i]);
+    }
+    return pos;
+  }
+
+  double getBookDuration() {
+    if (_activeBook == null || _chapters.isEmpty) return 0.0;
+    double total = 0.0;
+    for (final chapter in _chapters) {
+      for (final p in chapter.paragraphs) {
+        total += estimateParagraphDuration(p);
+      }
+    }
+    return total;
+  }
+
+  double getBookPosition() {
+    if (_activeBook == null || _chapters.isEmpty) return 0.0;
+    double pos = 0.0;
+    for (int i = 0; i < _currentChapterIndex; i++) {
+      final ch = _chapters[i];
+      for (final p in ch.paragraphs) {
+        pos += estimateParagraphDuration(p);
+      }
+    }
+    pos += getChapterPosition();
+    return pos;
+  }
+
+  String formatDuration(double seconds) {
+    if (seconds.isNaN || seconds.isInfinite || seconds < 0) return "00:00";
+    final duration = Duration(seconds: seconds.round());
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final secs = duration.inSeconds.remainder(60);
+    
+    if (hours > 0) {
+      return "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}";
+    } else {
+      return "${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}";
+    }
+  }
+
+  String get chapterProgressTimeStr => "${formatDuration(getChapterPosition())} / ${formatDuration(getChapterDuration())}";
+  String get bookProgressTimeStr => "${formatDuration(getBookPosition())} / ${formatDuration(getBookDuration())}";
 }

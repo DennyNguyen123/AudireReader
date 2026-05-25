@@ -32,6 +32,14 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   // Callback báo khi đọc xong đoạn văn để chuyển sang đoạn tiếp theo
   Function()? onParagraphComplete;
 
+  Function()? onSkipToNext;
+  Function()? onSkipToPrevious;
+  Function(int index)? onSeekToParagraph;
+
+  List<String> _currentParagraphs = [];
+  double _paragraphStartPosInChapter = 0.0;
+  double _charPerSecond = 15.0;
+
   bool _isSpeaking = false;
   String _currentText = "";
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS (0.5 tương đương 1.0x)
@@ -362,6 +370,14 @@ try {
       if (_activeEngine != TtsEngineType.system) return;
       _currentText = text;
       onWordProgress?.call(text, start, end, word);
+
+      if (_charPerSecond > 0) {
+        final positionInParagraph = start / _charPerSecond;
+        final currentChapterPos = _paragraphStartPosInChapter + positionInParagraph;
+        playbackState.add(playbackState.value.copyWith(
+          updatePosition: Duration(milliseconds: (currentChapterPos * 1000).round()),
+        ));
+      }
     });
 
     _tts.setCompletionHandler(() {
@@ -396,6 +412,13 @@ try {
   void _initEdgePlayer() {
     _positionSub = _edgePlayer.onPositionChanged.listen((duration) {
       if (_activeEngine != TtsEngineType.edge || !_isSpeaking) return;
+
+      final positionInParagraph = duration.inMilliseconds / 1000.0;
+      final currentChapterPos = _paragraphStartPosInChapter + positionInParagraph;
+
+      playbackState.add(playbackState.value.copyWith(
+        updatePosition: Duration(milliseconds: (currentChapterPos * 1000).round()),
+      ));
 
       final currentMs = duration.inMilliseconds;
       EdgeMetadataChunk? currentWordChunk;
@@ -467,14 +490,37 @@ try {
     required String chapterTitle,
     required int paragraphIndex,
     required int totalParagraphs,
+    String? coverPath,
+    double? chapterDuration,
+    double? chapterPosition,
   }) async {
+    Uri? artUri;
+    if (coverPath != null && coverPath.isNotEmpty) {
+      if (coverPath.startsWith('http://') || coverPath.startsWith('https://')) {
+        artUri = Uri.parse(coverPath);
+      } else {
+        artUri = Uri.file(coverPath);
+      }
+    }
+
+    final duration = chapterDuration != null 
+        ? Duration(milliseconds: (chapterDuration * 1000).round())
+        : Duration(seconds: totalParagraphs);
+
     mediaItem.add(MediaItem(
       id: 'tts_paragraph_$paragraphIndex',
       album: bookTitle,
       title: chapterTitle,
       artist: 'Audire Reader',
-      duration: Duration(seconds: totalParagraphs), // Duration giả lập hiển thị
+      duration: duration,
+      artUri: artUri,
     ));
+
+    if (chapterPosition != null) {
+      playbackState.add(playbackState.value.copyWith(
+        updatePosition: Duration(milliseconds: (chapterPosition * 1000).round()),
+      ));
+    }
   }
 
   Future<void> speak(String text) async {
@@ -804,6 +850,43 @@ try {
       _isSpeaking = true;
       await _tts.speak(text);
     }
+  }
+
+  void setChapterData(List<String> paragraphs, double duration, double startPos, double charPerSecond) {
+    _currentParagraphs = paragraphs;
+    _paragraphStartPosInChapter = startPos;
+    _charPerSecond = charPerSecond;
+  }
+
+  @override
+  Future<void> seek(Duration position) async {
+    final targetSec = position.inSeconds.toDouble();
+    if (_currentParagraphs.isEmpty || _charPerSecond <= 0) return;
+    
+    double total = 0.0;
+    int targetParagraphIndex = 0;
+    
+    for (int i = 0; i < _currentParagraphs.length; i++) {
+      final pDur = _currentParagraphs[i].length / _charPerSecond;
+      if (targetSec <= total + pDur) {
+        targetParagraphIndex = i;
+        break;
+      }
+      total += pDur;
+      targetParagraphIndex = i;
+    }
+    
+    onSeekToParagraph?.call(targetParagraphIndex);
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    onSkipToNext?.call();
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    onSkipToPrevious?.call();
   }
 
   Future<void> _cleanOldCacheFiles() async {
