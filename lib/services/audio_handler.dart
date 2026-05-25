@@ -41,6 +41,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   double _charPerSecond = 15.0;
 
   bool _isSpeaking = false;
+  bool _isSystemTtsPaused = false; // Track trạng thái pause riêng cho System TTS native
   String _currentText = "";
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS (0.5 tương đương 1.0x)
   Timer? _windowsTimer; // Timer giả lập hoàn thành trên Windows
@@ -401,11 +402,26 @@ try {
     _tts.setErrorHandler((msg) {
       if (_activeEngine != TtsEngineType.system) return;
       _isSpeaking = false;
+      _isSystemTtsPaused = false;
       _windowsTimer?.cancel();
       playbackState.add(playbackState.value.copyWith(
         playing: false,
         processingState: AudioProcessingState.error,
       ));
+    });
+
+    // Callback khi TTS thực sự pause (Android SDK >= 26, iOS, Web)
+    _tts.setPauseHandler(() {
+      if (_activeEngine != TtsEngineType.system) return;
+      _isSystemTtsPaused = true;
+      _isSpeaking = false;
+    });
+
+    // Callback khi TTS tiếp tục sau pause
+    _tts.setContinueHandler(() {
+      if (_activeEngine != TtsEngineType.system) return;
+      _isSystemTtsPaused = false;
+      _isSpeaking = true;
     });
   }
 
@@ -529,6 +545,7 @@ try {
     
     // 1. Dừng mọi tác vụ phát cũ một cách an toàn và tuần tự
     _isSpeaking = false;
+    _isSystemTtsPaused = false;
     _windowsTimer?.cancel();
     
     await _tts.stop();
@@ -724,6 +741,21 @@ try {
           processingState: AudioProcessingState.ready,
         ));
         await _edgePlayer.resume();
+      } else if (_isSystemTtsPaused) {
+        // Resume System TTS trên mobile sau khi pause
+        // Gọi _tts.speak() sau _tts.pause() → flutter_tts tự tiếp tục từ chỗ pause
+        _isSpeaking = true;
+        _isSystemTtsPaused = false;
+        playbackState.add(playbackState.value.copyWith(
+          controls: [
+            MediaControl.skipToPrevious,
+            MediaControl.pause,
+            MediaControl.skipToNext,
+          ],
+          playing: true,
+          processingState: AudioProcessingState.ready,
+        ));
+        await _tts.speak(_currentText);
       } else {
         await speak(_currentText);
       }
@@ -740,7 +772,10 @@ try {
     if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.pause();
     } else {
-      await _tts.stop();
+      // Sử dụng _tts.pause() thay vì _tts.stop() để giữ vị trí phát
+      // Hỗ trợ Android (SDK >= 26), iOS, Web
+      await _tts.pause();
+      _isSystemTtsPaused = true;
     }
     
     playbackState.add(playbackState.value.copyWith(
@@ -758,6 +793,7 @@ try {
   Future<void> stop() async {
     BgmService.getInstance().stopBgm();
     _isSpeaking = false;
+    _isSystemTtsPaused = false;
     _windowsTimer?.cancel();
     cancelAllPrefetches();
     
@@ -848,6 +884,7 @@ try {
       }
     } else {
       _isSpeaking = true;
+      _isSystemTtsPaused = false;
       await _tts.speak(text);
     }
   }

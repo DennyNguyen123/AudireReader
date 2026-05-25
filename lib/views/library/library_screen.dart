@@ -878,10 +878,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  book.coverPath != null
+                  book.coverPath != null && book.coverPath!.isNotEmpty && File(book.coverPath!).existsSync()
                       ? Image.file(
                           File(book.coverPath!),
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: isDark ? Colors.grey[850] : Colors.grey[300],
+                            child: Icon(
+                              Icons.book_rounded,
+                              size: 40,
+                              color: isDark ? Colors.white30 : Colors.black38,
+                            ),
+                          ),
                         )
                       : Container(
                           color: isDark ? Colors.grey[850] : Colors.grey[300],
