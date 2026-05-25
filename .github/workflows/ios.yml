@@ -20,6 +20,17 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Fix CocoaPods Environment
+        run: |
+          sudo gem uninstall cocoapods --all --ignore-dependencies || true
+          sudo gem install cocoapods
+          pod repo update
+
+      - name: Clear CocoaPods Cache
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData/*
+          rm -rf ~/.cocoapods/repos/trunk
+
       - name: Patch flutter_onnxruntime Podspec
         run: |
           for file in ~/.pub-cache/hosted/pub.dev/flutter_onnxruntime-*/ios/flutter_onnxruntime.podspec; do
