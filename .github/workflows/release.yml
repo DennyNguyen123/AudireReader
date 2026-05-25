@@ -123,21 +123,11 @@ jobs:
           flutter-version: '3.41.9'
           channel: 'stable'
 
-      - name: Fix CocoaPods Environment
-        run: |
-          sudo gem uninstall cocoapods --all --ignore-dependencies || true
-          sudo gem uninstall ffi --all --ignore-dependencies || true
-          sudo gem install ffi -v 1.16.2
-          sudo gem install cocoapods
-          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
-          pod repo update
-          pod setup
+      - name: Setup CocoaPods
+        uses: maxim-lobanov/setup-cocoapods@v1
+        with:
+          version: 1.16.2
 
-      - name: Clear CocoaPods Cache
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData/*
-          rm -rf ~/.cocoapods/repos
-          rm -rf ~/Library/Caches/CocoaPods
 
       - name: Install dependencies
         run: flutter pub get
