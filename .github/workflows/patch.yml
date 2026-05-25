@@ -44,7 +44,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Android
-        run: shorebird patch android --flutter-version=3.41.9
+        run: shorebird patch android
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -75,7 +75,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Windows
-        run: shorebird patch windows --flutter-version=3.41.9
+        run: shorebird patch windows
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -115,6 +115,6 @@ jobs:
           plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
 
       - name: Patch iOS
-        run: shorebird patch ios --no-codesign --flutter-version=3.41.9
+        run: shorebird patch ios --no-codesign
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
