@@ -23,9 +23,12 @@ jobs:
       - name: Fix CocoaPods Environment
         run: |
           sudo gem uninstall cocoapods --all --ignore-dependencies || true
+          sudo gem uninstall ffi --all --ignore-dependencies || true
+          sudo gem install ffi -v 1.16.2
           sudo gem install cocoapods
-          pod setup
+          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
           pod repo update
+          pod setup
 
       - name: Clear CocoaPods Cache
         run: |
