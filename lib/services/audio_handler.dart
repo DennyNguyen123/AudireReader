@@ -72,6 +72,24 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     }
   }
 
+  Future<String> _synthesizeSupertonicToWav(String text, String voiceStyle, double rate) async {
+    final supertonic = SupertonicService.getInstance();
+    await supertonic.initializeEngine(voiceStyle: voiceStyle);
+    
+    // Nhận diện ngôn ngữ động của văn bản
+    final detectedLang = supertonic.detectLanguage(text);
+    
+    final wavPath = await supertonic.synthesizeToWav(
+      text,
+      speed: rate * 2.0,
+      lang: detectedLang,
+    );
+    if (wavPath == null) {
+      throw Exception("Supertonic offline synthesis returned null");
+    }
+    return wavPath;
+  }
+
   Future<String> _synthesizeSystemTtsToWavWindows(String text, String voiceName, double rate) async {
     final cacheKey = _computeSha256("$text|$voiceName|$rate");
     final tempDir = await PathHelper.getAppCacheDirectory();
@@ -204,7 +222,17 @@ try {
     final completer = Completer<CachedAudio>();
     _pendingPrefetches[cacheKey] = completer.future;
     
-    if (provider == 'system' && Platform.isWindows) {
+    if (provider == 'supertonic') {
+      _synthesizeSupertonicToWav(text, voice, rate).then((filePath) {
+        final cached = CachedAudio(filePath, []);
+        _addToCache(cacheKey, cached);
+        _pendingPrefetches.remove(cacheKey);
+        completer.complete(cached);
+      }).catchError((err) {
+        _pendingPrefetches.remove(cacheKey);
+        completer.completeError(err);
+      });
+    } else if (provider == 'system' && Platform.isWindows) {
       // System TTS trên Windows: kết xuất bằng PowerShell ngầm
       _synthesizeSystemTtsToWavWindows(text, voice, rate).then((filePath) {
         final cached = CachedAudio(filePath, []);
@@ -277,12 +305,17 @@ try {
   Future<void> prefetch(List<String> texts) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+    final provider = (settings.ttsProvider == 'microsoft_edge') 
+        ? 'microsoft_edge' 
+        : (settings.ttsProvider == 'supertonic' ? 'supertonic' : 'system');
     
-    // Chỉ prefetch cho Edge TTS HOẶC System TTS trên Windows
-    if (provider != 'microsoft_edge' && !(provider == 'system' && Platform.isWindows)) return;
+    // Chỉ prefetch cho Edge TTS, Supertonic HOẶC System TTS trên Windows
+    if (provider != 'microsoft_edge' && provider != 'supertonic' && !(provider == 'system' && Platform.isWindows)) return;
     
-    String voice = settings.selectedVoiceName ?? (provider == 'microsoft_edge' ? "vi-VN-HoaiMyNeural" : "default");
+    String voice = settings.selectedVoiceName ?? 
+        (provider == 'microsoft_edge' 
+            ? "vi-VN-HoaiMyNeural" 
+            : (provider == 'supertonic' ? "M1" : "default"));
     if (provider == 'system' && (voice.contains('Neural') || voice.split('-').length > 2)) {
       voice = "default";
     }
@@ -484,40 +517,15 @@ try {
       processingState: AudioProcessingState.ready,
     ));
 
-    if (provider == 'supertonic') {
-      _activeEngine = TtsEngineType.supertonic;
-      try {
-        final supertonic = SupertonicService.getInstance();
-        final voiceName = settings.selectedVoiceName ?? 'M1';
-        
-        // Đảm bảo Engine offline đã được khởi tạo
-        await supertonic.initializeEngine(voiceStyle: voiceName);
-        
-        // Sinh WAV offline
-        final wavPath = await supertonic.synthesizeToWav(text, speed: _speechRate * 2.0);
-        
-        if (wavPath != null) {
-          _isSpeaking = true;
-          await _edgePlayer.play(DeviceFileSource(wavPath));
-          await _edgePlayer.setPlaybackRate(1.0); // Supertonic WAV đã có tốc độ nhúng sẵn, phát tốc độ chuẩn 1.0
-        } else {
-          throw Exception("Offline WAV generation failed");
-        }
-      } catch (e) {
-        debugPrint("Supertonic offline TTS failed, falling back to System TTS: $e");
-        _activeEngine = TtsEngineType.system;
-        _isSpeaking = true;
-        if (Platform.isWindows) {
-          await _tts.speak(text);
-          _startWindowsCompletionTimer(text);
-        } else {
-          await _tts.speak(text);
-        }
-      }
-    } else if (provider == 'microsoft_edge' || (provider == 'system' && Platform.isWindows)) {
-      _activeEngine = (provider == 'microsoft_edge') ? TtsEngineType.edge : TtsEngineType.system;
+    if (provider == 'microsoft_edge' || provider == 'supertonic' || (provider == 'system' && Platform.isWindows)) {
+      _activeEngine = (provider == 'microsoft_edge') 
+          ? TtsEngineType.edge 
+          : (provider == 'supertonic' ? TtsEngineType.supertonic : TtsEngineType.system);
       
-      String voice = settings.selectedVoiceName ?? (provider == 'microsoft_edge' ? "vi-VN-HoaiMyNeural" : "default");
+      String voice = settings.selectedVoiceName ?? 
+          (provider == 'microsoft_edge' 
+              ? "vi-VN-HoaiMyNeural" 
+              : (provider == 'supertonic' ? "M1" : "default"));
       if (provider == 'system' && (voice.contains('Neural') || voice.split('-').length > 2)) {
         voice = "default";
       }
@@ -579,6 +587,11 @@ try {
             await file.writeAsBytes(audioBytes, flush: true);
             cached = CachedAudio(file.path, List.from(_edgeMetadata));
             _addToCache(cacheKey, cached);
+          } else if (provider == 'supertonic') {
+            // Sinh file wav qua Supertonic
+            final filePath = await _synthesizeSupertonicToWav(text, voice, rate);
+            cached = CachedAudio(filePath, []);
+            _addToCache(cacheKey, cached);
           } else {
             // Windows System TTS: sinh file wav qua PowerShell
             final filePath = await _synthesizeSystemTtsToWavWindows(text, voice, rate);
@@ -592,49 +605,52 @@ try {
         // Bắt đầu phát âm thanh bằng audioplayers
         _isSpeaking = true;
         await _edgePlayer.play(DeviceFileSource(cached.filePath));
-        await _edgePlayer.setPlaybackRate(_speechRate * 2.0); // Quy đổi 0.5 -> 1.0x tốc độ chuẩn
+        if (provider == 'supertonic') {
+          await _edgePlayer.setPlaybackRate(1.0); // Supertonic WAV đã có tốc độ nhúng sẵn, phát tốc độ chuẩn 1.0
+        } else {
+          await _edgePlayer.setPlaybackRate(_speechRate * 2.0); // Quy đổi 0.5 -> 1.0x tốc độ chuẩn
+        }
         
       } catch (e) {
-        debugPrint("TTS engine failed, falling back to direct System TTS: $e");
+        debugPrint("TTS engine failed, falling back to System TTS: $e");
         
-        // HỆ THỐNG FALLBACK AN TOÀN: Chuyển về System TTS cùng ngôn ngữ
-        _activeEngine = TtsEngineType.system;
-        _isSpeaking = true;
+        if (Platform.isWindows) {
+          await _speakSystemFallback(text);
+        } else {
+          // HỆ THỐNG FALLBACK AN TOÀN trên Mobile: Chuyển về System TTS cùng ngôn ngữ
+          _activeEngine = TtsEngineType.system;
+          _isSpeaking = true;
 
-        // Tìm giọng System TTS cùng locale với Edge TTS voice đang dùng
-        String? matchedVoiceName;
-        try {
-          final localeParts = voice.split('-');
-          if (localeParts.length >= 2) {
-            final targetLocale = '${localeParts[0]}-${localeParts[1]}';
-            final systemVoices = await _tts.getVoices as List;
-            dynamic matchedVoice;
-            for (final v in systemVoices) {
-              final voiceLocale = v['locale']?.toString() ?? '';
-              if (voiceLocale.toLowerCase().startsWith(targetLocale.toLowerCase())) {
-                matchedVoice = v;
-                break;
+          // Tìm giọng System TTS cùng locale với Edge TTS voice đang dùng
+          String? matchedVoiceName;
+          try {
+            final localeParts = voice.split('-');
+            if (localeParts.length >= 2) {
+              final targetLocale = '${localeParts[0]}-${localeParts[1]}';
+              final systemVoices = await _tts.getVoices as List;
+              dynamic matchedVoice;
+              for (final v in systemVoices) {
+                final voiceLocale = v['locale']?.toString() ?? '';
+                if (voiceLocale.toLowerCase().startsWith(targetLocale.toLowerCase())) {
+                  matchedVoice = v;
+                  break;
+                }
+              }
+              if (matchedVoice != null) {
+                matchedVoiceName = matchedVoice['name'].toString();
+                await _tts.setVoice({
+                  'name': matchedVoiceName,
+                  'locale': matchedVoice['locale'].toString(),
+                });
+                debugPrint("Edge TTS fallback: using system voice '$matchedVoiceName' (${matchedVoice['locale']})");
+              } else {
+                debugPrint("Edge TTS fallback: no system voice found for locale '$targetLocale', using default");
               }
             }
-            if (matchedVoice != null) {
-              matchedVoiceName = matchedVoice['name'].toString();
-              await _tts.setVoice({
-                'name': matchedVoiceName,
-                'locale': matchedVoice['locale'].toString(),
-              });
-              debugPrint("Edge TTS fallback: using system voice '$matchedVoiceName' (${matchedVoice['locale']})");
-            } else {
-              debugPrint("Edge TTS fallback: no system voice found for locale '$targetLocale', using default");
-            }
+          } catch (voiceErr) {
+            debugPrint("Edge TTS fallback: failed to set matching system voice: $voiceErr");
           }
-        } catch (voiceErr) {
-          debugPrint("Edge TTS fallback: failed to set matching system voice: $voiceErr");
-        }
 
-        if (Platform.isWindows) {
-          await _tts.speak(text);
-          _startWindowsCompletionTimer(text);
-        } else {
           await _tts.speak(text);
         }
       }
@@ -747,6 +763,47 @@ try {
     }
     _audioCache.clear();
     await _edgePlayer.dispose();
+  }
+
+  Future<void> _speakSystemFallback(String text) async {
+    _activeEngine = TtsEngineType.system;
+    if (Platform.isWindows) {
+      try {
+        final db = await DatabaseHelper.getInstance();
+        final settings = await db.getSettings();
+        String voice = settings.selectedVoiceName ?? "default";
+        if (voice.contains('Neural') || voice.split('-').length > 2) {
+          voice = "default";
+        }
+        final rate = _speechRate;
+        final cacheKey = _computeSha256("$text|$voice|$rate");
+        
+        CachedAudio? cached;
+        if (_audioCache.containsKey(cacheKey)) {
+          cached = _audioCache[cacheKey];
+        } else if (_pendingPrefetches.containsKey(cacheKey)) {
+          cached = await _pendingPrefetches[cacheKey];
+        }
+
+        if (cached == null) {
+          final filePath = await _synthesizeSystemTtsToWavWindows(text, voice, rate);
+          cached = CachedAudio(filePath, []);
+          _addToCache(cacheKey, cached);
+        }
+        
+        _isSpeaking = true;
+        await _edgePlayer.play(DeviceFileSource(cached.filePath));
+        await _edgePlayer.setPlaybackRate(_speechRate * 2.0);
+      } catch (err) {
+        debugPrint("System TTS fallback via PowerShell failed: $err");
+        _isSpeaking = true;
+        await _tts.speak(text);
+        _startWindowsCompletionTimer(text);
+      }
+    } else {
+      _isSpeaking = true;
+      await _tts.speak(text);
+    }
   }
 
   Future<void> _cleanOldCacheFiles() async {

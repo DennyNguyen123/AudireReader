@@ -22,6 +22,7 @@ class SupertonicService extends ChangeNotifier {
   TextToSpeech? _textToSpeech;
   Style? _activeStyle;
   String _currentVoiceStyleName = ''; // 'M1' hoặc 'F1'
+  Future<void> _synthesisLock = Future.value();
 
   // Trạng thái các biến getter
   bool get isDownloading => _isDownloading;
@@ -30,6 +31,33 @@ class SupertonicService extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isLoadingModel => _isLoadingModel;
   String get currentVoiceStyleName => _currentVoiceStyleName;
+
+  /// Tự động phát hiện ngôn ngữ của văn bản dựa trên đặc trưng ký tự
+  String detectLanguage(String text) {
+    final cleanText = text.trim();
+    if (cleanText.isEmpty) return 'en';
+
+    // 1. Kiểm tra Tiếng Hàn (Hangul)
+    final hangulRegExp = RegExp(r'[\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7AF\uD7B0-\uD7FF]');
+    if (hangulRegExp.hasMatch(cleanText)) {
+      return 'ko';
+    }
+
+    // 2. Kiểm tra Tiếng Nhật (Hiragana/Katakana)
+    final japaneseRegExp = RegExp(r'[\u3040-\u309F\u30A0-\u30FF]');
+    if (japaneseRegExp.hasMatch(cleanText)) {
+      return 'ja';
+    }
+
+    // 3. Kiểm tra Tiếng Việt (chứa ký tự có dấu đặc trưng)
+    final vietnameseRegExp = RegExp(r'[àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ]');
+    if (vietnameseRegExp.hasMatch(cleanText)) {
+      return 'vi';
+    }
+
+    // Mặc định là Tiếng Anh
+    return 'en';
+  }
 
   SupertonicService._();
 
@@ -40,7 +68,7 @@ class SupertonicService extends ChangeNotifier {
 
   /// Trích xuất thư mục lưu trữ asset của Supertonic cục bộ
   Future<Directory> _getAssetsDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
+    final appDir = await getApplicationSupportDirectory();
     final assetsDir = Directory(p.join(appDir.path, 'supertonic_assets'));
     if (!assetsDir.existsSync()) {
       assetsDir.createSync(recursive: true);
@@ -60,7 +88,15 @@ class SupertonicService extends ChangeNotifier {
         'tts.json',
         'unicode_indexer.json',
         'M1.json',
+        'M2.json',
+        'M3.json',
+        'M4.json',
+        'M5.json',
         'F1.json',
+        'F2.json',
+        'F3.json',
+        'F4.json',
+        'F5.json',
       ];
 
       for (final filename in requiredFiles) {
@@ -94,7 +130,15 @@ class SupertonicService extends ChangeNotifier {
       'tts.json': '$baseUrl/onnx/tts.json',
       'unicode_indexer.json': '$baseUrl/onnx/unicode_indexer.json',
       'M1.json': '$baseUrl/voice_styles/M1.json',
+      'M2.json': '$baseUrl/voice_styles/M2.json',
+      'M3.json': '$baseUrl/voice_styles/M3.json',
+      'M4.json': '$baseUrl/voice_styles/M4.json',
+      'M5.json': '$baseUrl/voice_styles/M5.json',
       'F1.json': '$baseUrl/voice_styles/F1.json',
+      'F2.json': '$baseUrl/voice_styles/F2.json',
+      'F3.json': '$baseUrl/voice_styles/F3.json',
+      'F4.json': '$baseUrl/voice_styles/F4.json',
+      'F5.json': '$baseUrl/voice_styles/F5.json',
       'duration_predictor.onnx': '$baseUrl/onnx/duration_predictor.onnx',
       'text_encoder.onnx': '$baseUrl/onnx/text_encoder.onnx',
       'vector_estimator.onnx': '$baseUrl/onnx/vector_estimator.onnx',
@@ -107,7 +151,15 @@ class SupertonicService extends ChangeNotifier {
       'tts.json': 635,
       'unicode_indexer.json': 207399,
       'M1.json': 24707,
+      'M2.json': 24707,
+      'M3.json': 24707,
+      'M4.json': 24707,
+      'M5.json': 24707,
       'F1.json': 24707,
+      'F2.json': 24707,
+      'F3.json': 24707,
+      'F4.json': 24707,
+      'F5.json': 24707,
       'duration_predictor.onnx': 8920150,
       'text_encoder.onnx': 29910543,
       'vector_estimator.onnx': 38043521,
@@ -217,7 +269,7 @@ class SupertonicService extends ChangeNotifier {
       final sessions = await Future.wait(models.map((name) async {
         final filePath = p.join(dir.path, '$name.onnx');
         LoggerService().log("Loading ONNX session for $name...", tag: 'SUPERTONIC');
-        return ort.createSessionFromAsset(filePath);
+        return ort.createSession(filePath);
       }));
 
       _textToSpeech = TextToSpeech(
@@ -253,12 +305,18 @@ class SupertonicService extends ChangeNotifier {
 
   /// Đọc văn bản offline và sinh ra tệp WAV tạm thời, trả về đường dẫn file âm thanh sinh ra
   Future<String?> synthesizeToWav(String text, {double speed = 1.05, String lang = 'vi'}) async {
-    if (!_isInitialized || _textToSpeech == null || _activeStyle == null) {
-      LoggerService().log("Engine is not initialized yet.", tag: 'SUPERTONIC', level: LogLevel.error);
-      return null;
-    }
+    final completer = Completer<void>();
+    final previousLock = _synthesisLock;
+    _synthesisLock = completer.future;
+    
+    await previousLock;
 
     try {
+      if (!_isInitialized || _textToSpeech == null || _activeStyle == null) {
+        LoggerService().log("Engine is not initialized yet.", tag: 'SUPERTONIC', level: LogLevel.error);
+        return null;
+      }
+
       final cleanText = text.trim();
       if (cleanText.isEmpty) return null;
 
@@ -268,12 +326,12 @@ class SupertonicService extends ChangeNotifier {
       final targetLang = isValidLang(lang) ? lang : 'vi';
 
       // Chạy suy luận nơ-ron cục bộ thông qua ONNX
-      // ví dụ chạy denoising loop mặc định với 8 steps cho tốc độ tối ưu
+      // ví dụ chạy denoising loop với 16 steps để nâng cao chất lượng giọng đọc
       final result = await _textToSpeech!.call(
         cleanText,
         targetLang,
         _activeStyle!,
-        8,
+        16,
         speed: speed,
       );
 
@@ -298,6 +356,8 @@ class SupertonicService extends ChangeNotifier {
     } catch (e) {
       LoggerService().log("Fatal error in offline synthesis: $e", tag: 'SUPERTONIC', level: LogLevel.error);
       return null;
+    } finally {
+      completer.complete();
     }
   }
 

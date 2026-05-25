@@ -491,16 +491,16 @@ class TtsService extends ChangeNotifier {
   Future<List<dynamic>> getVoicesForProvider(String provider) async {
     if (provider == 'supertonic') {
       return [
-        {
-          'name': 'M1',
-          'locale': 'offline',
-          'gender': 'Male',
-        },
-        {
-          'name': 'F1',
-          'locale': 'offline',
-          'gender': 'Female',
-        }
+        {'name': 'M1', 'locale': 'offline', 'gender': 'Male'},
+        {'name': 'M2', 'locale': 'offline', 'gender': 'Male'},
+        {'name': 'M3', 'locale': 'offline', 'gender': 'Male'},
+        {'name': 'M4', 'locale': 'offline', 'gender': 'Male'},
+        {'name': 'M5', 'locale': 'offline', 'gender': 'Male'},
+        {'name': 'F1', 'locale': 'offline', 'gender': 'Female'},
+        {'name': 'F2', 'locale': 'offline', 'gender': 'Female'},
+        {'name': 'F3', 'locale': 'offline', 'gender': 'Female'},
+        {'name': 'F4', 'locale': 'offline', 'gender': 'Female'},
+        {'name': 'F5', 'locale': 'offline', 'gender': 'Female'},
       ];
     }
     final normalizedProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';

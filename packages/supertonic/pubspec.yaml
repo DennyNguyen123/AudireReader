@@ -13,6 +13,7 @@ dependencies:
   path_provider: ^2.1.1
   just_audio: ^0.10.5
   logger: ^2.0.2
+  unorm_dart: ^0.3.2
 
 dev_dependencies:
   flutter_test:
