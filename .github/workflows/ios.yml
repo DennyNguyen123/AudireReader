@@ -26,13 +26,6 @@ jobs:
         run: flutter pub get
 
 
-      - name: Patch flutter_onnxruntime Podspec
-        run: |
-          find ~/.pub-cache/hosted -name "flutter_onnxruntime.podspec" | while read -r file; do
-            echo "Patching $file"
-            sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
-          done
-
       - name: Run Code Generation (Isar Schemas)
         run: dart run build_runner build --delete-conflicting-outputs
 
