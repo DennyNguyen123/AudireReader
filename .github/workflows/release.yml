@@ -49,7 +49,7 @@ jobs:
           cache: true
 
       - name: Build APK via Shorebird (arm64)
-        run: shorebird release android --artifact apk --target-platform android-arm64
+        run: shorebird release android --artifact apk --target-platform android-arm64 --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -90,7 +90,7 @@ jobs:
           cache: true
 
       - name: Build Windows App via Shorebird
-        run: shorebird release windows
+        run: shorebird release windows --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -134,7 +134,8 @@ jobs:
 
       - name: Patch flutter_onnxruntime Podspec
         run: |
-          for file in ~/.pub-cache/hosted/pub.dev/flutter_onnxruntime-*/ios/flutter_onnxruntime.podspec; do
+          find ~/.pub-cache/hosted -name "flutter_onnxruntime.podspec" | while read -r file; do
+            echo "Patching $file"
             sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
           done
 
@@ -156,8 +157,12 @@ jobs:
         with:
           cache: true
 
+      - name: Diagnose Flutter iOS Build
+        run: flutter build ipa --release --no-codesign
+        continue-on-error: true
+
       - name: Build iOS Application (No Codesign) via Shorebird
-        run: shorebird release ios --no-codesign
+        run: shorebird release ios --no-codesign --verbose --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 

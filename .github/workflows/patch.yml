@@ -44,7 +44,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Android
-        run: shorebird patch android
+        run: shorebird patch android --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -75,7 +75,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Patch Windows
-        run: shorebird patch windows
+        run: shorebird patch windows --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
@@ -91,6 +91,11 @@ jobs:
           flutter-version: '3.41.9'
           channel: 'stable'
 
+      - name: Setup CocoaPods
+        uses: maxim-lobanov/setup-cocoapods@v1
+        with:
+          version: 1.16.2
+
       - name: Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
         with:
@@ -98,6 +103,13 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Patch flutter_onnxruntime Podspec
+        run: |
+          find ~/.pub-cache/hosted -name "flutter_onnxruntime.podspec" | while read -r file; do
+            echo "Patching $file"
+            sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
+          done
 
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
@@ -110,6 +122,6 @@ jobs:
           plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
 
       - name: Patch iOS
-        run: shorebird patch ios --no-codesign
+        run: shorebird patch ios --no-codesign --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}

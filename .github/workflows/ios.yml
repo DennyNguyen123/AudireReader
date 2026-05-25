@@ -28,7 +28,8 @@ jobs:
 
       - name: Patch flutter_onnxruntime Podspec
         run: |
-          for file in ~/.pub-cache/hosted/pub.dev/flutter_onnxruntime-*/ios/flutter_onnxruntime.podspec; do
+          find ~/.pub-cache/hosted -name "flutter_onnxruntime.podspec" | while read -r file; do
+            echo "Patching $file"
             sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
           done
 
