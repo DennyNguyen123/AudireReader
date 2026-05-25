@@ -554,6 +554,10 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   value: 'microsoft_edge',
                   child: Text(AppLocalizations.of(context)!.edgeTtsOnline, style: const TextStyle(fontSize: 13)),
                 ),
+                const DropdownMenuItem<String>(
+                  value: 'supertonic',
+                  child: Text('Supertonic Offline AI', style: TextStyle(fontSize: 13)),
+                ),
               ],
               onChanged: (val) async {
                 if (val != null) {
@@ -565,6 +569,17 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
                   await widget.ttsService.updateSettings(ttsProvider: val);
                   await _loadVoices(val);
+                  
+                  if (val == 'supertonic') {
+                    setState(() {
+                      _selectedVoice = {
+                        'name': 'M1',
+                        'locale': 'offline',
+                        'gender': 'Male',
+                      };
+                    });
+                    widget.onVoiceChanged(_selectedVoice);
+                  }
                 }
               },
             ),
@@ -944,7 +959,8 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                                 ),
                                 onPressed: () async {
                                   final result = await FilePicker.platform.pickFiles(
-                                    type: FileType.audio,
+                                    type: FileType.custom,
+                                    allowedExtensions: ['mp3', 'm4a', 'wav', 'ogg', 'flac'],
                                     allowMultiple: false,
                                   );
                                   if (result != null && result.files.single.path != null) {

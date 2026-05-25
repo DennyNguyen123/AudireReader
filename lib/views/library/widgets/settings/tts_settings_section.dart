@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'settings_card.dart';
+import '../../../../services/supertonic_service.dart';
 
 class TtsSettingsSection extends StatelessWidget {
   final double speechRate;
@@ -147,9 +148,169 @@ class TtsSettingsSection extends StatelessWidget {
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
+              const DropdownMenuItem<String>(
+                value: 'supertonic',
+                child: Text(
+                  'Supertonic Offline AI (New)',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
             ],
             onChanged: onTtsProviderChanged,
           ),
+          if (ttsProvider == 'supertonic') ...[
+            const SizedBox(height: 16),
+            ListenableBuilder(
+              listenable: SupertonicService.getInstance(),
+              builder: (context, _) {
+                final supertonic = SupertonicService.getInstance();
+                return FutureBuilder<bool>(
+                  future: supertonic.checkModelExists(),
+                  builder: (context, snapshot) {
+                    final modelExists = snapshot.data ?? false;
+                    
+                    if (supertonic.isDownloading) {
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              supertonic.downloadStatus,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: supertonic.downloadProgress,
+                              backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                            ),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '${(supertonic.downloadProgress * 100).toStringAsFixed(1)}%',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (!modelExists) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white10 : Colors.black12,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Offline AI Model Required',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'To use Supertonic Offline AI voices, you need to download the voice model files (~96MB) to your device.',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                supertonic.downloadModelFiles().then((success) {
+                                  if (success) {
+                                    supertonic.initializeEngine();
+                                  }
+                                });
+                              },
+                              icon: const Icon(Icons.download_rounded, size: 18),
+                              label: const Text('Download Voice Model (96MB)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber[700],
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Offline Voice Model Ready',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green),
+                                ),
+                                Text(
+                                  'Supertonic Offline AI is fully operational.',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                            tooltip: 'Delete Model File',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Model Files?'),
+                                  content: const Text('Are you sure you want to delete the offline AI model files to free up space? You will need to redownload them to use this feature again.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        supertonic.deleteModelFiles();
+                                      },
+                                      child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 16),
 
           // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ DROPDOWN

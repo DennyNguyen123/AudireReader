@@ -9,6 +9,7 @@ import '../models/progress.dart';
 import '../models/settings.dart';
 import '../models/pronunciation_rule.dart';
 import 'audio_handler.dart';
+import 'supertonic_service.dart';
 import 'edge_tts_service.dart';
 import '../core/database/database_helper.dart';
 import 'sync_service.dart';
@@ -112,8 +113,14 @@ class TtsService extends ChangeNotifier {
       final settings = await db.getSettings();
       await audioHandler.setSpeed(settings.speechRate);
       
-      final provider = (settings.ttsProvider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
-      if (provider == 'system' &&
+      final provider = settings.ttsProvider;
+      if (provider == 'supertonic') {
+        final supertonic = SupertonicService.getInstance();
+        final voiceName = settings.selectedVoiceName ?? 'M1';
+        if (await supertonic.checkModelExists()) {
+          unawaited(supertonic.initializeEngine(voiceStyle: voiceName));
+        }
+      } else if (provider == 'system' &&
           settings.selectedVoiceName != null && 
           settings.selectedVoiceLocale != null) {
         final voices = await audioHandler.getVoices();
@@ -454,6 +461,9 @@ class TtsService extends ChangeNotifier {
       settings.selectedVoiceLocale = voice['locale'];
       if (settings.ttsProvider == 'system') {
         await audioHandler.setVoice(voice);
+      } else if (settings.ttsProvider == 'supertonic') {
+        final voiceName = voice['name'] ?? 'M1';
+        unawaited(SupertonicService.getInstance().initializeEngine(voiceStyle: voiceName));
       }
     }
     if (fontFamily != null) {
@@ -464,8 +474,14 @@ class TtsService extends ChangeNotifier {
     }
     if (ttsProvider != null) {
       settings.ttsProvider = ttsProvider;
-      settings.selectedVoiceName = null;
-      settings.selectedVoiceLocale = null;
+      if (ttsProvider == 'supertonic') {
+        settings.selectedVoiceName = 'M1';
+        settings.selectedVoiceLocale = 'offline';
+        unawaited(SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'));
+      } else {
+        settings.selectedVoiceName = null;
+        settings.selectedVoiceLocale = null;
+      }
     }
     
     await db.saveSettings(settings);
@@ -473,6 +489,20 @@ class TtsService extends ChangeNotifier {
   }
 
   Future<List<dynamic>> getVoicesForProvider(String provider) async {
+    if (provider == 'supertonic') {
+      return [
+        {
+          'name': 'M1',
+          'locale': 'offline',
+          'gender': 'Male',
+        },
+        {
+          'name': 'F1',
+          'locale': 'offline',
+          'gender': 'Female',
+        }
+      ];
+    }
     final normalizedProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
     if (normalizedProvider == 'microsoft_edge') {
       try {

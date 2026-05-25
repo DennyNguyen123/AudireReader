@@ -125,8 +125,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
       _fontFamily = settings.fontFamily.trim().isEmpty ? 'System' : settings.fontFamily;
       _themeMode = settings.themeMode.trim().isEmpty ? 'System' : settings.themeMode;
-      final provider = settings.ttsProvider;
-      _ttsProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+      _ttsProvider = settings.ttsProvider;
 
       // Load Hotkeys & Boss Key Configurations
       _hotkeyNextParagraph = settings.hotkeyNextParagraph;
@@ -751,6 +750,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               final db = await DatabaseHelper.getInstance();
                               final settings = await db.getSettings();
                               await _loadVoices(settings);
+                              if (val == 'supertonic') {
+                                setState(() {
+                                  _selectedVoice = {
+                                    'name': 'M1',
+                                    'locale': 'offline',
+                                    'gender': 'Male',
+                                  };
+                                });
+                              }
                             }
                           },
                           onLanguageFilterChanged: (val) {
