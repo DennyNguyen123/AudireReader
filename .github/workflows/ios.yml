@@ -10,21 +10,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.9' # Tương đồng với phiên bản local của bạn
+          flutter-version: '3.41.9'
           channel: 'stable'
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Patch flutter_onnxruntime Podspec
+        run: |
+          for file in ~/.pub-cache/hosted/pub.dev/flutter_onnxruntime-*/ios/flutter_onnxruntime.podspec; do
+            sed -i '' "s/'onnxruntime-objc', '1.22.0'/'onnxruntime-objc', '1.19.2'/g" "$file"
+          done
 
       - name: Run Code Generation (Isar Schemas)
         run: dart run build_runner build --delete-conflicting-outputs
@@ -32,17 +32,12 @@ jobs:
       - name: Configure iOS Permissions (Background Audio & File Sharing)
         run: |
           PLIST_PATH="ios/Runner/Info.plist"
-          
-          # Thêm quyền phát âm thanh chạy nền (Background Audio)
           plutil -insert UIBackgroundModes -xml "<array><string>audio</string></array>" $PLIST_PATH || true
-          
-          # Thêm quyền truy cập chia sẻ file tài liệu để import EPUB dễ dàng qua iTunes/Files app
           plutil -replace UISupportsDocumentBrowser -bool true $PLIST_PATH || true
           plutil -replace UIFileSharingEnabled -bool true $PLIST_PATH || true
 
       - name: Build iOS Application (No Codesign)
-        run: |
-          flutter build ios --no-codesign --release
+        run: flutter build ios --no-codesign --release
 
       - name: Package into unsigned IPA (Sideload Ready)
         run: |
