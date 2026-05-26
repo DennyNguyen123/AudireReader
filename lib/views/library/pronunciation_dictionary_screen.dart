@@ -160,8 +160,8 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     title: Text(AppLocalizations.of(context)?.useRegularExpressionRegex ?? 'Use Regular Expression (Regex)'),
                     subtitle: Text(AppLocalizations.of(context)?.advancedPatternMatching ?? 'Advanced pattern matching'),
                     value: isRegex,
-                    activeThumbColor: Colors.amber[700],
-                    activeTrackColor: Colors.amber[700]?.withValues(alpha: 0.5),
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
+                    activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     contentPadding: EdgeInsets.zero,
                     onChanged: (val) {
                       setDialogState(() {
@@ -186,7 +186,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(AppLocalizations.of(context)?.pleaseFillBothFields ?? 'Please fill in both fields'),
-                        backgroundColor: Colors.amber,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                     );
                     return;
@@ -231,7 +231,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber[700],
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -336,10 +336,10 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                             Expanded(
                               child: Text(
                                 rule.target,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: Colors.amber,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             ),
@@ -391,8 +391,8 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                           children: [
                             Switch(
                               value: rule.active,
-                              activeThumbColor: Colors.amber[700],
-                              activeTrackColor: Colors.amber[700]?.withValues(alpha: 0.5),
+                              activeThumbColor: Theme.of(context).colorScheme.primary,
+                              activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                               onChanged: (val) => _toggleRuleActive(rule, val),
                             ),
                             IconButton(
@@ -412,7 +412,7 @@ class _PronunciationDictionaryScreenState extends State<PronunciationDictionaryS
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditRuleDialog(),
-        backgroundColor: Colors.amber[700],
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add_rounded),
       ),

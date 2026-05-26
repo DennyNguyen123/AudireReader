@@ -93,7 +93,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(AppLocalizations.of(context)?.allLogsCopied ?? 'All logs copied to clipboard.'),
-                  backgroundColor: Colors.amber,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
               );
             },
@@ -106,7 +106,7 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(AppLocalizations.of(context)?.consoleLogsCleared ?? 'Console logs cleared.'),
-                  backgroundColor: Colors.amber,
+                  backgroundColor: theme.colorScheme.primary,
                 ),
               );
             },
@@ -174,11 +174,11 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.black87 : (isDark ? Colors.white70 : Colors.black87),
+                                color: isSelected ? theme.colorScheme.onPrimary : (isDark ? Colors.white70 : Colors.black87),
                               ),
                             ),
                             selected: isSelected,
-                            selectedColor: Colors.amber,
+                            selectedColor: theme.colorScheme.primary,
                             backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                             onSelected: (val) {
                               if (val) {

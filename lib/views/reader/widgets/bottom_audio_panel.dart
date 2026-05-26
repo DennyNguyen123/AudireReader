@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import '../../../models/chapter.dart';
 import '../../../services/tts_service.dart';
+import 'bgm_player_sheet.dart';
 
 class BottomAudioPanel extends StatefulWidget {
   final TtsService ttsService;
@@ -34,26 +35,17 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     return '$minutes:$seconds';
   }
 
-  Widget _buildProgressRow({
+  Widget _buildCompactStat({
     required IconData icon,
-    required String label,
     required String value,
     String? percent,
     required Color textColor,
   }) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: textColor.withValues(alpha: 0.6)),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: textColor.withValues(alpha: 0.6),
-          ),
-        ),
-        const Spacer(),
+        const SizedBox(width: 4),
         Text(
           value,
           style: TextStyle(
@@ -63,12 +55,12 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
           ),
         ),
         if (percent != null) ...[
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               percent,
@@ -137,14 +129,30 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            color: glassColor,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                glassColor,
+                glassColor.withValues(alpha: widget.isDark ? 0.85 : 0.95),
+              ],
+            ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
-                color: widget.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                width: 1,
+                color: widget.isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.06),
+                width: 1.5,
               ),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: widget.isDark ? 0.15 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
           child: Column(
@@ -242,7 +250,97 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
               ),
               const SizedBox(height: 4),
 
-              // 2. Thông tin thời gian bằng Tiếng Anh (Card Layout)
+              // 2. Các nút bấm điều khiển
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 42), // Invisible spacer to balance the BGM button on the right
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildControlButton(
+                          icon: Icons.skip_previous_rounded,
+                          iconSize: 22,
+                          onPressed: tts.currentChapterIndex > 0 ? tts.previousChapter : null,
+                          tooltip: "Previous Chapter",
+                          textColor: widget.textColor,
+                        ),
+                        _buildControlButton(
+                          icon: Icons.fast_rewind_rounded,
+                          iconSize: 20,
+                          onPressed: tts.previousParagraph,
+                          tooltip: "Rewind Paragraph",
+                          textColor: widget.textColor,
+                        ),
+                        GestureDetector(
+                          onTap: tts.togglePlayPause,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
+                                  Theme.of(context).colorScheme.primary,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              tts.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              size: 26,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        _buildControlButton(
+                          icon: Icons.fast_forward_rounded,
+                          iconSize: 20,
+                          onPressed: tts.nextParagraph,
+                          tooltip: "Forward Paragraph",
+                          textColor: widget.textColor,
+                        ),
+                        _buildControlButton(
+                          icon: Icons.skip_next_rounded,
+                          iconSize: 22,
+                          onPressed: tts.currentChapterIndex < tts.chapters.length - 1 ? tts.nextChapter : null,
+                          tooltip: "Next Chapter",
+                          textColor: widget.textColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // BGM Player Button moved here
+                  _buildControlButton(
+                    icon: Icons.music_note_rounded,
+                    iconSize: 22,
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (context) => const BgmPlayerSheet(),
+                      );
+                    },
+                    tooltip: "BGM Player",
+                    textColor: widget.textColor,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 3. Compact Stats
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
@@ -253,98 +351,34 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                     width: 1,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    _buildProgressRow(
-                      icon: Icons.format_align_left_rounded,
-                      label: "Paragraph",
-                      value: "$currentParagraph / $totalParagraphs",
-                      percent: "$percentStr%",
-                      textColor: widget.textColor,
-                    ),
-                    const SizedBox(height: 4),
-                    _buildProgressRow(
-                      icon: Icons.menu_book_rounded,
-                      label: "Chapter",
-                      value: "$currentChapter / $totalChapters",
-                      percent: tts.chapterProgressTimeStr,
-                      textColor: widget.textColor,
-                    ),
-                    const SizedBox(height: 4),
-                    _buildProgressRow(
-                      icon: Icons.auto_stories_rounded,
-                      label: "Book Progress",
-                      value: tts.bookProgressTimeStr,
-                      textColor: widget.textColor,
-                    ),
-                  ],
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildCompactStat(
+                        icon: Icons.format_align_left_rounded,
+                        value: "$currentParagraph / $totalParagraphs",
+                        percent: "$percentStr%",
+                        textColor: widget.textColor,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildCompactStat(
+                        icon: Icons.menu_book_rounded,
+                        value: "$currentChapter / $totalChapters",
+                        percent: tts.chapterProgressTimeStr,
+                        textColor: widget.textColor,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildCompactStat(
+                        icon: Icons.auto_stories_rounded,
+                        value: tts.bookProgressTimeStr,
+                        textColor: widget.textColor,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-
-              // 3. Các nút bấm điều khiển
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildControlButton(
-                    icon: Icons.skip_previous_rounded,
-                    iconSize: 22,
-                    onPressed: tts.currentChapterIndex > 0 ? tts.previousChapter : null,
-                    tooltip: "Previous Chapter",
-                    textColor: widget.textColor,
-                  ),
-                  _buildControlButton(
-                    icon: Icons.fast_rewind_rounded,
-                    iconSize: 20,
-                    onPressed: tts.previousParagraph,
-                    tooltip: "Rewind Paragraph",
-                    textColor: widget.textColor,
-                  ),
-                  GestureDetector(
-                    onTap: tts.togglePlayPause,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
-                            Theme.of(context).colorScheme.primary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        tts.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                        size: 26,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  _buildControlButton(
-                    icon: Icons.fast_forward_rounded,
-                    iconSize: 20,
-                    onPressed: tts.nextParagraph,
-                    tooltip: "Forward Paragraph",
-                    textColor: widget.textColor,
-                  ),
-                  _buildControlButton(
-                    icon: Icons.skip_next_rounded,
-                    iconSize: 22,
-                    onPressed: tts.currentChapterIndex < tts.chapters.length - 1 ? tts.nextChapter : null,
-                    tooltip: "Next Chapter",
-                    textColor: widget.textColor,
-                  ),
-                ],
               ),
             ],
           ),

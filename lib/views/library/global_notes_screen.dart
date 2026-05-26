@@ -117,9 +117,9 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen> with SingleTicker
         foregroundColor: isDark ? Colors.white : Colors.black87,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.amber[700],
+          labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: isDark ? Colors.white54 : Colors.black54,
-          indicatorColor: Colors.amber[700],
+          indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: const [
             Tab(text: 'Bookmarks'),
             Tab(text: 'Highlights'),
@@ -127,7 +127,7 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen> with SingleTicker
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.amber)))
+          ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary)))
           : TabBarView(
               controller: _tabController,
               children: [
@@ -164,7 +164,7 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen> with SingleTicker
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                Text('Ch. ${b.chapterIndex + 1} | Par. ${b.paragraphIndex + 1}', style: TextStyle(fontSize: 12, color: Colors.amber[700])),
+                Text('Ch. ${b.chapterIndex + 1} | Par. ${b.paragraphIndex + 1}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
                 const SizedBox(height: 4),
                 Text('"${b.contentSnippet}"', style: TextStyle(fontStyle: FontStyle.italic, color: isDark ? Colors.white70 : Colors.black87)),
               ],
@@ -214,7 +214,7 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen> with SingleTicker
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                Text('Ch. ${h.chapterIndex + 1} | Par. ${h.paragraphIndex + 1}', style: TextStyle(fontSize: 12, color: Colors.amber[700])),
+                Text('Ch. ${h.chapterIndex + 1} | Par. ${h.paragraphIndex + 1}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(8),

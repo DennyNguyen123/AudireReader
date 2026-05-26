@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../l10n/app_localizations.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'settings_card.dart';
 
 class AppearanceSettingsSection extends StatelessWidget {
@@ -28,6 +29,7 @@ class AppearanceSettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final accentColor = theme.colorScheme.primary;
 
     return SettingsCard(
       child: Column(
@@ -35,7 +37,7 @@ class AppearanceSettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.chrome_reader_mode_rounded, color: Colors.amber[700], size: 28),
+              Icon(Icons.chrome_reader_mode_rounded, color: accentColor, size: 28),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.readingAppearance ?? 'Reading Appearance & Typography',
@@ -97,14 +99,14 @@ class AppearanceSettingsSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
-                            ? Colors.amber[700]!
+                            ? accentColor
                             : (isDark ? Colors.white10 : Colors.black12),
                         width: isSelected ? 2.5 : 1,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: Colors.amber[700]!.withValues(alpha: 0.3),
+                                color: accentColor.withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               )
@@ -116,7 +118,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                       children: [
                         Icon(
                           icon,
-                          color: isSelected ? Colors.amber[700] : textCol.withValues(alpha: 0.8),
+                          color: isSelected ? accentColor : textCol.withValues(alpha: 0.8),
                           size: 18,
                         ),
                         const SizedBox(height: 4),
@@ -125,7 +127,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Colors.amber[700] : textCol,
+                            color: isSelected ? accentColor : textCol,
                           ),
                         ),
                       ],
@@ -153,6 +155,20 @@ class AppearanceSettingsSection extends StatelessWidget {
                 _buildColorOption(context, 'F44336', Colors.red, 'Red'),
                 _buildColorOption(context, 'E91E63', Colors.pink, 'Pink'),
                 _buildColorOption(context, '009688', Colors.teal, 'Teal'),
+                if (primaryColorHex != null && !['2196F3', '4CAF50', '9C27B0', 'F44336', 'E91E63', '009688'].contains(primaryColorHex?.toUpperCase()))
+                  Builder(
+                    builder: (context) {
+                      Color? customColor;
+                      try {
+                        customColor = Color(int.parse('FF$primaryColorHex', radix: 16));
+                      } catch (_) {}
+                      if (customColor != null) {
+                        return _buildColorOption(context, primaryColorHex, customColor, 'Custom');
+                      }
+                      return const SizedBox();
+                    }
+                  ),
+                _buildColorPickerButton(context),
               ],
             ),
           ),
@@ -173,7 +189,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                   min: 14.0,
                   max: 28.0,
                   divisions: 7,
-                  activeColor: Colors.amber[700],
+                  activeColor: accentColor,
                   label: fontSize.round().toString(),
                   onChanged: onFontSizeChanged,
                 ),
@@ -275,6 +291,88 @@ class AppearanceSettingsSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorPickerButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: () {
+        Color currentColor = Colors.amber;
+        if (primaryColorHex != null) {
+          try {
+            currentColor = Color(int.parse('FF$primaryColorHex', radix: 16));
+          } catch (_) {}
+        }
+        
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            Color tempColor = currentColor;
+            return AlertDialog(
+              title: const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              content: SingleChildScrollView(
+                child: ColorPicker(
+                  pickerColor: currentColor,
+                  onColorChanged: (color) {
+                    tempColor = color;
+                  },
+                  pickerAreaHeightPercent: 0.8,
+                  enableAlpha: false,
+                  displayThumbColor: true,
+                  paletteType: PaletteType.hsvWithHue,
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    String hexString = tempColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase();
+                    onPrimaryColorChanged(hexString);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black12,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.transparent,
+                  width: 3,
+                ),
+              ),
+              child: Icon(Icons.palette_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 20),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Custom',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ],

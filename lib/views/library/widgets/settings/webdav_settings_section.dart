@@ -38,6 +38,7 @@ class WebdavSettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final accentColor = theme.colorScheme.primary;
 
     return SettingsCard(
       child: Column(
@@ -46,7 +47,7 @@ class WebdavSettingsSection extends StatelessWidget {
           // Tiêu đề & Mô tả chính
           Row(
             children: [
-              Icon(Icons.cloud_sync_rounded, color: Colors.amber[700], size: 28),
+              Icon(Icons.cloud_sync_rounded, color: accentColor, size: 28),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.cloudLibrarySync ?? 'Cloud Library Sync',
@@ -86,7 +87,7 @@ class WebdavSettingsSection extends StatelessWidget {
               style: const TextStyle(fontSize: 12),
             ),
             value: webDavEnabled,
-            activeThumbColor: Colors.amber[700],
+            activeThumbColor: accentColor,
             onChanged: onWebDavEnabledChanged,
           ),
 
@@ -99,10 +100,10 @@ class WebdavSettingsSection extends StatelessWidget {
 
             Text(
               AppLocalizations.of(context)?.webdavServerConfig ?? 'WebDAV Server Configuration',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
-                color: Colors.amber,
+                color: accentColor,
               ),
             ),
             const SizedBox(height: 16),
@@ -259,7 +260,7 @@ class WebdavSettingsSection extends StatelessWidget {
                       ? (AppLocalizations.of(context)?.lastSyncedAt(lastSync!.toLocal().toString().split('.')[0]) ??
                           'Last Synced: ${lastSync!.toLocal().toString().split('.')[0]}')
                       : (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never'),
-                  style: const TextStyle(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -272,7 +273,7 @@ class WebdavSettingsSection extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber[700],
+                backgroundColor: accentColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

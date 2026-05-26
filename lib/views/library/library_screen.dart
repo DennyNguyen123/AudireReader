@@ -585,8 +585,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Tông màu tối hiện đại, cao cấp
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = theme.colorScheme.primary;
 
     final filteredBooks = _books.where((book) {
       final searchLower = _searchQuery.toLowerCase();
@@ -638,7 +639,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                         ),
                       ),
                     ),
@@ -858,7 +859,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               child: ChoiceChip(
                                 label: Text(tag, style: TextStyle(color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 12)),
                                 selected: isSelected,
-                                selectedColor: Colors.amber[700],
+                                selectedColor: accentColor,
                                 backgroundColor: isDark ? Colors.white10 : Colors.black12,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 showCheckmark: false,
@@ -949,8 +950,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -998,7 +999,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     right: 16,
                     child: FloatingActionButton.extended(
                       onPressed: _importBook,
-                      backgroundColor: Colors.amber[700],
+                      backgroundColor: accentColor,
                       foregroundColor: Colors.white,
                       icon: const Icon(Icons.add_rounded),
                       label: Text(
@@ -1037,9 +1038,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget _buildBookCard(Book book, bool isDark) {
     final progressPercent = _progressMap[book.uuid] ?? 0.0;
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
+    final accentColor = Theme.of(context).colorScheme.primary;
     
     Color statusColor = Colors.grey;
-    if (bookStatus == 'reading') statusColor = Colors.amber[700]!;
+    if (bookStatus == 'reading') statusColor = accentColor;
     if (bookStatus == 'completed') statusColor = Colors.green;
 
     return GestureDetector(
@@ -1227,7 +1229,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     child: LinearProgressIndicator(
                       value: progressPercent / 100,
                       backgroundColor: Colors.black26,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                       minHeight: 3,
                     ),
                   ),
@@ -1276,7 +1278,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         AppLocalizations.of(context)?.readPercent(progressPercent.toStringAsFixed(0)) ?? '${progressPercent.toStringAsFixed(0)}% Read',
                         style: TextStyle(
                           fontSize: 9,
-                          color: Colors.amber[700],
+                          color: accentColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1317,10 +1319,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _buildFilterChip(String label, bool isSelected, ValueChanged<bool> onSelected) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = Theme.of(context).colorScheme.primary;
     return ChoiceChip(
       label: Text(label, style: TextStyle(color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 12, fontWeight: FontWeight.w600)),
       selected: isSelected,
-      selectedColor: Colors.amber[700],
+      selectedColor: accentColor,
       backgroundColor: isDark ? Colors.white10 : Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
@@ -1494,7 +1497,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
     
     Color statusColor = Colors.grey;
-    if (bookStatus == 'reading') statusColor = Colors.amber[700]!;
+    if (bookStatus == 'reading') statusColor = Theme.of(context).colorScheme.primary;
     if (bookStatus == 'completed') statusColor = Colors.green;
 
     return Container(
@@ -1663,7 +1666,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           AppLocalizations.of(context)?.readPercent(progressPercent.toStringAsFixed(0)) ?? '${progressPercent.toStringAsFixed(0)}% Read',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.amber[700],
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1675,7 +1678,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       child: LinearProgressIndicator(
                         value: progressPercent / 100,
                         backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                         minHeight: 4,
                       ),
                     ),

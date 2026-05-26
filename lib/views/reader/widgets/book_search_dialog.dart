@@ -132,7 +132,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                                     TextSpan(text: before.length > 50 ? '...${before.substring(before.length - 40)}' : before),
                                     TextSpan(
                                       text: keyword,
-                                      style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
                                     ),
                                     TextSpan(text: after.length > 50 ? '${after.substring(0, 40)}...' : after),
                                   ],
@@ -151,7 +151,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                               contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                               title: Text(
                                 res['chapterTitle'],
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                               ),
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4),

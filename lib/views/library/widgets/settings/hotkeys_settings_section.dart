@@ -168,7 +168,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                         color: isDark ? Colors.black26 : Colors.grey[100],
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.amber.withValues(alpha: 0.3),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -182,7 +182,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                             fontWeight: FontWeight.bold,
                             color: recordedShortcut.isEmpty
                                 ? (isDark ? Colors.white30 : Colors.black26)
-                                : Colors.amber[700],
+                                : Theme.of(context).colorScheme.primary,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -208,7 +208,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                           SizedBox(
                             width: 12,
                             height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber[700]),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -234,7 +234,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[700],
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -288,7 +288,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                   color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.2),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -297,7 +297,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: Colors.amber[700],
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -319,7 +319,7 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
         children: [
           Row(
             children: [
-              Icon(Icons.keyboard_rounded, color: Colors.amber[700], size: 28),
+              Icon(Icons.keyboard_rounded, color: theme.colorScheme.primary, size: 28),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.hotkeyConfigurations ?? 'Hotkey Configurations',
@@ -426,8 +426,8 @@ class _HotkeysSettingsSectionState extends State<HotkeysSettingsSection> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.amber[700],
-                    side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),

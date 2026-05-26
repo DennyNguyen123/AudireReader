@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
@@ -217,74 +217,98 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.paragraphActions,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildColorButton(context, Colors.yellow, '#FFFFEB3B', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
-                _buildColorButton(context, Colors.green, '#FF4CAF50', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
-                _buildColorButton(context, Colors.blue, '#FF2196F3', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            
-            ListTile(
-              leading: Icon(Icons.sticky_note_2_rounded, color: Colors.amber[700]),
-              title: Text(existingHighlight?.note != null ? l10n.editNote : l10n.addNote, style: TextStyle(color: textColor)),
-              onTap: () {
-                Navigator.pop(context);
-                _showAddNoteDialog(chapterIndex, paragraphIndex, paragraphText, existingHighlight);
-              },
-            ),
-            
-            ListTile(
-              leading: Icon(Icons.copy_rounded, color: Colors.amber[700]),
-              title: Text(l10n.copyText, style: TextStyle(color: textColor)),
-              onTap: () {
-                Navigator.pop(context);
-                Clipboard.setData(ClipboardData(text: paragraphText));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.copiedToClipboard), duration: const Duration(seconds: 1)),
-                );
-              },
-            ),
-
-            if (existingHighlight != null)
-              ListTile(
-                leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                title: Text(l10n.removeHighlight, style: const TextStyle(color: Colors.redAccent)),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final db = await DatabaseHelper.getInstance();
-                  await db.deleteHighlight(existingHighlight.id);
-                  await _loadBookmarksAndHighlights();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.highlightRemoved), duration: const Duration(seconds: 1)),
-                    );
-                  }
-                },
+      builder: (context) {
+        final theme = Theme.of(context);
+        final sheetBg = theme.scaffoldBackgroundColor;
+        final accentColor = theme.colorScheme.primary;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    sheetBg.withValues(alpha: isDark ? 0.75 : 0.85),
+                    sheetBg.withValues(alpha: isDark ? 0.85 : 0.95),
+                  ],
+                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                    width: 1.5,
+                  ),
+                ),
               ),
-          ],
-        ),
-      ),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.paragraphActions,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildColorButton(context, Colors.yellow, '#FFFFEB3B', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                      _buildColorButton(context, Colors.green, '#FF4CAF50', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                      _buildColorButton(context, Colors.blue, '#FF2196F3', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  
+                  ListTile(
+                    leading: Icon(Icons.sticky_note_2_rounded, color: accentColor),
+                    title: Text(existingHighlight?.note != null ? l10n.editNote : l10n.addNote, style: TextStyle(color: textColor)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAddNoteDialog(chapterIndex, paragraphIndex, paragraphText, existingHighlight);
+                    },
+                  ),
+                  
+                  ListTile(
+                    leading: Icon(Icons.copy_rounded, color: accentColor),
+                    title: Text(l10n.copyText, style: TextStyle(color: textColor)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Clipboard.setData(ClipboardData(text: paragraphText));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.copiedToClipboard), duration: const Duration(seconds: 1)),
+                      );
+                    },
+                  ),
+
+                  if (existingHighlight != null)
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                      title: Text(l10n.removeHighlight, style: const TextStyle(color: Colors.redAccent)),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final db = await DatabaseHelper.getInstance();
+                        await db.deleteHighlight(existingHighlight.id);
+                        await _loadBookmarksAndHighlights();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.highlightRemoved), duration: const Duration(seconds: 1)),
+                          );
+                        }
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -298,6 +322,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     String text
   ) {
     final isSelected = existing?.colorHex == hex;
+    final accentColor = Theme.of(context).colorScheme.primary;
     return GestureDetector(
       onTap: () async {
         Navigator.pop(context);
@@ -326,14 +351,14 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? Colors.amber[700]! : color,
+            color: isSelected ? accentColor : color,
             width: isSelected ? 3 : 1.5,
           ),
         ),
-        child: isSelected ? Icon(Icons.check, color: Colors.amber[700], size: 20) : null,
+        child: isSelected ? Icon(Icons.check, color: accentColor, size: 20) : null,
       ),
     );
   }
@@ -692,7 +717,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                   ),
                   IconButton(
                     icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
-                    color: _isBookmarked ? Colors.amber[700] : null,
+                    color: _isBookmarked ? Theme.of(context).colorScheme.primary : null,
                     onPressed: _toggleBookmark,
                   ),
                   IconButton(
@@ -716,7 +741,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.amber[400] : Colors.amber[800],
+                          color: Theme.of(context).colorScheme.primary,
                           fontFamily: _fontFamily == 'System' ? null : _fontFamily,
                         ),
                       ),

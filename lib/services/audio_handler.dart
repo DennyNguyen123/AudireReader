@@ -50,6 +50,8 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   final List<EdgeMetadataChunk> _edgeMetadata = [];
   int _lastHighlightIndex = 0;
   String _lastWord = "";
+  int _systemTtsCharacterOffset = 0;
+  int _systemTtsResumeOffset = 0;
 
   StreamSubscription? _positionSub;
   StreamSubscription? _completeSub;
@@ -369,11 +371,15 @@ try {
     }
     _tts.setProgressHandler((String text, int start, int end, String word) {
       if (_activeEngine != TtsEngineType.system) return;
-      _currentText = text;
-      onWordProgress?.call(text, start, end, word);
+      
+      final absoluteStart = start + _systemTtsResumeOffset;
+      final absoluteEnd = end + _systemTtsResumeOffset;
+      
+      _systemTtsCharacterOffset = absoluteStart;
+      onWordProgress?.call(_currentText, absoluteStart, absoluteEnd, word);
 
       if (_charPerSecond > 0) {
-        final positionInParagraph = start / _charPerSecond;
+        final positionInParagraph = absoluteStart / _charPerSecond;
         final currentChapterPos = _paragraphStartPosInChapter + positionInParagraph;
         playbackState.add(playbackState.value.copyWith(
           updatePosition: Duration(milliseconds: (currentChapterPos * 1000).round()),
@@ -558,6 +564,8 @@ try {
     _currentText = text;
     _lastHighlightIndex = 0;
     _lastWord = "";
+    _systemTtsCharacterOffset = 0;
+    _systemTtsResumeOffset = 0;
     
     // 2. Đọc cấu hình nhà cung cấp từ cơ sở dữ liệu Isar
     final db = await DatabaseHelper.getInstance();
@@ -742,8 +750,6 @@ try {
         ));
         await _edgePlayer.resume();
       } else if (_isSystemTtsPaused) {
-        // Resume System TTS trên mobile sau khi pause
-        // Gọi _tts.speak() sau _tts.pause() → flutter_tts tự tiếp tục từ chỗ pause
         _isSpeaking = true;
         _isSystemTtsPaused = false;
         playbackState.add(playbackState.value.copyWith(
@@ -755,7 +761,18 @@ try {
           playing: true,
           processingState: AudioProcessingState.ready,
         ));
-        await _tts.speak(_currentText);
+        
+        _systemTtsResumeOffset = _systemTtsCharacterOffset;
+        if (_systemTtsResumeOffset < _currentText.length) {
+          final textToSpeak = _currentText.substring(_systemTtsResumeOffset);
+          await _tts.speak(textToSpeak);
+        } else {
+          _isSpeaking = false;
+          playbackState.add(playbackState.value.copyWith(
+            processingState: AudioProcessingState.completed,
+          ));
+          onParagraphComplete?.call();
+        }
       } else {
         await speak(_currentText);
       }

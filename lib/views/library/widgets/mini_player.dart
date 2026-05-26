@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'dart:io';
@@ -30,7 +31,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
   Widget build(BuildContext context) {
     if (_ttsService == null) return const SizedBox.shrink();
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
 
     return StreamBuilder<MediaItem?>(
       stream: _ttsService!.audioHandler.mediaItem,
@@ -60,89 +63,103 @@ class _MiniPlayerState extends State<MiniPlayer> {
                   MaterialPageRoute(builder: (context) => const ReaderScreen()),
                 );
               },
-              child: Container(
-                height: 64,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2C2C2C).withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Cover image
-                    Container(
-                      width: 48,
-                      height: 48,
-                      margin: const EdgeInsets.all(8),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      height: 64,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: isDark ? Colors.grey[850] : Colors.grey[300],
-                        image: (mediaItem.artUri != null && File(mediaItem.artUri!.path).existsSync())
-                            ? DecorationImage(
-                                image: FileImage(File(mediaItem.artUri!.path)),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: (mediaItem.artUri == null || !File(mediaItem.artUri!.path).existsSync())
-                          ? Icon(Icons.music_note_rounded, color: isDark ? Colors.white30 : Colors.black38)
-                          : null,
-                    ),
-                    
-                    // Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            mediaItem.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            mediaItem.album ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
+                        color: isDark 
+                            ? const Color(0xFF2C2C2C).withValues(alpha: 0.75) 
+                            : Colors.white.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                    ),
-                    
-                    // Controls
-                    if (isProcessing)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
-                        ),
-                      )
-                    else
-                      IconButton(
-                        icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 32),
-                        color: Colors.amber[700],
-                        onPressed: () {
-                          if (isPlaying) {
-                            _ttsService!.pauseSpeaking();
-                          } else {
-                            _ttsService!.togglePlayPause();
-                          }
-                        },
+                      child: Row(
+                        children: [
+                          // Cover image
+                          Container(
+                            width: 48,
+                            height: 48,
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: isDark ? Colors.grey[850] : Colors.grey[300],
+                              image: (mediaItem.artUri != null && File(mediaItem.artUri!.path).existsSync())
+                                  ? DecorationImage(
+                                      image: FileImage(File(mediaItem.artUri!.path)),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: (mediaItem.artUri == null || !File(mediaItem.artUri!.path).existsSync())
+                                ? Icon(Icons.music_note_rounded, color: isDark ? Colors.white30 : Colors.black38)
+                                : null,
+                          ),
+                          
+                          // Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  mediaItem.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  mediaItem.album ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Controls
+                          if (isProcessing)
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
+                              ),
+                            )
+                          else
+                            IconButton(
+                              icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 32),
+                              color: primaryColor,
+                              onPressed: () {
+                                if (isPlaying) {
+                                  _ttsService!.pauseSpeaking();
+                                } else {
+                                  _ttsService!.togglePlayPause();
+                                }
+                              },
+                            ),
+                          const SizedBox(width: 8),
+                        ],
                       ),
-                    const SizedBox(width: 8),
-                  ],
+                    ),
+                  ),
                 ),
               ),
             );

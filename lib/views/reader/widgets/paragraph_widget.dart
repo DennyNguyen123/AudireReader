@@ -117,7 +117,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: Colors.amber[700],
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -153,9 +153,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   Widget _buildRichText(Color defaultColor) {
     Color? textBgColor;
     if (widget.isActive) {
-      textBgColor = widget.isDark 
-          ? Colors.amber[900]!.withValues(alpha: 0.15) 
-          : Colors.amber[100]!.withValues(alpha: 0.6);
+      textBgColor = Theme.of(context).colorScheme.primary.withValues(alpha: widget.isDark ? 0.2 : 0.15);
     } else if (widget.highlightColorHex != null) {
       try {
         final parsedColor = _parseHexColor(widget.highlightColorHex!);
@@ -196,8 +194,8 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
             TextSpan(text: before),
             TextSpan(
               text: word,
-              style: const TextStyle(
-                color: Colors.amber,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w900,
                 backgroundColor: Colors.black12,
               ),

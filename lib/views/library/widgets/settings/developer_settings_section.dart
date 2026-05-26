@@ -22,6 +22,8 @@ class DeveloperSettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SettingsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,14 +40,14 @@ class DeveloperSettingsSection extends StatelessWidget {
               style: const TextStyle(fontSize: 11),
             ),
             value: developerMode,
-            activeThumbColor: Colors.amber[700],
+            activeThumbColor: theme.colorScheme.primary,
             onChanged: onDeveloperModeChanged,
           ),
           if (developerMode) ...[
             const Divider(height: 32, thickness: 1),
             Row(
               children: [
-                Icon(Icons.developer_mode_rounded, color: Colors.amber[700], size: 28),
+                Icon(Icons.developer_mode_rounded, color: theme.colorScheme.primary, size: 28),
                 const SizedBox(width: 12),
                 Text(
                   AppLocalizations.of(context)?.developerSettings ?? 'Developer Settings',
@@ -69,7 +71,7 @@ class DeveloperSettingsSection extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber[700],
+                      backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -90,8 +92,8 @@ class DeveloperSettingsSection extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.amber[700],
-                      side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -111,8 +113,8 @@ class DeveloperSettingsSection extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.amber[700],
-                      side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -132,8 +134,8 @@ class DeveloperSettingsSection extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.amber[700],
-                      side: BorderSide(color: Colors.amber[700]!, width: 1.5),
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),

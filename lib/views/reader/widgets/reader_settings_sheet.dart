@@ -1,12 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as p;
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
-import '../../../services/bgm_service.dart';
 import '../../../core/theme_notifier.dart';
 import '../../library/pronunciation_dictionary_screen.dart';
 import '../../../services/supertonic_service.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class ReaderSettingsSheet extends StatefulWidget {
   final TtsService ttsService;
@@ -88,13 +87,10 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
   final _speedController = TextEditingController();
   final _voiceSearchController = TextEditingController();
+  late final TextEditingController _customBgController;
+  late final TextEditingController _customTextController;
   String _selectedLanguageFilter = 'all';
   String _voiceSearchQuery = '';
-
-  // Background Music (BGM) UI state variables
-  bool _showAddBgmForm = false;
-  final _bgmNameController = TextEditingController();
-  String? _bgmLocalPath;
 
   @override
   void initState() {
@@ -114,6 +110,8 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     _customBackgroundColor = widget.customBackgroundColor;
     _customTextColor = widget.customTextColor;
 
+    _customBgController = TextEditingController(text: _customBackgroundColor);
+    _customTextController = TextEditingController(text: _customTextColor);
     _speedController.text = (_speechRate * 2).toStringAsFixed(3);
   }
 
@@ -121,15 +119,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   void dispose() {
     _speedController.dispose();
     _voiceSearchController.dispose();
-    _bgmNameController.dispose();
+    _customBgController.dispose();
+    _customTextController.dispose();
     super.dispose();
   }
 
   bool _getIsDark(BuildContext context) {
-    if (_themeMode == 'System') {
-      return MediaQuery.of(context).platformBrightness == Brightness.dark;
-    }
-    return _themeMode == 'Dark';
+    return Theme.of(context).brightness == Brightness.dark;
   }
 
   Future<void> _loadVoices(String provider) async {
@@ -180,40 +176,59 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isDark = _getIsDark(context);
-    final sheetBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final labelColor = isDark ? Colors.white70 : Colors.black87;
+    final sheetBg = theme.scaffoldBackgroundColor;
+    final labelColor = theme.textTheme.bodyLarge?.color ?? (isDark ? Colors.white70 : Colors.black87);
+    final accentColor = theme.colorScheme.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.readerSettings,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                sheetBg.withValues(alpha: isDark ? 0.75 : 0.85),
+                sheetBg.withValues(alpha: isDark ? 0.85 : 0.95),
               ],
             ),
-            const SizedBox(height: 16),
-            
-            // 🎨 NHÓM 1: DISPLAY & TYPOGRAPHY
-            Row(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(
+                color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                width: 1.5,
+              ),
+            ),
+          ),
+          padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(Icons.format_paint_rounded, size: 16, color: Colors.amber[700]),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.readerSettings,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // 🎨 NHÓM 1: DISPLAY & TYPOGRAPHY
+                Row(
+                  children: [
+                    Icon(Icons.format_paint_rounded, size: 16, color: accentColor),
                 const SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.displayTypography,
@@ -279,13 +294,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected 
-                              ? Colors.amber[700]! 
+                              ? accentColor 
                               : (isDark ? Colors.white10 : Colors.black12),
                           width: isSelected ? 2.5 : 1,
                         ),
                         boxShadow: isSelected ? [
                           BoxShadow(
-                            color: Colors.amber[700]!.withValues(alpha: 0.3),
+                            color: accentColor.withValues(alpha: 0.3),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           )
@@ -296,7 +311,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                         children: [
                           Icon(
                             icon, 
-                            color: isSelected ? Colors.amber[700] : textCol.withValues(alpha: 0.8), 
+                            color: isSelected ? accentColor : textCol.withValues(alpha: 0.8), 
                             size: 18
                           ),
                           const SizedBox(height: 4),
@@ -313,7 +328,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? Colors.amber[700] : textCol,
+                              color: isSelected ? accentColor : textCol,
                             ),
                           ),
                         ],
@@ -376,7 +391,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                     min: 14.0,
                     max: 28.0,
                     divisions: 14,
-                    activeColor: Colors.amber[700],
+                    activeColor: accentColor,
                     label: _fontSize.round().toString(),
                     onChanged: (val) {
                       setState(() {
@@ -390,7 +405,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               ],
             ),
             const SizedBox(height: 16),
-
+ 
             // KHOẢNG CÁCH DÒNG (LINE HEIGHT)
             Row(
               children: [
@@ -402,7 +417,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                     min: 1.2,
                     max: 2.2,
                     divisions: 10,
-                    activeColor: Colors.amber[700],
+                    activeColor: accentColor,
                     label: _lineHeight.toStringAsFixed(1),
                     onChanged: (val) {
                       setState(() {
@@ -416,7 +431,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               ],
             ),
             const SizedBox(height: 16),
-
+ 
             // KHOẢNG CÁCH ĐOẠN VÀ LỀ HAI BÊN
             Row(
               children: [
@@ -432,7 +447,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                         min: 4.0,
                         max: 32.0,
                         divisions: 14,
-                        activeColor: Colors.amber[700],
+                        activeColor: accentColor,
                         label: _paragraphSpacing.round().toString(),
                         onChanged: (val) {
                           setState(() {
@@ -455,7 +470,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                         min: 0.0,
                         max: 60.0,
                         divisions: 12,
-                        activeColor: Colors.amber[700],
+                        activeColor: accentColor,
                         label: _sideMargin.round().toString(),
                         onChanged: (val) {
                           setState(() {
@@ -496,7 +511,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              dropdownColor: sheetBg,
               items: [
                 'System', 'Serif', 'Sans-Serif', 'Monospace', 
                 'Lora', 'Merriweather', 'Inter', 'Nunito',
@@ -559,15 +574,28 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: TextEditingController(text: _customBackgroundColor),
+                      controller: _customBgController,
                       decoration: InputDecoration(
                         labelText: 'Background (Hex)',
                         filled: true,
                         fillColor: isDark ? Colors.white10 : Colors.black12,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.palette_rounded),
+                          onPressed: () => _showColorPicker(_customBackgroundColor ?? '', (val) {
+                            setState(() {
+                              _customBackgroundColor = val;
+                              _customBgController.text = val;
+                            });
+                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                            widget.ttsService.updateSettings(customBackgroundColor: val);
+                          }),
+                        ),
                       ),
-                      onSubmitted: (val) {
-                        setState(() => _customBackgroundColor = val);
+                      onChanged: (val) {
+                        setState(() {
+                          _customBackgroundColor = val;
+                        });
                         widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
                         widget.ttsService.updateSettings(customBackgroundColor: val);
                       },
@@ -576,15 +604,28 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
-                      controller: TextEditingController(text: _customTextColor),
+                      controller: _customTextController,
                       decoration: InputDecoration(
                         labelText: 'Text (Hex)',
                         filled: true,
                         fillColor: isDark ? Colors.white10 : Colors.black12,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.palette_rounded),
+                          onPressed: () => _showColorPicker(_customTextColor ?? '', (val) {
+                            setState(() {
+                              _customTextColor = val;
+                              _customTextController.text = val;
+                            });
+                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                            widget.ttsService.updateSettings(customTextColor: val);
+                          }),
+                        ),
                       ),
-                      onSubmitted: (val) {
-                        setState(() => _customTextColor = val);
+                      onChanged: (val) {
+                        setState(() {
+                          _customTextColor = val;
+                        });
                         widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
                         widget.ttsService.updateSettings(customTextColor: val);
                       },
@@ -602,7 +643,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             // 🗣️ NHÓM 2: TEXT-TO-SPEECH (TTS)
             Row(
               children: [
-                Icon(Icons.volume_up_rounded, size: 16, color: Colors.amber[700]),
+                Icon(Icons.volume_up_rounded, size: 16, color: accentColor),
                 const SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.textToSpeechTts,
@@ -634,7 +675,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ChoiceChip(
                     label: Text(AppLocalizations.of(context)!.off, style: const TextStyle(fontSize: 12)),
                     selected: !widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter,
-                    selectedColor: Colors.amber[700],
+                    selectedColor: accentColor,
                     labelStyle: TextStyle(
                       color: (!widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter) ? Colors.white : labelColor
                     ),
@@ -650,7 +691,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ChoiceChip(
                     label: const Text('15m', style: TextStyle(fontSize: 12)),
                     selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15,
-                    selectedColor: Colors.amber[700],
+                    selectedColor: accentColor,
                     labelStyle: TextStyle(
                       color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15) ? Colors.white : labelColor
                     ),
@@ -665,7 +706,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ChoiceChip(
                     label: const Text('30m', style: TextStyle(fontSize: 12)),
                     selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30,
-                    selectedColor: Colors.amber[700],
+                    selectedColor: accentColor,
                     labelStyle: TextStyle(
                       color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30) ? Colors.white : labelColor
                     ),
@@ -680,7 +721,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ChoiceChip(
                     label: const Text('45m', style: TextStyle(fontSize: 12)),
                     selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45,
-                    selectedColor: Colors.amber[700],
+                    selectedColor: accentColor,
                     labelStyle: TextStyle(
                       color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45) ? Colors.white : labelColor
                     ),
@@ -695,7 +736,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   ChoiceChip(
                     label: Text(AppLocalizations.of(context)!.endChapter, style: const TextStyle(fontSize: 12)),
                     selected: widget.ttsService.stopAtEndOfChapter,
-                    selectedColor: Colors.amber[700],
+                    selectedColor: accentColor,
                     labelStyle: TextStyle(
                       color: widget.ttsService.stopAtEndOfChapter ? Colors.white : labelColor
                     ),
@@ -722,7 +763,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                      value: _speechRate,
                      min: 0.05,
                      max: 1.0,
-                     activeColor: Colors.amber[700],
+                     activeColor: accentColor,
                      onChanged: (val) {
                        setState(() {
                          _speechRate = val;
@@ -751,7 +792,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                        suffixStyle: TextStyle(
                          fontSize: 11, 
                          fontWeight: FontWeight.bold, 
-                         color: isDark ? Colors.amber[300] : Colors.amber[850]
+                         color: accentColor
                        ),
                        filled: true,
                        fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -846,9 +887,9 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.1),
+                            color: accentColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                            border: Border.all(color: accentColor.withValues(alpha: 0.3)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -861,7 +902,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                               LinearProgressIndicator(
                                 value: supertonic.downloadProgress,
                                 backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                               ),
                               const SizedBox(height: 4),
                               Align(
@@ -913,7 +954,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                                 icon: const Icon(Icons.download_rounded, size: 18),
                                 label: const Text('Download Voice Model (96MB)'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.amber[700],
+                                  backgroundColor: accentColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -999,7 +1040,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               icon: const Icon(Icons.record_voice_over_rounded),
               label: Text(AppLocalizations.of(context)!.managePronunciation),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber[700],
+                backgroundColor: accentColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1179,353 +1220,63 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               const SizedBox(height: 20),
               Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
               const SizedBox(height: 20),
-
-              // 🎵 GROUP 3: BACKGROUND MUSIC (BGM)
-              Row(
-                children: [
-                  Icon(Icons.music_note_rounded, size: 16, color: Colors.amber[700]),
-                  const SizedBox(width: 8),
-                  Text(
-                    "BACKGROUND MUSIC (BGM)",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      color: isDark ? Colors.white60 : Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              ListenableBuilder(
-                listenable: BgmService.getInstance(),
-                builder: (context, _) {
-                  final bgmService = BgmService.getInstance();
-                  
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ENABLE BGM SWITCH
-                      SwitchListTile(
-                        title: Text(
-                          "Enable Background Music",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 14),
-                        ),
-                        value: bgmService.bgmEnabled,
-                        activeThumbColor: Colors.amber[700],
-                        contentPadding: EdgeInsets.zero,
-                        onChanged: (val) async {
-                          await bgmService.updateSettings(bgmEnabled: val);
-                          if (val && bgmService.currentTrack != null) {
-                            await bgmService.playTrack(bgmService.currentTrack!);
-                          }
-                        },
-                      ),
-
-                      if (bgmService.bgmEnabled) ...[
-                        const SizedBox(height: 10),
-                        // VOLUME SLIDER
-                        Row(
-                          children: [
-                            const Icon(Icons.volume_down_rounded, size: 20),
-                            const SizedBox(width: 12),
-                            Text("BGM Volume", style: TextStyle(color: labelColor, fontSize: 13)),
-                            Expanded(
-                              child: Slider(
-                                value: bgmService.bgmVolume,
-                                min: 0.0,
-                                max: 0.5, // Giới hạn max 0.5 để nhạc nền không lấn át TTS
-                                activeColor: Colors.amber[700],
-                                onChanged: (val) {
-                                  bgmService.updateVolumeInMemory(val);
-                                },
-                                onChangeEnd: (val) {
-                                  bgmService.updateSettings(bgmVolume: val);
-                                },
-                              ),
-                            ),
-                            Text(
-                              "${(bgmService.bgmVolume * 200).round()}%",
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: labelColor),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // LOOP MODE DROPDOWN
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Loop Mode", style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 13)),
-                            SizedBox(
-                              width: 180,
-                              child: DropdownButtonFormField<String>(
-                                initialValue: bgmService.bgmLoopMode,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                dropdownColor: sheetBg,
-                                style: TextStyle(color: labelColor, fontSize: 13),
-                                items: const [
-                                  DropdownMenuItem(value: 'none', child: Text('No Loop')),
-                                  DropdownMenuItem(value: 'one', child: Text('Loop One Track')),
-                                  DropdownMenuItem(value: 'all', child: Text('Loop Playlist')),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    bgmService.updateSettings(bgmLoopMode: val);
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // PLAYLIST MANAGER
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "BGM Playlist",
-                            style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 14),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              _showAddBgmForm ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded,
-                              color: Colors.amber[700],
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _showAddBgmForm = !_showAddBgmForm;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Add Track Form (Local Only)
-                      if (_showAddBgmForm) ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                "Add BGM Track",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 13),
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              // Track Name Input
-                              TextField(
-                                controller: _bgmNameController,
-                                style: TextStyle(color: labelColor, fontSize: 13),
-                                decoration: InputDecoration(
-                                  labelText: "Track Name (Optional)",
-                                  labelStyle: TextStyle(color: labelColor.withValues(alpha: 0.6), fontSize: 12),
-                                  border: const OutlineInputBorder(),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Local Audio Picker Button
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? Colors.white12 : Colors.black12,
-                                  foregroundColor: labelColor,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                icon: const Icon(Icons.folder_open_rounded, size: 16),
-                                label: Text(
-                                  _bgmLocalPath != null
-                                      ? p.basename(_bgmLocalPath!)
-                                      : "Select Audio File",
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                onPressed: () async {
-                                  final result = await FilePicker.platform.pickFiles(
-                                    type: FileType.custom,
-                                    allowedExtensions: ['mp3', 'm4a', 'wav', 'ogg', 'flac'],
-                                    allowMultiple: false,
-                                  );
-                                  if (result != null && result.files.single.path != null) {
-                                    setState(() {
-                                      _bgmLocalPath = result.files.single.path;
-                                      if (_bgmNameController.text.trim().isEmpty) {
-                                        _bgmNameController.text = p.basenameWithoutExtension(_bgmLocalPath!);
-                                      }
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.amber[700],
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                onPressed: _bgmLocalPath == null
-                                    ? null
-                                    : () async {
-                                        try {
-                                          await bgmService.addTrackFromLocal(
-                                            _bgmNameController.text,
-                                            _bgmLocalPath!,
-                                          );
-                                          setState(() {
-                                            _showAddBgmForm = false;
-                                            _bgmNameController.clear();
-                                            _bgmLocalPath = null;
-                                          });
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text("BGM Track added successfully!")),
-                                          );
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Failed to add track: $e")),
-                                          );
-                                        }
-                                      },
-                                child: const Text("Import Local File", style: TextStyle(fontSize: 12)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // PLAYLIST TRACKS LIST
-                      if (bgmService.bgmPlaylist.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Text(
-                            "No background music tracks added yet.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: labelColor.withValues(alpha: 0.5), fontSize: 13, fontStyle: FontStyle.italic),
-                          ),
-                        )
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: bgmService.bgmPlaylist.length,
-                          itemBuilder: (context, index) {
-                            final track = bgmService.bgmPlaylist[index];
-                            final isCurrent = bgmService.currentTrack?.id == track.id;
-                            const IconData sourceIcon = Icons.insert_drive_file_rounded;
-
-                            return Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isCurrent
-                                    ? Colors.amber[700]!.withValues(alpha: isDark ? 0.2 : 0.1)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isCurrent
-                                      ? Colors.amber[700]!.withValues(alpha: 0.3)
-                                      : Colors.transparent,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    sourceIcon,
-                                    size: 18,
-                                    color: isCurrent ? Colors.amber[700] : labelColor.withValues(alpha: 0.6),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      track.name,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                                        color: isCurrent ? (isDark ? Colors.amber[200] : Colors.amber[900]) : labelColor,
-                                      ),
-                                    ),
-                                  ),
-                                  
-                                  // Play/Pause Button
-                                  IconButton(
-                                    icon: Icon(
-                                      isCurrent && bgmService.isPlaying
-                                          ? Icons.pause_circle_outline_rounded
-                                          : Icons.play_circle_outline_rounded,
-                                      size: 20,
-                                      color: isCurrent ? Colors.amber[700] : labelColor.withValues(alpha: 0.7),
-                                    ),
-                                    onPressed: () {
-                                      if (isCurrent && bgmService.isPlaying) {
-                                        bgmService.pauseBgm();
-                                      } else {
-                                        bgmService.playTrack(track);
-                                      }
-                                    },
-                                  ),
-
-                                  // Delete Button
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          backgroundColor: sheetBg,
-                                          title: const Text("Delete Track", style: TextStyle(fontWeight: FontWeight.bold)),
-                                          content: Text("Are you sure you want to delete '${track.name}'?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: const Text("Cancel"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                bgmService.deleteTrack(track);
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("Delete", style: TextStyle(color: Colors.redAccent)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  );
-                },
-              ),
             ],
           ],
         ),
       ),
+    ),
+    ),
+    );
+  }
+
+  void _showColorPicker(String currentColorHex, ValueChanged<String> onColorSelected) {
+    Color currentColor = Colors.white;
+    if (currentColorHex.isNotEmpty) {
+      String hex = currentColorHex.replaceAll('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      try {
+        currentColor = Color(int.parse(hex, radix: 16));
+      } catch (_) {}
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        Color tempColor = currentColor;
+        return AlertDialog(
+          title: const Text('Pick a Color', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: currentColor,
+              onColorChanged: (color) {
+                tempColor = color;
+              },
+              pickerAreaHeightPercent: 0.8,
+              enableAlpha: false,
+              displayThumbColor: true,
+              paletteType: PaletteType.hsvWithHue,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                String hexString = tempColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase();
+                onColorSelected('#$hexString');
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

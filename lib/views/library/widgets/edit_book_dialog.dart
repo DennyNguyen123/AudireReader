@@ -168,7 +168,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
         ElevatedButton(
           onPressed: _saveChanges,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.amber[700],
+            backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),

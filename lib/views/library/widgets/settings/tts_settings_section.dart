@@ -52,7 +52,7 @@ class TtsSettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.volume_up_rounded, color: Colors.amber[700], size: 28),
+              Icon(Icons.volume_up_rounded, color: theme.colorScheme.primary, size: 28),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.ttsSettings ?? 'TTS Settings',
@@ -80,7 +80,7 @@ class TtsSettingsSection extends StatelessWidget {
                   value: speechRate,
                   min: 0.05,
                   max: 1.0,
-                  activeColor: Colors.amber[700],
+                  activeColor: theme.colorScheme.primary,
                   onChanged: onSpeechRateSliderChanged,
                 ),
               ),
@@ -99,7 +99,7 @@ class TtsSettingsSection extends StatelessWidget {
                     suffixStyle: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.amber[300] : Colors.amber[850],
+                      color: theme.colorScheme.primary,
                     ),
                     filled: true,
                     fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -173,9 +173,9 @@ class TtsSettingsSection extends StatelessWidget {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                          border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +188,7 @@ class TtsSettingsSection extends StatelessWidget {
                             LinearProgressIndicator(
                               value: supertonic.downloadProgress,
                               backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[700]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
                             ),
                             const SizedBox(height: 4),
                             Align(
@@ -240,7 +240,7 @@ class TtsSettingsSection extends StatelessWidget {
                               icon: const Icon(Icons.download_rounded, size: 18),
                               label: const Text('Download Voice Model (96MB)'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber[700],
+                                backgroundColor: theme.colorScheme.primary,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -498,7 +498,7 @@ class TtsSettingsSection extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber[700],
+                    backgroundColor: theme.colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

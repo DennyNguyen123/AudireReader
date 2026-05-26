@@ -35,7 +35,7 @@ class GeneralSettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.settings_suggest_rounded, color: Colors.amber[700], size: 28),
+              Icon(Icons.settings_suggest_rounded, color: theme.colorScheme.primary, size: 28),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.generalPreferences ?? 'General Preferences',
@@ -59,7 +59,7 @@ class GeneralSettingsSection extends StatelessWidget {
               style: const TextStyle(fontSize: 11),
             ),
             value: openLastReadOnLaunch,
-            activeThumbColor: Colors.amber[700],
+            activeThumbColor: theme.colorScheme.primary,
             onChanged: onOpenLastReadChanged,
           ),
           const Divider(height: 1, thickness: 1),
@@ -74,7 +74,7 @@ class GeneralSettingsSection extends StatelessWidget {
               style: const TextStyle(fontSize: 11),
             ),
             value: autoCheckUpdate,
-            activeThumbColor: Colors.amber[700],
+            activeThumbColor: theme.colorScheme.primary,
             onChanged: onAutoCheckUpdateChanged,
           ),
           const Divider(height: 1, thickness: 1),
@@ -115,12 +115,12 @@ class GeneralSettingsSection extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: isCheckingUpdate ? null : onCheckUpdates,
                   icon: isCheckingUpdate
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
                           ),
                         )
                       : const Icon(Icons.system_update_alt_rounded),
@@ -129,9 +129,9 @@ class GeneralSettingsSection extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.amber[700],
+                    foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(
-                      color: Colors.amber[700]!.withValues(alpha: 0.5),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.5),
                       width: 1.5,
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),

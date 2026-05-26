@@ -313,7 +313,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                  child: Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                 ),
               ],
             );
@@ -376,9 +376,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cache cleared and sync data reset successfully.'),
-            backgroundColor: Colors.amber,
+          SnackBar(
+            content: const Text('Cache cleared and sync data reset successfully.'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -533,7 +533,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)?.resetHotkeysSuccess ?? 'All hotkeys reset to default values.'),
-          backgroundColor: Colors.amber,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -587,7 +587,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)?.enableWebdavFirst ?? 'Please enable WebDAV Sync first.'),
-          backgroundColor: Colors.amber,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -647,8 +647,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         foregroundColor: isDark ? Colors.white : Colors.black87,
       ),
       body: _isLoading && _urlController.text.isEmpty
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.amber),
+          ? Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
             )
           : Stack(
               children: [
@@ -926,8 +926,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                               ),
                               const SizedBox(height: 20),
                               Text(
@@ -942,7 +942,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               Text(
                                 AppLocalizations.of(context)?.processingSync ?? 'Processing books, cover arts, and reading progress...',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 12,
                                 ),
                               ),
