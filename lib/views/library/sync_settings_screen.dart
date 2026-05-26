@@ -64,6 +64,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   double _speechRate = 0.5;
   String _fontFamily = 'System';
   String _themeMode = 'System';
+  String? _primaryColorHex;
   List<dynamic> _voices = [];
   Map<String, String>? _selectedVoice;
   String _ttsProvider = 'system';
@@ -125,6 +126,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
       _fontFamily = settings.fontFamily.trim().isEmpty ? 'System' : settings.fontFamily;
       _themeMode = settings.themeMode.trim().isEmpty ? 'System' : settings.themeMode;
+      _primaryColorHex = settings.primaryColorHex;
       _ttsProvider = settings.ttsProvider;
 
       // Load Hotkeys & Boss Key Configurations
@@ -409,6 +411,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     String? fontFamily,
     String? themeMode,
     String? ttsProvider,
+    String? primaryColorHex,
   }) async {
     try {
       final ttsService = await TtsService.getInstance();
@@ -419,6 +422,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         fontFamily: fontFamily,
         themeMode: themeMode,
         ttsProvider: ttsProvider,
+        primaryColorHex: primaryColorHex,
       );
     } catch (e) {
       print("Failed to auto-save reading settings: $e");
@@ -689,6 +693,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         const SizedBox(height: 20),
                         AppearanceSettingsSection(
                           themeMode: _themeMode,
+                          primaryColorHex: _primaryColorHex,
                           fontSize: _fontSize,
                           fontFamily: _fontFamily,
                           onThemeModeChanged: (tMode) {
@@ -696,7 +701,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               _themeMode = tMode;
                             });
                             _saveReadingPreference(themeMode: tMode);
-                            ThemeNotifier.instance.updateTheme(tMode);
+                            ThemeNotifier.instance.updateTheme(tMode, primaryColorHex: _primaryColorHex);
+                          },
+                          onPrimaryColorChanged: (hexStr) {
+                            setState(() {
+                              _primaryColorHex = hexStr;
+                            });
+                            _saveReadingPreference(primaryColorHex: hexStr);
+                            ThemeNotifier.instance.updateTheme(_themeMode, primaryColorHex: hexStr);
                           },
                           onFontSizeChanged: (val) {
                             setState(() {

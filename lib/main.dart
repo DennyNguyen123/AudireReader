@@ -30,7 +30,10 @@ void main() async {
   // Khởi tạo trạng thái themeMode từ Database
   final db = await DatabaseHelper.getInstance();
   final settings = await db.getSettings();
-  ThemeNotifier.instance.init(settings.themeMode);
+  ThemeNotifier.instance.init(
+    settings.themeMode, 
+    primaryColorHex: settings.primaryColorHex,
+  );
   LocaleNotifier.instance.init(settings.appLocale);
   LoggerService().init(
     enableDebugLogs: settings.enableDebugLogs,
@@ -38,6 +41,21 @@ void main() async {
   );
 
   runApp(const AudireReaderApp());
+}
+
+Color _parseColor(String? hexString, Color defaultColor) {
+  if (hexString == null || hexString.trim().isEmpty) return defaultColor;
+  try {
+    final hexCode = hexString.replaceAll('#', '');
+    if (hexCode.length == 6) {
+      return Color(int.parse('FF$hexCode', radix: 16));
+    } else if (hexCode.length == 8) {
+      return Color(int.parse(hexCode, radix: 16));
+    }
+  } catch (e) {
+    // Ignore and fallback
+  }
+  return defaultColor;
 }
 
 class AudireReaderApp extends StatelessWidget {
@@ -49,6 +67,7 @@ class AudireReaderApp extends StatelessWidget {
       listenable: ThemeNotifier.instance,
       builder: (context, _) {
         final themeModeStr = ThemeNotifier.instance.themeMode;
+        final primaryColor = _parseColor(ThemeNotifier.instance.primaryColorHex, Colors.amber);
         
         ThemeMode appThemeMode;
         ThemeData? customTheme;
@@ -61,17 +80,15 @@ class AudireReaderApp extends StatelessWidget {
           appThemeMode = ThemeMode.light;
           customTheme = ThemeData(
             brightness: Brightness.light,
-            primarySwatch: Colors.amber,
             scaffoldBackgroundColor: const Color(0xFFF4ECD8),
             cardColor: const Color(0xFFEAD8B1),
             dividerColor: const Color(0xFF5B4636).withValues(alpha: 0.15),
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.amber,
+              seedColor: primaryColor,
               brightness: Brightness.light,
               surface: const Color(0xFFF4ECD8),
               onSurface: const Color(0xFF5B4636),
-              primary: const Color(0xFFB57C1E),
             ),
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.transparent,
@@ -109,20 +126,46 @@ class AudireReaderApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               theme: customTheme ?? ThemeData(
                 brightness: Brightness.light,
-                primarySwatch: Colors.amber,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: primaryColor,
+                  brightness: Brightness.light,
+                ),
                 scaffoldBackgroundColor: const Color(0xFFF5F5F7),
                 cardColor: Colors.white,
                 dividerColor: Colors.black.withValues(alpha: 0.06),
                 useMaterial3: true,
+                pageTransitionsTheme: const PageTransitionsTheme(
+                  builders: {
+                    TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                    TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+                  },
+                ),
               ),
               darkTheme: ThemeData(
                 brightness: Brightness.dark,
-                primarySwatch: Colors.amber,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: primaryColor,
+                  brightness: Brightness.dark,
+                ),
                 scaffoldBackgroundColor: const Color(0xFF121212),
                 cardColor: const Color(0xFF1E1E1E),
                 dividerColor: Colors.white.withValues(alpha: 0.1),
                 useMaterial3: true,
+                pageTransitionsTheme: const PageTransitionsTheme(
+                  builders: {
+                    TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                    TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+                    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+                  },
+                ),
               ),
+              themeAnimationDuration: const Duration(milliseconds: 500),
+              themeAnimationCurve: Curves.easeInOutCubic,
               themeMode: appThemeMode,
               locale: LocaleNotifier.instance.locale,
               localizationsDelegates: const [

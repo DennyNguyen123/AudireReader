@@ -13,9 +13,17 @@ class AppSettings {
   String? selectedVoiceLocale;
   String ttsProvider = 'system'; // 'system' hoặc 'microsoft_edge'
 
-  String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace'
-  String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia'
+  String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'
+  String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia', 'Custom'
   String appLocale = 'en';      // 'en' hoặc 'vi'
+
+  double lineHeight = 1.6;
+  double paragraphSpacing = 14.0;
+  String textAlignment = 'left';
+  double sideMargin = 20.0;
+  String? customBackgroundColor;
+  String? customTextColor;
+  String? primaryColorHex;
 
   bool webDavEnabled = false;
   String webDavUrl = '';

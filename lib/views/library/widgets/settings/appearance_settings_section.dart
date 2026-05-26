@@ -4,18 +4,22 @@ import 'settings_card.dart';
 
 class AppearanceSettingsSection extends StatelessWidget {
   final String themeMode;
+  final String? primaryColorHex;
   final double fontSize;
   final String fontFamily;
   final ValueChanged<String> onThemeModeChanged;
+  final ValueChanged<String?> onPrimaryColorChanged;
   final ValueChanged<double> onFontSizeChanged;
   final ValueChanged<String?> onFontFamilyChanged;
 
   const AppearanceSettingsSection({
     super.key,
     required this.themeMode,
+    this.primaryColorHex,
     required this.fontSize,
     required this.fontFamily,
     required this.onThemeModeChanged,
+    required this.onPrimaryColorChanged,
     required this.onFontSizeChanged,
     required this.onFontFamilyChanged,
   });
@@ -131,6 +135,27 @@ class AppearanceSettingsSection extends StatelessWidget {
               );
             }).toList(),
           ),
+          // MÀU CHỦ ĐẠO (PRIMARY COLOR)
+          const SizedBox(height: 20),
+          const Text(
+            'Primary Color',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildColorOption(context, null, Colors.amber, 'Amber'),
+                _buildColorOption(context, '2196F3', Colors.blue, 'Blue'),
+                _buildColorOption(context, '4CAF50', Colors.green, 'Green'),
+                _buildColorOption(context, '9C27B0', Colors.purple, 'Purple'),
+                _buildColorOption(context, 'F44336', Colors.red, 'Red'),
+                _buildColorOption(context, 'E91E63', Colors.pink, 'Pink'),
+                _buildColorOption(context, '009688', Colors.teal, 'Teal'),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
 
           // CỠ CHỮ SLIDER
@@ -168,9 +193,11 @@ class AppearanceSettingsSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            initialValue: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(fontFamily)
-                ? fontFamily
-                : 'System',
+            initialValue: [
+              'System', 'Serif', 'Sans-Serif', 'Monospace', 
+              'Lora', 'Merriweather', 'Inter', 'Nunito',
+              'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+            ].contains(fontFamily) ? fontFamily : 'System',
             decoration: InputDecoration(
               filled: true,
               fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -181,13 +208,19 @@ class AppearanceSettingsSection extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
+            items: [
+              'System', 'Serif', 'Sans-Serif', 'Monospace', 
+              'Lora', 'Merriweather', 'Inter', 'Nunito',
+              'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+            ].map((font) {
               return DropdownMenuItem<String>(
                 value: font,
                 child: Text(
                   font,
                   style: TextStyle(
-                    fontFamily: font == 'System' ? null : font.toLowerCase(),
+                    fontFamily: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(font)
+                        ? (font == 'System' ? null : font.toLowerCase())
+                        : font, // google_fonts requires exact family name in pubspec or dynamically loaded
                   ),
                 ),
               );
@@ -195,6 +228,57 @@ class AppearanceSettingsSection extends StatelessWidget {
             onChanged: onFontFamilyChanged,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildColorOption(BuildContext context, String? hexVal, Color displayColor, String label) {
+    final isSelected = primaryColorHex == hexVal || (primaryColorHex?.isEmpty == true && hexVal == null);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => onPrimaryColorChanged(hexVal),
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: displayColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? (isDark ? Colors.white : Colors.black87) : Colors.transparent,
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      color: displayColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
+                      size: 20,
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ParagraphWidget extends StatefulWidget {
   final String text;
   final bool isActive;
   final bool isPlaying;
   final double fontSize;
+  final double lineHeight;
+  final double paragraphSpacing;
+  final TextAlign textAlign;
   final int wordStart;
   final int wordEnd;
   final bool isDark;
@@ -21,6 +25,9 @@ class ParagraphWidget extends StatefulWidget {
     required this.isActive,
     required this.isPlaying,
     required this.fontSize,
+    required this.lineHeight,
+    required this.paragraphSpacing,
+    required this.textAlign,
     required this.wordStart,
     required this.wordEnd,
     required this.isDark,
@@ -89,8 +96,9 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     return GestureDetector(
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: EdgeInsets.only(bottom: widget.paragraphSpacing),
         padding: EdgeInsets.zero,
         decoration: const BoxDecoration(
           color: Colors.transparent,
@@ -125,6 +133,23 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     );
   }
 
+  TextStyle _getFontFamilyStyle() {
+    if (widget.fontFamily == 'System' || widget.fontFamily.isEmpty) {
+      return const TextStyle();
+    }
+    if ([
+      'Lora', 'Merriweather', 'Inter', 'Nunito',
+      'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+    ].contains(widget.fontFamily)) {
+      try {
+        return GoogleFonts.getFont(widget.fontFamily);
+      } catch (e) {
+        return TextStyle(fontFamily: widget.fontFamily);
+      }
+    }
+    return TextStyle(fontFamily: widget.fontFamily);
+  }
+
   Widget _buildRichText(Color defaultColor) {
     Color? textBgColor;
     if (widget.isActive) {
@@ -140,20 +165,20 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       }
     }
 
-    final style = TextStyle(
+    final style = _getFontFamilyStyle().copyWith(
       fontSize: widget.fontSize,
-      fontFamily: widget.fontFamily == 'System' ? null : widget.fontFamily,
-      height: 1.6,
+      height: widget.lineHeight,
       color: defaultColor,
       letterSpacing: 0.2,
       backgroundColor: textBgColor,
     );
 
     if (!widget.isActive || widget.wordStart >= widget.wordEnd || widget.wordEnd > widget.text.length) {
-      return Text(
-        widget.text,
+      return AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 300),
         style: style,
-        textAlign: TextAlign.left,
+        textAlign: widget.textAlign,
+        child: Text(widget.text),
       );
     }
 
@@ -161,22 +186,25 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     final word = widget.text.substring(widget.wordStart, widget.wordEnd);
     final after = widget.text.substring(widget.wordEnd);
 
-    return RichText(
-      textAlign: TextAlign.left,
-      text: TextSpan(
-        style: style,
-        children: [
-          TextSpan(text: before),
-          TextSpan(
-            text: word,
-            style: const TextStyle(
-              color: Colors.amber,
-              fontWeight: FontWeight.w900,
-              backgroundColor: Colors.black12,
+    return AnimatedDefaultTextStyle(
+      duration: const Duration(milliseconds: 300),
+      style: style,
+      textAlign: widget.textAlign,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: before),
+            TextSpan(
+              text: word,
+              style: const TextStyle(
+                color: Colors.amber,
+                fontWeight: FontWeight.w900,
+                backgroundColor: Colors.black12,
+              ),
             ),
-          ),
-          TextSpan(text: after),
-        ],
+            TextSpan(text: after),
+          ],
+        ),
       ),
     );
   }

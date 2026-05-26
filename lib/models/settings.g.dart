@@ -52,123 +52,158 @@ const AppSettingsSchema = CollectionSchema(
       name: r'currentBgmTrackId',
       type: IsarType.long,
     ),
-    r'developerMode': PropertySchema(
+    r'customBackgroundColor': PropertySchema(
       id: 7,
+      name: r'customBackgroundColor',
+      type: IsarType.string,
+    ),
+    r'customTextColor': PropertySchema(
+      id: 8,
+      name: r'customTextColor',
+      type: IsarType.string,
+    ),
+    r'developerMode': PropertySchema(
+      id: 9,
       name: r'developerMode',
       type: IsarType.bool,
     ),
     r'enableDebugLogs': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
+    r'lineHeight': PropertySchema(
+      id: 22,
+      name: r'lineHeight',
+      type: IsarType.double,
+    ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 20,
+      id: 23,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
+    r'paragraphSpacing': PropertySchema(
+      id: 24,
+      name: r'paragraphSpacing',
+      type: IsarType.double,
+    ),
+    r'primaryColorHex': PropertySchema(
+      id: 25,
+      name: r'primaryColorHex',
+      type: IsarType.string,
+    ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 21,
+      id: 26,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 22,
+      id: 27,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
+    r'sideMargin': PropertySchema(
+      id: 28,
+      name: r'sideMargin',
+      type: IsarType.double,
+    ),
     r'sortBy': PropertySchema(
-      id: 23,
+      id: 29,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 24,
+      id: 30,
       name: r'speechRate',
       type: IsarType.double,
     ),
+    r'textAlignment': PropertySchema(
+      id: 31,
+      name: r'textAlignment',
+      type: IsarType.string,
+    ),
     r'themeMode': PropertySchema(
-      id: 25,
+      id: 32,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 26,
+      id: 33,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 27,
+      id: 34,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 28,
+      id: 35,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 29,
+      id: 36,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 30,
+      id: 37,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -196,6 +231,18 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.appLocale.length * 3;
   bytesCount += 3 + object.bgmLoopMode.length * 3;
   bytesCount += 3 + object.bossKeyAction.length * 3;
+  {
+    final value = object.customBackgroundColor;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.customTextColor;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.fontFamily.length * 3;
   bytesCount += 3 + object.hotkeyBossKey.length * 3;
   bytesCount += 3 + object.hotkeyNextChapter.length * 3;
@@ -205,6 +252,12 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.hotkeyPlayPauseTts.length * 3;
   bytesCount += 3 + object.hotkeyPrevChapter.length * 3;
   bytesCount += 3 + object.hotkeyPrevParagraph.length * 3;
+  {
+    final value = object.primaryColorHex;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final value = object.selectedVoiceLocale;
     if (value != null) {
@@ -218,6 +271,7 @@ int _appSettingsEstimateSize(
     }
   }
   bytesCount += 3 + object.sortBy.length * 3;
+  bytesCount += 3 + object.textAlignment.length * 3;
   bytesCount += 3 + object.themeMode.length * 3;
   bytesCount += 3 + object.ttsProvider.length * 3;
   bytesCount += 3 + object.webDavUrl.length * 3;
@@ -238,30 +292,37 @@ void _appSettingsSerialize(
   writer.writeDouble(offsets[4], object.bgmVolume);
   writer.writeString(offsets[5], object.bossKeyAction);
   writer.writeLong(offsets[6], object.currentBgmTrackId);
-  writer.writeBool(offsets[7], object.developerMode);
-  writer.writeBool(offsets[8], object.enableDebugLogs);
-  writer.writeBool(offsets[9], object.enableWebDavDebug);
-  writer.writeString(offsets[10], object.fontFamily);
-  writer.writeDouble(offsets[11], object.fontSize);
-  writer.writeString(offsets[12], object.hotkeyBossKey);
-  writer.writeString(offsets[13], object.hotkeyNextChapter);
-  writer.writeString(offsets[14], object.hotkeyNextParagraph);
-  writer.writeString(offsets[15], object.hotkeyOpenChapter);
-  writer.writeString(offsets[16], object.hotkeyOpenSetting);
-  writer.writeString(offsets[17], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[18], object.hotkeyPrevChapter);
-  writer.writeString(offsets[19], object.hotkeyPrevParagraph);
-  writer.writeBool(offsets[20], object.openLastReadOnLaunch);
-  writer.writeString(offsets[21], object.selectedVoiceLocale);
-  writer.writeString(offsets[22], object.selectedVoiceName);
-  writer.writeString(offsets[23], object.sortBy);
-  writer.writeDouble(offsets[24], object.speechRate);
-  writer.writeString(offsets[25], object.themeMode);
-  writer.writeString(offsets[26], object.ttsProvider);
-  writer.writeBool(offsets[27], object.webDavEnabled);
-  writer.writeDateTime(offsets[28], object.webDavLastSync);
-  writer.writeString(offsets[29], object.webDavUrl);
-  writer.writeString(offsets[30], object.webDavUsername);
+  writer.writeString(offsets[7], object.customBackgroundColor);
+  writer.writeString(offsets[8], object.customTextColor);
+  writer.writeBool(offsets[9], object.developerMode);
+  writer.writeBool(offsets[10], object.enableDebugLogs);
+  writer.writeBool(offsets[11], object.enableWebDavDebug);
+  writer.writeString(offsets[12], object.fontFamily);
+  writer.writeDouble(offsets[13], object.fontSize);
+  writer.writeString(offsets[14], object.hotkeyBossKey);
+  writer.writeString(offsets[15], object.hotkeyNextChapter);
+  writer.writeString(offsets[16], object.hotkeyNextParagraph);
+  writer.writeString(offsets[17], object.hotkeyOpenChapter);
+  writer.writeString(offsets[18], object.hotkeyOpenSetting);
+  writer.writeString(offsets[19], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[20], object.hotkeyPrevChapter);
+  writer.writeString(offsets[21], object.hotkeyPrevParagraph);
+  writer.writeDouble(offsets[22], object.lineHeight);
+  writer.writeBool(offsets[23], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[24], object.paragraphSpacing);
+  writer.writeString(offsets[25], object.primaryColorHex);
+  writer.writeString(offsets[26], object.selectedVoiceLocale);
+  writer.writeString(offsets[27], object.selectedVoiceName);
+  writer.writeDouble(offsets[28], object.sideMargin);
+  writer.writeString(offsets[29], object.sortBy);
+  writer.writeDouble(offsets[30], object.speechRate);
+  writer.writeString(offsets[31], object.textAlignment);
+  writer.writeString(offsets[32], object.themeMode);
+  writer.writeString(offsets[33], object.ttsProvider);
+  writer.writeBool(offsets[34], object.webDavEnabled);
+  writer.writeDateTime(offsets[35], object.webDavLastSync);
+  writer.writeString(offsets[36], object.webDavUrl);
+  writer.writeString(offsets[37], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -278,31 +339,38 @@ AppSettings _appSettingsDeserialize(
   object.bgmVolume = reader.readDouble(offsets[4]);
   object.bossKeyAction = reader.readString(offsets[5]);
   object.currentBgmTrackId = reader.readLongOrNull(offsets[6]);
-  object.developerMode = reader.readBool(offsets[7]);
-  object.enableDebugLogs = reader.readBool(offsets[8]);
-  object.enableWebDavDebug = reader.readBool(offsets[9]);
-  object.fontFamily = reader.readString(offsets[10]);
-  object.fontSize = reader.readDouble(offsets[11]);
-  object.hotkeyBossKey = reader.readString(offsets[12]);
-  object.hotkeyNextChapter = reader.readString(offsets[13]);
-  object.hotkeyNextParagraph = reader.readString(offsets[14]);
-  object.hotkeyOpenChapter = reader.readString(offsets[15]);
-  object.hotkeyOpenSetting = reader.readString(offsets[16]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[17]);
-  object.hotkeyPrevChapter = reader.readString(offsets[18]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[19]);
+  object.customBackgroundColor = reader.readStringOrNull(offsets[7]);
+  object.customTextColor = reader.readStringOrNull(offsets[8]);
+  object.developerMode = reader.readBool(offsets[9]);
+  object.enableDebugLogs = reader.readBool(offsets[10]);
+  object.enableWebDavDebug = reader.readBool(offsets[11]);
+  object.fontFamily = reader.readString(offsets[12]);
+  object.fontSize = reader.readDouble(offsets[13]);
+  object.hotkeyBossKey = reader.readString(offsets[14]);
+  object.hotkeyNextChapter = reader.readString(offsets[15]);
+  object.hotkeyNextParagraph = reader.readString(offsets[16]);
+  object.hotkeyOpenChapter = reader.readString(offsets[17]);
+  object.hotkeyOpenSetting = reader.readString(offsets[18]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[19]);
+  object.hotkeyPrevChapter = reader.readString(offsets[20]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[21]);
   object.id = id;
-  object.openLastReadOnLaunch = reader.readBool(offsets[20]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[21]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[22]);
-  object.sortBy = reader.readString(offsets[23]);
-  object.speechRate = reader.readDouble(offsets[24]);
-  object.themeMode = reader.readString(offsets[25]);
-  object.ttsProvider = reader.readString(offsets[26]);
-  object.webDavEnabled = reader.readBool(offsets[27]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[28]);
-  object.webDavUrl = reader.readString(offsets[29]);
-  object.webDavUsername = reader.readString(offsets[30]);
+  object.lineHeight = reader.readDouble(offsets[22]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[23]);
+  object.paragraphSpacing = reader.readDouble(offsets[24]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[25]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[26]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[27]);
+  object.sideMargin = reader.readDouble(offsets[28]);
+  object.sortBy = reader.readString(offsets[29]);
+  object.speechRate = reader.readDouble(offsets[30]);
+  object.textAlignment = reader.readString(offsets[31]);
+  object.themeMode = reader.readString(offsets[32]);
+  object.ttsProvider = reader.readString(offsets[33]);
+  object.webDavEnabled = reader.readBool(offsets[34]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[35]);
+  object.webDavUrl = reader.readString(offsets[36]);
+  object.webDavUsername = reader.readString(offsets[37]);
   return object;
 }
 
@@ -328,19 +396,19 @@ P _appSettingsDeserializeProp<P>(
     case 6:
       return (reader.readLongOrNull(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
       return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 12:
       return (reader.readString(offset)) as P;
     case 13:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 14:
       return (reader.readString(offset)) as P;
     case 15:
@@ -354,26 +422,40 @@ P _appSettingsDeserializeProp<P>(
     case 19:
       return (reader.readString(offset)) as P;
     case 20:
-      return (reader.readBool(offset)) as P;
-    case 21:
-      return (reader.readStringOrNull(offset)) as P;
-    case 22:
-      return (reader.readStringOrNull(offset)) as P;
-    case 23:
       return (reader.readString(offset)) as P;
+    case 21:
+      return (reader.readString(offset)) as P;
+    case 22:
+      return (reader.readDouble(offset)) as P;
+    case 23:
+      return (reader.readBool(offset)) as P;
     case 24:
       return (reader.readDouble(offset)) as P;
     case 25:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 26:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 27:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 28:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 29:
       return (reader.readString(offset)) as P;
     case 30:
+      return (reader.readDouble(offset)) as P;
+    case 31:
+      return (reader.readString(offset)) as P;
+    case 32:
+      return (reader.readString(offset)) as P;
+    case 33:
+      return (reader.readString(offset)) as P;
+    case 34:
+      return (reader.readBool(offset)) as P;
+    case 35:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 36:
+      return (reader.readString(offset)) as P;
+    case 37:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1037,6 +1119,315 @@ extension AppSettingsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'customBackgroundColor',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'customBackgroundColor',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'customBackgroundColor',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'customBackgroundColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'customBackgroundColor',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customBackgroundColor',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customBackgroundColorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'customBackgroundColor',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'customTextColor',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'customTextColor',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'customTextColor',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'customTextColor',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'customTextColor',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customTextColor',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      customTextColorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'customTextColor',
+        value: '',
       ));
     });
   }
@@ -2413,11 +2804,297 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lineHeightEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lineHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lineHeightGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lineHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lineHeightLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lineHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lineHeightBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lineHeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       openLastReadOnLaunchEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'openLastReadOnLaunch',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      paragraphSpacingEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'paragraphSpacing',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      paragraphSpacingGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'paragraphSpacing',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      paragraphSpacingLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'paragraphSpacing',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      paragraphSpacingBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'paragraphSpacing',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'primaryColorHex',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'primaryColorHex',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'primaryColorHex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'primaryColorHex',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'primaryColorHex',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'primaryColorHex',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      primaryColorHexIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'primaryColorHex',
+        value: '',
       ));
     });
   }
@@ -2730,6 +3407,72 @@ extension AppSettingsQueryFilter
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sideMarginEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sideMargin',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sideMarginGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'sideMargin',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sideMarginLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'sideMargin',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sideMarginBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'sideMargin',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> sortByEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -2926,6 +3669,142 @@ extension AppSettingsQueryFilter
         upper: upper,
         includeUpper: includeUpper,
         epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'textAlignment',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'textAlignment',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'textAlignment',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'textAlignment',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      textAlignmentIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'textAlignment',
+        value: '',
       ));
     });
   }
@@ -3655,6 +4534,33 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCustomBackgroundColor() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customBackgroundColor', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCustomBackgroundColorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customBackgroundColor', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByCustomTextColor() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customTextColor', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCustomTextColorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customTextColor', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByDeveloperMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'developerMode', Sort.asc);
@@ -3830,6 +4736,18 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByLineHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lineHeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByLineHeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lineHeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       sortByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
@@ -3841,6 +4759,33 @@ extension AppSettingsQuerySortBy
       sortByOpenLastReadOnLaunchDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'openLastReadOnLaunch', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByParagraphSpacing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paragraphSpacing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByParagraphSpacingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paragraphSpacing', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByPrimaryColorHex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'primaryColorHex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByPrimaryColorHexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'primaryColorHex', Sort.desc);
     });
   }
 
@@ -3872,6 +4817,18 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySideMargin() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sideMargin', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySideMarginDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sideMargin', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySortBy() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortBy', Sort.asc);
@@ -3893,6 +4850,19 @@ extension AppSettingsQuerySortBy
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySpeechRateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'speechRate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByTextAlignment() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'textAlignment', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByTextAlignmentDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'textAlignment', Sort.desc);
     });
   }
 
@@ -4059,6 +5029,33 @@ extension AppSettingsQuerySortThenBy
       thenByCurrentBgmTrackIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentBgmTrackId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCustomBackgroundColor() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customBackgroundColor', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCustomBackgroundColorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customBackgroundColor', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByCustomTextColor() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customTextColor', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCustomTextColorDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customTextColor', Sort.desc);
     });
   }
 
@@ -4249,6 +5246,18 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByLineHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lineHeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByLineHeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lineHeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       thenByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
@@ -4260,6 +5269,33 @@ extension AppSettingsQuerySortThenBy
       thenByOpenLastReadOnLaunchDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'openLastReadOnLaunch', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByParagraphSpacing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paragraphSpacing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByParagraphSpacingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paragraphSpacing', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByPrimaryColorHex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'primaryColorHex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByPrimaryColorHexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'primaryColorHex', Sort.desc);
     });
   }
 
@@ -4291,6 +5327,18 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySideMargin() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sideMargin', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySideMarginDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sideMargin', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySortBy() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sortBy', Sort.asc);
@@ -4312,6 +5360,19 @@ extension AppSettingsQuerySortThenBy
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySpeechRateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'speechRate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByTextAlignment() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'textAlignment', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByTextAlignmentDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'textAlignment', Sort.desc);
     });
   }
 
@@ -4441,6 +5502,22 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByCustomBackgroundColor({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'customBackgroundColor',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByCustomTextColor(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'customTextColor',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByDeveloperMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'developerMode');
@@ -4538,10 +5615,31 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByLineHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lineHeight');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'openLastReadOnLaunch');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByParagraphSpacing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'paragraphSpacing');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByPrimaryColorHex(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'primaryColorHex',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -4561,6 +5659,12 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySideMargin() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sideMargin');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySortBy(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -4571,6 +5675,14 @@ extension AppSettingsQueryWhereDistinct
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySpeechRate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'speechRate');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByTextAlignment(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'textAlignment',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -4667,6 +5779,20 @@ extension AppSettingsQueryProperty
     });
   }
 
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      customBackgroundColorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'customBackgroundColor');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      customTextColorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'customTextColor');
+    });
+  }
+
   QueryBuilder<AppSettings, bool, QQueryOperations> developerModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'developerMode');
@@ -4753,10 +5879,30 @@ extension AppSettingsQueryProperty
     });
   }
 
+  QueryBuilder<AppSettings, double, QQueryOperations> lineHeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lineHeight');
+    });
+  }
+
   QueryBuilder<AppSettings, bool, QQueryOperations>
       openLastReadOnLaunchProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'openLastReadOnLaunch');
+    });
+  }
+
+  QueryBuilder<AppSettings, double, QQueryOperations>
+      paragraphSpacingProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'paragraphSpacing');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      primaryColorHexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'primaryColorHex');
     });
   }
 
@@ -4774,6 +5920,12 @@ extension AppSettingsQueryProperty
     });
   }
 
+  QueryBuilder<AppSettings, double, QQueryOperations> sideMarginProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sideMargin');
+    });
+  }
+
   QueryBuilder<AppSettings, String, QQueryOperations> sortByProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'sortBy');
@@ -4783,6 +5935,12 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, double, QQueryOperations> speechRateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'speechRate');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> textAlignmentProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'textAlignment');
     });
   }
 

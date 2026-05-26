@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
@@ -9,6 +9,7 @@ import '../models/chapter.dart';
 import '../models/progress.dart';
 import 'webdav_service.dart';
 import 'logger_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void print(Object? object) {
@@ -29,6 +30,9 @@ class SyncService {
   static SyncService? _instance;
   final WebDavService _webdav = WebDavService.getInstance();
   bool _isSyncing = false;
+  
+  // Lưu trữ trạng thái đồng bộ của các sách (bookUuid -> status)
+  final ValueNotifier<Map<String, String>> syncStateNotifier = ValueNotifier({});
 
   SyncService._();
 
@@ -38,6 +42,29 @@ class SyncService {
   }
 
   bool get isSyncing => _isSyncing;
+
+  void _updateBookSyncStatus(String bookUuid, String status) {
+    final newMap = Map<String, String>.from(syncStateNotifier.value);
+    if (status == 'success' || status == 'error') {
+      // Có thể clear trạng thái sau một thời gian ngắn nếu muốn, hoặc cứ để đó
+      // Nếu không muốn nó stuck ở loading, ta cập nhật trạng thái
+      newMap[bookUuid] = status;
+    } else {
+      newMap[bookUuid] = status;
+    }
+    syncStateNotifier.value = newMap;
+    
+    // Tự động clear trạng thái sau 3 giây nếu success/error
+    if (status == 'success' || status == 'error') {
+      Future.delayed(const Duration(seconds: 3), () {
+        final currentMap = Map<String, String>.from(syncStateNotifier.value);
+        if (currentMap[bookUuid] == status) {
+           currentMap.remove(bookUuid);
+           syncStateNotifier.value = currentMap;
+        }
+      });
+    }
+  }
 
   /// Thực hiện đồng bộ hóa toàn diện (để tương thích ngược)
   Future<SyncResult> sync() async {
@@ -255,6 +282,7 @@ class SyncService {
 
           if (!existsOnCloud) {
             print('[SyncLibrary] Uploading new local book to cloud: "${localBook.title}"');
+            _updateBookSyncStatus(localBook.uuid, 'syncing');
             try {
               // A. Upload Ảnh bìa
               bool hasCover = false;
@@ -299,9 +327,13 @@ class SyncService {
                 });
                 cloudDatabaseChanged = true;
                 print('[SyncLibrary] Successfully uploaded book: "${localBook.title}"');
+                _updateBookSyncStatus(localBook.uuid, 'success');
+              } else {
+                _updateBookSyncStatus(localBook.uuid, 'error');
               }
             } catch (e) {
               print('[SyncLibrary] Error uploading book "${localBook.title}": $e');
+              _updateBookSyncStatus(localBook.uuid, 'error');
             }
           }
         }
@@ -318,8 +350,9 @@ class SyncService {
 
           if (!existsLocally) {
             print('[SyncLibrary] Downloading book from cloud: "${cloudBook['title']}"');
+            final bookUuid = cloudBook['uuid'];
+            _updateBookSyncStatus(bookUuid, 'syncing');
             try {
-              final bookUuid = cloudBook['uuid'];
               var bytes = await _webdav.downloadBytes('/AudireReader/books/$bookUuid.json');
               if (bytes == null || bytes.isEmpty) {
                 // Fallback sang NovelReader cũ trên WebDAV
@@ -385,9 +418,13 @@ class SyncService {
                 await db.saveChapters(newChapters);
                 localDatabaseChanged = true;
                 print('[SyncLibrary] Restored book locally: "${newBook.title}"');
+                _updateBookSyncStatus(bookUuid, 'success');
+              } else {
+                _updateBookSyncStatus(bookUuid, 'error');
               }
             } catch (e) {
               print('[SyncLibrary] Error downloading book "${cloudBook['title']}": $e');
+              _updateBookSyncStatus(cloudBook['uuid'], 'error');
             }
           }
         }
@@ -464,6 +501,19 @@ class SyncService {
 
   /// Hàm nội bộ thực hiện đồng bộ Tiến trình đọc (không check lock)
   Future<bool> _syncBookProgressInternal(String bookUuid) async {
+    _updateBookSyncStatus(bookUuid, 'syncing');
+    try {
+      final res = await __syncBookProgressInternal(bookUuid);
+      _updateBookSyncStatus(bookUuid, 'success');
+      return res;
+    } catch (e) {
+      _updateBookSyncStatus(bookUuid, 'error');
+      print('[SyncProgressWrapper] Error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> __syncBookProgressInternal(String bookUuid) async {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();

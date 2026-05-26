@@ -490,6 +490,13 @@ class TtsService extends ChangeNotifier {
     String? fontFamily,
     String? themeMode,
     String? ttsProvider,
+    double? lineHeight,
+    double? paragraphSpacing,
+    String? textAlignment,
+    double? sideMargin,
+    String? customBackgroundColor,
+    String? customTextColor,
+    String? primaryColorHex,
   }) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -527,6 +534,14 @@ class TtsService extends ChangeNotifier {
         settings.selectedVoiceLocale = null;
       }
     }
+    
+    if (lineHeight != null) settings.lineHeight = lineHeight;
+    if (paragraphSpacing != null) settings.paragraphSpacing = paragraphSpacing;
+    if (textAlignment != null) settings.textAlignment = textAlignment;
+    if (sideMargin != null) settings.sideMargin = sideMargin;
+    if (customBackgroundColor != null) settings.customBackgroundColor = customBackgroundColor;
+    if (customTextColor != null) settings.customTextColor = customTextColor;
+    if (primaryColorHex != null) settings.primaryColorHex = primaryColorHex;
     
     await db.saveSettings(settings);
     notifyListeners();

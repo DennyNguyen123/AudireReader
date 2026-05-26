@@ -7,14 +7,29 @@ class ThemeNotifier extends ChangeNotifier {
   String _themeMode = 'System';
   String get themeMode => _themeMode;
 
-  void init(String mode) {
+  String? _primaryColorHex;
+  String? get primaryColorHex => _primaryColorHex;
+
+  void init(String mode, {String? primaryColorHex}) {
     _themeMode = mode.isEmpty ? 'System' : mode;
+    _primaryColorHex = primaryColorHex;
   }
 
-  void updateTheme(String mode) {
+  void updateTheme(String mode, {String? primaryColorHex}) {
     final normalized = mode.isEmpty ? 'System' : mode;
+    bool changed = false;
+    
     if (_themeMode != normalized) {
       _themeMode = normalized;
+      changed = true;
+    }
+    
+    if (_primaryColorHex != primaryColorHex) {
+      _primaryColorHex = primaryColorHex;
+      changed = true;
+    }
+    
+    if (changed) {
       notifyListeners();
     }
   }

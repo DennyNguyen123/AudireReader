@@ -18,9 +18,21 @@ class ReaderSettingsSheet extends StatefulWidget {
   final List<dynamic> initialVoices;
   final Map<String, String>? initialSelectedVoice;
 
+  final double lineHeight;
+  final double paragraphSpacing;
+  final String textAlignment;
+  final double sideMargin;
+  final String? customBackgroundColor;
+  final String? customTextColor;
+
   final ValueChanged<String> onThemeModeChanged;
   final ValueChanged<double> onFontSizeChanged;
   final ValueChanged<String> onFontFamilyChanged;
+  final ValueChanged<double> onLineHeightChanged;
+  final ValueChanged<double> onParagraphSpacingChanged;
+  final ValueChanged<String> onTextAlignmentChanged;
+  final ValueChanged<double> onSideMarginChanged;
+  final Function(String? bg, String? text) onCustomColorChanged;
   final ValueChanged<double> onSpeechRateChanged;
   final Function(String provider, List<dynamic> voices, Map<String, String>? selectedVoice) onTtsProviderChanged;
   final ValueChanged<Map<String, String>?> onVoiceChanged;
@@ -35,9 +47,20 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.ttsProvider,
     required this.initialVoices,
     this.initialSelectedVoice,
+    required this.lineHeight,
+    required this.paragraphSpacing,
+    required this.textAlignment,
+    required this.sideMargin,
+    this.customBackgroundColor,
+    this.customTextColor,
     required this.onThemeModeChanged,
     required this.onFontSizeChanged,
     required this.onFontFamilyChanged,
+    required this.onLineHeightChanged,
+    required this.onParagraphSpacingChanged,
+    required this.onTextAlignmentChanged,
+    required this.onSideMarginChanged,
+    required this.onCustomColorChanged,
     required this.onSpeechRateChanged,
     required this.onTtsProviderChanged,
     required this.onVoiceChanged,
@@ -55,6 +78,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   late String _ttsProvider;
   late List<dynamic> _voices;
   Map<String, String>? _selectedVoice;
+
+  late double _lineHeight;
+  late double _paragraphSpacing;
+  late String _textAlignment;
+  late double _sideMargin;
+  String? _customBackgroundColor;
+  String? _customTextColor;
 
   final _speedController = TextEditingController();
   final _voiceSearchController = TextEditingController();
@@ -76,6 +106,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     _ttsProvider = widget.ttsProvider;
     _voices = List.from(widget.initialVoices);
     _selectedVoice = widget.initialSelectedVoice;
+
+    _lineHeight = widget.lineHeight;
+    _paragraphSpacing = widget.paragraphSpacing;
+    _textAlignment = widget.textAlignment;
+    _sideMargin = widget.sideMargin;
+    _customBackgroundColor = widget.customBackgroundColor;
+    _customTextColor = widget.customTextColor;
 
     _speedController.text = (_speechRate * 2).toStringAsFixed(3);
   }
@@ -196,7 +233,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: ['System', 'Light', 'Dark', 'Sepia'].map((theme) {
+              children: ['System', 'Light', 'Dark', 'Sepia', 'Custom'].map((theme) {
                 final isSelected = _themeMode == theme;
                 Color btnBg;
                 Color textCol;
@@ -214,10 +251,14 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   btnBg = const Color(0xFF121212);
                   textCol = Colors.white70;
                   icon = Icons.nightlight_round;
-                } else { // Sepia
+                } else if (theme == 'Sepia') {
                   btnBg = const Color(0xFFF4ECD8);
                   textCol = const Color(0xFF5B4636);
                   icon = Icons.menu_book_rounded;
+                } else {
+                  btnBg = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE8EAF6);
+                  textCol = isDark ? Colors.tealAccent : Colors.indigo;
+                  icon = Icons.color_lens_rounded;
                 }
                 
                 return Expanded(
@@ -266,9 +307,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                                     ? AppLocalizations.of(context)!.light 
                                     : theme == 'Dark' 
                                         ? AppLocalizations.of(context)!.dark 
-                                        : AppLocalizations.of(context)!.sepia,
+                                        : theme == 'Sepia'
+                                            ? AppLocalizations.of(context)!.sepia
+                                            : 'Custom',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               color: isSelected ? Colors.amber[700] : textCol,
                             ),
@@ -282,38 +325,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             ),
             const SizedBox(height: 20),
 
-            // CỠ CHỮ
-            Row(
-              children: [
-                const Icon(Icons.format_size_rounded),
-                const SizedBox(width: 12),
-                Text(AppLocalizations.of(context)!.fontSize, style: TextStyle(color: labelColor)),
-                Expanded(
-                  child: Slider(
-                    value: _fontSize,
-                    min: 14.0,
-                    max: 28.0,
-                    divisions: 7,
-                    activeColor: Colors.amber[700],
-                    label: _fontSize.round().toString(),
-                    onChanged: (val) {
-                      setState(() {
-                        _fontSize = val;
-                      });
-                      widget.onFontSizeChanged(val);
-                      widget.ttsService.updateSettings(fontSize: val);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // CHỌN PHÔNG CHỮ (Font Family Dropdown)
+            // CỠ CHỮ VÀ FONT
             Text(AppLocalizations.of(context)!.fontStyle, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(_fontFamily) 
+              initialValue: ['System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'].contains(_fontFamily) 
                   ? _fontFamily 
                   : 'System',
               decoration: InputDecoration(
@@ -326,7 +342,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               dropdownColor: sheetBg,
-              items: ['System', 'Serif', 'Sans-Serif', 'Monospace'].map((font) {
+              items: ['System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'].map((font) {
                 return DropdownMenuItem<String>(
                   value: font,
                   child: Text(
@@ -348,6 +364,237 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 }
               },
             ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                const Icon(Icons.format_size_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Slider(
+                    value: _fontSize,
+                    min: 14.0,
+                    max: 28.0,
+                    divisions: 14,
+                    activeColor: Colors.amber[700],
+                    label: _fontSize.round().toString(),
+                    onChanged: (val) {
+                      setState(() {
+                        _fontSize = val;
+                      });
+                      widget.onFontSizeChanged(val);
+                      widget.ttsService.updateSettings(fontSize: val);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // KHOẢNG CÁCH DÒNG (LINE HEIGHT)
+            Row(
+              children: [
+                const Icon(Icons.format_line_spacing_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Slider(
+                    value: _lineHeight,
+                    min: 1.2,
+                    max: 2.2,
+                    divisions: 10,
+                    activeColor: Colors.amber[700],
+                    label: _lineHeight.toStringAsFixed(1),
+                    onChanged: (val) {
+                      setState(() {
+                        _lineHeight = val;
+                      });
+                      widget.onLineHeightChanged(val);
+                      widget.ttsService.updateSettings(lineHeight: val);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // KHOẢNG CÁCH ĐOẠN VÀ LỀ HAI BÊN
+            Row(
+              children: [
+                const Icon(Icons.straighten_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Paragraph Spacing', style: TextStyle(fontSize: 12, color: labelColor)),
+                      Slider(
+                        value: _paragraphSpacing,
+                        min: 4.0,
+                        max: 32.0,
+                        divisions: 14,
+                        activeColor: Colors.amber[700],
+                        label: _paragraphSpacing.round().toString(),
+                        onChanged: (val) {
+                          setState(() {
+                            _paragraphSpacing = val;
+                          });
+                          widget.onParagraphSpacingChanged(val);
+                          widget.ttsService.updateSettings(paragraphSpacing: val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Side Margin', style: TextStyle(fontSize: 12, color: labelColor)),
+                      Slider(
+                        value: _sideMargin,
+                        min: 0.0,
+                        max: 60.0,
+                        divisions: 12,
+                        activeColor: Colors.amber[700],
+                        label: _sideMargin.round().toString(),
+                        onChanged: (val) {
+                          setState(() {
+                            _sideMargin = val;
+                          });
+                          widget.onSideMarginChanged(val);
+                          widget.ttsService.updateSettings(sideMargin: val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // CHỌN PHÔNG CHỮ (Font Family Dropdown)
+            Row(
+              children: [
+                const Icon(Icons.font_download_rounded),
+                const SizedBox(width: 12),
+                Text(AppLocalizations.of(context)!.fontStyle, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: [
+                'System', 'Serif', 'Sans-Serif', 'Monospace', 
+                'Lora', 'Merriweather', 'Inter', 'Nunito',
+                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+              ].contains(_fontFamily) ? _fontFamily : 'System',
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              items: [
+                'System', 'Serif', 'Sans-Serif', 'Monospace', 
+                'Lora', 'Merriweather', 'Inter', 'Nunito',
+                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+              ].map((font) {
+                return DropdownMenuItem<String>(
+                  value: font,
+                  child: Text(
+                    font,
+                    style: TextStyle(
+                      fontFamily: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(font)
+                          ? (font == 'System' ? null : font.toLowerCase())
+                          : font,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _fontFamily = val;
+                  });
+                  widget.onFontFamilyChanged(val);
+                  widget.ttsService.updateSettings(fontFamily: val);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // CĂN LỀ TEXT (ALIGNMENT)
+            Row(
+              children: [
+                const Icon(Icons.format_align_left_rounded),
+                const SizedBox(width: 12),
+                Text('Text Alignment', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                const Spacer(),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'left', icon: Icon(Icons.format_align_left_rounded)),
+                    ButtonSegment(value: 'justify', icon: Icon(Icons.format_align_justify_rounded)),
+                  ],
+                  selected: {_textAlignment},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      _textAlignment = newSelection.first;
+                    });
+                    widget.onTextAlignmentChanged(newSelection.first);
+                    widget.ttsService.updateSettings(textAlignment: newSelection.first);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            if (_themeMode == 'Custom') ...[
+              const SizedBox(height: 16),
+              Text('Custom Colors', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: TextEditingController(text: _customBackgroundColor),
+                      decoration: InputDecoration(
+                        labelText: 'Background (Hex)',
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onSubmitted: (val) {
+                        setState(() => _customBackgroundColor = val);
+                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                        widget.ttsService.updateSettings(customBackgroundColor: val);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: TextEditingController(text: _customTextColor),
+                      decoration: InputDecoration(
+                        labelText: 'Text (Hex)',
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onSubmitted: (val) {
+                        setState(() => _customTextColor = val);
+                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                        widget.ttsService.updateSettings(customTextColor: val);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Enter hex color like #1A1A1A or FFFFFF and press Enter', style: TextStyle(fontSize: 10, color: labelColor)),
+            ],
             const SizedBox(height: 20),
             Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
             const SizedBox(height: 20),

@@ -37,6 +37,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   String _themeMode = 'System';
   String _ttsProvider = 'system';
 
+  double _lineHeight = 1.6;
+  double _paragraphSpacing = 14.0;
+  String _textAlignment = 'left';
+  double _sideMargin = 20.0;
+  String? _customBackgroundColor;
+  String? _customTextColor;
+
   final ScrollController _scrollController = ScrollController();
 
   // Bookmarks, Highlights & Notes
@@ -402,6 +409,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       
       dynamic rawTheme = settings.themeMode;
       _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty) ? 'System' : rawTheme.toString();
+      
+      _lineHeight = settings.lineHeight.isNaN ? 1.6 : settings.lineHeight;
+      _paragraphSpacing = settings.paragraphSpacing.isNaN ? 14.0 : settings.paragraphSpacing;
+      _textAlignment = settings.textAlignment;
+      _sideMargin = settings.sideMargin.isNaN ? 20.0 : settings.sideMargin;
+      _customBackgroundColor = settings.customBackgroundColor;
+      _customTextColor = settings.customTextColor;
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
@@ -516,12 +530,29 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     return Theme.of(context).brightness == Brightness.dark;
   }
 
+  Color _parseColor(String? hexColor, Color fallback) {
+    if (hexColor == null || hexColor.isEmpty) return fallback;
+    try {
+      String cleanHex = hexColor.replaceAll('#', '');
+      if (cleanHex.length == 6) cleanHex = 'FF$cleanHex';
+      return Color(int.parse(cleanHex, radix: 16));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   Color _getBackgroundColor(bool isDark) {
+    if (_themeMode == 'Custom') {
+      return _parseColor(_customBackgroundColor, isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6));
+    }
     if (_themeMode == 'Sepia') return const Color(0xFFF4ECD8);
     return isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6);
   }
 
   Color _getTextColor(bool isDark) {
+    if (_themeMode == 'Custom') {
+      return _parseColor(_customTextColor, isDark ? Colors.white70 : Colors.black87);
+    }
     if (_themeMode == 'Sepia') return const Color(0xFF5B4636);
     return isDark ? Colors.white70 : Colors.black87;
   }
@@ -540,6 +571,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         ttsProvider: _ttsProvider,
         initialVoices: _voices,
         initialSelectedVoice: _selectedVoice,
+        lineHeight: _lineHeight,
+        paragraphSpacing: _paragraphSpacing,
+        textAlignment: _textAlignment,
+        sideMargin: _sideMargin,
+        customBackgroundColor: _customBackgroundColor,
+        customTextColor: _customTextColor,
         onThemeModeChanged: (theme) {
           setState(() {
             _themeMode = theme;
@@ -553,6 +590,32 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         onFontFamilyChanged: (val) {
           setState(() {
             _fontFamily = val;
+          });
+        },
+        onLineHeightChanged: (val) {
+          setState(() {
+            _lineHeight = val;
+          });
+        },
+        onParagraphSpacingChanged: (val) {
+          setState(() {
+            _paragraphSpacing = val;
+          });
+        },
+        onTextAlignmentChanged: (val) {
+          setState(() {
+            _textAlignment = val;
+          });
+        },
+        onSideMarginChanged: (val) {
+          setState(() {
+            _sideMargin = val;
+          });
+        },
+        onCustomColorChanged: (bg, text) {
+          setState(() {
+            _customBackgroundColor = bg;
+            _customTextColor = text;
           });
         },
         onSpeechRateChanged: (val) {
@@ -645,7 +708,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               body: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: _sideMargin, vertical: 10),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -663,7 +726,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     child: ListView.builder(
                       controller: _scrollController,
                       cacheExtent: 100000,
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+                      padding: EdgeInsets.fromLTRB(_sideMargin, 10, _sideMargin, 100),
                       itemCount: chapter.paragraphs.length,
                       itemBuilder: (context, index) {
                         final paragraphText = chapter.paragraphs[index];
@@ -678,6 +741,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           isActive: isActive,
                           isPlaying: _ttsService.isPlaying,
                           fontSize: _fontSize,
+                          lineHeight: _lineHeight,
+                          paragraphSpacing: _paragraphSpacing,
+                          textAlign: _textAlignment == 'justify' ? TextAlign.justify : TextAlign.left,
                           wordStart: isActive ? _ttsService.wordStart : 0,
                           wordEnd: isActive ? _ttsService.wordEnd : 0,
                           isDark: isDark,
