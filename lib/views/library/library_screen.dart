@@ -878,27 +878,42 @@ class _LibraryScreenState extends State<LibraryScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  book.coverPath != null && book.coverPath!.isNotEmpty && File(book.coverPath!).existsSync()
-                      ? Image.file(
+                  Builder(
+                    builder: (context) {
+                      final hasPath = book.coverPath != null && book.coverPath!.isNotEmpty;
+                      final fileExists = hasPath ? File(book.coverPath!).existsSync() : false;
+                      // ignore: avoid_print
+                      print('[LibraryScreen] Card "${book.title}" -> hasPath: $hasPath, exists: $fileExists, path: ${book.coverPath}');
+                      
+                      if (hasPath && fileExists) {
+                        return Image.file(
                           File(book.coverPath!),
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: isDark ? Colors.grey[850] : Colors.grey[300],
-                            child: Icon(
-                              Icons.book_rounded,
-                              size: 40,
-                              color: isDark ? Colors.white30 : Colors.black38,
-                            ),
-                          ),
-                        )
-                      : Container(
+                          errorBuilder: (context, error, stackTrace) {
+                            // ignore: avoid_print
+                            print('[LibraryScreen] Error loading image for "${book.title}": $error');
+                            return Container(
+                              color: isDark ? Colors.grey[850] : Colors.grey[300],
+                              child: Icon(
+                                Icons.book_rounded,
+                                size: 40,
+                                color: isDark ? Colors.white30 : Colors.black38,
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        return Container(
                           color: isDark ? Colors.grey[850] : Colors.grey[300],
                           child: Icon(
                             Icons.book_rounded,
                             size: 40,
                             color: isDark ? Colors.white30 : Colors.black38,
                           ),
-                        ),
+                        );
+                      }
+                    },
+                  ),
                   Positioned(
                     top: 6,
                     left: 6,

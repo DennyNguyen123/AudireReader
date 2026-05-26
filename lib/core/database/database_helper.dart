@@ -51,10 +51,17 @@ class DatabaseHelper {
         if (path != null && path.isNotEmpty) {
           final fileName = p.basename(path);
           final newPath = p.join(newAppDirPath, 'covers', fileName);
+          final fileExists = File(newPath).existsSync();
+          // ignore: avoid_print
+          print('[Migration] Book "${book.title}":\n  Old Path: $path\n  New Path: $newPath\n  File exists: $fileExists');
+          
           if (path != newPath) {
             book.coverPath = newPath;
             booksToUpdate.add(book);
           }
+        } else {
+          // ignore: avoid_print
+          print('[Migration] Book "${book.title}": coverPath is null or empty');
         }
       }
       if (booksToUpdate.isNotEmpty) {
