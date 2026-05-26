@@ -49,11 +49,9 @@ class DatabaseHelper {
       for (final book in books) {
         final path = book.coverPath;
         if (path != null && path.isNotEmpty) {
-          final normalizedPath = path.replaceAll('\\', '/');
-          final expectedPart = '/AudireReader/covers/';
-          if (!normalizedPath.contains(expectedPart)) {
-            final fileName = p.basename(path);
-            final newPath = p.join(newAppDirPath, 'covers', fileName);
+          final fileName = p.basename(path);
+          final newPath = p.join(newAppDirPath, 'covers', fileName);
+          if (path != newPath) {
             book.coverPath = newPath;
             booksToUpdate.add(book);
           }
