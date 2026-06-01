@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
@@ -135,7 +136,7 @@ class AudireReaderApp extends StatelessWidget {
                 dividerColor: Colors.black.withValues(alpha: 0.06),
                 useMaterial3: true,
                 pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: {
+                  builders: <TargetPlatform, PageTransitionsBuilder>{
                     TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
                     TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                     TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
@@ -155,7 +156,7 @@ class AudireReaderApp extends StatelessWidget {
                 dividerColor: Colors.white.withValues(alpha: 0.1),
                 useMaterial3: true,
                 pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: {
+                  builders: <TargetPlatform, PageTransitionsBuilder>{
                     TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
                     TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                     TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
