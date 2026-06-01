@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import '../../../models/chapter.dart';
 import '../../../services/tts_service.dart';
 import 'bgm_player_sheet.dart';
+import 'reader_tts_settings_sheet.dart';
 
 class BottomAudioPanel extends StatefulWidget {
   final TtsService ttsService;
@@ -255,7 +256,22 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(width: 42), // Invisible spacer to balance the BGM button on the right
+                  _buildControlButton(
+                    icon: Icons.headphones_rounded,
+                    iconSize: 22,
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (context) => ReaderTtsSettingsSheet(
+                          ttsService: widget.ttsService,
+                        ),
+                      );
+                    },
+                    tooltip: "TTS Settings",
+                    textColor: widget.textColor,
+                  ),
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,

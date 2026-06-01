@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/theme_notifier.dart';
-import '../../library/pronunciation_dictionary_screen.dart';
-import '../../../services/supertonic_service.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class ReaderSettingsSheet extends StatefulWidget {
@@ -12,10 +10,6 @@ class ReaderSettingsSheet extends StatefulWidget {
   final String themeMode;
   final double fontSize;
   final String fontFamily;
-  final double speechRate;
-  final String ttsProvider;
-  final List<dynamic> initialVoices;
-  final Map<String, String>? initialSelectedVoice;
 
   final double lineHeight;
   final double paragraphSpacing;
@@ -32,9 +26,6 @@ class ReaderSettingsSheet extends StatefulWidget {
   final ValueChanged<String> onTextAlignmentChanged;
   final ValueChanged<double> onSideMarginChanged;
   final Function(String? bg, String? text) onCustomColorChanged;
-  final ValueChanged<double> onSpeechRateChanged;
-  final Function(String provider, List<dynamic> voices, Map<String, String>? selectedVoice) onTtsProviderChanged;
-  final ValueChanged<Map<String, String>?> onVoiceChanged;
 
   const ReaderSettingsSheet({
     super.key,
@@ -42,10 +33,6 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.themeMode,
     required this.fontSize,
     required this.fontFamily,
-    required this.speechRate,
-    required this.ttsProvider,
-    required this.initialVoices,
-    this.initialSelectedVoice,
     required this.lineHeight,
     required this.paragraphSpacing,
     required this.textAlignment,
@@ -60,9 +47,6 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.onTextAlignmentChanged,
     required this.onSideMarginChanged,
     required this.onCustomColorChanged,
-    required this.onSpeechRateChanged,
-    required this.onTtsProviderChanged,
-    required this.onVoiceChanged,
   });
 
   @override
@@ -73,10 +57,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   late String _themeMode;
   late double _fontSize;
   late String _fontFamily;
-  late double _speechRate;
-  late String _ttsProvider;
-  late List<dynamic> _voices;
-  Map<String, String>? _selectedVoice;
 
   late double _lineHeight;
   late double _paragraphSpacing;
@@ -85,12 +65,8 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   String? _customBackgroundColor;
   String? _customTextColor;
 
-  final _speedController = TextEditingController();
-  final _voiceSearchController = TextEditingController();
   late final TextEditingController _customBgController;
   late final TextEditingController _customTextController;
-  String _selectedLanguageFilter = 'all';
-  String _voiceSearchQuery = '';
 
   @override
   void initState() {
@@ -98,10 +74,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     _themeMode = widget.themeMode;
     _fontSize = widget.fontSize;
     _fontFamily = widget.fontFamily;
-    _speechRate = widget.speechRate;
-    _ttsProvider = widget.ttsProvider;
-    _voices = List.from(widget.initialVoices);
-    _selectedVoice = widget.initialSelectedVoice;
 
     _lineHeight = widget.lineHeight;
     _paragraphSpacing = widget.paragraphSpacing;
@@ -112,13 +84,10 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
     _customBgController = TextEditingController(text: _customBackgroundColor);
     _customTextController = TextEditingController(text: _customTextColor);
-    _speedController.text = (_speechRate * 2).toStringAsFixed(3);
   }
 
   @override
   void dispose() {
-    _speedController.dispose();
-    _voiceSearchController.dispose();
     _customBgController.dispose();
     _customTextController.dispose();
     super.dispose();
@@ -128,51 +97,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     return Theme.of(context).brightness == Brightness.dark;
   }
 
-  Future<void> _loadVoices(String provider) async {
-    try {
-      final list = await widget.ttsService.getVoicesForProvider(provider);
-      final settings = await widget.ttsService.getSettings();
-
-      Map<String, String>? initialVoice;
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == settings.selectedVoiceName &&
-              v['locale']?.toString() == settings.selectedVoiceLocale) {
-            matched = v;
-            break;
-          }
-        }
-        if (matched != null) {
-          initialVoice = Map<String, String>.from(
-            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-          );
-        }
-      } else if (provider == 'microsoft_edge' && list.isNotEmpty) {
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == 'vi-VN-HoaiMyNeural') {
-            matched = v;
-            break;
-          }
-        }
-        matched ??= list.first;
-        initialVoice = Map<String, String>.from(
-          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-        );
-        widget.ttsService.updateSettings(voice: initialVoice);
-      }
-
-      setState(() {
-        _voices = list;
-        _selectedVoice = initialVoice;
-      });
-      
-      widget.onTtsProviderChanged(provider, list, initialVoice);
-    } catch (e) {
-      debugPrint("Failed to load voices in settings sheet: $e");
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -636,598 +560,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               const SizedBox(height: 8),
               Text('Enter hex color like #1A1A1A or FFFFFF and press Enter', style: TextStyle(fontSize: 10, color: labelColor)),
             ],
-            const SizedBox(height: 20),
-            Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
-            const SizedBox(height: 20),
-
-            // 🗣️ NHÓM 2: TEXT-TO-SPEECH (TTS)
-            Row(
-              children: [
-                Icon(Icons.volume_up_rounded, size: 16, color: accentColor),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)!.textToSpeechTts,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // SLEEP TIMER
-            Text(
-              widget.ttsService.isSleepTimerActive 
-                  ? AppLocalizations.of(context)!.sleepTimerRemaining('${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}')
-                  : widget.ttsService.stopAtEndOfChapter 
-                      ? AppLocalizations.of(context)!.sleepTimerStopAtEnd
-                      : AppLocalizations.of(context)!.sleepTimer,
-              style: TextStyle(fontWeight: FontWeight.bold, color: labelColor),
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChoiceChip(
-                    label: Text(AppLocalizations.of(context)!.off, style: const TextStyle(fontSize: 12)),
-                    selected: !widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter,
-                    selectedColor: accentColor,
-                    labelStyle: TextStyle(
-                      color: (!widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter) ? Colors.white : labelColor
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        widget.ttsService.cancelSleepTimer();
-                        widget.ttsService.enableStopAtEndOfChapter(false);
-                        setState(() {});
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('15m', style: TextStyle(fontSize: 12)),
-                    selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15,
-                    selectedColor: accentColor,
-                    labelStyle: TextStyle(
-                      color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15) ? Colors.white : labelColor
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        widget.ttsService.startSleepTimer(15);
-                        setState(() {});
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('30m', style: TextStyle(fontSize: 12)),
-                    selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30,
-                    selectedColor: accentColor,
-                    labelStyle: TextStyle(
-                      color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30) ? Colors.white : labelColor
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        widget.ttsService.startSleepTimer(30);
-                        setState(() {});
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('45m', style: TextStyle(fontSize: 12)),
-                    selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45,
-                    selectedColor: accentColor,
-                    labelStyle: TextStyle(
-                      color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45) ? Colors.white : labelColor
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        widget.ttsService.startSleepTimer(45);
-                        setState(() {});
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text(AppLocalizations.of(context)!.endChapter, style: const TextStyle(fontSize: 12)),
-                    selected: widget.ttsService.stopAtEndOfChapter,
-                    selectedColor: accentColor,
-                    labelStyle: TextStyle(
-                      color: widget.ttsService.stopAtEndOfChapter ? Colors.white : labelColor
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        widget.ttsService.enableStopAtEndOfChapter(true);
-                        setState(() {});
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-             // TỐC ĐỘ NÓI
-             Row(
-               children: [
-                 const Icon(Icons.speed_rounded),
-                 const SizedBox(width: 12),
-                 Text(AppLocalizations.of(context)!.readingSpeed, style: TextStyle(color: labelColor)),
-                 Expanded(
-                   child: Slider(
-                     value: _speechRate,
-                     min: 0.05,
-                     max: 1.0,
-                     activeColor: accentColor,
-                     onChanged: (val) {
-                       setState(() {
-                         _speechRate = val;
-                         _speedController.text = (val * 2).toStringAsFixed(3);
-                       });
-                       widget.onSpeechRateChanged(val);
-                       widget.ttsService.updateSettings(speechRate: val);
-                     },
-                   ),
-                 ),
-                 SizedBox(
-                   width: 85,
-                   height: 38,
-                   child: TextField(
-                     controller: _speedController,
-                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                     textAlign: TextAlign.center,
-                     style: TextStyle(
-                       fontSize: 12, 
-                       fontWeight: FontWeight.bold,
-                       color: labelColor,
-                     ),
-                     decoration: InputDecoration(
-                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                       suffixText: 'x',
-                       suffixStyle: TextStyle(
-                         fontSize: 11, 
-                         fontWeight: FontWeight.bold, 
-                         color: accentColor
-                       ),
-                       filled: true,
-                       fillColor: isDark ? Colors.white10 : Colors.black12,
-                       border: OutlineInputBorder(
-                         borderRadius: BorderRadius.circular(10),
-                         borderSide: BorderSide.none,
-                       ),
-                     ),
-                     onChanged: (text) {
-                       final double? val = double.tryParse(text);
-                       if (val != null) {
-                         final clampedMultiplier = val.clamp(0.1, 2.0);
-                         final newRate = clampedMultiplier / 2.0;
-                         setState(() {
-                           _speechRate = newRate;
-                         });
-                         widget.onSpeechRateChanged(newRate);
-                         widget.ttsService.updateSettings(speechRate: newRate);
-                       }
-                     },
-                   ),
-                 ),
-               ],
-             ),
-            const SizedBox(height: 16),
-
-            // CHỌN ĐỘNG CƠ TTS (TTS Provider Dropdown)
-            Text(AppLocalizations.of(context)!.ttsProvider, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: _ttsProvider,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: isDark ? Colors.white10 : Colors.black12,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              dropdownColor: sheetBg,
-              items: [
-                DropdownMenuItem<String>(
-                  value: 'system',
-                  child: Text(AppLocalizations.of(context)!.systemTtsOffline, style: const TextStyle(fontSize: 13)),
-                ),
-                DropdownMenuItem<String>(
-                  value: 'microsoft_edge',
-                  child: Text(AppLocalizations.of(context)!.edgeTtsOnline, style: const TextStyle(fontSize: 13)),
-                ),
-                const DropdownMenuItem<String>(
-                  value: 'supertonic',
-                  child: Text('Supertonic Offline AI', style: TextStyle(fontSize: 13)),
-                ),
-              ],
-              onChanged: (val) async {
-                if (val != null) {
-                  setState(() {
-                    _ttsProvider = val;
-                    _voices = [];
-                    _selectedVoice = null;
-                  });
-
-                  await widget.ttsService.updateSettings(ttsProvider: val);
-                  await _loadVoices(val);
-                  
-                  if (val == 'supertonic') {
-                    setState(() {
-                      _selectedVoice = {
-                        'name': 'M1',
-                        'locale': 'offline',
-                        'gender': 'Male',
-                      };
-                    });
-                    widget.onVoiceChanged(_selectedVoice);
-                  }
-                }
-              },
-            ),
-            if (_ttsProvider == 'supertonic') ...[
-              const SizedBox(height: 16),
-              ListenableBuilder(
-                listenable: SupertonicService.getInstance(),
-                builder: (context, _) {
-                  final supertonic = SupertonicService.getInstance();
-                  return FutureBuilder<bool>(
-                    future: supertonic.checkModelExists(),
-                    builder: (context, snapshot) {
-                      final modelExists = snapshot.data ?? false;
-                      
-                      if (supertonic.isDownloading) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: accentColor.withValues(alpha: 0.3)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                supertonic.downloadStatus,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: labelColor),
-                              ),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: supertonic.downloadProgress,
-                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                              ),
-                              const SizedBox(height: 4),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  '${(supertonic.downloadProgress * 100).toStringAsFixed(1)}%',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: labelColor),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      if (!modelExists) {
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white10 : Colors.black12,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Offline AI Model Required',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: labelColor),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'To use Supertonic Offline AI voices, you need to download the voice model files (~96MB) to your device.',
-                                style: TextStyle(fontSize: 12, color: labelColor.withValues(alpha: 0.7)),
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  supertonic.downloadModelFiles().then((success) {
-                                    if (success) {
-                                      supertonic.initializeEngine();
-                                    }
-                                  });
-                                },
-                                icon: const Icon(Icons.download_rounded, size: 18),
-                                label: const Text('Download Voice Model (96MB)'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: accentColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Offline Voice Model Ready',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green),
-                                  ),
-                                  Text(
-                                    'Supertonic Offline AI is fully operational.',
-                                    style: TextStyle(fontSize: 11, color: labelColor.withValues(alpha: 0.7)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                              tooltip: 'Delete Model File',
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    backgroundColor: sheetBg,
-                                    title: Text('Delete Model Files?', style: TextStyle(color: labelColor)),
-                                    content: Text('Are you sure you want to delete the offline AI model files to free up space? You will need to redownload them to use this feature again.', style: TextStyle(color: labelColor.withValues(alpha: 0.8))),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          supertonic.deleteModelFiles();
-                                        },
-                                        child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
             ],
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context); // Đóng Bottom Sheet
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PronunciationDictionaryScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.record_voice_over_rounded),
-              label: Text(AppLocalizations.of(context)!.managePronunciation),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // CHỌN GIỌNG ĐỌC & BỘ LỌC NGÔN NGỮ
-            if (_voices.isNotEmpty) ...[
-              // BỘ LỌC NGÔN NGỮ
-              Text(AppLocalizations.of(context)!.languageFilter, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedLanguageFilter,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                dropdownColor: sheetBg,
-                items: [
-                  DropdownMenuItem<String>(
-                    value: 'all',
-                    child: Text(AppLocalizations.of(context)!.allLanguages, style: const TextStyle(fontSize: 13)),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'vi',
-                    child: Text(AppLocalizations.of(context)!.vietnamese, style: const TextStyle(fontSize: 13)),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'en',
-                    child: Text(AppLocalizations.of(context)!.english, style: const TextStyle(fontSize: 13)),
-                  ),
-                  DropdownMenuItem<String>(
-                    value: 'others',
-                    child: Text(AppLocalizations.of(context)!.otherLanguages, style: const TextStyle(fontSize: 13)),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _selectedLanguageFilter = val;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Ô TÌM KIẾM GIỌNG ĐỌC (Bằng tiếng Anh)
-              Text(AppLocalizations.of(context)!.searchVoice, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _voiceSearchController,
-                style: TextStyle(color: labelColor, fontSize: 13),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: isDark ? Colors.white10 : Colors.black12,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  hintText: AppLocalizations.of(context)!.searchVoiceHint,
-                  hintStyle: TextStyle(color: labelColor.withValues(alpha: 0.5), fontSize: 13),
-                  prefixIcon: Icon(Icons.search_rounded, color: labelColor.withValues(alpha: 0.6)),
-                  suffixIcon: _voiceSearchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear_rounded, color: labelColor.withValues(alpha: 0.6)),
-                          onPressed: () {
-                            _voiceSearchController.clear();
-                            setState(() {
-                              _voiceSearchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _voiceSearchQuery = val.trim().toLowerCase();
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              Text(AppLocalizations.of(context)!.selectVoice, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-              const SizedBox(height: 8),
-              () {
-                final filteredDisplayVoices = _voices.where((v) {
-                  final lang = v['locale']?.toString().toLowerCase() ?? '';
-                  final name = v['name']?.toString().toLowerCase() ?? '';
-
-                  // 1. Lọc theo ngôn ngữ
-                  bool matchesLang = true;
-                  if (_selectedLanguageFilter == 'vi') {
-                    matchesLang = lang.startsWith('vi');
-                  } else if (_selectedLanguageFilter == 'en') {
-                    matchesLang = lang.startsWith('en');
-                  } else if (_selectedLanguageFilter == 'others') {
-                    matchesLang = !lang.startsWith('vi') && !lang.startsWith('en');
-                  }
-
-                  if (!matchesLang) return false;
-
-                  // 2. Lọc theo ô tìm kiếm
-                  if (_voiceSearchQuery.isNotEmpty) {
-                    return name.contains(_voiceSearchQuery) || lang.contains(_voiceSearchQuery);
-                  }
-
-                  return true;
-                }).toList();
-
-                return DropdownButtonFormField<String>(
-                  initialValue: filteredDisplayVoices.any((v) => v['name']?.toString() == _selectedVoice?['name'])
-                      ? (_selectedVoice?['name'])
-                      : null,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: isDark ? Colors.white10 : Colors.black12,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  dropdownColor: sheetBg,
-                  items: () {
-                    final Set<String> seenNames = {};
-                    final List<DropdownMenuItem<String>> menuItems = [];
-                    for (final v in filteredDisplayVoices) {
-                      final name = v['name']?.toString() ?? 'Unknown';
-                      final locale = v['locale']?.toString() ?? '';
-                      if (!seenNames.contains(name)) {
-                        seenNames.add(name);
-                        menuItems.add(DropdownMenuItem<String>(
-                          value: name,
-                          child: Text(
-                            '$name ($locale)',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13, color: labelColor),
-                          ),
-                        ));
-                      }
-                    }
-                    return menuItems;
-                  }(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      dynamic selectedMap;
-                      for (final v in filteredDisplayVoices) {
-                        if (v['name']?.toString() == val) {
-                          selectedMap = v;
-                          break;
-                        }
-                      }
-                      if (selectedMap != null) {
-                        final voiceMap = Map<String, String>.from(
-                          (selectedMap as Map).map(
-                            (key, value) => MapEntry(key.toString(), value.toString()),
-                          ),
-                        );
-                        setState(() {
-                          _selectedVoice = voiceMap;
-                        });
-                        widget.onVoiceChanged(voiceMap);
-                        widget.ttsService.updateSettings(voice: voiceMap);
-                      }
-                    }
-                  },
-                );
-              }(),
-              
-              const SizedBox(height: 20),
-              Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
-              const SizedBox(height: 20),
-            ],
-          ],
+          ),
         ),
       ),
     ),
-    ),
-    );
-  }
+  );
+}
 
   void _showColorPicker(String currentColorHex, ValueChanged<String> onColorSelected) {
     Color currentColor = Colors.white;

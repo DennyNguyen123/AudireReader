@@ -31,11 +31,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   double _fontSize = 18.0;
   double _speechRate = 0.5; // FlutterTts standard rate is 0.5 for normal speed
   final _speedController = TextEditingController();
-  List<dynamic> _voices = [];
-  Map<String, String>? _selectedVoice;
   String _fontFamily = 'System';
   String _themeMode = 'System';
-  String _ttsProvider = 'system';
 
   double _lineHeight = 1.6;
   double _paragraphSpacing = 14.0;
@@ -426,8 +423,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
-      final provider = settings.ttsProvider;
-      _ttsProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
       
       dynamic rawFont = settings.fontFamily;
       _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty) ? 'System' : rawFont.toString();
@@ -451,57 +446,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       _isInitialized = true;
     });
 
-    _loadVoices(settings);
-    
     // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
     _syncActiveBookProgressOnEntry();
   }
 
 
 
-  Future<void> _loadVoices(AppSettings settings) async {
-    try {
-      final list = await _ttsService.getVoicesForProvider(settings.ttsProvider);
-
-      Map<String, String>? initialVoice;
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == settings.selectedVoiceName &&
-              v['locale']?.toString() == settings.selectedVoiceLocale) {
-            matched = v;
-            break;
-          }
-        }
-        if (matched != null) {
-          initialVoice = Map<String, String>.from(
-            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-          );
-        }
-      } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
-        // Tự động gán mặc định giọng HoaiMy cho Edge TTS
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == 'vi-VN-HoaiMyNeural') {
-            matched = v;
-            break;
-          }
-        }
-        matched ??= list.first;
-        initialVoice = Map<String, String>.from(
-          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-        );
-        _ttsService.updateSettings(voice: initialVoice);
-      }
-
-      setState(() {
-        _voices = list;
-        _selectedVoice = initialVoice;
-      });
-    } catch (e) {
-      LoggerService().log('Failed to load voices', tag: 'APP', level: LogLevel.error, error: e.toString());
-    }
-  }
 
   // --- Hotkeys & Boss Key Handlers ---
   void _handleNextParagraph() {
@@ -592,10 +542,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         themeMode: _themeMode,
         fontSize: _fontSize,
         fontFamily: _fontFamily,
-        speechRate: _speechRate,
-        ttsProvider: _ttsProvider,
-        initialVoices: _voices,
-        initialSelectedVoice: _selectedVoice,
         lineHeight: _lineHeight,
         paragraphSpacing: _paragraphSpacing,
         textAlignment: _textAlignment,
@@ -641,24 +587,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
           setState(() {
             _customBackgroundColor = bg;
             _customTextColor = text;
-          });
-        },
-        onSpeechRateChanged: (val) {
-          setState(() {
-            _speechRate = val;
-            _speedController.text = (val * 2).toStringAsFixed(3);
-          });
-        },
-        onTtsProviderChanged: (provider, voices, selectedVoice) {
-          setState(() {
-            _ttsProvider = provider;
-            _voices = voices;
-            _selectedVoice = selectedVoice;
-          });
-        },
-        onVoiceChanged: (voice) {
-          setState(() {
-            _selectedVoice = voice;
           });
         },
       ),
@@ -725,7 +653,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     onPressed: () => _showChapterList(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.settings_rounded),
+                    icon: const Icon(Icons.palette_rounded),
+                    tooltip: 'Appearance Settings',
                     onPressed: _showSettings,
                   ),
                 ],

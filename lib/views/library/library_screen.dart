@@ -28,6 +28,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'widgets/mini_player.dart';
 import 'widgets/edit_book_dialog.dart';
 import 'global_notes_screen.dart';
+import 'widgets/tts_settings_sheet.dart';
+
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -665,6 +667,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ).then((_) {
                 _loadBooks();
               });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.headphones_rounded),
+            tooltip: 'TTS Settings',
+            onPressed: () {
+              showTtsSettingsBottomSheet(context);
             },
           ),
           IconButton(

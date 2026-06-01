@@ -9,7 +9,6 @@ import '../../services/webdav_service.dart';
 import '../../services/sync_service.dart' hide print;
 import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
-import '../../models/settings.dart';
 import '../../models/book.dart';
 import '../../models/chapter.dart';
 import '../../models/progress.dart';
@@ -19,10 +18,8 @@ import '../../core/locale_notifier.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/logger_service.dart';
 import 'developer_console_screen.dart';
-import 'pronunciation_dictionary_screen.dart';
 import 'widgets/settings/general_settings_section.dart';
 import 'widgets/settings/appearance_settings_section.dart';
-import 'widgets/settings/tts_settings_section.dart';
 import 'widgets/settings/hotkeys_settings_section.dart';
 import 'widgets/settings/webdav_settings_section.dart';
 import 'widgets/settings/developer_settings_section.dart';
@@ -47,7 +44,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   final _urlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _speedController = TextEditingController();
   
   DateTime? _lastSync;
   bool _isLoading = false;
@@ -61,16 +57,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   bool _enableWebDavDebug = false;
 
   double _fontSize = 18.0;
-  double _speechRate = 0.5;
   String _fontFamily = 'System';
   String _themeMode = 'System';
   String? _primaryColorHex;
-  List<dynamic> _voices = [];
-  Map<String, String>? _selectedVoice;
-  String _ttsProvider = 'system';
-  String _selectedLanguageFilter = 'all';
-  final _voiceSearchController = TextEditingController();
-  String _voiceSearchQuery = '';
   String _appVersion = '';
 
   // Hotkeys & Boss Key States
@@ -95,8 +84,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     _urlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
-    _speedController.dispose();
-    _voiceSearchController.dispose();
     super.dispose();
   }
 
@@ -122,12 +109,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
       // Load cấu hình đọc sách
       _fontSize = settings.fontSize;
-      _speechRate = settings.speechRate;
-      _speedController.text = (_speechRate * 2).toStringAsFixed(3);
       _fontFamily = settings.fontFamily.trim().isEmpty ? 'System' : settings.fontFamily;
       _themeMode = settings.themeMode.trim().isEmpty ? 'System' : settings.themeMode;
       _primaryColorHex = settings.primaryColorHex;
-      _ttsProvider = settings.ttsProvider;
 
       // Load Hotkeys & Boss Key Configurations
       _hotkeyNextParagraph = settings.hotkeyNextParagraph;
@@ -148,8 +132,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         enableWebDavDebug: _enableWebDavDebug,
       );
     });
-
-    await _loadVoices(settings);
 
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -181,50 +163,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     }
   }
 
-  Future<void> _loadVoices(AppSettings settings) async {
-    try {
-      final ttsService = await TtsService.getInstance();
-      final list = await ttsService.getVoicesForProvider(settings.ttsProvider);
-
-      Map<String, String>? initialVoice;
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == settings.selectedVoiceName &&
-              v['locale']?.toString() == settings.selectedVoiceLocale) {
-            matched = v;
-            break;
-          }
-        }
-        if (matched != null) {
-          initialVoice = Map<String, String>.from(
-            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-          );
-        }
-      } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
-        // Tự động gán mặc định giọng HoaiMy cho Edge TTS
-        dynamic matched;
-        for (final v in list) {
-          if (v['name']?.toString() == 'vi-VN-HoaiMyNeural') {
-            matched = v;
-            break;
-          }
-        }
-        matched ??= list.first;
-        initialVoice = Map<String, String>.from(
-          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
-        );
-        ttsService.updateSettings(voice: initialVoice);
-      }
-
-      setState(() {
-        _voices = list;
-        _selectedVoice = initialVoice;
-      });
-    } catch (e) {
-      print("Failed to load settings voices: $e");
-    }
-  }
 
   Future<void> _saveGeneralPreference(bool val) async {
     final db = await DatabaseHelper.getInstance();
@@ -406,22 +344,16 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
   Future<void> _saveReadingPreference({
     double? fontSize,
-    double? speechRate,
-    Map<String, String>? voice,
     String? fontFamily,
     String? themeMode,
-    String? ttsProvider,
     String? primaryColorHex,
   }) async {
     try {
       final ttsService = await TtsService.getInstance();
       await ttsService.updateSettings(
         fontSize: fontSize,
-        speechRate: speechRate,
-        voice: voice,
         fontFamily: fontFamily,
         themeMode: themeMode,
-        ttsProvider: ttsProvider,
         primaryColorHex: primaryColorHex,
       );
     } catch (e) {
@@ -723,87 +655,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               });
                               _saveReadingPreference(fontFamily: val);
                             }
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        TtsSettingsSection(
-                          speechRate: _speechRate,
-                          speedController: _speedController,
-                          ttsProvider: _ttsProvider,
-                          voices: _voices,
-                          selectedVoice: _selectedVoice,
-                          selectedLanguageFilter: _selectedLanguageFilter,
-                          voiceSearchController: _voiceSearchController,
-                          voiceSearchQuery: _voiceSearchQuery,
-                          onSpeechRateSliderChanged: (val) {
-                            setState(() {
-                              _speechRate = val;
-                              _speedController.text = (val * 2).toStringAsFixed(3);
-                            });
-                            _saveReadingPreference(speechRate: val);
-                          },
-                          onSpeechRateTextChanged: (text) {
-                            final double? val = double.tryParse(text);
-                            if (val != null) {
-                              final clampedMultiplier = val.clamp(0.1, 2.0);
-                              final newRate = clampedMultiplier / 2.0;
-                              setState(() {
-                                _speechRate = newRate;
-                              });
-                              _saveReadingPreference(speechRate: newRate);
-                            }
-                          },
-                          onTtsProviderChanged: (val) async {
-                            if (val != null) {
-                              setState(() {
-                                _ttsProvider = val;
-                              });
-                              await _saveReadingPreference(ttsProvider: val);
-                              final db = await DatabaseHelper.getInstance();
-                              final settings = await db.getSettings();
-                              await _loadVoices(settings);
-                              if (val == 'supertonic') {
-                                setState(() {
-                                  _selectedVoice = {
-                                    'name': 'M1',
-                                    'locale': 'offline',
-                                    'gender': 'Male',
-                                  };
-                                });
-                              }
-                            }
-                          },
-                          onLanguageFilterChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedLanguageFilter = val;
-                              });
-                            }
-                          },
-                          onVoiceSearchChanged: (val) {
-                            setState(() {
-                              _voiceSearchQuery = val.trim().toLowerCase();
-                            });
-                          },
-                          onClearVoiceSearch: () {
-                            _voiceSearchController.clear();
-                            setState(() {
-                              _voiceSearchQuery = '';
-                            });
-                          },
-                          onVoiceSelected: (voiceMap) {
-                            setState(() {
-                              _selectedVoice = voiceMap;
-                            });
-                            _saveReadingPreference(voice: voiceMap);
-                          },
-                          onManagePronunciation: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PronunciationDictionaryScreen(),
-                              ),
-                            );
                           },
                         ),
                         const SizedBox(height: 20),
