@@ -500,6 +500,46 @@ abstract class AppLocalizations {
   /// **'Sepia'**
   String get sepia;
 
+  /// No description provided for @deviceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Name'**
+  String get deviceName;
+
+  /// No description provided for @enterDeviceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Device Name'**
+  String get enterDeviceName;
+
+  /// No description provided for @syncConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Conflict Detected'**
+  String get syncConflictTitle;
+
+  /// No description provided for @syncConflictDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current reading progress conflicts with data from \"{deviceName}\".\n\nCloud: Chapter {cloudChapter}\nLocal: Chapter {localChapter}\n\nWhich progress would you like to keep?'**
+  String syncConflictDesc(
+    String deviceName,
+    String cloudChapter,
+    String localChapter,
+  );
+
+  /// No description provided for @keepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Local'**
+  String get keepLocal;
+
+  /// No description provided for @useCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Cloud'**
+  String get useCloud;
+
   /// No description provided for @sortOptions.
   ///
   /// In en, this message translates to:

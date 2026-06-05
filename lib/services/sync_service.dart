@@ -88,11 +88,10 @@ class SyncService {
       final localBooks = await db.getAllBooks();
       bool progressChanged = false;
 
+      // Sau đó đồng bộ tiến trình cho từng sách (để tải cover mới nếu có, và update progress)
       for (final book in localBooks) {
-        final changed = await _syncBookProgressInternal(book.uuid);
-        if (changed) {
-          progressChanged = true;
-        }
+        final res = await _syncBookProgressInternal(book.uuid);
+        if (res.status == ProgressSyncStatus.updatedLocal) progressChanged = true;
       }
 
       _isSyncing = false;
@@ -494,13 +493,13 @@ class SyncService {
 
   /// 2. Đồng bộ Tiến trình đọc của riêng một cuốn sách
   /// Sử dụng tệp siêu nhẹ `/progress/{bookUuid}.json`
-  /// Trả về true nếu Local database được cập nhật dữ liệu mới từ Cloud
-  Future<bool> syncBookProgress(String bookUuid) async {
+  /// Trả về ProgressSyncStatus
+  Future<ProgressSyncResult> syncBookProgress(String bookUuid) async {
     return await _syncBookProgressInternal(bookUuid);
   }
 
   /// Hàm nội bộ thực hiện đồng bộ Tiến trình đọc (không check lock)
-  Future<bool> _syncBookProgressInternal(String bookUuid) async {
+  Future<ProgressSyncResult> _syncBookProgressInternal(String bookUuid) async {
     _updateBookSyncStatus(bookUuid, 'syncing');
     try {
       final res = await __syncBookProgressInternal(bookUuid);
@@ -509,11 +508,11 @@ class SyncService {
     } catch (e) {
       _updateBookSyncStatus(bookUuid, 'error');
       print('[SyncProgressWrapper] Error: $e');
-      return false;
+      return ProgressSyncResult(status: ProgressSyncStatus.error);
     }
   }
 
-  Future<bool> __syncBookProgressInternal(String bookUuid) async {
+  Future<ProgressSyncResult> __syncBookProgressInternal(String bookUuid) async {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
@@ -525,8 +524,11 @@ class SyncService {
           settings.webDavUrl.isEmpty ||
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
-        return false;
+        return ProgressSyncResult(status: ProgressSyncStatus.error);
       }
+
+      final deviceId = settings.deviceId ?? '';
+      final deviceName = settings.deviceName ?? 'Unknown Device';
 
       // Đảm bảo client đã khởi tạo
       _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
@@ -547,7 +549,6 @@ class SyncService {
           if (bytes != null && bytes.isNotEmpty) {
             try {
               cloudProg = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
-              // Đồng thời upload lên AudireReader để migrate
               await _webdav.uploadBytes(remotePath, bytes);
             } catch (_) {}
           }
@@ -565,56 +566,111 @@ class SyncService {
 
       // 2. So sánh và xử lý đồng bộ
       if (cloudProg != null) {
-        // So sánh tiến trình mây với local bằng thuật toán thông minh chống lệch giờ
-        final bool cloudIsNewer = _isCloudProgressNewer(cloudProg, localProg);
+        final cloudDeviceId = cloudProg['deviceId'] as String?;
+        
+        final localCh = localProg?.currentChapterIndex ?? 0;
+        final localPara = localProg?.currentParagraphIndex ?? 0;
 
-        if (cloudIsNewer) {
-          // Cloud mới hơn -> Ghi đè Local
-          final DateTime cloudLastRead = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
-          final targetProg = localProg ?? (ReadingProgress()..bookUuid = bookUuid);
-          targetProg.currentChapterIndex = cloudProg['currentChapterIndex'] ?? 0;
-          targetProg.currentParagraphIndex = cloudProg['currentParagraphIndex'] ?? 0;
-          targetProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
-          targetProg.lastRead = cloudLastRead;
-          await db.saveProgress(targetProg);
-          print('[SyncProgress] Updated local progress for book $bookUuid (Cloud was newer: Chapter: ${targetProg.currentChapterIndex})');
-          return true;
-        } else if (localProg != null) {
-          // Local mới hơn hoặc bằng -> Upload Local lên Cloud (nếu local thực sự mới hơn vị trí hoặc giờ)
-          final bool localIsNewer = !_isCloudProgressEqual(cloudProg, localProg);
-          if (localIsNewer) {
-            final localJson = {
-              'bookUuid': bookUuid,
-              'currentChapterIndex': localProg.currentChapterIndex,
-              'currentParagraphIndex': localProg.currentParagraphIndex,
-              'currentCharacterOffset': localProg.currentCharacterOffset,
-              'lastRead': localProg.lastRead.toIso8601String(),
-            };
-            final jsonBytes = utf8.encode(json.encode(localJson));
-            await _webdav.uploadBytes(remotePath, jsonBytes);
-            print('[SyncProgress] Uploaded local progress for book $bookUuid (Local is newer: Chapter: ${localProg.currentChapterIndex})');
+        final cloudCh = cloudProg['currentChapterIndex'] ?? 0;
+        final cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
+
+        // Nếu cloud do chính máy này update lần cuối, ta coi như an toàn, auto ghi đè (nếu local mới hơn thì đẩy lên)
+        if (cloudDeviceId == deviceId) {
+          if (_isCloudProgressNewer(cloudProg, localProg)) {
+             // Dữ liệu trên mây (do chính máy này đẩy lên trước đó hoặc sync nhầm?) mới hơn -> đè local
+             _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
+             return ProgressSyncResult(status: ProgressSyncStatus.updatedLocal, cloudProgress: cloudProg);
+          } else if (!_isCloudProgressEqual(cloudProg, localProg!)) {
+             // Local mới hơn -> đẩy lên mây
+             await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
+             return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
+          }
+          return ProgressSyncResult(status: ProgressSyncStatus.upToDate);
+        } else {
+          // Cloud do máy KHÁC update
+          final bool isCloudNewer = _isCloudProgressNewer(cloudProg, localProg);
+          final bool isLocalNewer = _isLocalProgressNewer(cloudProg, localProg);
+
+          if (isCloudNewer && !isLocalNewer) {
+            // Máy kia đọc xa hơn và local không xa hơn -> an toàn để đè local
+            _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
+            return ProgressSyncResult(status: ProgressSyncStatus.updatedLocal, cloudProgress: cloudProg);
+          } else if (isLocalNewer && !isCloudNewer) {
+            // Máy này đọc xa hơn máy kia -> an toàn để đè mây
+            await _uploadLocalToCloud(remotePath, bookUuid, localProg!, deviceId, deviceName);
+            return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
+          } else if (isCloudNewer && isLocalNewer || (cloudCh != localCh || cloudPara != localPara)) {
+            // CONFLICT! Ví dụ: Máy A chương 8, Máy B chương 10. Nhưng thời gian lộn xộn, hoặc rẽ nhánh.
+            // Báo conflict ra ngoài
+            return ProgressSyncResult(status: ProgressSyncStatus.conflict, cloudProgress: cloudProg);
+          } else {
+            // Bằng nhau
+            return ProgressSyncResult(status: ProgressSyncStatus.upToDate);
           }
         }
       } else {
-        // Mây chưa có tiến trình của sách này -> Đẩy Local lên mây nếu Local có dữ liệu
+        // Mây chưa có tiến trình -> Đẩy Local lên
         if (localProg != null) {
-          final localJson = {
-            'bookUuid': bookUuid,
-            'currentChapterIndex': localProg.currentChapterIndex,
-            'currentParagraphIndex': localProg.currentParagraphIndex,
-            'currentCharacterOffset': localProg.currentCharacterOffset,
-            'lastRead': localProg.lastRead.toIso8601String(),
-          };
-          final jsonBytes = utf8.encode(json.encode(localJson));
-          await _webdav.uploadBytes(remotePath, jsonBytes);
-          print('[SyncProgress] Created initial cloud progress for book $bookUuid');
+          await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
+          return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
         }
       }
     } catch (e) {
       print('[SyncProgress] Failed to sync progress for book $bookUuid: $e');
     }
-    return false;
+    return ProgressSyncResult(status: ProgressSyncStatus.error);
   }
+
+  Future<void> _uploadLocalToCloud(String remotePath, String bookUuid, ReadingProgress localProg, String deviceId, String deviceName) async {
+    final localJson = {
+      'bookUuid': bookUuid,
+      'deviceId': deviceId,
+      'deviceName': deviceName,
+      'currentChapterIndex': localProg.currentChapterIndex,
+      'currentParagraphIndex': localProg.currentParagraphIndex,
+      'currentCharacterOffset': localProg.currentCharacterOffset,
+      'lastRead': localProg.lastRead.toIso8601String(),
+    };
+    final jsonBytes = utf8.encode(json.encode(localJson));
+    await _webdav.uploadBytes(remotePath, jsonBytes);
+  }
+
+  Future<void> forceUploadLocalProgress(String bookUuid, ReadingProgress localProg, String deviceId, String deviceName) async {
+    final String remotePath = '/AudireReader/progress/$bookUuid.json';
+    await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
+  }
+
+  Future<void> forceUpdateLocalFromCloud(String bookUuid, Map<String, dynamic> cloudProg, ReadingProgress? localProg, DatabaseHelper db) async {
+    await _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
+  }
+
+  Future<void> _updateLocalFromCloud(String bookUuid, Map<String, dynamic> cloudProg, ReadingProgress? localProg, DatabaseHelper db) async {
+    final DateTime cloudLastRead = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
+    final targetProg = localProg ?? (ReadingProgress()..bookUuid = bookUuid);
+    targetProg.currentChapterIndex = cloudProg['currentChapterIndex'] ?? 0;
+    targetProg.currentParagraphIndex = cloudProg['currentParagraphIndex'] ?? 0;
+    targetProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
+    targetProg.lastRead = cloudLastRead;
+    await db.saveProgress(targetProg);
+  }
+
+  bool _isLocalProgressNewer(Map<String, dynamic> cloudProg, ReadingProgress? localProg) {
+    if (localProg == null) return false;
+    final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
+    final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
+    final DateTime cloudTime = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+    final int localCh = localProg.currentChapterIndex;
+    final int localPara = localProg.currentParagraphIndex;
+    final DateTime localTime = localProg.lastRead;
+
+    if (localCh > cloudCh) return true;
+    if (localCh < cloudCh) return false;
+    if (localPara > cloudPara) return true;
+    if (localPara < cloudPara) return false;
+    return localTime.isAfter(cloudTime);
+  }
+
 
   /// Thuật toán so sánh tiến trình đọc thông minh chống lệch giờ hệ thống
   /// Ưu tiên vị trí chương/đoạn lớn hơn trước, nếu bằng nhau mới so timestamp
@@ -773,4 +829,19 @@ class SyncResult {
     required this.message,
     this.localChanged = false,
   });
+}
+
+enum ProgressSyncStatus {
+  upToDate,
+  updatedLocal,
+  uploadedToCloud,
+  conflict,
+  error,
+}
+
+class ProgressSyncResult {
+  final ProgressSyncStatus status;
+  final Map<String, dynamic>? cloudProgress;
+
+  ProgressSyncResult({required this.status, this.cloudProgress});
 }

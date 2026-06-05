@@ -137,6 +137,25 @@
   "light": "Light",
   "dark": "Dark",
   "sepia": "Sepia",
+  "deviceName": "Device Name",
+  "enterDeviceName": "Enter Device Name",
+  "syncConflictTitle": "Sync Conflict Detected",
+  "syncConflictDesc": "Your current reading progress conflicts with data from \"{deviceName}\".\n\nCloud: Chapter {cloudChapter}\nLocal: Chapter {localChapter}\n\nWhich progress would you like to keep?",
+  "@syncConflictDesc": {
+    "placeholders": {
+      "deviceName": {
+        "type": "String"
+      },
+      "cloudChapter": {
+        "type": "String"
+      },
+      "localChapter": {
+        "type": "String"
+      }
+    }
+  },
+  "keepLocal": "Keep Local",
+  "useCloud": "Use Cloud",
   "sortOptions": "Sort options",
   "deleteBook": "Delete Book",
   "confirmDeleteBook": "Are you sure you want to delete \"{title}\"?",

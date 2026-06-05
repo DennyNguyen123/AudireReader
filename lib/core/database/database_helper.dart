@@ -10,6 +10,7 @@ import '../../models/pronunciation_rule.dart';
 import '../../models/bookmark.dart';
 import '../../models/highlight.dart';
 import '../../models/bgm_track.dart';
+import '../utils/device_helper.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
@@ -207,7 +208,20 @@ class DatabaseHelper {
 
   Future<AppSettings> getSettings() async {
     final settings = await isar.appSettings.get(1);
-    return settings ?? AppSettings();
+    if (settings != null) {
+      if (settings.deviceId == null || settings.deviceName == null) {
+        settings.deviceId ??= DeviceHelper.generateDeviceId();
+        settings.deviceName ??= DeviceHelper.getDefaultDeviceName();
+        await saveSettings(settings);
+      }
+      return settings;
+    } else {
+      final newSettings = AppSettings();
+      newSettings.deviceId = DeviceHelper.generateDeviceId();
+      newSettings.deviceName = DeviceHelper.getDefaultDeviceName();
+      await saveSettings(newSettings);
+      return newSettings;
+    }
   }
 
   // --- Pronunciation Rule Operations ---

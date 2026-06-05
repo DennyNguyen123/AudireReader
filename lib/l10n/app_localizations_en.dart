@@ -233,6 +233,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sepia => 'Sepia';
 
   @override
+  String get deviceName => 'Device Name';
+
+  @override
+  String get enterDeviceName => 'Enter Device Name';
+
+  @override
+  String get syncConflictTitle => 'Sync Conflict Detected';
+
+  @override
+  String syncConflictDesc(
+    String deviceName,
+    String cloudChapter,
+    String localChapter,
+  ) {
+    return 'Your current reading progress conflicts with data from \"$deviceName\".\n\nCloud: Chapter $cloudChapter\nLocal: Chapter $localChapter\n\nWhich progress would you like to keep?';
+  }
+
+  @override
+  String get keepLocal => 'Keep Local';
+
+  @override
+  String get useCloud => 'Use Cloud';
+
+  @override
   String get sortOptions => 'Sort options';
 
   @override

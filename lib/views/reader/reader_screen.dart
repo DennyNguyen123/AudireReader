@@ -9,6 +9,7 @@ import '../../services/logger_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../models/chapter.dart';
 import '../../models/settings.dart';
+import '../../models/book.dart';
 
 import '../../models/bookmark.dart';
 import '../../models/highlight.dart';
@@ -79,7 +80,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     if (_isInitialized) {
       final book = _ttsService.activeBook;
       if (book != null) {
-        LoggerService().log('[ReaderScreen] Auto-syncing progress on exit/pause for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
         SyncService.getInstance().syncBookProgress(book.uuid);
       }
     }
@@ -89,8 +89,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     final book = _ttsService.activeBook;
     if (book != null) {
       LoggerService().log('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
-      final localDatabaseChanged = await SyncService.getInstance().syncBookProgress(book.uuid);
-      if (localDatabaseChanged && mounted) {
+      final syncResult = await SyncService.getInstance().syncBookProgress(book.uuid);
+      if (syncResult.status == ProgressSyncStatus.updatedLocal && mounted) {
         LoggerService().log('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...', tag: 'SYNC', level: LogLevel.info);
         final db = await DatabaseHelper.getInstance();
         final progress = await db.getProgress(book.uuid);
@@ -102,6 +102,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             startParagraph: progress.currentParagraphIndex
           );
         }
+      } else if (syncResult.status == ProgressSyncStatus.conflict && mounted && syncResult.cloudProgress != null) {
+        // SHOW CONFLICT DIALOG
+        _showConflictDialog(book, syncResult.cloudProgress!);
       }
     }
   }
@@ -109,6 +112,63 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   void _onTtsServiceChanged() {
     _updateBookmarkState();
     _loadBookmarksAndHighlights();
+  }
+
+  void _showConflictDialog(Book book, Map<String, dynamic> cloudProgress) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)?.syncConflictTitle ?? 'Sync Conflict Detected'),
+          content: Text(
+            AppLocalizations.of(context)?.syncConflictDesc(
+              cloudProgress['deviceName'] ?? 'Unknown Device',
+              (cloudProgress['currentChapterIndex'] ?? 0).toString(),
+              _ttsService.currentChapterIndex.toString(),
+            ) ??
+            'Your current reading progress conflicts with data from "${cloudProgress['deviceName']}".\n\n'
+            'Cloud: Chapter ${cloudProgress['currentChapterIndex']}\n'
+            'Local: Chapter ${_ttsService.currentChapterIndex}\n\n'
+            'Which progress would you like to keep?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                // Keep Local: Upload local to cloud to overwrite
+                final db = await DatabaseHelper.getInstance();
+                final localProg = await db.getProgress(book.uuid);
+                final settings = await db.getSettings();
+                if (localProg != null) {
+                  // Bypass conflict and force upload
+                  SyncService.getInstance().forceUploadLocalProgress(book.uuid, localProg, settings.deviceId ?? '', settings.deviceName ?? '');
+                }
+              },
+              child: Text(AppLocalizations.of(context)?.keepLocal ?? 'Keep Local', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                // Keep Cloud: Overwrite local
+                final db = await DatabaseHelper.getInstance();
+                await SyncService.getInstance().forceUpdateLocalFromCloud(book.uuid, cloudProgress, await db.getProgress(book.uuid), db);
+                final updatedProg = await db.getProgress(book.uuid);
+                if (updatedProg != null && mounted) {
+                  await _ttsService.loadBook(
+                    book, 
+                    _ttsService.chapters, 
+                    startChapter: updatedProg.currentChapterIndex, 
+                    startParagraph: updatedProg.currentParagraphIndex
+                  );
+                }
+              },
+              child: Text(AppLocalizations.of(context)?.useCloud ?? 'Use Cloud', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _updateBookmarkState() async {

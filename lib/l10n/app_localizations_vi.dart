@@ -230,10 +230,34 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dark => 'Tối';
 
   @override
-  String get sepia => 'Sepia';
+  String get sepia => 'Ấm (Sepia)';
 
   @override
-  String get sortOptions => 'Tùy chọn sắp xếp';
+  String get deviceName => 'Tên Thiết Bị';
+
+  @override
+  String get enterDeviceName => 'Nhập tên thiết bị';
+
+  @override
+  String get syncConflictTitle => 'Phát hiện Xung đột';
+
+  @override
+  String syncConflictDesc(
+    String deviceName,
+    String cloudChapter,
+    String localChapter,
+  ) {
+    return 'Tiến trình đọc hiện tại của bạn xung đột với dữ liệu từ máy \"$deviceName\".\n\nCloud: Chương $cloudChapter\nLocal: Chương $localChapter\n\nBạn muốn giữ lại tiến trình nào?';
+  }
+
+  @override
+  String get keepLocal => 'Giữ Local';
+
+  @override
+  String get useCloud => 'Dùng Cloud';
+
+  @override
+  String get sortOptions => 'Tuỳ chọn sắp xếp';
 
   @override
   String get deleteBook => 'Xóa sách';

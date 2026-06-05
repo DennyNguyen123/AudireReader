@@ -7,6 +7,7 @@ class WebdavSettingsSection extends StatelessWidget {
   final TextEditingController urlController;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
+  final TextEditingController deviceNameController;
   final bool isTestingConnection;
   final String? testResult;
   final bool testSuccess;
@@ -23,6 +24,7 @@ class WebdavSettingsSection extends StatelessWidget {
     required this.urlController,
     required this.usernameController,
     required this.passwordController,
+    required this.deviceNameController,
     required this.isTestingConnection,
     required this.testResult,
     required this.testSuccess,
@@ -173,6 +175,30 @@ class WebdavSettingsSection extends StatelessWidget {
               validator: (val) {
                 if (webDavEnabled && (val == null || val.isEmpty)) {
                   return AppLocalizations.of(context)?.enterPassword ?? 'Please enter Password';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Device Name
+            TextFormField(
+              controller: deviceNameController,
+              onChanged: (_) => onSettingsChanged(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)?.deviceName ?? 'Device Name',
+                hintText: 'My Phone',
+                prefixIcon: const Icon(Icons.devices_rounded),
+                filled: true,
+                fillColor: isDark ? Colors.black26 : Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              validator: (val) {
+                if (webDavEnabled && (val == null || val.trim().isEmpty)) {
+                  return AppLocalizations.of(context)?.enterDeviceName ?? 'Please enter Device Name';
                 }
                 return null;
               },

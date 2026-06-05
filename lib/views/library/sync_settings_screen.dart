@@ -44,6 +44,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   final _urlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _deviceNameController = TextEditingController();
   
   DateTime? _lastSync;
   bool _isLoading = false;
@@ -84,6 +85,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     _urlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _deviceNameController.dispose();
     super.dispose();
   }
 
@@ -105,6 +107,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _urlController.text = settings.webDavUrl;
       _usernameController.text = settings.webDavUsername;
       _passwordController.text = webDavPassword;
+      _deviceNameController.text = settings.deviceName ?? '';
       _lastSync = settings.webDavLastSync;
 
       // Load cấu hình đọc sách
@@ -373,6 +376,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final settings = await db.getSettings();
     settings.webDavUrl = _urlController.text.trim();
     settings.webDavUsername = _usernameController.text.trim();
+    settings.deviceName = _deviceNameController.text.trim();
     await db.saveSettings(settings);
 
     const storage = FlutterSecureStorage();
@@ -717,6 +721,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           urlController: _urlController,
                           usernameController: _usernameController,
                           passwordController: _passwordController,
+                          deviceNameController: _deviceNameController,
                           isTestingConnection: _isTestingConnection,
                           testResult: _testResult,
                           testSuccess: _testSuccess,

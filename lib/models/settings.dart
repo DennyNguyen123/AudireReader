@@ -30,6 +30,9 @@ class AppSettings {
   String webDavUsername = '';
   DateTime? webDavLastSync;
 
+  String? deviceId;
+  String? deviceName;
+
   bool openLastReadOnLaunch = false;
 
   // --- Hotkeys & Boss Key Settings ---

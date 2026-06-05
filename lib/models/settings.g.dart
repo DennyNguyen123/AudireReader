@@ -67,143 +67,153 @@ const AppSettingsSchema = CollectionSchema(
       name: r'developerMode',
       type: IsarType.bool,
     ),
-    r'enableDebugLogs': PropertySchema(
+    r'deviceId': PropertySchema(
       id: 10,
+      name: r'deviceId',
+      type: IsarType.string,
+    ),
+    r'deviceName': PropertySchema(
+      id: 11,
+      name: r'deviceName',
+      type: IsarType.string,
+    ),
+    r'enableDebugLogs': PropertySchema(
+      id: 12,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 20,
+      id: 22,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 21,
+      id: 23,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
     r'lineHeight': PropertySchema(
-      id: 22,
+      id: 24,
       name: r'lineHeight',
       type: IsarType.double,
     ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 23,
+      id: 25,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'paragraphSpacing': PropertySchema(
-      id: 24,
+      id: 26,
       name: r'paragraphSpacing',
       type: IsarType.double,
     ),
     r'primaryColorHex': PropertySchema(
-      id: 25,
+      id: 27,
       name: r'primaryColorHex',
       type: IsarType.string,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 26,
+      id: 28,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 27,
+      id: 29,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
     r'sideMargin': PropertySchema(
-      id: 28,
+      id: 30,
       name: r'sideMargin',
       type: IsarType.double,
     ),
     r'sortBy': PropertySchema(
-      id: 29,
+      id: 31,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 30,
+      id: 32,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'textAlignment': PropertySchema(
-      id: 31,
+      id: 33,
       name: r'textAlignment',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 32,
+      id: 34,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 33,
+      id: 35,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 34,
+      id: 36,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 35,
+      id: 37,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 36,
+      id: 38,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 37,
+      id: 39,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -239,6 +249,18 @@ int _appSettingsEstimateSize(
   }
   {
     final value = object.customTextColor;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.deviceId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.deviceName;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -295,34 +317,36 @@ void _appSettingsSerialize(
   writer.writeString(offsets[7], object.customBackgroundColor);
   writer.writeString(offsets[8], object.customTextColor);
   writer.writeBool(offsets[9], object.developerMode);
-  writer.writeBool(offsets[10], object.enableDebugLogs);
-  writer.writeBool(offsets[11], object.enableWebDavDebug);
-  writer.writeString(offsets[12], object.fontFamily);
-  writer.writeDouble(offsets[13], object.fontSize);
-  writer.writeString(offsets[14], object.hotkeyBossKey);
-  writer.writeString(offsets[15], object.hotkeyNextChapter);
-  writer.writeString(offsets[16], object.hotkeyNextParagraph);
-  writer.writeString(offsets[17], object.hotkeyOpenChapter);
-  writer.writeString(offsets[18], object.hotkeyOpenSetting);
-  writer.writeString(offsets[19], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[20], object.hotkeyPrevChapter);
-  writer.writeString(offsets[21], object.hotkeyPrevParagraph);
-  writer.writeDouble(offsets[22], object.lineHeight);
-  writer.writeBool(offsets[23], object.openLastReadOnLaunch);
-  writer.writeDouble(offsets[24], object.paragraphSpacing);
-  writer.writeString(offsets[25], object.primaryColorHex);
-  writer.writeString(offsets[26], object.selectedVoiceLocale);
-  writer.writeString(offsets[27], object.selectedVoiceName);
-  writer.writeDouble(offsets[28], object.sideMargin);
-  writer.writeString(offsets[29], object.sortBy);
-  writer.writeDouble(offsets[30], object.speechRate);
-  writer.writeString(offsets[31], object.textAlignment);
-  writer.writeString(offsets[32], object.themeMode);
-  writer.writeString(offsets[33], object.ttsProvider);
-  writer.writeBool(offsets[34], object.webDavEnabled);
-  writer.writeDateTime(offsets[35], object.webDavLastSync);
-  writer.writeString(offsets[36], object.webDavUrl);
-  writer.writeString(offsets[37], object.webDavUsername);
+  writer.writeString(offsets[10], object.deviceId);
+  writer.writeString(offsets[11], object.deviceName);
+  writer.writeBool(offsets[12], object.enableDebugLogs);
+  writer.writeBool(offsets[13], object.enableWebDavDebug);
+  writer.writeString(offsets[14], object.fontFamily);
+  writer.writeDouble(offsets[15], object.fontSize);
+  writer.writeString(offsets[16], object.hotkeyBossKey);
+  writer.writeString(offsets[17], object.hotkeyNextChapter);
+  writer.writeString(offsets[18], object.hotkeyNextParagraph);
+  writer.writeString(offsets[19], object.hotkeyOpenChapter);
+  writer.writeString(offsets[20], object.hotkeyOpenSetting);
+  writer.writeString(offsets[21], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[22], object.hotkeyPrevChapter);
+  writer.writeString(offsets[23], object.hotkeyPrevParagraph);
+  writer.writeDouble(offsets[24], object.lineHeight);
+  writer.writeBool(offsets[25], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[26], object.paragraphSpacing);
+  writer.writeString(offsets[27], object.primaryColorHex);
+  writer.writeString(offsets[28], object.selectedVoiceLocale);
+  writer.writeString(offsets[29], object.selectedVoiceName);
+  writer.writeDouble(offsets[30], object.sideMargin);
+  writer.writeString(offsets[31], object.sortBy);
+  writer.writeDouble(offsets[32], object.speechRate);
+  writer.writeString(offsets[33], object.textAlignment);
+  writer.writeString(offsets[34], object.themeMode);
+  writer.writeString(offsets[35], object.ttsProvider);
+  writer.writeBool(offsets[36], object.webDavEnabled);
+  writer.writeDateTime(offsets[37], object.webDavLastSync);
+  writer.writeString(offsets[38], object.webDavUrl);
+  writer.writeString(offsets[39], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -342,35 +366,37 @@ AppSettings _appSettingsDeserialize(
   object.customBackgroundColor = reader.readStringOrNull(offsets[7]);
   object.customTextColor = reader.readStringOrNull(offsets[8]);
   object.developerMode = reader.readBool(offsets[9]);
-  object.enableDebugLogs = reader.readBool(offsets[10]);
-  object.enableWebDavDebug = reader.readBool(offsets[11]);
-  object.fontFamily = reader.readString(offsets[12]);
-  object.fontSize = reader.readDouble(offsets[13]);
-  object.hotkeyBossKey = reader.readString(offsets[14]);
-  object.hotkeyNextChapter = reader.readString(offsets[15]);
-  object.hotkeyNextParagraph = reader.readString(offsets[16]);
-  object.hotkeyOpenChapter = reader.readString(offsets[17]);
-  object.hotkeyOpenSetting = reader.readString(offsets[18]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[19]);
-  object.hotkeyPrevChapter = reader.readString(offsets[20]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[21]);
+  object.deviceId = reader.readStringOrNull(offsets[10]);
+  object.deviceName = reader.readStringOrNull(offsets[11]);
+  object.enableDebugLogs = reader.readBool(offsets[12]);
+  object.enableWebDavDebug = reader.readBool(offsets[13]);
+  object.fontFamily = reader.readString(offsets[14]);
+  object.fontSize = reader.readDouble(offsets[15]);
+  object.hotkeyBossKey = reader.readString(offsets[16]);
+  object.hotkeyNextChapter = reader.readString(offsets[17]);
+  object.hotkeyNextParagraph = reader.readString(offsets[18]);
+  object.hotkeyOpenChapter = reader.readString(offsets[19]);
+  object.hotkeyOpenSetting = reader.readString(offsets[20]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[21]);
+  object.hotkeyPrevChapter = reader.readString(offsets[22]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[23]);
   object.id = id;
-  object.lineHeight = reader.readDouble(offsets[22]);
-  object.openLastReadOnLaunch = reader.readBool(offsets[23]);
-  object.paragraphSpacing = reader.readDouble(offsets[24]);
-  object.primaryColorHex = reader.readStringOrNull(offsets[25]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[26]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[27]);
-  object.sideMargin = reader.readDouble(offsets[28]);
-  object.sortBy = reader.readString(offsets[29]);
-  object.speechRate = reader.readDouble(offsets[30]);
-  object.textAlignment = reader.readString(offsets[31]);
-  object.themeMode = reader.readString(offsets[32]);
-  object.ttsProvider = reader.readString(offsets[33]);
-  object.webDavEnabled = reader.readBool(offsets[34]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[35]);
-  object.webDavUrl = reader.readString(offsets[36]);
-  object.webDavUsername = reader.readString(offsets[37]);
+  object.lineHeight = reader.readDouble(offsets[24]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[25]);
+  object.paragraphSpacing = reader.readDouble(offsets[26]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[27]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[28]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[29]);
+  object.sideMargin = reader.readDouble(offsets[30]);
+  object.sortBy = reader.readString(offsets[31]);
+  object.speechRate = reader.readDouble(offsets[32]);
+  object.textAlignment = reader.readString(offsets[33]);
+  object.themeMode = reader.readString(offsets[34]);
+  object.ttsProvider = reader.readString(offsets[35]);
+  object.webDavEnabled = reader.readBool(offsets[36]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[37]);
+  object.webDavUrl = reader.readString(offsets[38]);
+  object.webDavUsername = reader.readString(offsets[39]);
   return object;
 }
 
@@ -402,17 +428,17 @@ P _appSettingsDeserializeProp<P>(
     case 9:
       return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 13:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 14:
       return (reader.readString(offset)) as P;
     case 15:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 16:
       return (reader.readString(offset)) as P;
     case 17:
@@ -426,36 +452,40 @@ P _appSettingsDeserializeProp<P>(
     case 21:
       return (reader.readString(offset)) as P;
     case 22:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 23:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 24:
       return (reader.readDouble(offset)) as P;
     case 25:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 26:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 27:
       return (reader.readStringOrNull(offset)) as P;
     case 28:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 29:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 30:
       return (reader.readDouble(offset)) as P;
     case 31:
       return (reader.readString(offset)) as P;
     case 32:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 33:
       return (reader.readString(offset)) as P;
     case 34:
-      return (reader.readBool(offset)) as P;
-    case 35:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 36:
       return (reader.readString(offset)) as P;
+    case 35:
+      return (reader.readString(offset)) as P;
+    case 36:
+      return (reader.readBool(offset)) as P;
     case 37:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 38:
+      return (reader.readString(offset)) as P;
+    case 39:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1438,6 +1468,313 @@ extension AppSettingsQueryFilter
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'developerMode',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deviceId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deviceId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> deviceIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> deviceIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deviceId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'deviceId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition> deviceIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'deviceId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deviceId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'deviceId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deviceName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deviceName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deviceName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'deviceName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'deviceName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deviceName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      deviceNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'deviceName',
+        value: '',
       ));
     });
   }
@@ -4574,6 +4911,30 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByDeviceId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByDeviceIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByDeviceName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByDeviceNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceName', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByEnableDebugLogs() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'enableDebugLogs', Sort.asc);
@@ -5072,6 +5433,30 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByDeviceId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByDeviceIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByDeviceName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByDeviceNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deviceName', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByEnableDebugLogs() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'enableDebugLogs', Sort.asc);
@@ -5524,6 +5909,20 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByDeviceId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deviceId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByDeviceName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deviceName', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByEnableDebugLogs() {
     return QueryBuilder.apply(this, (query) {
@@ -5796,6 +6195,18 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, bool, QQueryOperations> developerModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'developerMode');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations> deviceIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deviceId');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations> deviceNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deviceName');
     });
   }
 
