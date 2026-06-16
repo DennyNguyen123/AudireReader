@@ -196,12 +196,14 @@ class BgmService extends ChangeNotifier {
       notifyListeners();
 
       if (track.sourceType == 'local') {
-        final file = File(track.sourcePath);
+        final appDir = await PathHelper.getAppDirectory();
+        final fileName = p.basename(track.sourcePath);
+        final file = File(p.join(appDir.path, 'bgm', fileName));
         if (await file.exists()) {
-          await _audioPlayer.play(DeviceFileSource(track.sourcePath));
+          await _audioPlayer.play(DeviceFileSource(file.path));
           _hasSource = true;
         } else {
-          throw Exception("Local BGM file does not exist: ${track.sourcePath}");
+          throw Exception("Local BGM file does not exist: ${file.path}");
         }
       } else {
         throw Exception("Unsupported BGM source type: ${track.sourceType}");
@@ -226,7 +228,9 @@ class BgmService extends ChangeNotifier {
     
     if (_currentTrack != null) {
       if (_currentTrack!.sourceType == 'local') {
-        final file = File(_currentTrack!.sourcePath);
+        final appDir = await PathHelper.getAppDirectory();
+        final fileName = p.basename(_currentTrack!.sourcePath);
+        final file = File(p.join(appDir.path, 'bgm', fileName));
         if (await file.exists()) {
           if (_hasSource) {
             _isPlaying = true;
@@ -349,7 +353,9 @@ class BgmService extends ChangeNotifier {
 
       // Xóa file vật lý nếu nguồn là file local
       if (track.sourceType == 'local') {
-        final file = File(track.sourcePath);
+        final appDir = await PathHelper.getAppDirectory();
+        final fileName = p.basename(track.sourcePath);
+        final file = File(p.join(appDir.path, 'bgm', fileName));
         if (await file.exists()) {
           await file.delete();
         }
