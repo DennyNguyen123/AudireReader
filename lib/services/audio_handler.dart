@@ -752,6 +752,13 @@ try {
       } else if (_isSystemTtsPaused) {
         _isSpeaking = true;
         _isSystemTtsPaused = false;
+        
+        // Cần gọi stop() để xoá trạng thái pause của iOS Native TTS trước khi phát tiếp
+        await _tts.stop();
+        if (!Platform.isWindows) {
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
+
         playbackState.add(playbackState.value.copyWith(
           controls: [
             MediaControl.skipToPrevious,

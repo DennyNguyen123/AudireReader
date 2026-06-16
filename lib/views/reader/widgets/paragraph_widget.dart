@@ -96,6 +96,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     return GestureDetector(
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         margin: EdgeInsets.only(bottom: widget.paragraphSpacing),
