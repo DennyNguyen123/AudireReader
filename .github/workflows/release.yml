@@ -90,7 +90,9 @@ jobs:
           cache: true
 
       - name: Build Windows App via Shorebird
-        run: shorebird release windows --flutter-version=3.41.9
+        run: |
+          git config --system core.longpaths true
+          shorebird release windows --flutter-version=3.41.9
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
