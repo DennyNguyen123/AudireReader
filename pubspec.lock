@@ -717,7 +717,7 @@ packages:
     source: hosted
     version: "4.12.0"
   just_audio:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: just_audio
       sha256: "9694e4734f515f2a052493d1d7e0d6de219ee0427c7c29492e246ff32a219908"
@@ -740,6 +740,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.16"
+  just_audio_windows:
+    dependency: "direct main"
+    description:
+      name: just_audio_windows
+      sha256: "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
   leak_tracker:
     dependency: transitive
     description:
