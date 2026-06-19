@@ -2,8 +2,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart' as ja;
-import 'dart:math';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../core/utils/path_helper.dart';
 import 'dart:async';
@@ -19,80 +17,8 @@ enum TtsEngineType { system, edge, supertonic }
 
 class CachedAudio {
   final String? filePath;
-  final ja.StreamAudioSource? streamSource;
   final List<EdgeMetadataChunk> metadata;
-  CachedAudio({this.filePath, this.streamSource, required this.metadata});
-}
-
-
-class EdgeTtsStreamAudioSource extends ja.StreamAudioSource {
-  final List<int> _buffer = [];
-  final Completer<void> _doneCompleter = Completer<void>();
-  final StreamController<void> _updateController = StreamController<void>.broadcast();
-
-  EdgeTtsStreamAudioSource(Stream<EdgeTtsChunk> chunkStream, List<EdgeMetadataChunk> metadataList) {
-    chunkStream.listen(
-      (chunk) {
-        if (chunk is EdgeAudioChunk) {
-          _buffer.addAll(chunk.data);
-          _updateController.add(null);
-        } else if (chunk is EdgeMetadataChunk) {
-          metadataList.add(chunk);
-        }
-      },
-      onDone: () {
-        if (!_doneCompleter.isCompleted) {
-          _doneCompleter.complete();
-        }
-        _updateController.add(null);
-      },
-      onError: (e) {
-        if (!_doneCompleter.isCompleted) {
-          _doneCompleter.completeError(e);
-        }
-      }
-    );
-  }
-
-  @override
-  Future<ja.StreamAudioResponse> request([int? start, int? end]) async {
-    start ??= 0;
-    while (_buffer.length <= start && !_doneCompleter.isCompleted) {
-      await _updateController.stream.first;
-    }
-    if (start >= _buffer.length && _doneCompleter.isCompleted) {
-       return ja.StreamAudioResponse(
-         sourceLength: _buffer.length,
-         contentLength: 0,
-         offset: start,
-         stream: Stream.value([]),
-         contentType: 'audio/mpeg',
-       );
-    }
-    Stream<List<int>> stream() async* {
-      int position = start!;
-      while (true) {
-        if (position < _buffer.length) {
-          final endPos = end != null ? min(end, _buffer.length) : _buffer.length;
-          final chunk = _buffer.sublist(position, endPos);
-          yield chunk;
-          position = endPos;
-          if (end != null && position >= end) break;
-        } else if (_doneCompleter.isCompleted) {
-          break;
-        } else {
-          await _updateController.stream.first;
-        }
-      }
-    }
-    return ja.StreamAudioResponse(
-      sourceLength: _doneCompleter.isCompleted ? _buffer.length : null,
-      contentLength: end != null ? end - start : null,
-      offset: start,
-      stream: stream(),
-      contentType: 'audio/mpeg',
-    );
-  }
+  CachedAudio({this.filePath, required this.metadata});
 }
 
 class MyAudioHandler extends BaseAudioHandler with QueueHandler {
@@ -339,52 +265,41 @@ try {
           voice: voice,
         );
 
-        if (Platform.isWindows) {
-          final audioBytes = <int>[];
-          subscription = stream.listen(
-            (chunk) {
-              if (chunk is EdgeAudioChunk) {
-                audioBytes.addAll(chunk.data);
-              } else if (chunk is EdgeMetadataChunk) {
-                metadata.add(chunk);
+        subscription = stream.listen(
+          (chunk) {
+            if (chunk is EdgeAudioChunk) {
+              audioBytes.addAll(chunk.data);
+            } else if (chunk is EdgeMetadataChunk) {
+              metadata.add(chunk);
+            }
+          },
+          onError: (err) {
+            _pendingPrefetches.remove(cacheKey);
+            _activePrefetches.remove(cacheKey);
+            if (!completer.isCompleted) completer.completeError(err);
+          },
+          onDone: () async {
+            _activePrefetches.remove(cacheKey);
+            try {
+              if (audioBytes.isEmpty) {
+                throw Exception("Empty audio bytes");
               }
-            },
-            onError: (err) {
+              final tempDir = await PathHelper.getAppCacheDirectory();
+              final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+              await file.writeAsBytes(audioBytes, flush: true);
+              
+              final cached = CachedAudio(filePath: file.path, metadata: metadata);
+              _addToCache(cacheKey, cached);
               _pendingPrefetches.remove(cacheKey);
-              _activePrefetches.remove(cacheKey);
-              if (!completer.isCompleted) completer.completeError(err);
-            },
-            onDone: () async {
-              _activePrefetches.remove(cacheKey);
-              try {
-                if (audioBytes.isEmpty) {
-                  throw Exception("Empty audio bytes");
-                }
-                final tempDir = await PathHelper.getAppCacheDirectory();
-                final file = File('${tempDir.path}/tts_$cacheKey.mp3');
-                await file.writeAsBytes(audioBytes, flush: true);
-                
-                final cached = CachedAudio(filePath: file.path, metadata: metadata);
-                _addToCache(cacheKey, cached);
-                _pendingPrefetches.remove(cacheKey);
-                if (!completer.isCompleted) completer.complete(cached);
-              } catch (e) {
-                _pendingPrefetches.remove(cacheKey);
-                if (!completer.isCompleted) completer.completeError(e);
-              }
-            },
-            cancelOnError: true,
-          );
-        } else {
-          final source = EdgeTtsStreamAudioSource(stream, metadata);
-          final cached = CachedAudio(streamSource: source, metadata: metadata);
-          _addToCache(cacheKey, cached);
-          _pendingPrefetches.remove(cacheKey);
-          if (!completer.isCompleted) completer.complete(cached);
-
-          
-        }
-        
+              if (!completer.isCompleted) completer.complete(cached);
+            } catch (e) {
+              _pendingPrefetches.remove(cacheKey);
+              if (!completer.isCompleted) completer.completeError(e);
+            }
+          },
+          cancelOnError: true,
+        );
+        _activePrefetches[cacheKey] = subscription;
       } catch (e) {
         _pendingPrefetches.remove(cacheKey);
         _activePrefetches.remove(cacheKey);
@@ -700,53 +615,7 @@ try {
 
         if (cached == null) {
           if (provider == 'microsoft_edge') {
-            final stream = EdgeTtsService.synthesize(
-              text: text,
-              voice: voice,
-            );
-            if (Platform.isWindows) {
-              final audioBytes = <int>[];
-              final completer = Completer<void>();
-              
-              final subscription = stream.listen(
-                (chunk) {
-                  if (chunk is EdgeAudioChunk) {
-                    audioBytes.addAll(chunk.data);
-                  } else if (chunk is EdgeMetadataChunk) {
-                    _edgeMetadata.add(chunk);
-                  }
-                },
-                onError: (err) {
-                  debugPrint("MyAudioHandler.speak: Stream error occurred: $err");
-                  if (!completer.isCompleted) completer.completeError(err);
-                },
-                onDone: () {
-                  if (!completer.isCompleted) completer.complete();
-                },
-                cancelOnError: true,
-              );
-
-              try {
-                await completer.future;
-              } catch (e) {
-                subscription.cancel();
-                rethrow;
-              }
-              
-              if (audioBytes.isEmpty) {
-                throw Exception("No audio bytes received from Microsoft Edge TTS");
-              }
-              
-              final tempDir = await getTemporaryDirectory();
-              final file = File('${tempDir.path}/tts_$cacheKey.mp3');
-              await file.writeAsBytes(audioBytes, flush: true);
-              cached = CachedAudio(filePath: file.path, metadata: List.from(_edgeMetadata));
-              _addToCache(cacheKey, cached);
-            } else {
-              final source = EdgeTtsStreamAudioSource(stream, _edgeMetadata);
-              cached = CachedAudio(streamSource: source, metadata: List.from(_edgeMetadata));
-              _addToCache(cacheKey, cached);
-            }
+            cached = await prefetchSingle(text, voice, rate, provider);
           } else if (provider == 'supertonic') {
             // Sinh file wav qua Supertonic
             final filePath = await _synthesizeSupertonicToWav(text, voice, rate);
@@ -758,17 +627,17 @@ try {
             cached = CachedAudio(filePath: filePath, metadata: []);
             _addToCache(cacheKey, cached);
           }
-        } else {
-          _edgeMetadata.addAll(cached.metadata);
         }
+
+        if (cached == null || cached.filePath == null) {
+          throw Exception("Failed to obtain synthesized audio file path");
+        }
+
+        _edgeMetadata.addAll(cached.metadata);
         
         // Bắt đầu phát âm thanh
         _isSpeaking = true;
-        if (cached.streamSource != null) {
-          await _edgePlayer.setAudioSource(cached.streamSource!);
-        } else if (cached.filePath != null) {
-          await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(cached.filePath!)));
-        }
+        await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(cached.filePath!)));
         _edgePlayer.play();
         if (provider == 'supertonic') {
           await _edgePlayer.setSpeed(1.0); // Supertonic WAV đã có tốc độ nhúng sẵn, phát tốc độ chuẩn 1.0
@@ -992,7 +861,7 @@ try {
         }
         
         _isSpeaking = true;
-        await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(cached!.filePath!)));
+        await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(cached.filePath!)));
         _edgePlayer.play();
         await _edgePlayer.setSpeed(_speechRate * 2.0);
       } catch (err) {
