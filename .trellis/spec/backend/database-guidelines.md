@@ -16,7 +16,7 @@ Questions to answer:
 - How do you handle transactions?
 -->
 
-(To be filled by the team)
+- What ORM/query library do you use? 
 
 ---
 
