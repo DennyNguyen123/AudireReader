@@ -44,6 +44,17 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
     super.initState();
     _localBookmarks = List.from(widget.bookmarks);
     _localHighlights = List.from(widget.highlights);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.scrollController != null && widget.scrollController!.hasClients) {
+        final currentIdx = widget.ttsService.currentChapterIndex;
+        if (currentIdx > 0) {
+          final offset = (currentIdx * 52.0) - 52.0;
+          final maxScroll = widget.scrollController!.position.maxScrollExtent;
+          widget.scrollController!.jumpTo(offset > maxScroll ? maxScroll : (offset > 0 ? offset : 0));
+        }
+      }
+    });
   }
 
   @override

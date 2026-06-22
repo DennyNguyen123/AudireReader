@@ -193,6 +193,16 @@ class EpubParser {
       extractChaptersRecursive(epubBook.Chapters!);
     }
 
+    // Many web novel EPUBs have chapters in arbitrary or alphabetical order.
+    // Try to sort them naturally.
+    if (chapters.isNotEmpty) {
+      chapters.sort((a, b) => _naturalSortCompare(a.title, b.title));
+      // Re-assign chapterIndex after sorting
+      for (int i = 0; i < chapters.length; i++) {
+        chapters[i].chapterIndex = i;
+      }
+    }
+
     final book = Book()
       ..uuid = uuid
       ..title = title
@@ -202,6 +212,29 @@ class EpubParser {
       ..dateAdded = DateTime.now();
 
     return ParsedBookData(book: book, chapters: chapters);
+  }
+
+  static int _naturalSortCompare(String a, String b) {
+    final regExp = RegExp(r'(\d+)|([^\d]+)');
+    final matchesA = regExp.allMatches(a).map((m) => m.group(0)!).toList();
+    final matchesB = regExp.allMatches(b).map((m) => m.group(0)!).toList();
+
+    for (int i = 0; i < matchesA.length && i < matchesB.length; i++) {
+      final partA = matchesA[i];
+      final partB = matchesB[i];
+
+      final intA = int.tryParse(partA);
+      final intB = int.tryParse(partB);
+
+      if (intA != null && intB != null) {
+        final cmp = intA.compareTo(intB);
+        if (cmp != 0) return cmp;
+      } else {
+        final cmp = partA.toLowerCase().compareTo(partB.toLowerCase());
+        if (cmp != 0) return cmp;
+      }
+    }
+    return matchesA.length.compareTo(matchesB.length);
   }
 
   @visibleForTesting

@@ -36,7 +36,6 @@ class TtsService extends ChangeNotifier {
   List<Chapter> _chapters = [];
   int _currentChapterIndex = 0;
   int _currentParagraphIndex = 0;
-  bool _isPaused = false; // Phân biệt trạng thái pause (có thể resume) vs stop
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS
 
   // Highlight vị trí từ đang đọc
@@ -301,8 +300,6 @@ class TtsService extends ChangeNotifier {
   Future<void> startSpeaking() async {
     if (_activeBook == null || _chapters.isEmpty) return;
 
-    _isPaused = false; // Reset flag khi bắt đầu đọc đoạn mới
-
     final chapter = _chapters[_currentChapterIndex];
     if (chapter.paragraphs.isEmpty) return;
 
@@ -344,7 +341,6 @@ class TtsService extends ChangeNotifier {
 
   Future<void> pauseSpeaking() async {
     LoggerService().log('TTS speaking paused', tag: 'TTS', level: LogLevel.tts);
-    _isPaused = true; // Đánh dấu đang pause để có thể resume
     await audioHandler.pause();
     notifyListeners();
   }
@@ -352,14 +348,16 @@ class TtsService extends ChangeNotifier {
   Future<void> togglePlayPause() async {
     if (isPlaying) {
       await pauseSpeaking();
-    } else if (_isPaused) {
-      // Resume từ chỗ đang dừng (Edge TTS: _edgePlayer.resume(), System TTS: re-speak)
-      LoggerService().log('TTS resuming from pause', tag: 'TTS', level: LogLevel.tts);
-      _isPaused = false;
-      await audioHandler.play();
-      notifyListeners();
     } else {
-      await startSpeaking();
+      final state = audioHandler.playbackState.value;
+      if (state.processingState == AudioProcessingState.ready && _activeBook != null) {
+        // Resume từ chỗ đang dừng
+        LoggerService().log('TTS resuming from pause', tag: 'TTS', level: LogLevel.tts);
+        await audioHandler.play();
+        notifyListeners();
+      } else {
+        await startSpeaking();
+      }
     }
   }
 
