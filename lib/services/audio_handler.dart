@@ -397,7 +397,8 @@ try {
       ));
       
       // Đưa việc gọi callback ra ngoài Native Thread sang Dart Event Loop (Platform Thread)
-      Future.delayed(Duration.zero, () {
+      // Delay 100ms để Native TTS nhả hoàn toàn AudioSession và tránh kẹt trên iOS
+      Future.delayed(const Duration(milliseconds: 100), () {
         onParagraphComplete?.call();
       });
     });
@@ -548,15 +549,20 @@ try {
     // Gọi resume nhạc nền nếu được bật
     BgmService.getInstance().resumeBgm();
     
+    // Lưu lại trạng thái của Native TTS trước khi reset
+    bool wasNativeTtsActive = _isSpeaking || _isSystemTtsPaused;
+
     // 1. Dừng mọi tác vụ phát cũ một cách an toàn và tuần tự
     _isSpeaking = false;
     _isSystemTtsPaused = false;
     _windowsTimer?.cancel();
     
-    await _tts.stop();
+    if (wasNativeTtsActive) {
+      await _tts.stop();
+    }
     await _edgePlayer.stop();
     
-    if (!Platform.isWindows) {
+    if (wasNativeTtsActive && !Platform.isWindows) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
     
@@ -713,14 +719,16 @@ try {
         ));
         await _edgePlayer.play();
       } else if (_isSystemTtsPaused) {
-        _isSpeaking = true;
         _isSystemTtsPaused = false;
         
         // Cần gọi stop() để xoá trạng thái pause của iOS Native TTS trước khi phát tiếp
+        // Đảm bảo _isSpeaking = false khi gọi stop() để tránh kích hoạt completionHandler của flutter_tts
         await _tts.stop();
         if (!Platform.isWindows) {
           await Future.delayed(const Duration(milliseconds: 50));
         }
+
+        _isSpeaking = true;
 
         playbackState.add(playbackState.value.copyWith(
           controls: [
