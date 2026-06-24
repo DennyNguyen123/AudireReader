@@ -11,7 +11,13 @@ class AppSettings {
   
   String? selectedVoiceName;
   String? selectedVoiceLocale;
-  String ttsProvider = 'system'; // 'system' hoặc 'microsoft_edge'
+  String ttsProvider = 'system'; // 'system' hoặc 'microsoft_edge' hoặc 'supertonic' hoặc 'openai'
+
+  // --- OpenAI TTS Settings ---
+  String openAiTtsEndpoint = 'https://api.openai.com/v1';
+  String openAiTtsApiKey = '';
+  String openAiTtsModel = 'tts-1';
+
 
   String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'
   String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia', 'Custom'

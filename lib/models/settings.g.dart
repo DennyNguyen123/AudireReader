@@ -142,78 +142,93 @@ const AppSettingsSchema = CollectionSchema(
       name: r'lineHeight',
       type: IsarType.double,
     ),
-    r'openLastReadOnLaunch': PropertySchema(
+    r'openAiTtsApiKey': PropertySchema(
       id: 25,
+      name: r'openAiTtsApiKey',
+      type: IsarType.string,
+    ),
+    r'openAiTtsEndpoint': PropertySchema(
+      id: 26,
+      name: r'openAiTtsEndpoint',
+      type: IsarType.string,
+    ),
+    r'openAiTtsModel': PropertySchema(
+      id: 27,
+      name: r'openAiTtsModel',
+      type: IsarType.string,
+    ),
+    r'openLastReadOnLaunch': PropertySchema(
+      id: 28,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'paragraphSpacing': PropertySchema(
-      id: 26,
+      id: 29,
       name: r'paragraphSpacing',
       type: IsarType.double,
     ),
     r'primaryColorHex': PropertySchema(
-      id: 27,
+      id: 30,
       name: r'primaryColorHex',
       type: IsarType.string,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 28,
+      id: 31,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 29,
+      id: 32,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
     r'sideMargin': PropertySchema(
-      id: 30,
+      id: 33,
       name: r'sideMargin',
       type: IsarType.double,
     ),
     r'sortBy': PropertySchema(
-      id: 31,
+      id: 34,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 32,
+      id: 35,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'textAlignment': PropertySchema(
-      id: 33,
+      id: 36,
       name: r'textAlignment',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 34,
+      id: 37,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 35,
+      id: 38,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 36,
+      id: 39,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 37,
+      id: 40,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 38,
+      id: 41,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 39,
+      id: 42,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -274,6 +289,9 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.hotkeyPlayPauseTts.length * 3;
   bytesCount += 3 + object.hotkeyPrevChapter.length * 3;
   bytesCount += 3 + object.hotkeyPrevParagraph.length * 3;
+  bytesCount += 3 + object.openAiTtsApiKey.length * 3;
+  bytesCount += 3 + object.openAiTtsEndpoint.length * 3;
+  bytesCount += 3 + object.openAiTtsModel.length * 3;
   {
     final value = object.primaryColorHex;
     if (value != null) {
@@ -332,21 +350,24 @@ void _appSettingsSerialize(
   writer.writeString(offsets[22], object.hotkeyPrevChapter);
   writer.writeString(offsets[23], object.hotkeyPrevParagraph);
   writer.writeDouble(offsets[24], object.lineHeight);
-  writer.writeBool(offsets[25], object.openLastReadOnLaunch);
-  writer.writeDouble(offsets[26], object.paragraphSpacing);
-  writer.writeString(offsets[27], object.primaryColorHex);
-  writer.writeString(offsets[28], object.selectedVoiceLocale);
-  writer.writeString(offsets[29], object.selectedVoiceName);
-  writer.writeDouble(offsets[30], object.sideMargin);
-  writer.writeString(offsets[31], object.sortBy);
-  writer.writeDouble(offsets[32], object.speechRate);
-  writer.writeString(offsets[33], object.textAlignment);
-  writer.writeString(offsets[34], object.themeMode);
-  writer.writeString(offsets[35], object.ttsProvider);
-  writer.writeBool(offsets[36], object.webDavEnabled);
-  writer.writeDateTime(offsets[37], object.webDavLastSync);
-  writer.writeString(offsets[38], object.webDavUrl);
-  writer.writeString(offsets[39], object.webDavUsername);
+  writer.writeString(offsets[25], object.openAiTtsApiKey);
+  writer.writeString(offsets[26], object.openAiTtsEndpoint);
+  writer.writeString(offsets[27], object.openAiTtsModel);
+  writer.writeBool(offsets[28], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[29], object.paragraphSpacing);
+  writer.writeString(offsets[30], object.primaryColorHex);
+  writer.writeString(offsets[31], object.selectedVoiceLocale);
+  writer.writeString(offsets[32], object.selectedVoiceName);
+  writer.writeDouble(offsets[33], object.sideMargin);
+  writer.writeString(offsets[34], object.sortBy);
+  writer.writeDouble(offsets[35], object.speechRate);
+  writer.writeString(offsets[36], object.textAlignment);
+  writer.writeString(offsets[37], object.themeMode);
+  writer.writeString(offsets[38], object.ttsProvider);
+  writer.writeBool(offsets[39], object.webDavEnabled);
+  writer.writeDateTime(offsets[40], object.webDavLastSync);
+  writer.writeString(offsets[41], object.webDavUrl);
+  writer.writeString(offsets[42], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -382,21 +403,24 @@ AppSettings _appSettingsDeserialize(
   object.hotkeyPrevParagraph = reader.readString(offsets[23]);
   object.id = id;
   object.lineHeight = reader.readDouble(offsets[24]);
-  object.openLastReadOnLaunch = reader.readBool(offsets[25]);
-  object.paragraphSpacing = reader.readDouble(offsets[26]);
-  object.primaryColorHex = reader.readStringOrNull(offsets[27]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[28]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[29]);
-  object.sideMargin = reader.readDouble(offsets[30]);
-  object.sortBy = reader.readString(offsets[31]);
-  object.speechRate = reader.readDouble(offsets[32]);
-  object.textAlignment = reader.readString(offsets[33]);
-  object.themeMode = reader.readString(offsets[34]);
-  object.ttsProvider = reader.readString(offsets[35]);
-  object.webDavEnabled = reader.readBool(offsets[36]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[37]);
-  object.webDavUrl = reader.readString(offsets[38]);
-  object.webDavUsername = reader.readString(offsets[39]);
+  object.openAiTtsApiKey = reader.readString(offsets[25]);
+  object.openAiTtsEndpoint = reader.readString(offsets[26]);
+  object.openAiTtsModel = reader.readString(offsets[27]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[28]);
+  object.paragraphSpacing = reader.readDouble(offsets[29]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[30]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[31]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[32]);
+  object.sideMargin = reader.readDouble(offsets[33]);
+  object.sortBy = reader.readString(offsets[34]);
+  object.speechRate = reader.readDouble(offsets[35]);
+  object.textAlignment = reader.readString(offsets[36]);
+  object.themeMode = reader.readString(offsets[37]);
+  object.ttsProvider = reader.readString(offsets[38]);
+  object.webDavEnabled = reader.readBool(offsets[39]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[40]);
+  object.webDavUrl = reader.readString(offsets[41]);
+  object.webDavUsername = reader.readString(offsets[42]);
   return object;
 }
 
@@ -458,34 +482,40 @@ P _appSettingsDeserializeProp<P>(
     case 24:
       return (reader.readDouble(offset)) as P;
     case 25:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 26:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 27:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 28:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 29:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 30:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 31:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 32:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 33:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 34:
       return (reader.readString(offset)) as P;
     case 35:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 36:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 37:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 38:
       return (reader.readString(offset)) as P;
     case 39:
+      return (reader.readBool(offset)) as P;
+    case 40:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 41:
+      return (reader.readString(offset)) as P;
+    case 42:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3207,6 +3237,414 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'openAiTtsApiKey',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'openAiTtsApiKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'openAiTtsApiKey',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsApiKey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsApiKeyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'openAiTtsApiKey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'openAiTtsEndpoint',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'openAiTtsEndpoint',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'openAiTtsEndpoint',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsEndpoint',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsEndpointIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'openAiTtsEndpoint',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'openAiTtsModel',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'openAiTtsModel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'openAiTtsModel',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'openAiTtsModel',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      openAiTtsModelIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'openAiTtsModel',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       openLastReadOnLaunchEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -5109,6 +5547,46 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByOpenAiTtsApiKey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsApiKey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByOpenAiTtsApiKeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsApiKey', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByOpenAiTtsEndpoint() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsEndpoint', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByOpenAiTtsEndpointDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsEndpoint', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByOpenAiTtsModel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsModel', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByOpenAiTtsModelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsModel', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       sortByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
@@ -5643,6 +6121,46 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByOpenAiTtsApiKey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsApiKey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByOpenAiTtsApiKeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsApiKey', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByOpenAiTtsEndpoint() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsEndpoint', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByOpenAiTtsEndpointDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsEndpoint', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByOpenAiTtsModel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsModel', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByOpenAiTtsModelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'openAiTtsModel', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       thenByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
@@ -6020,6 +6538,30 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByOpenAiTtsApiKey(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'openAiTtsApiKey',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByOpenAiTtsEndpoint(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'openAiTtsEndpoint',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByOpenAiTtsModel(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'openAiTtsModel',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByOpenLastReadOnLaunch() {
     return QueryBuilder.apply(this, (query) {
@@ -6293,6 +6835,26 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, double, QQueryOperations> lineHeightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'lineHeight');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      openAiTtsApiKeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'openAiTtsApiKey');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      openAiTtsEndpointProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'openAiTtsEndpoint');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> openAiTtsModelProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'openAiTtsModel');
     });
   }
 

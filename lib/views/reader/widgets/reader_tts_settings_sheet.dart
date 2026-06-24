@@ -31,6 +31,10 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
   String _voiceSearchQuery = '';
   bool _isLoading = true;
 
+  String _openAiTtsEndpoint = 'https://api.openai.com/v1';
+  String _openAiTtsApiKey = '';
+  String _openAiTtsModel = 'tts-1';
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +75,11 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
     try {
       final list = await widget.ttsService.getVoicesForProvider(settings.ttsProvider);
 
+      _ttsProvider = settings.ttsProvider;
+      _openAiTtsEndpoint = settings.openAiTtsEndpoint;
+      _openAiTtsApiKey = settings.openAiTtsApiKey;
+      _openAiTtsModel = settings.openAiTtsModel;
+        
       Map<String, String>? initialVoice;
       if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
         dynamic matched;
@@ -85,6 +94,12 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
           initialVoice = Map<String, String>.from(
             (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
           );
+        } else if (settings.ttsProvider == 'openai') {
+          initialVoice = {
+            'name': settings.selectedVoiceName!,
+            'locale': settings.selectedVoiceLocale!,
+            'gender': 'Neutral'
+          };
         }
       } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
         dynamic matched;
@@ -117,17 +132,60 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
     double? speechRate,
     Map<String, String>? voice,
     String? ttsProvider,
+    String? openAiTtsEndpoint,
+    String? openAiTtsApiKey,
+    String? openAiTtsModel,
   }) async {
     try {
       await widget.ttsService.updateSettings(
         speechRate: speechRate,
         voice: voice,
         ttsProvider: ttsProvider,
+        openAiTtsEndpoint: openAiTtsEndpoint,
+        openAiTtsApiKey: openAiTtsApiKey,
+        openAiTtsModel: openAiTtsModel,
       );
     } catch (e) {
       // ignore: avoid_print
       print("Failed to save TTS settings in reader sheet: $e");
     }
+  }
+
+  void _showCustomSleepTimerDialog(BuildContext context) {
+    final TextEditingController textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)?.sleepTimer ?? 'Sleep Timer'),
+          content: TextField(
+            controller: textController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Minutes',
+              hintText: 'Enter minutes',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final int? minutes = int.tryParse(textController.text);
+                if (minutes != null && minutes > 0) {
+                  widget.ttsService.startSleepTimer(minutes);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -301,6 +359,16 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                               }
                             },
                           ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text('Custom', style: TextStyle(fontSize: 12)),
+                            selected: false,
+                            selectedColor: accentColor,
+                            labelStyle: TextStyle(color: labelColor),
+                            onSelected: (_) {
+                              _showCustomSleepTimerDialog(context);
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -325,6 +393,21 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                             selectedLanguageFilter: _selectedLanguageFilter,
                             voiceSearchController: _voiceSearchController,
                             voiceSearchQuery: _voiceSearchQuery,
+                            openAiTtsEndpoint: _openAiTtsEndpoint,
+                            openAiTtsApiKey: _openAiTtsApiKey,
+                            openAiTtsModel: _openAiTtsModel,
+                            onOpenAiEndpointChanged: (val) {
+                              setState(() => _openAiTtsEndpoint = val);
+                              _saveReadingPreference(openAiTtsEndpoint: val);
+                            },
+                            onOpenAiApiKeyChanged: (val) {
+                              setState(() => _openAiTtsApiKey = val);
+                              _saveReadingPreference(openAiTtsApiKey: val);
+                            },
+                            onOpenAiModelChanged: (val) {
+                              setState(() => _openAiTtsModel = val);
+                              _saveReadingPreference(openAiTtsModel: val);
+                            },
                             onSpeechRateSliderChanged: (val) {
                               setState(() {
                                 _speechRate = val;

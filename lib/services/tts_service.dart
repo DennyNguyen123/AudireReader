@@ -488,6 +488,9 @@ class TtsService extends ChangeNotifier {
     String? fontFamily,
     String? themeMode,
     String? ttsProvider,
+    String? openAiTtsEndpoint,
+    String? openAiTtsApiKey,
+    String? openAiTtsModel,
     double? lineHeight,
     double? paragraphSpacing,
     String? textAlignment,
@@ -505,6 +508,9 @@ class TtsService extends ChangeNotifier {
       settings.speechRate = speechRate;
       await audioHandler.setSpeed(speechRate);
     }
+    if (openAiTtsEndpoint != null) settings.openAiTtsEndpoint = openAiTtsEndpoint;
+    if (openAiTtsApiKey != null) settings.openAiTtsApiKey = openAiTtsApiKey;
+    if (openAiTtsModel != null) settings.openAiTtsModel = openAiTtsModel;
     if (voice != null) {
       settings.selectedVoiceName = voice['name'];
       settings.selectedVoiceLocale = voice['locale'];
@@ -527,6 +533,9 @@ class TtsService extends ChangeNotifier {
         settings.selectedVoiceName = 'M1';
         settings.selectedVoiceLocale = 'offline';
         unawaited(SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'));
+      } else if (ttsProvider == 'openai') {
+        settings.selectedVoiceName = 'alloy';
+        settings.selectedVoiceLocale = 'en';
       } else {
         settings.selectedVoiceName = null;
         settings.selectedVoiceLocale = null;
@@ -558,6 +567,18 @@ class TtsService extends ChangeNotifier {
         {'name': 'F3', 'locale': 'offline', 'gender': 'Female'},
         {'name': 'F4', 'locale': 'offline', 'gender': 'Female'},
         {'name': 'F5', 'locale': 'offline', 'gender': 'Female'},
+      ];
+    }
+    if (provider == 'openai') {
+      // Lazy load openAiTtsService if needed, but it's just static now
+      // Actually we will hardcode the voices here or return from OpenAiTtsService
+      return [
+        {'name': 'alloy', 'locale': 'en', 'gender': 'Neutral'},
+        {'name': 'echo', 'locale': 'en', 'gender': 'Male'},
+        {'name': 'fable', 'locale': 'en', 'gender': 'Neutral'},
+        {'name': 'onyx', 'locale': 'en', 'gender': 'Male'},
+        {'name': 'nova', 'locale': 'en', 'gender': 'Female'},
+        {'name': 'shimmer', 'locale': 'en', 'gender': 'Female'},
       ];
     }
     final normalizedProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';

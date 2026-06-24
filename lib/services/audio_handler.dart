@@ -11,9 +11,10 @@ import 'dart:convert';
 import '../core/database/database_helper.dart';
 import 'edge_tts_service.dart';
 import 'supertonic_service.dart';
+import 'openai_tts_service.dart';
 import 'bgm_service.dart';
 
-enum TtsEngineType { system, edge, supertonic }
+enum TtsEngineType { system, edge, supertonic, openai }
 
 class CachedAudio {
   final String? filePath;
@@ -80,6 +81,10 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
         }
       }
     }
+  }
+
+  Future<String> _synthesizeOpenAiToAudio(String text, String voiceName, double rate) async {
+    return await OpenAiTtsService.synthesizeToWav(text, voiceName, rate);
   }
 
   Future<String> _synthesizeSupertonicToWav(String text, String voiceStyle, double rate) async {
@@ -253,6 +258,16 @@ try {
         _pendingPrefetches.remove(cacheKey);
         completer.completeError(err);
       });
+    } else if (provider == 'openai') {
+      _synthesizeOpenAiToAudio(text, voice, rate).then((filePath) {
+        final cached = CachedAudio(filePath: filePath, metadata: []);
+        _addToCache(cacheKey, cached);
+        _pendingPrefetches.remove(cacheKey);
+        completer.complete(cached);
+      }).catchError((err) {
+        _pendingPrefetches.remove(cacheKey);
+        completer.completeError(err);
+      });
     } else {
       // Edge TTS
       StreamSubscription? subscription;
@@ -315,10 +330,12 @@ try {
     final settings = await db.getSettings();
     final provider = (settings.ttsProvider == 'microsoft_edge') 
         ? 'microsoft_edge' 
-        : (settings.ttsProvider == 'supertonic' ? 'supertonic' : 'system');
+        : (settings.ttsProvider == 'supertonic' 
+            ? 'supertonic' 
+            : (settings.ttsProvider == 'openai' ? 'openai' : 'system'));
     
-    // Chỉ prefetch cho Edge TTS, Supertonic HOẶC System TTS trên Windows
-    if (provider != 'microsoft_edge' && provider != 'supertonic' && !(provider == 'system' && Platform.isWindows)) return;
+    // Chỉ prefetch cho Edge TTS, Supertonic, OpenAI HOẶC System TTS trên Windows
+    if (provider != 'microsoft_edge' && provider != 'supertonic' && provider != 'openai' && !(provider == 'system' && Platform.isWindows)) return;
     
     String voice = settings.selectedVoiceName ?? 
         (provider == 'microsoft_edge' 
@@ -468,7 +485,7 @@ try {
     });
 
     _completeSub = _edgePlayer.playerStateStream.listen((state) {
-      if ((_activeEngine != TtsEngineType.edge && _activeEngine != TtsEngineType.supertonic && !(Platform.isWindows && _activeEngine == TtsEngineType.system)) || !_isSpeaking) return;
+      if ((_activeEngine != TtsEngineType.edge && _activeEngine != TtsEngineType.supertonic && _activeEngine != TtsEngineType.openai && !(Platform.isWindows && _activeEngine == TtsEngineType.system)) || !_isSpeaking) return;
 
       if (state.processingState == ja.ProcessingState.completed) {
         _isSpeaking = false;
@@ -577,7 +594,9 @@ try {
     final settings = await db.getSettings();
     final provider = (settings.ttsProvider == 'microsoft_edge') 
         ? 'microsoft_edge' 
-        : (settings.ttsProvider == 'supertonic' ? 'supertonic' : 'system');
+        : (settings.ttsProvider == 'supertonic' 
+            ? 'supertonic' 
+            : (settings.ttsProvider == 'openai' ? 'openai' : 'system'));
     
     playbackState.add(playbackState.value.copyWith(
       controls: [
@@ -593,15 +612,18 @@ try {
       processingState: AudioProcessingState.ready,
     ));
 
-    if (provider == 'microsoft_edge' || provider == 'supertonic' || (provider == 'system' && Platform.isWindows)) {
+    print("--- [AudioHandler] speak() called. provider: $provider, text: ${text.substring(0, text.length > 20 ? 20 : text.length)} ---");
+
+    if (provider == 'microsoft_edge' || provider == 'supertonic' || provider == 'openai' || (provider == 'system' && Platform.isWindows)) {
       _activeEngine = (provider == 'microsoft_edge') 
           ? TtsEngineType.edge 
-          : (provider == 'supertonic' ? TtsEngineType.supertonic : TtsEngineType.system);
+          : (provider == 'supertonic' ? TtsEngineType.supertonic : (provider == 'openai' ? TtsEngineType.openai : TtsEngineType.system));
+
       
       String voice = settings.selectedVoiceName ?? 
           (provider == 'microsoft_edge' 
               ? "vi-VN-HoaiMyNeural" 
-              : (provider == 'supertonic' ? "M1" : "default"));
+              : (provider == 'supertonic' ? "M1" : (provider == 'openai' ? "Alloy" : "default")));
       if (provider == 'system' && (voice.contains('Neural') || voice.split('-').length > 2)) {
         voice = "default";
       }
@@ -625,6 +647,11 @@ try {
           } else if (provider == 'supertonic') {
             // Sinh file wav qua Supertonic
             final filePath = await _synthesizeSupertonicToWav(text, voice, rate);
+            cached = CachedAudio(filePath: filePath, metadata: []);
+            _addToCache(cacheKey, cached);
+          } else if (provider == 'openai') {
+            // Sinh file mp3 qua OpenAI TTS
+            final filePath = await _synthesizeOpenAiToAudio(text, voice, rate);
             cached = CachedAudio(filePath: filePath, metadata: []);
             _addToCache(cacheKey, cached);
           } else {
@@ -706,7 +733,7 @@ try {
   Future<void> play() async {
     BgmService.getInstance().resumeBgm();
     if (!_isSpeaking && _currentText.isNotEmpty) {
-      if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
+      if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
         _isSpeaking = true;
         playbackState.add(playbackState.value.copyWith(
           controls: [
@@ -764,7 +791,7 @@ try {
     _windowsTimer?.cancel();
     cancelAllPrefetches();
     
-    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
+    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.pause();
     } else {
       // Sử dụng _tts.pause() thay vì _tts.stop() để giữ vị trí phát
@@ -792,7 +819,7 @@ try {
     _windowsTimer?.cancel();
     cancelAllPrefetches();
     
-    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
+    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.stop();
     } else {
       await _tts.stop();
@@ -809,7 +836,7 @@ try {
   Future<void> setSpeed(double speed) async {
     _speechRate = speed;
     await _tts.setSpeechRate(speed);
-    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
+    if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.setSpeed(speed * 2.0);
     }
   }

@@ -21,6 +21,13 @@ class TtsSettingsSection extends StatelessWidget {
   final ValueChanged<Map<String, String>> onVoiceSelected;
   final VoidCallback onManagePronunciation;
 
+  final String openAiTtsEndpoint;
+  final String openAiTtsApiKey;
+  final String openAiTtsModel;
+  final ValueChanged<String> onOpenAiEndpointChanged;
+  final ValueChanged<String> onOpenAiApiKeyChanged;
+  final ValueChanged<String> onOpenAiModelChanged;
+
   const TtsSettingsSection({
     super.key,
     required this.speechRate,
@@ -39,6 +46,12 @@ class TtsSettingsSection extends StatelessWidget {
     required this.onClearVoiceSearch,
     required this.onVoiceSelected,
     required this.onManagePronunciation,
+    required this.openAiTtsEndpoint,
+    required this.openAiTtsApiKey,
+    required this.openAiTtsModel,
+    required this.onOpenAiEndpointChanged,
+    required this.onOpenAiApiKeyChanged,
+    required this.onOpenAiModelChanged,
   });
 
   @override
@@ -155,9 +168,107 @@ class TtsSettingsSection extends StatelessWidget {
                   style: TextStyle(fontSize: 13),
                 ),
               ),
+              const DropdownMenuItem<String>(
+                value: 'openai',
+                child: Text(
+                  'OpenAI / Custom API (Online)',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
             ],
             onChanged: onTtsProviderChanged,
           ),
+          if (ttsProvider == 'openai') ...[
+            const SizedBox(height: 16),
+            Text(
+              'API Endpoint',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              initialValue: openAiTtsEndpoint,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                hintText: 'https://api.openai.com/v1',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.restore_rounded),
+                  tooltip: 'Reset to default',
+                  onPressed: () => onOpenAiEndpointChanged('https://api.openai.com/v1'),
+                ),
+              ),
+              onChanged: onOpenAiEndpointChanged,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'API Key',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              initialValue: openAiTtsApiKey,
+              obscureText: true,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                hintText: 'sk-...',
+              ),
+              onChanged: onOpenAiApiKeyChanged,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'API Model',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              initialValue: openAiTtsModel,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                hintText: 'tts-1',
+              ),
+              onChanged: onOpenAiModelChanged,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Custom Voice Name',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              initialValue: selectedVoice?['name'] ?? 'alloy',
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                hintText: 'alloy',
+                helperText: 'Type your custom voice if not using official OpenAI voices.',
+              ),
+              onChanged: (val) {
+                onVoiceSelected({'name': val, 'locale': 'en', 'gender': 'Neutral'});
+              },
+            ),
+          ],
           if (ttsProvider == 'supertonic') ...[
             const SizedBox(height: 16),
             ListenableBuilder(

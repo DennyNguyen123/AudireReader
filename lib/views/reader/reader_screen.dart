@@ -699,6 +699,33 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 actions: [
+                  if (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration != null)
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.bedtime, size: 14, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   IconButton(
                     icon: const Icon(Icons.search_rounded),
                     onPressed: _showSearchInsideBook,

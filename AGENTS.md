@@ -19,3 +19,19 @@ If you're using Codex or another agent-capable tool, additional project-scoped h
 Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
 
 <!-- TRELLIS:END -->
+
+---
+
+## 📌 Quy định bắt buộc đối với AI Assistant (Agent) về việc sử dụng Trellis
+
+Mọi AI Assistant khi làm việc trong dự án này **bắt buộc** phải tuân thủ quy trình quản lý của Trellis:
+1. **Trước khi bắt đầu thực hiện (viết code)**:
+   - Kiểm tra task active bằng lệnh: `python ./.trellis/scripts/task.py current --source`.
+   - Nếu chưa có task active, bắt buộc phải hỏi ý kiến người dùng và chạy lệnh để tạo + kích hoạt task:
+     - Tạo task: `python ./.trellis/scripts/task.py create "Tên nhiệm vụ" --slug <slug-name>`
+     - Bắt đầu task: `python ./.trellis/scripts/task.py start <slug-name>`
+2. **Sau khi thực hiện xong và build thành công**:
+   - Bắt buộc phải chạy lệnh ghi nhận nhật ký phiên làm việc (Session) trước khi báo cáo hoàn thành:
+     - Ghi nhận: `python ./.trellis/scripts/add_session.py --title "Tiêu đề session" --summary "Tóm tắt những thay đổi" --no-commit`
+
+*Quy định này là bắt buộc đối với tất cả các AI Agent và không được phép bỏ qua trong bất kỳ phiên hội thoại nào.*

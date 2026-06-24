@@ -5,3 +5,65 @@
 
 ---
 
+
+
+## Session 1: Thêm hỗ trợ OpenAI TTS
+
+**Date**: 2026-06-25
+**Task**: Thêm hỗ trợ OpenAI TTS
+**Branch**: `main`
+
+### Summary
+
+Cập nhật AppSettings, AudioHandler, TtsService và giao diện để cấu hình Endpoint, API Key và Model cho OpenAI TTS.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 2: Custom Sleep Timer
+
+**Date**: 2026-06-25
+**Task**: Custom Sleep Timer
+**Branch**: `main`
+
+### Summary
+
+Added custom sleep timer input via dialog and a countdown indicator in the reading screen AppBar.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

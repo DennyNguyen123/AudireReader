@@ -25,6 +25,10 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
   String _voiceSearchQuery = '';
   bool _isLoading = true;
 
+  String _openAiTtsEndpoint = 'https://api.openai.com/v1';
+  String _openAiTtsApiKey = '';
+  String _openAiTtsModel = 'tts-1';
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +51,9 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
         _speechRate = settings.speechRate;
         _speedController.text = (_speechRate * 2).toStringAsFixed(3);
         _ttsProvider = settings.ttsProvider;
+        _openAiTtsEndpoint = settings.openAiTtsEndpoint;
+        _openAiTtsApiKey = settings.openAiTtsApiKey;
+        _openAiTtsModel = settings.openAiTtsModel;
       });
 
       await _loadVoices(settings);
@@ -81,6 +88,12 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
           initialVoice = Map<String, String>.from(
             (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
           );
+        } else if (settings.ttsProvider == 'openai') {
+          initialVoice = {
+            'name': settings.selectedVoiceName!,
+            'locale': settings.selectedVoiceLocale!,
+            'gender': 'Neutral'
+          };
         }
       } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
         dynamic matched;
@@ -113,6 +126,9 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
     double? speechRate,
     Map<String, String>? voice,
     String? ttsProvider,
+    String? openAiTtsEndpoint,
+    String? openAiTtsApiKey,
+    String? openAiTtsModel,
   }) async {
     try {
       final ttsService = await TtsService.getInstance();
@@ -120,6 +136,9 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
         speechRate: speechRate,
         voice: voice,
         ttsProvider: ttsProvider,
+        openAiTtsEndpoint: openAiTtsEndpoint,
+        openAiTtsApiKey: openAiTtsApiKey,
+        openAiTtsModel: openAiTtsModel,
       );
     } catch (e) {
       // ignore: avoid_print
@@ -191,6 +210,21 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
                         selectedLanguageFilter: _selectedLanguageFilter,
                         voiceSearchController: _voiceSearchController,
                         voiceSearchQuery: _voiceSearchQuery,
+                        openAiTtsEndpoint: _openAiTtsEndpoint,
+                        openAiTtsApiKey: _openAiTtsApiKey,
+                        openAiTtsModel: _openAiTtsModel,
+                        onOpenAiEndpointChanged: (val) {
+                          setState(() => _openAiTtsEndpoint = val);
+                          _saveReadingPreference(openAiTtsEndpoint: val);
+                        },
+                        onOpenAiApiKeyChanged: (val) {
+                          setState(() => _openAiTtsApiKey = val);
+                          _saveReadingPreference(openAiTtsApiKey: val);
+                        },
+                        onOpenAiModelChanged: (val) {
+                          setState(() => _openAiTtsModel = val);
+                          _saveReadingPreference(openAiTtsModel: val);
+                        },
                         onSpeechRateSliderChanged: (val) {
                           setState(() {
                             _speechRate = val;
