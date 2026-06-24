@@ -198,6 +198,41 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                             ),
                             
                             Divider(height: 1, color: secondaryColor.withValues(alpha: 0.2), indent: 56),
+
+                            // Provider Row
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.library_music_rounded, size: 22, color: secondaryColor),
+                                      const SizedBox(width: 16),
+                                      Text("Source", style: TextStyle(fontWeight: FontWeight.w600, color: labelColor, fontSize: 15)),
+                                    ],
+                                  ),
+                                  DropdownButton<String>(
+                                    value: bgmService.bgmProviderId,
+                                    underline: const SizedBox(),
+                                    icon: Icon(Icons.arrow_drop_down_rounded, color: secondaryColor),
+                                    dropdownColor: cardBg,
+                                    borderRadius: BorderRadius.circular(12),
+                                    items: bgmService.providers.map((p) => DropdownMenuItem(
+                                      value: p.id,
+                                      child: Text(p.name, style: TextStyle(fontSize: 14, color: labelColor, fontWeight: FontWeight.w600)),
+                                    )).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        bgmService.changeProvider(val);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            Divider(height: 1, color: secondaryColor.withValues(alpha: 0.2), indent: 56),
                             
                             // Loop Mode Row
                             Padding(
@@ -247,24 +282,25 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                           "Playlist",
                           style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 18),
                         ),
-                        TextButton.icon(
-                          style: TextButton.styleFrom(
-                            foregroundColor: accentColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            backgroundColor: accentColor.withValues(alpha: 0.1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        if (bgmService.bgmProviderId == 'local')
+                          TextButton.icon(
+                            style: TextButton.styleFrom(
+                              foregroundColor: accentColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              backgroundColor: accentColor.withValues(alpha: 0.1),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            icon: Icon(
+                              _showAddBgmForm ? Icons.close_rounded : Icons.add_rounded,
+                              size: 18,
+                            ),
+                            label: Text(_showAddBgmForm ? "Cancel" : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () {
+                              setState(() {
+                                _showAddBgmForm = !_showAddBgmForm;
+                              });
+                            },
                           ),
-                          icon: Icon(
-                            _showAddBgmForm ? Icons.close_rounded : Icons.add_rounded,
-                            size: 18,
-                          ),
-                          label: Text(_showAddBgmForm ? "Cancel" : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            setState(() {
-                              _showAddBgmForm = !_showAddBgmForm;
-                            });
-                          },
-                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -273,7 +309,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                     AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOutCubic,
-                      child: !_showAddBgmForm ? const SizedBox.shrink() : Container(
+                      child: (!_showAddBgmForm || bgmService.bgmProviderId != 'local') ? const SizedBox.shrink() : Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -419,7 +455,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                         separatorBuilder: (context, index) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final track = bgmService.bgmPlaylist[index];
-                          final isCurrent = bgmService.currentTrack?.id == track.id;
+                          final isCurrent = bgmService.currentTrack?.name == track.name;
 
                           return Container(
                             decoration: BoxDecoration(
@@ -497,43 +533,45 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                       }
                                     },
                                   ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    style: IconButton.styleFrom(
-                                      foregroundColor: Colors.redAccent,
-                                    ),
-                                    icon: const Icon(Icons.delete_outline_rounded, size: 22),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          backgroundColor: cardBg,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                          title: const Text("Delete Track", style: TextStyle(fontWeight: FontWeight.bold)),
-                                          content: Text("Are you sure you want to delete '${track.name}'?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: Text("Cancel", style: TextStyle(color: secondaryColor)),
-                                            ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.redAccent,
-                                                foregroundColor: Colors.white,
-                                                elevation: 0,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  if (track.sourceType == 'local') ...[
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: Colors.redAccent,
+                                      ),
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 22),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            backgroundColor: cardBg,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            title: const Text("Delete Track", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            content: Text("Are you sure you want to delete '${track.name}'?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: Text("Cancel", style: TextStyle(color: secondaryColor)),
                                               ),
-                                              onPressed: () {
-                                                bgmService.deleteTrack(track);
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text("Delete"),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.redAccent,
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 0,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                ),
+                                                onPressed: () {
+                                                  bgmService.deleteTrack(track);
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text("Delete"),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

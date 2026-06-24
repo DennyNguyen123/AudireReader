@@ -37,198 +37,203 @@ const AppSettingsSchema = CollectionSchema(
       name: r'bgmLoopMode',
       type: IsarType.string,
     ),
-    r'bgmVolume': PropertySchema(
+    r'bgmProviderId': PropertySchema(
       id: 4,
+      name: r'bgmProviderId',
+      type: IsarType.string,
+    ),
+    r'bgmVolume': PropertySchema(
+      id: 5,
       name: r'bgmVolume',
       type: IsarType.double,
     ),
     r'bossKeyAction': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'bossKeyAction',
       type: IsarType.string,
     ),
     r'currentBgmTrackId': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'currentBgmTrackId',
       type: IsarType.long,
     ),
     r'customBackgroundColor': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'customBackgroundColor',
       type: IsarType.string,
     ),
     r'customTextColor': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'customTextColor',
       type: IsarType.string,
     ),
     r'developerMode': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'developerMode',
       type: IsarType.bool,
     ),
     r'deviceId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'deviceId',
       type: IsarType.string,
     ),
     r'deviceName': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'deviceName',
       type: IsarType.string,
     ),
     r'enableDebugLogs': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
     r'lineHeight': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'lineHeight',
       type: IsarType.double,
     ),
     r'openAiTtsApiKey': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'openAiTtsApiKey',
       type: IsarType.string,
     ),
     r'openAiTtsEndpoint': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'openAiTtsEndpoint',
       type: IsarType.string,
     ),
     r'openAiTtsModel': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'openAiTtsModel',
       type: IsarType.string,
     ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'paragraphSpacing': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'paragraphSpacing',
       type: IsarType.double,
     ),
     r'primaryColorHex': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'primaryColorHex',
       type: IsarType.string,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
     r'sideMargin': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'sideMargin',
       type: IsarType.double,
     ),
     r'sortBy': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'textAlignment': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'textAlignment',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 37,
+      id: 38,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 38,
+      id: 39,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 39,
+      id: 40,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 40,
+      id: 41,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 41,
+      id: 42,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 42,
+      id: 43,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -255,6 +260,7 @@ int _appSettingsEstimateSize(
   var bytesCount = offsets.last;
   bytesCount += 3 + object.appLocale.length * 3;
   bytesCount += 3 + object.bgmLoopMode.length * 3;
+  bytesCount += 3 + object.bgmProviderId.length * 3;
   bytesCount += 3 + object.bossKeyAction.length * 3;
   {
     final value = object.customBackgroundColor;
@@ -329,45 +335,46 @@ void _appSettingsSerialize(
   writer.writeBool(offsets[1], object.autoCheckUpdate);
   writer.writeBool(offsets[2], object.bgmEnabled);
   writer.writeString(offsets[3], object.bgmLoopMode);
-  writer.writeDouble(offsets[4], object.bgmVolume);
-  writer.writeString(offsets[5], object.bossKeyAction);
-  writer.writeLong(offsets[6], object.currentBgmTrackId);
-  writer.writeString(offsets[7], object.customBackgroundColor);
-  writer.writeString(offsets[8], object.customTextColor);
-  writer.writeBool(offsets[9], object.developerMode);
-  writer.writeString(offsets[10], object.deviceId);
-  writer.writeString(offsets[11], object.deviceName);
-  writer.writeBool(offsets[12], object.enableDebugLogs);
-  writer.writeBool(offsets[13], object.enableWebDavDebug);
-  writer.writeString(offsets[14], object.fontFamily);
-  writer.writeDouble(offsets[15], object.fontSize);
-  writer.writeString(offsets[16], object.hotkeyBossKey);
-  writer.writeString(offsets[17], object.hotkeyNextChapter);
-  writer.writeString(offsets[18], object.hotkeyNextParagraph);
-  writer.writeString(offsets[19], object.hotkeyOpenChapter);
-  writer.writeString(offsets[20], object.hotkeyOpenSetting);
-  writer.writeString(offsets[21], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[22], object.hotkeyPrevChapter);
-  writer.writeString(offsets[23], object.hotkeyPrevParagraph);
-  writer.writeDouble(offsets[24], object.lineHeight);
-  writer.writeString(offsets[25], object.openAiTtsApiKey);
-  writer.writeString(offsets[26], object.openAiTtsEndpoint);
-  writer.writeString(offsets[27], object.openAiTtsModel);
-  writer.writeBool(offsets[28], object.openLastReadOnLaunch);
-  writer.writeDouble(offsets[29], object.paragraphSpacing);
-  writer.writeString(offsets[30], object.primaryColorHex);
-  writer.writeString(offsets[31], object.selectedVoiceLocale);
-  writer.writeString(offsets[32], object.selectedVoiceName);
-  writer.writeDouble(offsets[33], object.sideMargin);
-  writer.writeString(offsets[34], object.sortBy);
-  writer.writeDouble(offsets[35], object.speechRate);
-  writer.writeString(offsets[36], object.textAlignment);
-  writer.writeString(offsets[37], object.themeMode);
-  writer.writeString(offsets[38], object.ttsProvider);
-  writer.writeBool(offsets[39], object.webDavEnabled);
-  writer.writeDateTime(offsets[40], object.webDavLastSync);
-  writer.writeString(offsets[41], object.webDavUrl);
-  writer.writeString(offsets[42], object.webDavUsername);
+  writer.writeString(offsets[4], object.bgmProviderId);
+  writer.writeDouble(offsets[5], object.bgmVolume);
+  writer.writeString(offsets[6], object.bossKeyAction);
+  writer.writeLong(offsets[7], object.currentBgmTrackId);
+  writer.writeString(offsets[8], object.customBackgroundColor);
+  writer.writeString(offsets[9], object.customTextColor);
+  writer.writeBool(offsets[10], object.developerMode);
+  writer.writeString(offsets[11], object.deviceId);
+  writer.writeString(offsets[12], object.deviceName);
+  writer.writeBool(offsets[13], object.enableDebugLogs);
+  writer.writeBool(offsets[14], object.enableWebDavDebug);
+  writer.writeString(offsets[15], object.fontFamily);
+  writer.writeDouble(offsets[16], object.fontSize);
+  writer.writeString(offsets[17], object.hotkeyBossKey);
+  writer.writeString(offsets[18], object.hotkeyNextChapter);
+  writer.writeString(offsets[19], object.hotkeyNextParagraph);
+  writer.writeString(offsets[20], object.hotkeyOpenChapter);
+  writer.writeString(offsets[21], object.hotkeyOpenSetting);
+  writer.writeString(offsets[22], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[23], object.hotkeyPrevChapter);
+  writer.writeString(offsets[24], object.hotkeyPrevParagraph);
+  writer.writeDouble(offsets[25], object.lineHeight);
+  writer.writeString(offsets[26], object.openAiTtsApiKey);
+  writer.writeString(offsets[27], object.openAiTtsEndpoint);
+  writer.writeString(offsets[28], object.openAiTtsModel);
+  writer.writeBool(offsets[29], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[30], object.paragraphSpacing);
+  writer.writeString(offsets[31], object.primaryColorHex);
+  writer.writeString(offsets[32], object.selectedVoiceLocale);
+  writer.writeString(offsets[33], object.selectedVoiceName);
+  writer.writeDouble(offsets[34], object.sideMargin);
+  writer.writeString(offsets[35], object.sortBy);
+  writer.writeDouble(offsets[36], object.speechRate);
+  writer.writeString(offsets[37], object.textAlignment);
+  writer.writeString(offsets[38], object.themeMode);
+  writer.writeString(offsets[39], object.ttsProvider);
+  writer.writeBool(offsets[40], object.webDavEnabled);
+  writer.writeDateTime(offsets[41], object.webDavLastSync);
+  writer.writeString(offsets[42], object.webDavUrl);
+  writer.writeString(offsets[43], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -381,46 +388,47 @@ AppSettings _appSettingsDeserialize(
   object.autoCheckUpdate = reader.readBool(offsets[1]);
   object.bgmEnabled = reader.readBool(offsets[2]);
   object.bgmLoopMode = reader.readString(offsets[3]);
-  object.bgmVolume = reader.readDouble(offsets[4]);
-  object.bossKeyAction = reader.readString(offsets[5]);
-  object.currentBgmTrackId = reader.readLongOrNull(offsets[6]);
-  object.customBackgroundColor = reader.readStringOrNull(offsets[7]);
-  object.customTextColor = reader.readStringOrNull(offsets[8]);
-  object.developerMode = reader.readBool(offsets[9]);
-  object.deviceId = reader.readStringOrNull(offsets[10]);
-  object.deviceName = reader.readStringOrNull(offsets[11]);
-  object.enableDebugLogs = reader.readBool(offsets[12]);
-  object.enableWebDavDebug = reader.readBool(offsets[13]);
-  object.fontFamily = reader.readString(offsets[14]);
-  object.fontSize = reader.readDouble(offsets[15]);
-  object.hotkeyBossKey = reader.readString(offsets[16]);
-  object.hotkeyNextChapter = reader.readString(offsets[17]);
-  object.hotkeyNextParagraph = reader.readString(offsets[18]);
-  object.hotkeyOpenChapter = reader.readString(offsets[19]);
-  object.hotkeyOpenSetting = reader.readString(offsets[20]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[21]);
-  object.hotkeyPrevChapter = reader.readString(offsets[22]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[23]);
+  object.bgmProviderId = reader.readString(offsets[4]);
+  object.bgmVolume = reader.readDouble(offsets[5]);
+  object.bossKeyAction = reader.readString(offsets[6]);
+  object.currentBgmTrackId = reader.readLongOrNull(offsets[7]);
+  object.customBackgroundColor = reader.readStringOrNull(offsets[8]);
+  object.customTextColor = reader.readStringOrNull(offsets[9]);
+  object.developerMode = reader.readBool(offsets[10]);
+  object.deviceId = reader.readStringOrNull(offsets[11]);
+  object.deviceName = reader.readStringOrNull(offsets[12]);
+  object.enableDebugLogs = reader.readBool(offsets[13]);
+  object.enableWebDavDebug = reader.readBool(offsets[14]);
+  object.fontFamily = reader.readString(offsets[15]);
+  object.fontSize = reader.readDouble(offsets[16]);
+  object.hotkeyBossKey = reader.readString(offsets[17]);
+  object.hotkeyNextChapter = reader.readString(offsets[18]);
+  object.hotkeyNextParagraph = reader.readString(offsets[19]);
+  object.hotkeyOpenChapter = reader.readString(offsets[20]);
+  object.hotkeyOpenSetting = reader.readString(offsets[21]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[22]);
+  object.hotkeyPrevChapter = reader.readString(offsets[23]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[24]);
   object.id = id;
-  object.lineHeight = reader.readDouble(offsets[24]);
-  object.openAiTtsApiKey = reader.readString(offsets[25]);
-  object.openAiTtsEndpoint = reader.readString(offsets[26]);
-  object.openAiTtsModel = reader.readString(offsets[27]);
-  object.openLastReadOnLaunch = reader.readBool(offsets[28]);
-  object.paragraphSpacing = reader.readDouble(offsets[29]);
-  object.primaryColorHex = reader.readStringOrNull(offsets[30]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[31]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[32]);
-  object.sideMargin = reader.readDouble(offsets[33]);
-  object.sortBy = reader.readString(offsets[34]);
-  object.speechRate = reader.readDouble(offsets[35]);
-  object.textAlignment = reader.readString(offsets[36]);
-  object.themeMode = reader.readString(offsets[37]);
-  object.ttsProvider = reader.readString(offsets[38]);
-  object.webDavEnabled = reader.readBool(offsets[39]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[40]);
-  object.webDavUrl = reader.readString(offsets[41]);
-  object.webDavUsername = reader.readString(offsets[42]);
+  object.lineHeight = reader.readDouble(offsets[25]);
+  object.openAiTtsApiKey = reader.readString(offsets[26]);
+  object.openAiTtsEndpoint = reader.readString(offsets[27]);
+  object.openAiTtsModel = reader.readString(offsets[28]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[29]);
+  object.paragraphSpacing = reader.readDouble(offsets[30]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[31]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[32]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[33]);
+  object.sideMargin = reader.readDouble(offsets[34]);
+  object.sortBy = reader.readString(offsets[35]);
+  object.speechRate = reader.readDouble(offsets[36]);
+  object.textAlignment = reader.readString(offsets[37]);
+  object.themeMode = reader.readString(offsets[38]);
+  object.ttsProvider = reader.readString(offsets[39]);
+  object.webDavEnabled = reader.readBool(offsets[40]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[41]);
+  object.webDavUrl = reader.readString(offsets[42]);
+  object.webDavUsername = reader.readString(offsets[43]);
   return object;
 }
 
@@ -440,31 +448,31 @@ P _appSettingsDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readDouble(offset)) as P;
-    case 5:
       return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readDouble(offset)) as P;
     case 6:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readBool(offset)) as P;
-    case 10:
       return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readBool(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 13:
       return (reader.readBool(offset)) as P;
     case 14:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 15:
-      return (reader.readDouble(offset)) as P;
-    case 16:
       return (reader.readString(offset)) as P;
+    case 16:
+      return (reader.readDouble(offset)) as P;
     case 17:
       return (reader.readString(offset)) as P;
     case 18:
@@ -480,42 +488,44 @@ P _appSettingsDeserializeProp<P>(
     case 23:
       return (reader.readString(offset)) as P;
     case 24:
-      return (reader.readDouble(offset)) as P;
-    case 25:
       return (reader.readString(offset)) as P;
+    case 25:
+      return (reader.readDouble(offset)) as P;
     case 26:
       return (reader.readString(offset)) as P;
     case 27:
       return (reader.readString(offset)) as P;
     case 28:
-      return (reader.readBool(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 29:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 30:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 31:
       return (reader.readStringOrNull(offset)) as P;
     case 32:
       return (reader.readStringOrNull(offset)) as P;
     case 33:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 34:
-      return (reader.readString(offset)) as P;
-    case 35:
       return (reader.readDouble(offset)) as P;
-    case 36:
+    case 35:
       return (reader.readString(offset)) as P;
+    case 36:
+      return (reader.readDouble(offset)) as P;
     case 37:
       return (reader.readString(offset)) as P;
     case 38:
       return (reader.readString(offset)) as P;
     case 39:
-      return (reader.readBool(offset)) as P;
-    case 40:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 41:
       return (reader.readString(offset)) as P;
+    case 40:
+      return (reader.readBool(offset)) as P;
+    case 41:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 42:
+      return (reader.readString(offset)) as P;
+    case 43:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -902,6 +912,142 @@ extension AppSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'bgmLoopMode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bgmProviderId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'bgmProviderId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'bgmProviderId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bgmProviderId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      bgmProviderIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'bgmProviderId',
         value: '',
       ));
     });
@@ -5270,6 +5416,19 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmProviderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmProviderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByBgmProviderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmProviderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByBgmVolume() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bgmVolume', Sort.asc);
@@ -5832,6 +5991,19 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmProviderId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmProviderId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByBgmProviderIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bgmProviderId', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByBgmVolume() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bgmVolume', Sort.asc);
@@ -6384,6 +6556,14 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBgmProviderId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bgmProviderId',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByBgmVolume() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'bgmVolume');
@@ -6698,6 +6878,12 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, String, QQueryOperations> bgmLoopModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'bgmLoopMode');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations> bgmProviderIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bgmProviderId');
     });
   }
 

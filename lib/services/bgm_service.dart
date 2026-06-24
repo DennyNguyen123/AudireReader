@@ -7,6 +7,10 @@ import '../core/database/database_helper.dart';
 import '../core/utils/path_helper.dart';
 import '../models/bgm_track.dart';
 import 'logger_service.dart';
+import 'bgm/bgm_provider.dart';
+import 'bgm/local_bgm_provider.dart';
+import 'bgm/radio_browser_provider.dart';
+import 'bgm/open_lofi_provider.dart';
 
 class BgmService extends ChangeNotifier {
   static BgmService? _instance;
@@ -16,8 +20,14 @@ class BgmService extends ChangeNotifier {
   bool _bgmEnabled = false;
   double _bgmVolume = 0.15;
   String _bgmLoopMode = 'all'; // 'none', 'one', 'all'
-  int? _currentBgmTrackId;
+  String _bgmProviderId = 'local';
+  final List<BgmProvider> _providers = [
+    LocalBgmProvider(),
+    RadioBrowserProvider(),
+    OpenLofiProvider(),
+  ];
 
+  int? _currentBgmTrackId;
   List<BgmTrack> _bgmPlaylist = [];
   BgmTrack? _currentTrack;
   bool _isPlaying = false;
@@ -27,6 +37,8 @@ class BgmService extends ChangeNotifier {
   bool get bgmEnabled => _bgmEnabled;
   double get bgmVolume => _bgmVolume;
   String get bgmLoopMode => _bgmLoopMode;
+  String get bgmProviderId => _bgmProviderId;
+  List<BgmProvider> get providers => _providers;
   int? get currentBgmTrackId => _currentBgmTrackId;
   List<BgmTrack> get bgmPlaylist => _bgmPlaylist;
   BgmTrack? get currentTrack => _currentTrack;
@@ -64,15 +76,39 @@ class BgmService extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadPlaylistForCurrentProvider() async {
+    try {
+      final provider = _providers.firstWhere((p) => p.id == _bgmProviderId, orElse: () => _providers.first);
+      _bgmPlaylist = await provider.fetchTracks();
+    } catch (e) {
+      LoggerService().log("Fetch tracks error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      _bgmPlaylist = [];
+    }
+  }
+
+  Future<void> changeProvider(String providerId) async {
+    if (_bgmProviderId == providerId) return;
+    _bgmProviderId = providerId;
+    await stopBgm();
+    
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    settings.bgmProviderId = providerId;
+    settings.currentBgmTrackId = null; // Reset track selection when switching provider
+    await db.saveSettings(settings);
+
+    await _loadPlaylistForCurrentProvider();
+    _currentBgmTrackId = null;
+    _currentTrack = _bgmPlaylist.isNotEmpty ? _bgmPlaylist.first : null;
+    
+    notifyListeners();
+  }
+
   Future<void> loadSettingsAndPlaylist() async {
     try {
       LoggerService().log("loadSettingsAndPlaylist started, getting DatabaseHelper", tag: 'BGM');
       final db = await DatabaseHelper.getInstance();
       
-      // Load playlist
-      LoggerService().log("loadSettingsAndPlaylist, getting all BgmTracks", tag: 'BGM');
-      _bgmPlaylist = await db.getAllBgmTracks();
-
       // Load settings
       LoggerService().log("loadSettingsAndPlaylist, getting settings", tag: 'BGM');
       final settings = await db.getSettings();
@@ -85,6 +121,16 @@ class BgmService extends ChangeNotifier {
       
       _bgmEnabled = settings.bgmEnabled;
       _bgmVolume = settings.bgmVolume;
+      
+      _bgmProviderId = settings.bgmProviderId;
+      if (!_providers.any((p) => p.id == _bgmProviderId)) {
+        _bgmProviderId = 'local';
+        settings.bgmProviderId = 'local';
+        await db.saveSettings(settings);
+      }
+      // Load playlist depending on provider
+      LoggerService().log("loadSettingsAndPlaylist, loading tracks for provider $_bgmProviderId", tag: 'BGM');
+      await _loadPlaylistForCurrentProvider();
       
       // Cú pháp an toàn phòng khi Isar deserialize ra null
       dynamic rawLoopMode = settings.bgmLoopMode;
@@ -110,7 +156,7 @@ class BgmService extends ChangeNotifier {
       }
 
       // Thiết lập currentTrack
-      if (_currentBgmTrackId != null && _bgmPlaylist.isNotEmpty) {
+      if (_currentBgmTrackId != null && _bgmPlaylist.isNotEmpty && _bgmProviderId == 'local') {
         final matches = _bgmPlaylist.where((t) => t.id == _currentBgmTrackId);
         if (matches.isNotEmpty) {
           _currentTrack = matches.first;
@@ -183,8 +229,14 @@ class BgmService extends ChangeNotifier {
   Future<void> playTrack(BgmTrack track) async {
     await _audioPlayer.stop();
     _currentTrack = track;
-    _currentBgmTrackId = track.id;
-    await updateSettings(currentBgmTrackId: track.id);
+    
+    // Only save currentBgmTrackId if it's local provider, because internet tracks don't have stable IDs
+    if (_bgmProviderId == 'local') {
+      _currentBgmTrackId = track.id;
+      await updateSettings(currentBgmTrackId: track.id);
+    } else {
+      _currentBgmTrackId = null;
+    }
 
     if (!_bgmEnabled) {
       notifyListeners();
@@ -205,16 +257,29 @@ class BgmService extends ChangeNotifier {
         } else {
           throw Exception("Local BGM file does not exist: ${file.path}");
         }
+      } else if (track.sourceType == 'radio' || track.sourceType == 'openlofi') {
+        // Stream from internet
+        await _audioPlayer.play(UrlSource(track.sourcePath));
+        _hasSource = true;
       } else {
         throw Exception("Unsupported BGM source type: ${track.sourceType}");
       }
       
       await _audioPlayer.setVolume(_bgmVolume);
     } catch (e) {
+      LoggerService().log("Error playing BGM", tag: 'BGM', level: LogLevel.error, error: e.toString());
       _isPlaying = false;
       _hasSource = false;
-      LoggerService().log("Error playing BGM", tag: 'BGM', level: LogLevel.error, error: e.toString());
       notifyListeners();
+
+      // Tự động Fallback sang Local nếu đang dùng Internet Provider bị lỗi
+      if (_bgmProviderId != 'local') {
+        LoggerService().log("Network BGM failed, falling back to local provider...", tag: 'BGM');
+        await changeProvider('local');
+        if (_currentTrack != null) {
+          await playTrack(_currentTrack!);
+        }
+      }
     }
   }
 

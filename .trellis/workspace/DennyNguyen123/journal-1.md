@@ -98,3 +98,34 @@ Nâng cấp EdgeTtsService sử dụng HTTP POST giống với 9router để tă
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Integrate Multi-Provider BGM
+
+**Date**: 2026-06-25
+**Task**: Integrate Multi-Provider BGM
+**Branch**: `main`
+
+### Summary
+
+Created BgmProvider interface. Added RadioBrowserProvider and OpenLofiProvider. Refactored BgmService to support multiple providers, stream URL sources, and automatic fallback to Local on network failure. Wrote unit tests for new providers. Updated UI in BgmPlayerSheet to select providers.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
