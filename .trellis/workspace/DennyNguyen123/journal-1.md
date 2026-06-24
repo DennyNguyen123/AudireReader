@@ -67,3 +67,34 @@ Added custom sleep timer input via dialog and a countdown indicator in the readi
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Refactor EdgeTTS to Bing Translator HTTP API
+
+**Date**: 2026-06-25
+**Task**: Refactor EdgeTTS to Bing Translator HTTP API
+**Branch**: `main`
+
+### Summary
+
+Nâng cấp EdgeTtsService sử dụng HTTP POST giống với 9router để tăng độ ổn định. Đã xóa bỏ WebSocket và tự động quản lý token cookie.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
