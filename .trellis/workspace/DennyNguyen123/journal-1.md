@@ -129,3 +129,34 @@ Created BgmProvider interface. Added RadioBrowserProvider and OpenLofiProvider. 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Explain Shorebird patch limitations and workflow
+
+**Date**: 2026-06-25
+**Task**: Explain Shorebird patch limitations and workflow
+**Branch**: `main`
+
+### Summary
+
+Analyzed Shorebird logs and explained UnpatchableChangeException due to asset/font changes. Clarified usage of 'shorebird release' vs 'shorebird patch' when upgrading versions.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

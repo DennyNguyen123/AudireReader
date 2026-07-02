@@ -29,6 +29,7 @@ class OpenLofiProvider implements BgmProvider {
 
     return tracksData.map((data) {
       final track = BgmTrack();
+      track.id = data['url'].hashCode.abs();
       track.name = data['name']!;
       track.sourceType = 'openlofi';
       track.sourcePath = data['url']!;

@@ -21,10 +21,11 @@ class RadioBrowserProvider implements BgmProvider {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) {
           final track = BgmTrack();
+          final url = json['url_resolved'] ?? json['url'];
+          track.id = url.hashCode.abs();
           track.name = json['name']?.toString().trim() ?? 'Unknown Station';
           track.sourceType = 'radio';
-          // Use url_resolved as it redirects to the actual stream
-          track.sourcePath = json['url_resolved'] ?? json['url'];
+          track.sourcePath = url;
           track.dateAdded = DateTime.now();
           return track;
         }).where((track) => track.sourcePath.isNotEmpty).toList();

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
+- **Total Sessions**: 5
 - **Last Active**: 2026-06-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~131 | Active |
+| `journal-1.md` | ~162 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-06-25 | Explain Shorebird patch limitations and workflow | - | `main` |
 | 4 | 2026-06-25 | Integrate Multi-Provider BGM | - | `main` |
 | 3 | 2026-06-25 | Refactor EdgeTTS to Bing Translator HTTP API | - | `main` |
 | 2 | 2026-06-25 | Custom Sleep Timer | - | `main` |

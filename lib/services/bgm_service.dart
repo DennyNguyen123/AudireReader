@@ -230,13 +230,8 @@ class BgmService extends ChangeNotifier {
     await _audioPlayer.stop();
     _currentTrack = track;
     
-    // Only save currentBgmTrackId if it's local provider, because internet tracks don't have stable IDs
-    if (_bgmProviderId == 'local') {
-      _currentBgmTrackId = track.id;
-      await updateSettings(currentBgmTrackId: track.id);
-    } else {
-      _currentBgmTrackId = null;
-    }
+    _currentBgmTrackId = track.id;
+    await updateSettings(currentBgmTrackId: track.id);
 
     if (!_bgmEnabled) {
       notifyListeners();
