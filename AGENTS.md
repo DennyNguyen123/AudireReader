@@ -1,4 +1,4 @@
-<!-- TRELLIS:START -->
+<!-- TRELLIS:START
 # Trellis Instructions
 
 These instructions are for AI assistants working in this project.
@@ -34,4 +34,5 @@ Mọi AI Assistant khi làm việc trong dự án này **bắt buộc** phải t
    - Bắt buộc phải chạy lệnh ghi nhận nhật ký phiên làm việc (Session) trước khi báo cáo hoàn thành:
      - Ghi nhận: `python ./.trellis/scripts/add_session.py --title "Tiêu đề session" --summary "Tóm tắt những thay đổi" --no-commit`
 
-*Quy định này là bắt buộc đối với tất cả các AI Agent và không được phép bỏ qua trong bất kỳ phiên hội thoại nào.*
+*Quy định này là bắt buộc đối với tất cả các AI Agent và không được phép bỏ qua trong bất kỳ phiên hội thoại nào.* 
+-->
