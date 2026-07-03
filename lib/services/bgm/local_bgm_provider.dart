@@ -7,13 +7,13 @@ class LocalBgmProvider implements BgmProvider {
   String get id => 'local';
 
   @override
-  String get name => 'Thư viện máy (Local)';
+  String get name => 'Thư viện của tôi (Local & Link)';
 
   @override
   Future<List<BgmTrack>> fetchTracks() async {
     final db = await DatabaseHelper.getInstance();
     final tracks = await db.getAllBgmTracks();
-    // Return only local tracks from database
-    return tracks.where((t) => t.sourceType == 'local').toList();
+    // Trả về cả các track có sourceType là local hoặc direct_url
+    return tracks.where((t) => t.sourceType == 'local' || t.sourceType == 'direct_url').toList();
   }
 }

@@ -58,8 +58,16 @@ class AppSettings {
   bool bgmEnabled = false;
   double bgmVolume = 0.15;
   int? currentBgmTrackId;
+  String? currentBgmTrackUrl;
+  String? currentBgmTrackName;
   String bgmLoopMode = 'all'; // 'none', 'one', 'all'
   String bgmProviderId = 'local'; // 'local', 'radio_browser', 'open_lofi'
+
+  String? lastLocalTrackUrl;
+  String? lastRadioTrackUrl;
+  String? lastRadioTrackName;
+  String? lastLofiTrackUrl;
+  String? lastLofiTrackName;
 
   // Library Sorting Options: 'dateAdded', 'recentlyRead', 'title', 'author'
   String sortBy = 'dateAdded';

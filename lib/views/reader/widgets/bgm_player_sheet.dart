@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import '../../../services/bgm_service.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/bgm_track.dart';
+import '../../../services/bgm/radio_browser_provider.dart';
 
 class BgmPlayerSheet extends StatefulWidget {
   const BgmPlayerSheet({super.key});
@@ -15,11 +18,21 @@ class BgmPlayerSheet extends StatefulWidget {
 class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
   bool _showAddBgmForm = false;
   final _bgmNameController = TextEditingController();
+  final _bgmUrlController = TextEditingController();
   String? _bgmLocalPath;
+  bool _isAddingLink = false;
+
+  // Trạng thái tìm kiếm Radio
+  final _searchController = TextEditingController();
+  bool _isLoadingRadio = false;
+  bool _isSearching = false;
+  List<BgmTrack> _searchedRadioTracks = [];
 
   @override
   void dispose() {
     _bgmNameController.dispose();
+    _bgmUrlController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -100,6 +113,10 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
               listenable: BgmService.getInstance(),
               builder: (context, _) {
                 final bgmService = BgmService.getInstance();
+                
+                final playlist = (_isSearching && bgmService.bgmProviderId == 'radio_browser')
+                    ? _searchedRadioTracks
+                    : bgmService.bgmPlaylist;
                 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -225,6 +242,12 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                     onChanged: (val) {
                                       if (val != null) {
                                         bgmService.changeProvider(val);
+                                        setState(() {
+                                          _searchController.clear();
+                                          _isSearching = false;
+                                          _isLoadingRadio = false;
+                                          _searchedRadioTracks = [];
+                                        });
                                       }
                                     },
                                   ),
@@ -294,7 +317,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                               _showAddBgmForm ? Icons.close_rounded : Icons.add_rounded,
                               size: 18,
                             ),
-                            label: Text(_showAddBgmForm ? "Cancel" : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            label: Text(_showAddBgmForm ? (AppLocalizations.of(context)?.cancel ?? "Cancel") : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
                             onPressed: () {
                               setState(() {
                                 _showAddBgmForm = !_showAddBgmForm;
@@ -304,6 +327,113 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                       ],
                     ),
                     const SizedBox(height: 12),
+
+                    // Thanh tìm kiếm cho Radio Browser
+                    if (bgmService.bgmProviderId == 'radio_browser') ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                style: TextStyle(color: labelColor, fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(context)?.searchStation ?? "Tìm kiếm đài phát...",
+                                  hintStyle: TextStyle(color: secondaryColor, fontSize: 13),
+                                  prefixIcon: Icon(Icons.search_rounded, color: secondaryColor, size: 20),
+                                  suffixIcon: _searchController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.clear_rounded, color: secondaryColor, size: 20),
+                                          onPressed: () {
+                                            setState(() {
+                                              _searchController.clear();
+                                              _isSearching = false;
+                                              _searchedRadioTracks = [];
+                                            });
+                                          },
+                                        )
+                                      : null,
+                                  filled: true,
+                                  fillColor: secondaryColor.withValues(alpha: 0.05),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(color: accentColor, width: 1),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                                onSubmitted: (val) async {
+                                  if (val.trim().isEmpty) {
+                                    setState(() {
+                                      _isSearching = false;
+                                      _searchedRadioTracks = [];
+                                    });
+                                    return;
+                                  }
+                                  setState(() {
+                                    _isLoadingRadio = true;
+                                    _isSearching = true;
+                                  });
+                                  try {
+                                    final provider = bgmService.providers.firstWhere((p) => p.id == 'radio_browser') as RadioBrowserProvider;
+                                    final results = await provider.searchTracks(val);
+                                    setState(() {
+                                      _searchedRadioTracks = results;
+                                      _isLoadingRadio = false;
+                                    });
+                                  } catch (e) {
+                                    setState(() {
+                                      _isLoadingRadio = false;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accentColor,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () async {
+                                final val = _searchController.text;
+                                if (val.trim().isEmpty) {
+                                  setState(() {
+                                    _isSearching = false;
+                                    _searchedRadioTracks = [];
+                                  });
+                                  return;
+                                }
+                                setState(() {
+                                  _isLoadingRadio = true;
+                                  _isSearching = true;
+                                });
+                                try {
+                                  final provider = bgmService.providers.firstWhere((p) => p.id == 'radio_browser') as RadioBrowserProvider;
+                                  final results = await provider.searchTracks(val);
+                                  setState(() {
+                                    _searchedRadioTracks = results;
+                                    _isLoadingRadio = false;
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    _isLoadingRadio = false;
+                                  });
+                                }
+                              },
+                              child: const Icon(Icons.search_rounded, size: 20),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     // Add Track Form (Animated)
                     AnimatedSize(
@@ -320,12 +450,48 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // Lựa chọn: File cục bộ hoặc Link URL
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                style: SegmentedButton.styleFrom(
+                                  selectedBackgroundColor: accentColor.withValues(alpha: 0.15),
+                                  selectedForegroundColor: accentColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                segments: [
+                                  ButtonSegment(
+                                    value: false,
+                                    label: Text(
+                                      AppLocalizations.of(context)?.addFileOption ?? "Chọn file cục bộ",
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    label: Text(
+                                      AppLocalizations.of(context)?.addLinkOption ?? "Dán link trực tiếp",
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                                selected: {_isAddingLink},
+                                onSelectionChanged: (val) {
+                                  setState(() {
+                                    _isAddingLink = val.first;
+                                  });
+                                },
+                              ),
+                            ),
+
                             // Track Name Input
                             TextField(
                               controller: _bgmNameController,
                               style: TextStyle(color: labelColor, fontSize: 14),
                               decoration: InputDecoration(
-                                labelText: "Track Name (Optional)",
+                                labelText: AppLocalizations.of(context)?.trackName ?? "Tên nhạc nền/đài phát",
                                 labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
                                 floatingLabelStyle: TextStyle(color: accentColor),
                                 filled: true,
@@ -343,40 +509,64 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                             ),
                             const SizedBox(height: 12),
 
-                            // Local Audio Picker Button
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: secondaryColor.withValues(alpha: 0.1),
-                                foregroundColor: labelColor,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            if (_isAddingLink) ...[
+                              TextField(
+                                controller: _bgmUrlController,
+                                style: TextStyle(color: labelColor, fontSize: 14),
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(context)?.trackUrl ?? "Đường dẫn Link (URL)",
+                                  labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
+                                  floatingLabelStyle: TextStyle(color: accentColor),
+                                  filled: true,
+                                  fillColor: secondaryColor.withValues(alpha: 0.05),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(color: accentColor, width: 1),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
                               ),
-                              icon: Icon(Icons.folder_open_rounded, size: 18, color: secondaryColor),
-                              label: Text(
-                                _bgmLocalPath != null
-                                    ? p.basename(_bgmLocalPath!)
-                                    : "Select Audio File",
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                              const SizedBox(height: 16),
+                            ] else ...[
+                              // Local Audio Picker Button
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: secondaryColor.withValues(alpha: 0.1),
+                                  foregroundColor: labelColor,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                icon: Icon(Icons.folder_open_rounded, size: 18, color: secondaryColor),
+                                label: Text(
+                                  _bgmLocalPath != null
+                                      ? p.basename(_bgmLocalPath!)
+                                      : AppLocalizations.of(context)?.selectLocalFile ?? "Select Audio File",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                                onPressed: () async {
+                                  final result = await FilePicker.platform.pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: ['mp3', 'm4a', 'wav', 'ogg', 'flac'],
+                                    allowMultiple: false,
+                                  );
+                                  if (result != null && result.files.single.path != null) {
+                                    setState(() {
+                                      _bgmLocalPath = result.files.single.path;
+                                      if (_bgmNameController.text.trim().isEmpty) {
+                                        _bgmNameController.text = p.basenameWithoutExtension(_bgmLocalPath!);
+                                      }
+                                    });
+                                  }
+                                },
                               ),
-                              onPressed: () async {
-                                final result = await FilePicker.platform.pickFiles(
-                                  type: FileType.custom,
-                                  allowedExtensions: ['mp3', 'm4a', 'wav', 'ogg', 'flac'],
-                                  allowMultiple: false,
-                                );
-                                if (result != null && result.files.single.path != null) {
-                                  setState(() {
-                                    _bgmLocalPath = result.files.single.path;
-                                    if (_bgmNameController.text.trim().isEmpty) {
-                                      _bgmNameController.text = p.basenameWithoutExtension(_bgmLocalPath!);
-                                    }
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 16),
+                            ],
                             
                             // Import Button
                             ElevatedButton(
@@ -387,23 +577,35 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onPressed: _bgmLocalPath == null
+                              onPressed: (_isAddingLink ? _bgmUrlController.text.trim().isEmpty : _bgmLocalPath == null)
                                   ? null
                                   : () async {
                                       try {
-                                        await bgmService.addTrackFromLocal(
-                                          _bgmNameController.text,
-                                          _bgmLocalPath!,
-                                        );
+                                        if (_isAddingLink) {
+                                          final url = _bgmUrlController.text.trim();
+                                          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                                            throw Exception("URL must start with http:// or https://");
+                                          }
+                                          await bgmService.addTrackFromUrl(
+                                            _bgmNameController.text,
+                                            url,
+                                          );
+                                        } else {
+                                          await bgmService.addTrackFromLocal(
+                                            _bgmNameController.text,
+                                            _bgmLocalPath!,
+                                          );
+                                        }
                                         setState(() {
                                           _showAddBgmForm = false;
                                           _bgmNameController.clear();
+                                          _bgmUrlController.clear();
                                           _bgmLocalPath = null;
                                         });
                                         if (!context.mounted) return;
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: const Text("Track added successfully!"),
+                                            content: Text(AppLocalizations.of(context)?.addSuccess ?? "Track added successfully!"),
                                             behavior: SnackBarBehavior.floating,
                                             backgroundColor: Colors.green[700],
                                           ),
@@ -419,7 +621,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                         );
                                       }
                                     },
-                              child: const Text("Import Track", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              child: Text(AppLocalizations.of(context)?.importTrack ?? "Import Track", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -427,7 +629,15 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                     ),
 
                     // PLAYLIST TRACKS
-                    if (bgmService.bgmPlaylist.isEmpty)
+
+                    if (_isLoadingRadio)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (playlist.isEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 40),
                         alignment: Alignment.center,
@@ -436,13 +646,8 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                             Icon(Icons.music_off_rounded, size: 48, color: secondaryColor.withValues(alpha: 0.3)),
                             const SizedBox(height: 16),
                             Text(
-                              "No tracks in playlist",
+                              AppLocalizations.of(context)?.emptySearch ?? "No matching results found",
                               style: TextStyle(color: secondaryColor, fontSize: 15, fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Add some relaxing background music",
-                              style: TextStyle(color: secondaryColor.withValues(alpha: 0.7), fontSize: 13),
                             ),
                           ],
                         ),
@@ -451,11 +656,12 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: bgmService.bgmPlaylist.length,
+                        itemCount: playlist.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final track = bgmService.bgmPlaylist[index];
-                          final isCurrent = bgmService.currentTrack?.name == track.name;
+                          final track = playlist[index];
+                          // Đối với radio, do list nạp lại hashcode khác nhau, ta so khớp theo URL để bôi đậm bài đang phát
+                          final isCurrent = bgmService.currentTrack?.sourcePath == track.sourcePath;
 
                           return Container(
                             decoration: BoxDecoration(
@@ -496,7 +702,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                         ),
                                       )
                                     : Icon(
-                                        Icons.music_note_rounded,
+                                        (track.sourceType == 'direct_url' || track.sourceType == 'radio' || track.sourceType == 'openlofi')
+                                            ? Icons.radio_rounded
+                                            : Icons.music_note_rounded,
                                         color: isCurrent ? accentColor : secondaryColor,
                                         size: 22,
                                       ),
@@ -514,6 +722,39 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  if (bgmService.bgmProviderId != 'local') ...[
+                                    IconButton(
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: secondaryColor.withValues(alpha: 0.1),
+                                        foregroundColor: accentColor,
+                                      ),
+                                      icon: const Icon(Icons.add_rounded, size: 20),
+                                      tooltip: AppLocalizations.of(context)?.importTrack ?? "Add to Library",
+                                      onPressed: () async {
+                                        try {
+                                          await bgmService.addTrackFromUrl(track.name, track.sourcePath);
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(AppLocalizations.of(context)?.addSuccess ?? "Added to library successfully!"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.green[700],
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Failed: $e"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red[700],
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
                                   IconButton(
                                     style: IconButton.styleFrom(
                                       backgroundColor: isCurrent ? accentColor : secondaryColor.withValues(alpha: 0.1),
@@ -533,8 +774,98 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                       }
                                     },
                                   ),
-                                  if (track.sourceType == 'local') ...[
+                                  if (track.sourceType == 'local' || track.sourceType == 'direct_url') ...[
                                     const SizedBox(width: 8),
+                                    IconButton(
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: accentColor,
+                                      ),
+                                      icon: const Icon(Icons.edit_outlined, size: 22),
+                                      onPressed: () {
+                                        final editNameController = TextEditingController(text: track.name);
+                                        final editUrlController = TextEditingController(text: track.sourcePath);
+                                        
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            backgroundColor: cardBg,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            title: Text(
+                                              AppLocalizations.of(context)?.editTrack ?? "Sửa thông tin nhạc",
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                TextField(
+                                                  controller: editNameController,
+                                                  style: TextStyle(color: labelColor),
+                                                  decoration: InputDecoration(
+                                                    labelText: AppLocalizations.of(context)?.trackName ?? "Tên bài hát",
+                                                  ),
+                                                ),
+                                                if (track.sourceType == 'direct_url') ...[
+                                                  const SizedBox(height: 12),
+                                                  TextField(
+                                                    controller: editUrlController,
+                                                    style: TextStyle(color: labelColor),
+                                                    decoration: InputDecoration(
+                                                      labelText: AppLocalizations.of(context)?.trackUrl ?? "Link URL",
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: Text(
+                                                  AppLocalizations.of(context)?.cancel ?? "Hủy",
+                                                  style: TextStyle(color: secondaryColor),
+                                                ),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: accentColor,
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 0,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                ),
+                                                onPressed: () async {
+                                                  try {
+                                                    await bgmService.updateTrack(
+                                                      track,
+                                                      name: editNameController.text,
+                                                      sourcePath: track.sourceType == 'direct_url' ? editUrlController.text : null,
+                                                    );
+                                                    if (!context.mounted) return;
+                                                    Navigator.pop(context);
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(AppLocalizations.of(context)?.updateSuccess ?? "Updated successfully!"),
+                                                        behavior: SnackBarBehavior.floating,
+                                                        backgroundColor: Colors.green[700],
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    if (!context.mounted) return;
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text("Failed to update: $e"),
+                                                        behavior: SnackBarBehavior.floating,
+                                                        backgroundColor: Colors.red[700],
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                child: Text(AppLocalizations.of(context)?.save ?? "Lưu"),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 4),
                                     IconButton(
                                       style: IconButton.styleFrom(
                                         foregroundColor: Colors.redAccent,
@@ -546,12 +877,18 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                           builder: (context) => AlertDialog(
                                             backgroundColor: cardBg,
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            title: const Text("Delete Track", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            title: Text(
+                                              AppLocalizations.of(context)?.confirmDelete ?? "Confirm Delete",
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
                                             content: Text("Are you sure you want to delete '${track.name}'?"),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Navigator.pop(context),
-                                                child: Text("Cancel", style: TextStyle(color: secondaryColor)),
+                                                child: Text(
+                                                  AppLocalizations.of(context)?.cancel ?? "Cancel",
+                                                  style: TextStyle(color: secondaryColor),
+                                                ),
                                               ),
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
@@ -564,7 +901,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                   bgmService.deleteTrack(track);
                                                   Navigator.pop(context);
                                                 },
-                                                child: const Text("Delete"),
+                                                child: Text(AppLocalizations.of(context)?.confirm ?? "Delete"),
                                               ),
                                             ],
                                           ),

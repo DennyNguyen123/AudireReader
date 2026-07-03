@@ -94,13 +94,65 @@ class BgmService extends ChangeNotifier {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     settings.bgmProviderId = providerId;
-    settings.currentBgmTrackId = null; // Reset track selection when switching provider
     await db.saveSettings(settings);
 
     await _loadPlaylistForCurrentProvider();
-    _currentBgmTrackId = null;
-    _currentTrack = _bgmPlaylist.isNotEmpty ? _bgmPlaylist.first : null;
     
+    // Khôi phục track lịch sử của provider mới
+    String? targetUrl;
+    String? targetName;
+    if (providerId == 'local') {
+      targetUrl = settings.lastLocalTrackUrl;
+    } else if (providerId == 'radio_browser') {
+      targetUrl = settings.lastRadioTrackUrl;
+      targetName = settings.lastRadioTrackName;
+    } else if (providerId == 'open_lofi') {
+      targetUrl = settings.lastLofiTrackUrl;
+      targetName = settings.lastLofiTrackName;
+    }
+
+    BgmTrack? matchedTrack;
+    if (_bgmPlaylist.isNotEmpty) {
+      if (targetUrl != null) {
+        final matches = _bgmPlaylist.where((t) => t.sourcePath == targetUrl);
+        if (matches.isNotEmpty) {
+          matchedTrack = matches.first;
+        }
+      }
+      if (matchedTrack == null && settings.currentBgmTrackId != null && providerId == 'local') {
+        final matches = _bgmPlaylist.where((t) => t.id == settings.currentBgmTrackId);
+        if (matches.isNotEmpty) {
+          matchedTrack = matches.first;
+        }
+      }
+    }
+
+    if (matchedTrack != null) {
+      _currentTrack = matchedTrack;
+      _currentBgmTrackId = matchedTrack.id;
+    } else if (targetUrl != null && targetUrl.startsWith('http')) {
+      final tempTrack = BgmTrack()
+        ..id = targetUrl.hashCode.abs()
+        ..name = targetName ?? 'Last Station'
+        ..sourceType = providerId == 'radio_browser' ? 'radio' : 'openlofi'
+        ..sourcePath = targetUrl
+        ..dateAdded = DateTime.now();
+      _currentTrack = tempTrack;
+      _currentBgmTrackId = tempTrack.id;
+    } else if (_bgmPlaylist.isNotEmpty) {
+      _currentTrack = _bgmPlaylist.first;
+      _currentBgmTrackId = _currentTrack?.id;
+    } else {
+      _currentTrack = null;
+      _currentBgmTrackId = null;
+    }
+
+    // Cập nhật lại cấu hình hiện tại trong database
+    settings.currentBgmTrackId = _currentBgmTrackId;
+    settings.currentBgmTrackUrl = _currentTrack?.sourcePath;
+    settings.currentBgmTrackName = _currentTrack?.name;
+    await db.saveSettings(settings);
+
     notifyListeners();
   }
 
@@ -156,14 +208,48 @@ class BgmService extends ChangeNotifier {
       }
 
       // Thiết lập currentTrack
-      if (_currentBgmTrackId != null && _bgmPlaylist.isNotEmpty && _bgmProviderId == 'local') {
-        final matches = _bgmPlaylist.where((t) => t.id == _currentBgmTrackId);
-        if (matches.isNotEmpty) {
-          _currentTrack = matches.first;
-        } else {
-          _currentTrack = _bgmPlaylist.first;
-          _currentBgmTrackId = _currentTrack?.id;
+      String? targetUrl;
+      String? targetName;
+      if (_bgmProviderId == 'local') {
+        targetUrl = settings.lastLocalTrackUrl;
+      } else if (_bgmProviderId == 'radio_browser') {
+        targetUrl = settings.lastRadioTrackUrl;
+        targetName = settings.lastRadioTrackName;
+      } else if (_bgmProviderId == 'open_lofi') {
+        targetUrl = settings.lastLofiTrackUrl;
+        targetName = settings.lastLofiTrackName;
+      }
+
+      BgmTrack? matchedTrack;
+      if (_bgmPlaylist.isNotEmpty) {
+        if (targetUrl != null) {
+          final urlMatches = _bgmPlaylist.where((t) => t.sourcePath == targetUrl);
+          if (urlMatches.isNotEmpty) {
+            matchedTrack = urlMatches.first;
+          }
         }
+        
+        if (matchedTrack == null && _currentBgmTrackId != null) {
+          final idMatches = _bgmPlaylist.where((t) => t.id == _currentBgmTrackId);
+          if (idMatches.isNotEmpty) {
+            matchedTrack = idMatches.first;
+          }
+        }
+      }
+
+      if (matchedTrack != null) {
+        _currentTrack = matchedTrack;
+        _currentBgmTrackId = matchedTrack.id;
+      } else if (targetUrl != null && targetUrl.startsWith('http')) {
+        // Tự tạo track tạm thời cho nguồn internet nếu không tìm thấy trong danh sách tải về
+        final tempTrack = BgmTrack()
+          ..id = targetUrl.hashCode.abs()
+          ..name = targetName ?? 'Last Station'
+          ..sourceType = _bgmProviderId == 'radio_browser' ? 'radio' : 'openlofi'
+          ..sourcePath = targetUrl
+          ..dateAdded = DateTime.now();
+        _currentTrack = tempTrack;
+        _currentBgmTrackId = tempTrack.id;
       } else if (_bgmPlaylist.isNotEmpty) {
         _currentTrack = _bgmPlaylist.first;
         _currentBgmTrackId = _currentTrack?.id;
@@ -185,6 +271,8 @@ class BgmService extends ChangeNotifier {
     double? bgmVolume,
     String? bgmLoopMode,
     int? currentBgmTrackId,
+    String? currentBgmTrackUrl,
+    String? currentBgmTrackName,
   }) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -213,6 +301,26 @@ class BgmService extends ChangeNotifier {
         _currentTrack = matches.first;
       }
     }
+    if (currentBgmTrackUrl != null) {
+      settings.currentBgmTrackUrl = currentBgmTrackUrl;
+      // Cập nhật trường lịch sử tương ứng của provider
+      if (_bgmProviderId == 'local') {
+        settings.lastLocalTrackUrl = currentBgmTrackUrl;
+      } else if (_bgmProviderId == 'radio_browser') {
+        settings.lastRadioTrackUrl = currentBgmTrackUrl;
+        if (currentBgmTrackName != null) {
+          settings.lastRadioTrackName = currentBgmTrackName;
+        }
+      } else if (_bgmProviderId == 'open_lofi') {
+        settings.lastLofiTrackUrl = currentBgmTrackUrl;
+        if (currentBgmTrackName != null) {
+          settings.lastLofiTrackName = currentBgmTrackName;
+        }
+      }
+    }
+    if (currentBgmTrackName != null) {
+      settings.currentBgmTrackName = currentBgmTrackName;
+    }
 
     await db.saveSettings(settings);
     notifyListeners();
@@ -231,7 +339,11 @@ class BgmService extends ChangeNotifier {
     _currentTrack = track;
     
     _currentBgmTrackId = track.id;
-    await updateSettings(currentBgmTrackId: track.id);
+    await updateSettings(
+      currentBgmTrackId: track.id,
+      currentBgmTrackUrl: track.sourcePath,
+      currentBgmTrackName: track.name,
+    );
 
     if (!_bgmEnabled) {
       notifyListeners();
@@ -252,7 +364,7 @@ class BgmService extends ChangeNotifier {
         } else {
           throw Exception("Local BGM file does not exist: ${file.path}");
         }
-      } else if (track.sourceType == 'radio' || track.sourceType == 'openlofi') {
+      } else if (track.sourceType == 'radio' || track.sourceType == 'openlofi' || track.sourceType == 'direct_url') {
         // Stream from internet
         await _audioPlayer.play(UrlSource(track.sourcePath));
         _hasSource = true;
@@ -426,6 +538,56 @@ class BgmService extends ChangeNotifier {
       await loadSettingsAndPlaylist();
     } catch (e) {
       LoggerService().log("Delete track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+    }
+  }
+
+  Future<void> addTrackFromUrl(String name, String url) async {
+    try {
+      final track = BgmTrack()
+        ..name = name.trim().isEmpty ? 'Direct Link' : name
+        ..sourceType = 'direct_url'
+        ..sourcePath = url.trim()
+        ..dateAdded = DateTime.now();
+
+      final db = await DatabaseHelper.getInstance();
+      await db.saveBgmTrack(track);
+      await loadSettingsAndPlaylist();
+    } catch (e) {
+      LoggerService().log("Add track from URL error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> updateTrack(BgmTrack track, {String? name, String? sourcePath}) async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      
+      // Cập nhật thông tin
+      if (name != null && name.trim().isNotEmpty) {
+        track.name = name.trim();
+      }
+      if (sourcePath != null && sourcePath.trim().isNotEmpty && track.sourceType == 'direct_url') {
+        track.sourcePath = sourcePath.trim();
+      }
+
+      await db.saveBgmTrack(track);
+      
+      // Nếu track đang sửa là track hiện tại, cập nhật lại trạng thái
+      if (_currentTrack?.id == track.id) {
+        _currentTrack = track;
+        final settings = await db.getSettings();
+        settings.currentBgmTrackName = track.name;
+        settings.currentBgmTrackUrl = track.sourcePath;
+        if (_bgmProviderId == 'local') {
+          settings.lastLocalTrackUrl = track.sourcePath;
+        }
+        await db.saveSettings(settings);
+      }
+
+      await loadSettingsAndPlaylist();
+    } catch (e) {
+      LoggerService().log("Update track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      rethrow;
     }
   }
 }

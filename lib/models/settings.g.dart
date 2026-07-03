@@ -57,183 +57,218 @@ const AppSettingsSchema = CollectionSchema(
       name: r'currentBgmTrackId',
       type: IsarType.long,
     ),
-    r'customBackgroundColor': PropertySchema(
+    r'currentBgmTrackName': PropertySchema(
       id: 8,
+      name: r'currentBgmTrackName',
+      type: IsarType.string,
+    ),
+    r'currentBgmTrackUrl': PropertySchema(
+      id: 9,
+      name: r'currentBgmTrackUrl',
+      type: IsarType.string,
+    ),
+    r'customBackgroundColor': PropertySchema(
+      id: 10,
       name: r'customBackgroundColor',
       type: IsarType.string,
     ),
     r'customTextColor': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'customTextColor',
       type: IsarType.string,
     ),
     r'developerMode': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'developerMode',
       type: IsarType.bool,
     ),
     r'deviceId': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'deviceId',
       type: IsarType.string,
     ),
     r'deviceName': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'deviceName',
       type: IsarType.string,
     ),
     r'enableDebugLogs': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 20,
+      id: 22,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 21,
+      id: 23,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 22,
+      id: 24,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 23,
+      id: 25,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 24,
+      id: 26,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
+    r'lastLocalTrackUrl': PropertySchema(
+      id: 27,
+      name: r'lastLocalTrackUrl',
+      type: IsarType.string,
+    ),
+    r'lastLofiTrackName': PropertySchema(
+      id: 28,
+      name: r'lastLofiTrackName',
+      type: IsarType.string,
+    ),
+    r'lastLofiTrackUrl': PropertySchema(
+      id: 29,
+      name: r'lastLofiTrackUrl',
+      type: IsarType.string,
+    ),
+    r'lastRadioTrackName': PropertySchema(
+      id: 30,
+      name: r'lastRadioTrackName',
+      type: IsarType.string,
+    ),
+    r'lastRadioTrackUrl': PropertySchema(
+      id: 31,
+      name: r'lastRadioTrackUrl',
+      type: IsarType.string,
+    ),
     r'lineHeight': PropertySchema(
-      id: 25,
+      id: 32,
       name: r'lineHeight',
       type: IsarType.double,
     ),
     r'openAiTtsApiKey': PropertySchema(
-      id: 26,
+      id: 33,
       name: r'openAiTtsApiKey',
       type: IsarType.string,
     ),
     r'openAiTtsEndpoint': PropertySchema(
-      id: 27,
+      id: 34,
       name: r'openAiTtsEndpoint',
       type: IsarType.string,
     ),
     r'openAiTtsModel': PropertySchema(
-      id: 28,
+      id: 35,
       name: r'openAiTtsModel',
       type: IsarType.string,
     ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 29,
+      id: 36,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'paragraphSpacing': PropertySchema(
-      id: 30,
+      id: 37,
       name: r'paragraphSpacing',
       type: IsarType.double,
     ),
     r'primaryColorHex': PropertySchema(
-      id: 31,
+      id: 38,
       name: r'primaryColorHex',
       type: IsarType.string,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 32,
+      id: 39,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 33,
+      id: 40,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
     r'sideMargin': PropertySchema(
-      id: 34,
+      id: 41,
       name: r'sideMargin',
       type: IsarType.double,
     ),
     r'sortBy': PropertySchema(
-      id: 35,
+      id: 42,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 36,
+      id: 43,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'textAlignment': PropertySchema(
-      id: 37,
+      id: 44,
       name: r'textAlignment',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 38,
+      id: 45,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 39,
+      id: 46,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 40,
+      id: 47,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 41,
+      id: 48,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 42,
+      id: 49,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 43,
+      id: 50,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -262,6 +297,18 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.bgmLoopMode.length * 3;
   bytesCount += 3 + object.bgmProviderId.length * 3;
   bytesCount += 3 + object.bossKeyAction.length * 3;
+  {
+    final value = object.currentBgmTrackName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.currentBgmTrackUrl;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final value = object.customBackgroundColor;
     if (value != null) {
@@ -295,6 +342,36 @@ int _appSettingsEstimateSize(
   bytesCount += 3 + object.hotkeyPlayPauseTts.length * 3;
   bytesCount += 3 + object.hotkeyPrevChapter.length * 3;
   bytesCount += 3 + object.hotkeyPrevParagraph.length * 3;
+  {
+    final value = object.lastLocalTrackUrl;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.lastLofiTrackName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.lastLofiTrackUrl;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.lastRadioTrackName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.lastRadioTrackUrl;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.openAiTtsApiKey.length * 3;
   bytesCount += 3 + object.openAiTtsEndpoint.length * 3;
   bytesCount += 3 + object.openAiTtsModel.length * 3;
@@ -339,42 +416,49 @@ void _appSettingsSerialize(
   writer.writeDouble(offsets[5], object.bgmVolume);
   writer.writeString(offsets[6], object.bossKeyAction);
   writer.writeLong(offsets[7], object.currentBgmTrackId);
-  writer.writeString(offsets[8], object.customBackgroundColor);
-  writer.writeString(offsets[9], object.customTextColor);
-  writer.writeBool(offsets[10], object.developerMode);
-  writer.writeString(offsets[11], object.deviceId);
-  writer.writeString(offsets[12], object.deviceName);
-  writer.writeBool(offsets[13], object.enableDebugLogs);
-  writer.writeBool(offsets[14], object.enableWebDavDebug);
-  writer.writeString(offsets[15], object.fontFamily);
-  writer.writeDouble(offsets[16], object.fontSize);
-  writer.writeString(offsets[17], object.hotkeyBossKey);
-  writer.writeString(offsets[18], object.hotkeyNextChapter);
-  writer.writeString(offsets[19], object.hotkeyNextParagraph);
-  writer.writeString(offsets[20], object.hotkeyOpenChapter);
-  writer.writeString(offsets[21], object.hotkeyOpenSetting);
-  writer.writeString(offsets[22], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[23], object.hotkeyPrevChapter);
-  writer.writeString(offsets[24], object.hotkeyPrevParagraph);
-  writer.writeDouble(offsets[25], object.lineHeight);
-  writer.writeString(offsets[26], object.openAiTtsApiKey);
-  writer.writeString(offsets[27], object.openAiTtsEndpoint);
-  writer.writeString(offsets[28], object.openAiTtsModel);
-  writer.writeBool(offsets[29], object.openLastReadOnLaunch);
-  writer.writeDouble(offsets[30], object.paragraphSpacing);
-  writer.writeString(offsets[31], object.primaryColorHex);
-  writer.writeString(offsets[32], object.selectedVoiceLocale);
-  writer.writeString(offsets[33], object.selectedVoiceName);
-  writer.writeDouble(offsets[34], object.sideMargin);
-  writer.writeString(offsets[35], object.sortBy);
-  writer.writeDouble(offsets[36], object.speechRate);
-  writer.writeString(offsets[37], object.textAlignment);
-  writer.writeString(offsets[38], object.themeMode);
-  writer.writeString(offsets[39], object.ttsProvider);
-  writer.writeBool(offsets[40], object.webDavEnabled);
-  writer.writeDateTime(offsets[41], object.webDavLastSync);
-  writer.writeString(offsets[42], object.webDavUrl);
-  writer.writeString(offsets[43], object.webDavUsername);
+  writer.writeString(offsets[8], object.currentBgmTrackName);
+  writer.writeString(offsets[9], object.currentBgmTrackUrl);
+  writer.writeString(offsets[10], object.customBackgroundColor);
+  writer.writeString(offsets[11], object.customTextColor);
+  writer.writeBool(offsets[12], object.developerMode);
+  writer.writeString(offsets[13], object.deviceId);
+  writer.writeString(offsets[14], object.deviceName);
+  writer.writeBool(offsets[15], object.enableDebugLogs);
+  writer.writeBool(offsets[16], object.enableWebDavDebug);
+  writer.writeString(offsets[17], object.fontFamily);
+  writer.writeDouble(offsets[18], object.fontSize);
+  writer.writeString(offsets[19], object.hotkeyBossKey);
+  writer.writeString(offsets[20], object.hotkeyNextChapter);
+  writer.writeString(offsets[21], object.hotkeyNextParagraph);
+  writer.writeString(offsets[22], object.hotkeyOpenChapter);
+  writer.writeString(offsets[23], object.hotkeyOpenSetting);
+  writer.writeString(offsets[24], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[25], object.hotkeyPrevChapter);
+  writer.writeString(offsets[26], object.hotkeyPrevParagraph);
+  writer.writeString(offsets[27], object.lastLocalTrackUrl);
+  writer.writeString(offsets[28], object.lastLofiTrackName);
+  writer.writeString(offsets[29], object.lastLofiTrackUrl);
+  writer.writeString(offsets[30], object.lastRadioTrackName);
+  writer.writeString(offsets[31], object.lastRadioTrackUrl);
+  writer.writeDouble(offsets[32], object.lineHeight);
+  writer.writeString(offsets[33], object.openAiTtsApiKey);
+  writer.writeString(offsets[34], object.openAiTtsEndpoint);
+  writer.writeString(offsets[35], object.openAiTtsModel);
+  writer.writeBool(offsets[36], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[37], object.paragraphSpacing);
+  writer.writeString(offsets[38], object.primaryColorHex);
+  writer.writeString(offsets[39], object.selectedVoiceLocale);
+  writer.writeString(offsets[40], object.selectedVoiceName);
+  writer.writeDouble(offsets[41], object.sideMargin);
+  writer.writeString(offsets[42], object.sortBy);
+  writer.writeDouble(offsets[43], object.speechRate);
+  writer.writeString(offsets[44], object.textAlignment);
+  writer.writeString(offsets[45], object.themeMode);
+  writer.writeString(offsets[46], object.ttsProvider);
+  writer.writeBool(offsets[47], object.webDavEnabled);
+  writer.writeDateTime(offsets[48], object.webDavLastSync);
+  writer.writeString(offsets[49], object.webDavUrl);
+  writer.writeString(offsets[50], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -392,43 +476,50 @@ AppSettings _appSettingsDeserialize(
   object.bgmVolume = reader.readDouble(offsets[5]);
   object.bossKeyAction = reader.readString(offsets[6]);
   object.currentBgmTrackId = reader.readLongOrNull(offsets[7]);
-  object.customBackgroundColor = reader.readStringOrNull(offsets[8]);
-  object.customTextColor = reader.readStringOrNull(offsets[9]);
-  object.developerMode = reader.readBool(offsets[10]);
-  object.deviceId = reader.readStringOrNull(offsets[11]);
-  object.deviceName = reader.readStringOrNull(offsets[12]);
-  object.enableDebugLogs = reader.readBool(offsets[13]);
-  object.enableWebDavDebug = reader.readBool(offsets[14]);
-  object.fontFamily = reader.readString(offsets[15]);
-  object.fontSize = reader.readDouble(offsets[16]);
-  object.hotkeyBossKey = reader.readString(offsets[17]);
-  object.hotkeyNextChapter = reader.readString(offsets[18]);
-  object.hotkeyNextParagraph = reader.readString(offsets[19]);
-  object.hotkeyOpenChapter = reader.readString(offsets[20]);
-  object.hotkeyOpenSetting = reader.readString(offsets[21]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[22]);
-  object.hotkeyPrevChapter = reader.readString(offsets[23]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[24]);
+  object.currentBgmTrackName = reader.readStringOrNull(offsets[8]);
+  object.currentBgmTrackUrl = reader.readStringOrNull(offsets[9]);
+  object.customBackgroundColor = reader.readStringOrNull(offsets[10]);
+  object.customTextColor = reader.readStringOrNull(offsets[11]);
+  object.developerMode = reader.readBool(offsets[12]);
+  object.deviceId = reader.readStringOrNull(offsets[13]);
+  object.deviceName = reader.readStringOrNull(offsets[14]);
+  object.enableDebugLogs = reader.readBool(offsets[15]);
+  object.enableWebDavDebug = reader.readBool(offsets[16]);
+  object.fontFamily = reader.readString(offsets[17]);
+  object.fontSize = reader.readDouble(offsets[18]);
+  object.hotkeyBossKey = reader.readString(offsets[19]);
+  object.hotkeyNextChapter = reader.readString(offsets[20]);
+  object.hotkeyNextParagraph = reader.readString(offsets[21]);
+  object.hotkeyOpenChapter = reader.readString(offsets[22]);
+  object.hotkeyOpenSetting = reader.readString(offsets[23]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[24]);
+  object.hotkeyPrevChapter = reader.readString(offsets[25]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[26]);
   object.id = id;
-  object.lineHeight = reader.readDouble(offsets[25]);
-  object.openAiTtsApiKey = reader.readString(offsets[26]);
-  object.openAiTtsEndpoint = reader.readString(offsets[27]);
-  object.openAiTtsModel = reader.readString(offsets[28]);
-  object.openLastReadOnLaunch = reader.readBool(offsets[29]);
-  object.paragraphSpacing = reader.readDouble(offsets[30]);
-  object.primaryColorHex = reader.readStringOrNull(offsets[31]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[32]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[33]);
-  object.sideMargin = reader.readDouble(offsets[34]);
-  object.sortBy = reader.readString(offsets[35]);
-  object.speechRate = reader.readDouble(offsets[36]);
-  object.textAlignment = reader.readString(offsets[37]);
-  object.themeMode = reader.readString(offsets[38]);
-  object.ttsProvider = reader.readString(offsets[39]);
-  object.webDavEnabled = reader.readBool(offsets[40]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[41]);
-  object.webDavUrl = reader.readString(offsets[42]);
-  object.webDavUsername = reader.readString(offsets[43]);
+  object.lastLocalTrackUrl = reader.readStringOrNull(offsets[27]);
+  object.lastLofiTrackName = reader.readStringOrNull(offsets[28]);
+  object.lastLofiTrackUrl = reader.readStringOrNull(offsets[29]);
+  object.lastRadioTrackName = reader.readStringOrNull(offsets[30]);
+  object.lastRadioTrackUrl = reader.readStringOrNull(offsets[31]);
+  object.lineHeight = reader.readDouble(offsets[32]);
+  object.openAiTtsApiKey = reader.readString(offsets[33]);
+  object.openAiTtsEndpoint = reader.readString(offsets[34]);
+  object.openAiTtsModel = reader.readString(offsets[35]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[36]);
+  object.paragraphSpacing = reader.readDouble(offsets[37]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[38]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[39]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[40]);
+  object.sideMargin = reader.readDouble(offsets[41]);
+  object.sortBy = reader.readString(offsets[42]);
+  object.speechRate = reader.readDouble(offsets[43]);
+  object.textAlignment = reader.readString(offsets[44]);
+  object.themeMode = reader.readString(offsets[45]);
+  object.ttsProvider = reader.readString(offsets[46]);
+  object.webDavEnabled = reader.readBool(offsets[47]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[48]);
+  object.webDavUrl = reader.readString(offsets[49]);
+  object.webDavUsername = reader.readString(offsets[50]);
   return object;
 }
 
@@ -460,23 +551,23 @@ P _appSettingsDeserializeProp<P>(
     case 9:
       return (reader.readStringOrNull(offset)) as P;
     case 10:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 13:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 14:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 16:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 17:
       return (reader.readString(offset)) as P;
     case 18:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 19:
       return (reader.readString(offset)) as P;
     case 20:
@@ -490,42 +581,56 @@ P _appSettingsDeserializeProp<P>(
     case 24:
       return (reader.readString(offset)) as P;
     case 25:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 26:
       return (reader.readString(offset)) as P;
     case 27:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 28:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 29:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 30:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 31:
       return (reader.readStringOrNull(offset)) as P;
     case 32:
-      return (reader.readStringOrNull(offset)) as P;
-    case 33:
-      return (reader.readStringOrNull(offset)) as P;
-    case 34:
       return (reader.readDouble(offset)) as P;
+    case 33:
+      return (reader.readString(offset)) as P;
+    case 34:
+      return (reader.readString(offset)) as P;
     case 35:
       return (reader.readString(offset)) as P;
     case 36:
-      return (reader.readDouble(offset)) as P;
-    case 37:
-      return (reader.readString(offset)) as P;
-    case 38:
-      return (reader.readString(offset)) as P;
-    case 39:
-      return (reader.readString(offset)) as P;
-    case 40:
       return (reader.readBool(offset)) as P;
+    case 37:
+      return (reader.readDouble(offset)) as P;
+    case 38:
+      return (reader.readStringOrNull(offset)) as P;
+    case 39:
+      return (reader.readStringOrNull(offset)) as P;
+    case 40:
+      return (reader.readStringOrNull(offset)) as P;
     case 41:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 42:
       return (reader.readString(offset)) as P;
     case 43:
+      return (reader.readDouble(offset)) as P;
+    case 44:
+      return (reader.readString(offset)) as P;
+    case 45:
+      return (reader.readString(offset)) as P;
+    case 46:
+      return (reader.readString(offset)) as P;
+    case 47:
+      return (reader.readBool(offset)) as P;
+    case 48:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 49:
+      return (reader.readString(offset)) as P;
+    case 50:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1325,6 +1430,314 @@ extension AppSettingsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'currentBgmTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'currentBgmTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentBgmTrackName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'currentBgmTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'currentBgmTrackName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentBgmTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'currentBgmTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'currentBgmTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'currentBgmTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentBgmTrackUrl',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'currentBgmTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'currentBgmTrackUrl',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentBgmTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      currentBgmTrackUrlIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'currentBgmTrackUrl',
+        value: '',
       ));
     });
   }
@@ -3312,6 +3725,776 @@ extension AppSettingsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastLocalTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastLocalTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastLocalTrackUrl',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastLocalTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastLocalTrackUrl',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLocalTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLocalTrackUrlIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastLocalTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastLofiTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastLofiTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastLofiTrackName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastLofiTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastLofiTrackName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLofiTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastLofiTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastLofiTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastLofiTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastLofiTrackUrl',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastLofiTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastLofiTrackUrl',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastLofiTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastLofiTrackUrlIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastLofiTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastRadioTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastRadioTrackName',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastRadioTrackName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastRadioTrackName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastRadioTrackName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastRadioTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastRadioTrackName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastRadioTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastRadioTrackUrl',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastRadioTrackUrl',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'lastRadioTrackUrl',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'lastRadioTrackUrl',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastRadioTrackUrl',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      lastRadioTrackUrlIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'lastRadioTrackUrl',
+        value: '',
       ));
     });
   }
@@ -5469,6 +6652,34 @@ extension AppSettingsQuerySortBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByCurrentBgmTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       sortByCustomBackgroundColor() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'customBackgroundColor', Sort.asc);
@@ -5691,6 +6902,76 @@ extension AppSettingsQuerySortBy
       sortByHotkeyPrevParagraphDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hotkeyPrevParagraph', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLocalTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLocalTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLocalTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLocalTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLofiTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLofiTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLofiTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastLofiTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastRadioTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastRadioTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastRadioTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByLastRadioTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackUrl', Sort.desc);
     });
   }
 
@@ -6044,6 +7325,34 @@ extension AppSettingsQuerySortThenBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByCurrentBgmTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentBgmTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       thenByCustomBackgroundColor() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'customBackgroundColor', Sort.asc);
@@ -6278,6 +7587,76 @@ extension AppSettingsQuerySortThenBy
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLocalTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLocalTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLocalTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLocalTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLofiTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLofiTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLofiTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastLofiTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastLofiTrackUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastRadioTrackName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastRadioTrackNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastRadioTrackUrl() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackUrl', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByLastRadioTrackUrlDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastRadioTrackUrl', Sort.desc);
     });
   }
 
@@ -6586,6 +7965,22 @@ extension AppSettingsQueryWhereDistinct
   }
 
   QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByCurrentBgmTrackName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentBgmTrackName',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByCurrentBgmTrackUrl({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentBgmTrackUrl',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByCustomBackgroundColor({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'customBackgroundColor',
@@ -6708,6 +8103,46 @@ extension AppSettingsQueryWhereDistinct
       distinctByHotkeyPrevParagraph({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hotkeyPrevParagraph',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByLastLocalTrackUrl(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastLocalTrackUrl',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByLastLofiTrackName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastLofiTrackName',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByLastLofiTrackUrl(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastLofiTrackUrl',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByLastRadioTrackName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastRadioTrackName',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByLastRadioTrackUrl(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastRadioTrackUrl',
           caseSensitive: caseSensitive);
     });
   }
@@ -6907,6 +8342,20 @@ extension AppSettingsQueryProperty
   }
 
   QueryBuilder<AppSettings, String?, QQueryOperations>
+      currentBgmTrackNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentBgmTrackName');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      currentBgmTrackUrlProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentBgmTrackUrl');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
       customBackgroundColorProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'customBackgroundColor');
@@ -7015,6 +8464,41 @@ extension AppSettingsQueryProperty
       hotkeyPrevParagraphProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'hotkeyPrevParagraph');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      lastLocalTrackUrlProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastLocalTrackUrl');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      lastLofiTrackNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastLofiTrackName');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      lastLofiTrackUrlProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastLofiTrackUrl');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      lastRadioTrackNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastRadioTrackName');
+    });
+  }
+
+  QueryBuilder<AppSettings, String?, QQueryOperations>
+      lastRadioTrackUrlProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastRadioTrackUrl');
     });
   }
 

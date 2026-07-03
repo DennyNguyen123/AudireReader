@@ -435,5 +435,17 @@
   "cancel": "Cancel",
   "confirm": "Confirm",
   "onlySyncProgress": "Only overwrite reading progress",
-  "onlySyncProgressDesc": "Quickly sync reading progress without modifying book shelf."
+  "onlySyncProgressDesc": "Quickly sync reading progress without modifying book shelf.",
+  "searchStation": "Search stations...",
+  "addLink": "Add Link URL",
+  "trackUrl": "Link URL",
+  "editTrack": "Edit Track Info",
+  "save": "Save",
+  "addSuccess": "Added to library successfully!",
+  "updateSuccess": "Updated successfully!",
+  "deleteSuccess": "Deleted successfully!",
+  "emptySearch": "No matching results found",
+  "addFileOption": "Select local file",
+  "addLinkOption": "Paste direct link",
+  "importTrack": "Add to Library"
 }

@@ -802,4 +802,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onlySyncProgressDesc =>
       'Quickly sync reading progress without modifying book shelf.';
+
+  @override
+  String get searchStation => 'Search stations...';
+
+  @override
+  String get addLink => 'Add Link URL';
+
+  @override
+  String get trackUrl => 'Link URL';
+
+  @override
+  String get editTrack => 'Edit Track Info';
+
+  @override
+  String get addSuccess => 'Added to library successfully!';
+
+  @override
+  String get updateSuccess => 'Updated successfully!';
+
+  @override
+  String get deleteSuccess => 'Deleted successfully!';
+
+  @override
+  String get emptySearch => 'No matching results found';
+
+  @override
+  String get addFileOption => 'Select local file';
+
+  @override
+  String get addLinkOption => 'Paste direct link';
+
+  @override
+  String get importTrack => 'Add to Library';
 }

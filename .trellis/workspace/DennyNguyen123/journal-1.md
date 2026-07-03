@@ -222,3 +222,65 @@ Thêm tham số progressOnly vào hàm forcePush và forcePull trong SyncService
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Hoan thanh tim kiem, them dai phat radio va nho vi tri theo URL
+
+**Date**: 2026-07-03
+**Task**: Hoan thanh tim kiem, them dai phat radio va nho vi tri theo URL
+**Branch**: `main`
+
+### Summary
+
+Sua loi nho phan dang nghe BGM theo URL; them tinh nang search dai radio, add vao thu vien, sua va xoa link truc tiep
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 9: Sua loi compile settings va bgm_player_sheet
+
+**Date**: 2026-07-03
+**Task**: Sua loi compile settings va bgm_player_sheet
+**Branch**: `main`
+
+### Summary
+
+Bo sung import va fix syntax Column children trong bgm_player_sheet, bo sung truong setting con thieu
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

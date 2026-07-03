@@ -1542,6 +1542,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quickly sync reading progress without modifying book shelf.'**
   String get onlySyncProgressDesc;
+
+  /// No description provided for @searchStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stations...'**
+  String get searchStation;
+
+  /// No description provided for @addLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Link URL'**
+  String get addLink;
+
+  /// No description provided for @trackUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Link URL'**
+  String get trackUrl;
+
+  /// No description provided for @editTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Track Info'**
+  String get editTrack;
+
+  /// No description provided for @addSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to library successfully!'**
+  String get addSuccess;
+
+  /// No description provided for @updateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated successfully!'**
+  String get updateSuccess;
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted successfully!'**
+  String get deleteSuccess;
+
+  /// No description provided for @emptySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching results found'**
+  String get emptySearch;
+
+  /// No description provided for @addFileOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Select local file'**
+  String get addFileOption;
+
+  /// No description provided for @addLinkOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste direct link'**
+  String get addLinkOption;
+
+  /// No description provided for @importTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Library'**
+  String get importTrack;
 }
 
 class _AppLocalizationsDelegate

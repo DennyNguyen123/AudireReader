@@ -246,5 +246,17 @@
   "cancel": "Hủy",
   "confirm": "Xác nhận",
   "onlySyncProgress": "Chỉ ghi đè tiến trình đọc",
-  "onlySyncProgressDesc": "Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách."
+  "onlySyncProgressDesc": "Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách.",
+  "searchStation": "Tìm kiếm đài phát...",
+  "addLink": "Dán link URL",
+  "trackUrl": "Đường dẫn Link (URL)",
+  "editTrack": "Sửa thông tin nhạc",
+  "save": "Lưu",
+  "addSuccess": "Đã thêm vào thư viện thành công!",
+  "updateSuccess": "Cập nhật thành công!",
+  "deleteSuccess": "Đã xóa thành công!",
+  "emptySearch": "Không tìm thấy kết quả phù hợp",
+  "addFileOption": "Chọn file cục bộ",
+  "addLinkOption": "Dán link trực tiếp",
+  "importTrack": "Thêm vào thư viện"
 }

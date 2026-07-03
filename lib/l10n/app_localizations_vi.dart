@@ -805,4 +805,37 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get onlySyncProgressDesc =>
       'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách.';
+
+  @override
+  String get searchStation => 'Tìm kiếm đài phát...';
+
+  @override
+  String get addLink => 'Dán link URL';
+
+  @override
+  String get trackUrl => 'Đường dẫn Link (URL)';
+
+  @override
+  String get editTrack => 'Sửa thông tin nhạc';
+
+  @override
+  String get addSuccess => 'Đã thêm vào thư viện thành công!';
+
+  @override
+  String get updateSuccess => 'Cập nhật thành công!';
+
+  @override
+  String get deleteSuccess => 'Đã xóa thành công!';
+
+  @override
+  String get emptySearch => 'Không tìm thấy kết quả phù hợp';
+
+  @override
+  String get addFileOption => 'Chọn file cục bộ';
+
+  @override
+  String get addLinkOption => 'Dán link trực tiếp';
+
+  @override
+  String get importTrack => 'Thêm vào thư viện';
 }
