@@ -283,6 +283,227 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  Future<void> _startForcePush() async {
+    if (_isSyncing) return;
+
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+
+    bool progressOnly = true;
+
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(AppLocalizations.of(context)?.forcePushConfirmTitle ?? 'Confirm Force Push'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)?.forcePushConfirmDesc ?? 'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?'),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
+                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  value: progressOnly,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (val) {
+                    setDialogState(() {
+                      progressOnly = val ?? true;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isSyncing = true;
+      _syncFailed = false;
+    });
+
+    try {
+      final result = await SyncService.getInstance().forcePush(progressOnly: progressOnly);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.forcePushSuccess ?? 'Force push completed successfully!')
+                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Force push failed: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _startForcePull() async {
+    if (_isSyncing) return;
+
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+
+    bool progressOnly = true;
+
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(AppLocalizations.of(context)?.forcePullConfirmTitle ?? 'Confirm Force Pull'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)?.forcePullConfirmDesc ?? 'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?'),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
+                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  value: progressOnly,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (val) {
+                    setDialogState(() {
+                      progressOnly = val ?? true;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isSyncing = true;
+      _syncFailed = false;
+    });
+
+    try {
+      final result = await SyncService.getInstance().forcePull(progressOnly: progressOnly);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.forcePullSuccess ?? 'Force pull completed successfully!')
+                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Force pull failed: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+      if (result.success && result.localChanged) {
+        await _loadBooks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
   Future<void> _checkUpdateOnLaunch() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -630,6 +851,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         actions: [
+          if (_webDavEnabled && !_isSyncing) ...[
+            Tooltip(
+              message: AppLocalizations.of(context)?.forcePush ?? 'Force Push (Local -> Cloud)',
+              child: IconButton(
+                icon: const Icon(Icons.cloud_upload_rounded),
+                onPressed: _startForcePush,
+              ),
+            ),
+            Tooltip(
+              message: AppLocalizations.of(context)?.forcePull ?? 'Force Pull (Cloud -> Local)',
+              child: IconButton(
+                icon: const Icon(Icons.cloud_download_rounded),
+                onPressed: _startForcePull,
+              ),
+            ),
+          ],
           if (_webDavEnabled)
             _isSyncing
                 ? SizedBox(

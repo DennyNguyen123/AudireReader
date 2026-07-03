@@ -423,5 +423,17 @@
     }
   },
   "success": "Success",
-  "error": "Error"
+  "error": "Error",
+  "forcePush": "Force Push (Local -> Cloud)",
+  "forcePull": "Force Pull (Cloud -> Local)",
+  "forcePushConfirmTitle": "Confirm Force Push",
+  "forcePushConfirmDesc": "This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?",
+  "forcePullConfirmTitle": "Confirm Force Pull",
+  "forcePullConfirmDesc": "This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?",
+  "forcePushSuccess": "Force push completed successfully!",
+  "forcePullSuccess": "Force pull completed successfully!",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "onlySyncProgress": "Only overwrite reading progress",
+  "onlySyncProgressDesc": "Quickly sync reading progress without modifying book shelf."
 }

@@ -160,3 +160,65 @@ Analyzed Shorebird logs and explained UnpatchableChangeException due to asset/fo
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Thêm nút Force Push và Force Pull đồng bộ WebDAV
+
+**Date**: 2026-07-03
+**Task**: Thêm nút Force Push và Force Pull đồng bộ WebDAV
+**Branch**: `main`
+
+### Summary
+
+Bổ sung phương thức forcePush() và forcePull() vào SyncService; thêm giao diện nút bấm trong WebdavSettingsSection & SyncSettingsScreen; thêm icon thao tác nhanh trên AppBar của LibraryScreen kèm hộp thoại cảnh báo xác nhận an toàn
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 7: Bổ sung tùy chọn Chỉ ghi đè tiến trình đọc cho Force Push và Force Pull
+
+**Date**: 2026-07-03
+**Task**: Bổ sung tùy chọn Chỉ ghi đè tiến trình đọc cho Force Push và Force Pull
+**Branch**: `main`
+
+### Summary
+
+Thêm tham số progressOnly vào hàm forcePush và forcePull trong SyncService; Cập nhật Dialog xác nhận trong SyncSettingsScreen và LibraryScreen hỗ trợ checkbox lựa chọn; Tối ưu hóa hiệu năng đồng bộ toàn bộ bằng cách kiểm tra tệp sách tồn tại trước khi upload/download; Cập nhật đa ngôn ngữ app_vi.arb và app_en.arb.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

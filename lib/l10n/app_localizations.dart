@@ -1476,6 +1476,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get error;
+
+  /// No description provided for @forcePush.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Push (Local -> Cloud)'**
+  String get forcePush;
+
+  /// No description provided for @forcePull.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Pull (Cloud -> Local)'**
+  String get forcePull;
+
+  /// No description provided for @forcePushConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Force Push'**
+  String get forcePushConfirmTitle;
+
+  /// No description provided for @forcePushConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?'**
+  String get forcePushConfirmDesc;
+
+  /// No description provided for @forcePullConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Force Pull'**
+  String get forcePullConfirmTitle;
+
+  /// No description provided for @forcePullConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?'**
+  String get forcePullConfirmDesc;
+
+  /// No description provided for @forcePushSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Force push completed successfully!'**
+  String get forcePushSuccess;
+
+  /// No description provided for @forcePullSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Force pull completed successfully!'**
+  String get forcePullSuccess;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @onlySyncProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Only overwrite reading progress'**
+  String get onlySyncProgress;
+
+  /// No description provided for @onlySyncProgressDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Quickly sync reading progress without modifying book shelf.'**
+  String get onlySyncProgressDesc;
 }
 
 class _AppLocalizationsDelegate

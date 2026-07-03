@@ -16,6 +16,8 @@ class WebdavSettingsSection extends StatelessWidget {
   final ValueChanged<bool> onWebDavEnabledChanged;
   final VoidCallback onTestConnection;
   final VoidCallback onSyncNow;
+  final VoidCallback onForcePush;
+  final VoidCallback onForcePull;
   final VoidCallback onSettingsChanged;
 
   const WebdavSettingsSection({
@@ -33,6 +35,8 @@ class WebdavSettingsSection extends StatelessWidget {
     required this.onWebDavEnabledChanged,
     required this.onTestConnection,
     required this.onSyncNow,
+    required this.onForcePush,
+    required this.onForcePull,
     required this.onSettingsChanged,
   });
 
@@ -305,6 +309,44 @@ class WebdavSettingsSection extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
               ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isLoading ? null : onForcePush,
+                    icon: const Icon(Icons.cloud_upload_rounded),
+                    label: Text(
+                      AppLocalizations.of(context)?.forcePush ?? 'Force Push',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isLoading ? null : onForcePull,
+                    icon: const Icon(Icons.cloud_download_rounded),
+                    label: Text(
+                      AppLocalizations.of(context)?.forcePull ?? 'Force Pull',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],

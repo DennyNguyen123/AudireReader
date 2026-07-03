@@ -766,4 +766,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get error => 'Error';
+
+  @override
+  String get forcePush => 'Force Push (Local -> Cloud)';
+
+  @override
+  String get forcePull => 'Force Pull (Cloud -> Local)';
+
+  @override
+  String get forcePushConfirmTitle => 'Confirm Force Push';
+
+  @override
+  String get forcePushConfirmDesc =>
+      'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?';
+
+  @override
+  String get forcePullConfirmTitle => 'Confirm Force Pull';
+
+  @override
+  String get forcePullConfirmDesc =>
+      'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?';
+
+  @override
+  String get forcePushSuccess => 'Force push completed successfully!';
+
+  @override
+  String get forcePullSuccess => 'Force pull completed successfully!';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get onlySyncProgress => 'Only overwrite reading progress';
+
+  @override
+  String get onlySyncProgressDesc =>
+      'Quickly sync reading progress without modifying book shelf.';
 }

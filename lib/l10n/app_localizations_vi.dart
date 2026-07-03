@@ -769,4 +769,40 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get error => 'Lỗi';
+
+  @override
+  String get forcePush => 'Đẩy lên mây (Ghi đè Cloud)';
+
+  @override
+  String get forcePull => 'Tải từ mây (Ghi đè Local)';
+
+  @override
+  String get forcePushConfirmTitle => 'Xác nhận Force Push';
+
+  @override
+  String get forcePushConfirmDesc =>
+      'Hành động này sẽ ghi đè toàn bộ dữ liệu trên đám mây bằng dữ liệu trên thiết bị này. Bạn có chắc chắn muốn tiếp tục?';
+
+  @override
+  String get forcePullConfirmTitle => 'Xác nhận Force Pull';
+
+  @override
+  String get forcePullConfirmDesc =>
+      'Hành động này sẽ ghi đè toàn bộ dữ liệu trên thiết bị này bằng dữ liệu từ đám mây. Sách và tiến trình cục bộ không có trên mây sẽ bị xóa. Bạn có chắc chắn muốn tiếp tục?';
+
+  @override
+  String get forcePushSuccess => 'Đẩy dữ liệu lên mây thành công!';
+
+  @override
+  String get forcePullSuccess => 'Tải dữ liệu từ mây về thành công!';
+
+  @override
+  String get confirm => 'Xác nhận';
+
+  @override
+  String get onlySyncProgress => 'Chỉ ghi đè tiến trình đọc';
+
+  @override
+  String get onlySyncProgressDesc =>
+      'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách.';
 }
