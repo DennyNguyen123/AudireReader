@@ -38,6 +38,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   
   bool _webDavEnabled = false;
+  bool _autoSyncEnabled = true;
   bool _openLastReadOnLaunch = false;
   bool _autoCheckUpdate = true;
   String _appLocaleCode = 'en';
@@ -98,9 +99,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final settings = await db.getSettings();
     const storage = FlutterSecureStorage();
     final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
 
     setState(() {
       _webDavEnabled = settings.webDavEnabled;
+      _autoSyncEnabled = autoSyncStr == 'true';
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
       _autoCheckUpdate = settings.autoCheckUpdate;
       _appLocaleCode = (settings.appLocale == 'vi' || settings.appLocale == 'en') ? settings.appLocale : 'en';
@@ -916,6 +919,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                         ],
                         WebdavSettingsSection(
                           webDavEnabled: _webDavEnabled,
+                          autoSyncEnabled: _autoSyncEnabled,
                           urlController: _urlController,
                           usernameController: _usernameController,
                           passwordController: _passwordController,
@@ -930,6 +934,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               _webDavEnabled = val;
                             });
                             _saveWebDavEnableSetting(val);
+                          },
+                          onAutoSyncEnabledChanged: (val) async {
+                            setState(() {
+                              _autoSyncEnabled = val;
+                            });
+                            const storage = FlutterSecureStorage();
+                            await storage.write(key: 'webdav_auto_sync', value: val ? 'true' : 'false');
                           },
                           onTestConnection: _testConnection,
                           onSyncNow: _triggerManualSync,

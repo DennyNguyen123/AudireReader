@@ -4,6 +4,7 @@ import 'settings_card.dart';
 
 class WebdavSettingsSection extends StatelessWidget {
   final bool webDavEnabled;
+  final bool autoSyncEnabled;
   final TextEditingController urlController;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
@@ -14,6 +15,7 @@ class WebdavSettingsSection extends StatelessWidget {
   final DateTime? lastSync;
   final bool isLoading;
   final ValueChanged<bool> onWebDavEnabledChanged;
+  final ValueChanged<bool> onAutoSyncEnabledChanged;
   final VoidCallback onTestConnection;
   final VoidCallback onSyncNow;
   final VoidCallback onForcePush;
@@ -23,6 +25,7 @@ class WebdavSettingsSection extends StatelessWidget {
   const WebdavSettingsSection({
     super.key,
     required this.webDavEnabled,
+    required this.autoSyncEnabled,
     required this.urlController,
     required this.usernameController,
     required this.passwordController,
@@ -33,6 +36,7 @@ class WebdavSettingsSection extends StatelessWidget {
     required this.lastSync,
     required this.isLoading,
     required this.onWebDavEnabledChanged,
+    required this.onAutoSyncEnabledChanged,
     required this.onTestConnection,
     required this.onSyncNow,
     required this.onForcePush,
@@ -89,13 +93,34 @@ class WebdavSettingsSection extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             subtitle: Text(
-              AppLocalizations.of(context)?.autoSyncDesc ?? 'Auto-sync when launching or leaving a book',
+              AppLocalizations.of(context)?.enableWebdavDesc ?? 'Đồng bộ thư viện qua máy chủ WebDAV cá nhân',
               style: const TextStyle(fontSize: 12),
             ),
             value: webDavEnabled,
             activeThumbColor: accentColor,
             onChanged: onWebDavEnabledChanged,
           ),
+
+          if (webDavEnabled) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(height: 1, color: Colors.white10),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                AppLocalizations.of(context)?.autoSyncEnabled ?? 'Auto Sync WebDAV',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              subtitle: Text(
+                AppLocalizations.of(context)?.autoSyncEnabledDesc ?? 'Automatically synchronize library on launch or leaving a book',
+                style: const TextStyle(fontSize: 12),
+              ),
+              value: autoSyncEnabled,
+              activeThumbColor: accentColor,
+              onChanged: onAutoSyncEnabledChanged,
+            ),
+          ],
 
           // Phần mở rộng cấu hình & trạng thái (chỉ hiện khi bật WebDAV)
           if (webDavEnabled) ...[

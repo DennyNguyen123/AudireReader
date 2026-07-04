@@ -35,11 +35,112 @@ class SyncService {
   // Lưu trữ trạng thái đồng bộ của các sách (bookUuid -> status)
   final ValueNotifier<Map<String, String>> syncStateNotifier = ValueNotifier({});
 
-  SyncService._();
+  final ValueNotifier<List<Map<String, dynamic>>> cloudBooksNotifier = ValueNotifier([]);
+  final ValueNotifier<Set<String>> cloudBookUuidsNotifier = ValueNotifier({});
+
+  SyncService._() {
+    _initCache();
+  }
 
   static SyncService getInstance() {
     _instance ??= SyncService._();
     return _instance!;
+  }
+
+  Future<void> _initCache() async {
+    try {
+      const storage = FlutterSecureStorage();
+      final cachedJson = await storage.read(key: 'webdav_cached_cloud_books');
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> list = json.decode(cachedJson);
+        final parsed = list.map((item) => Map<String, dynamic>.from(item)).toList();
+        cloudBooksNotifier.value = parsed;
+        cloudBookUuidsNotifier.value = parsed.map((item) => item['uuid'] as String).toSet();
+      }
+    } catch (e) {
+      print('[Sync] Error loading cloud books cache: $e');
+    }
+  }
+
+  Future<void> fetchCloudBooks() async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      const storage = FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      if (!settings.webDavEnabled ||
+          settings.webDavUrl.isEmpty ||
+          settings.webDavUsername.isEmpty ||
+          webDavPassword.isEmpty) {
+        cloudBooksNotifier.value = [];
+        cloudBookUuidsNotifier.value = {};
+        return;
+      }
+
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      final connected = await _webdav.testConnection();
+      if (!connected) return;
+
+      final hasIndex = await _webdav.fileExists('/AudireReader/sync_data.json');
+      if (hasIndex) {
+        final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+        if (bytes != null && bytes.isNotEmpty) {
+          final jsonStr = utf8.decode(bytes);
+          final cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
+          final List<dynamic> cloudBooks = cloudSyncData['books'] ?? [];
+          final List<Map<String, dynamic>> parsed = cloudBooks
+              .map((b) => b is Map<String, dynamic> ? Map<String, dynamic>.from(b) : null)
+              .whereType<Map<String, dynamic>>()
+              .toList();
+
+          cloudBooksNotifier.value = parsed;
+          cloudBookUuidsNotifier.value = parsed.map((b) => b['uuid'] as String).toSet();
+
+          // Save to cache
+          await storage.write(key: 'webdav_cached_cloud_books', value: json.encode(parsed));
+          print('[Sync] Fetched ${parsed.length} cloud books.');
+
+          // Tải ngầm ảnh bìa của các sách ảo chưa có ở local
+          _downloadMissingCoversInBackground(parsed);
+        }
+      } else {
+        cloudBooksNotifier.value = [];
+        cloudBookUuidsNotifier.value = {};
+        await storage.delete(key: 'webdav_cached_cloud_books');
+      }
+    } catch (e) {
+      print('[Sync] Failed to fetch cloud books: $e');
+    }
+  }
+
+  Future<void> _downloadMissingCoversInBackground(List<Map<String, dynamic>> cloudBooks) async {
+    try {
+      final docDir = await PathHelper.getAppDirectory();
+      
+      for (final cb in cloudBooks) {
+        final uuid = cb['uuid'] as String;
+        if (cb['hasCover'] == true) {
+          final ext = cb['coverExtension'] ?? '.png';
+          final localPath = p.join(docDir.path, 'covers', '$uuid$ext');
+          final localFile = File(localPath);
+          if (!await localFile.exists()) {
+            final remotePath = '/AudireReader/covers/$uuid$ext';
+            print('[Sync] Downloading missing cover in background for $uuid');
+            
+            // Create covers dir if not exists
+            final coverDir = Directory(p.join(docDir.path, 'covers'));
+            if (!await coverDir.exists()) {
+              await coverDir.create(recursive: true);
+            }
+            
+            await _webdav.downloadToLocalFile(remotePath, localPath);
+          }
+        }
+      }
+    } catch (e) {
+      print('[Sync] Background cover download failed: $e');
+    }
   }
 
   bool get isSyncing => _isSyncing;
@@ -67,29 +168,23 @@ class SyncService {
     }
   }
 
-  /// Thực hiện đồng bộ hóa toàn diện (để tương thích ngược)
+  /// Thực hiện đồng bộ hóa toàn diện (chỉ đồng bộ tiến trình đọc và chỉ mục sách đám mây)
   Future<SyncResult> sync() async {
     if (_isSyncing) {
       return SyncResult(success: false, message: 'Sync is already in progress.');
     }
     _isSyncing = true;
-    print('[Sync] Starting overall synchronization...');
+    print('[Sync] Starting progress-only synchronization...');
 
     try {
-      // 1. Đồng bộ thư viện sách trước thông qua hàm internal không check lock
-      final libResult = await _syncLibraryInternal();
+      // 1. Chỉ tải danh sách chỉ mục sách mây về (để cập nhật sách ảo trên UI)
+      await fetchCloudBooks();
       
-      if (!libResult.success) {
-        _isSyncing = false;
-        return libResult;
-      }
-
       // 2. Đồng bộ tiến trình đọc cho tất cả sách cục bộ thông qua hàm internal
       final db = await DatabaseHelper.getInstance();
       final localBooks = await db.getAllBooks();
       bool progressChanged = false;
 
-      // Sau đó đồng bộ tiến trình cho từng sách (để tải cover mới nếu có, và update progress)
       for (final book in localBooks) {
         final res = await _syncBookProgressInternal(book.uuid);
         if (res.status == ProgressSyncStatus.updatedLocal) progressChanged = true;
@@ -99,11 +194,11 @@ class SyncService {
       return SyncResult(
         success: true,
         message: 'Sync completed successfully.',
-        localChanged: libResult.localChanged || progressChanged,
+        localChanged: progressChanged,
       );
     } catch (e) {
       _isSyncing = false;
-      print('[Sync] Fatal error during overall sync: $e');
+      print('[Sync] Fatal error during sync: $e');
       return SyncResult(success: false, message: 'Sync failed: $e');
     }
   }
@@ -634,6 +729,15 @@ class SyncService {
     };
     final jsonBytes = utf8.encode(json.encode(localJson));
     await _webdav.uploadBytes(remotePath, jsonBytes);
+
+    await _addSyncHistoryEntry(
+      bookUuid: bookUuid,
+      action: 'push',
+      chapterIndex: localProg.currentChapterIndex,
+      paragraphIndex: localProg.currentParagraphIndex,
+      deviceIdOverride: deviceId,
+      deviceNameOverride: deviceName,
+    );
   }
 
   Future<void> forceUploadLocalProgress(String bookUuid, ReadingProgress localProg, String deviceId, String deviceName) async {
@@ -653,6 +757,15 @@ class SyncService {
     targetProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
     targetProg.lastRead = cloudLastRead;
     await db.saveProgress(targetProg);
+
+    await _addSyncHistoryEntry(
+      bookUuid: bookUuid,
+      action: 'pull',
+      chapterIndex: targetProg.currentChapterIndex,
+      paragraphIndex: targetProg.currentParagraphIndex,
+      deviceIdOverride: cloudProg['deviceId'] as String?,
+      deviceNameOverride: cloudProg['deviceName'] as String?,
+    );
   }
 
   bool _isLocalProgressNewer(Map<String, dynamic> cloudProg, ReadingProgress? localProg) {
@@ -1299,6 +1412,7 @@ class SyncService {
       settings.webDavLastSync = DateTime.now();
       await db.saveSettings(settings);
 
+      await fetchCloudBooks();
       _isSyncing = false;
       return SyncResult(success: true, message: 'Book force pushed successfully.');
     } catch (e) {
@@ -1511,6 +1625,7 @@ class SyncService {
       settings.webDavLastSync = DateTime.now();
       await db.saveSettings(settings);
 
+      await fetchCloudBooks();
       _isSyncing = false;
       return SyncResult(
         success: true,
@@ -1628,11 +1743,110 @@ class SyncService {
       }
 
       print('[Sync] Successfully cleaned up all cloud resources for deleted book UUID "$bookUuid"');
+      await fetchCloudBooks();
       return SyncResult(success: true, message: 'Book successfully deleted from cloud.');
     } catch (e) {
       print('[Sync] Failed to delete book from cloud: $e');
       return SyncResult(success: false, message: 'Failed to delete book from cloud: $e');
     }
+  }
+
+  Future<void> _addSyncHistoryEntry({
+    required String bookUuid,
+    required String action,
+    required int chapterIndex,
+    required int paragraphIndex,
+    String? deviceIdOverride,
+    String? deviceNameOverride,
+  }) async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      if (!settings.webDavEnabled) return;
+
+      final deviceId = deviceIdOverride ?? settings.deviceId ?? '';
+      final deviceName = deviceNameOverride ?? settings.deviceName ?? 'Unknown Device';
+
+      // Lấy tên sách
+      String bookTitle = 'Unknown Book';
+      final book = await db.getBookByUuid(bookUuid);
+      if (book != null) {
+        bookTitle = book.title;
+      } else {
+        // Có thể sách là sách ảo, thử tìm trong cache metadata mây
+        final cloudBooks = cloudBooksNotifier.value;
+        final cloudBook = cloudBooks.firstWhere(
+          (b) => b['uuid'] == bookUuid,
+          orElse: () => <String, dynamic>{},
+        );
+        if (cloudBook.containsKey('title')) {
+          bookTitle = cloudBook['title'] ?? 'Unknown Book';
+        }
+      }
+
+      final String historyPath = '/AudireReader/sync_history.json';
+      List<dynamic> historyList = [];
+
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      // Đảm bảo client đã khởi tạo
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+
+      // 1. Tải lịch sử hiện tại về
+      final bytes = await _webdav.downloadBytes(historyPath);
+      if (bytes != null && bytes.isNotEmpty) {
+        try {
+          historyList = json.decode(utf8.decode(bytes)) as List<dynamic>;
+        } catch (_) {}
+      }
+
+      // 2. Tạo entry mới
+      final newEntry = {
+        'timestamp': DateTime.now().toIso8601String(),
+        'deviceId': deviceId,
+        'deviceName': deviceName,
+        'bookUuid': bookUuid,
+        'bookTitle': bookTitle,
+        'chapterIndex': chapterIndex,
+        'paragraphIndex': paragraphIndex,
+        'action': action, // 'push', 'pull'
+      };
+
+      // 3. Insert lên đầu và giới hạn 50 phần tử
+      historyList.insert(0, newEntry);
+      if (historyList.length > 50) {
+        historyList = historyList.sublist(0, 50);
+      }
+
+      // 4. Upload ngược lại
+      final updatedBytes = utf8.encode(json.encode(historyList));
+      await _webdav.uploadBytes(historyPath, updatedBytes);
+    } catch (e) {
+      print('[SyncHistory] Error updating history: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getSyncHistory() async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      if (!settings.webDavEnabled) return [];
+
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      // Đảm bảo client đã khởi tạo
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+
+      final String historyPath = '/AudireReader/sync_history.json';
+      final bytes = await _webdav.downloadBytes(historyPath);
+      if (bytes != null && bytes.isNotEmpty) {
+        final decoded = json.decode(utf8.decode(bytes)) as List<dynamic>;
+        return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 }
 

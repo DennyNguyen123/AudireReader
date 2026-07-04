@@ -717,7 +717,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoSyncDesc.
   ///
   /// In en, this message translates to:
-  /// **'Auto-sync when launching or leaving a book'**
+  /// **'Automatically synchronize reading progress of all books and cloud index.'**
   String get autoSyncDesc;
 
   /// No description provided for @webdavServerConfig.
@@ -1668,6 +1668,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to pull book: {error}'**
   String forcePullBookFailed(String error);
+
+  /// No description provided for @enableWebdavDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync library via private WebDAV server'**
+  String get enableWebdavDesc;
+
+  /// No description provided for @autoSyncEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Sync WebDAV'**
+  String get autoSyncEnabled;
+
+  /// No description provided for @autoSyncEnabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically synchronize library on app launch or reader screen exit.'**
+  String get autoSyncEnabledDesc;
+
+  /// No description provided for @deleteDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete from Device'**
+  String get deleteDevice;
+
+  /// No description provided for @deleteCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete from Cloud'**
+  String get deleteCloud;
+
+  /// No description provided for @uploadCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload to Cloud'**
+  String get uploadCloud;
+
+  /// No description provided for @localSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get localSource;
+
+  /// No description provided for @cloudSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get cloudSource;
+
+  /// No description provided for @syncProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Progress'**
+  String get syncProgress;
+
+  /// No description provided for @autoSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Sync (Sync Now)'**
+  String get autoSyncTitle;
+
+  /// No description provided for @forcePushDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Force push all local book files and reading progress to WebDAV Cloud.'**
+  String get forcePushDesc;
+
+  /// No description provided for @forcePullDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Force pull all book files and reading progress from WebDAV Cloud to overwrite local data.'**
+  String get forcePullDesc;
+
+  /// No description provided for @syncBookProgressDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronize reading progress of book \"{title}\"'**
+  String syncBookProgressDesc(Object title);
+
+  /// No description provided for @forcePushProgressDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite the current reading progress of this device to Cloud WebDAV.'**
+  String get forcePushProgressDesc;
+
+  /// No description provided for @forcePullProgressDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the reading progress from Cloud WebDAV to this device.'**
+  String get forcePullProgressDesc;
 }
 
 class _AppLocalizationsDelegate

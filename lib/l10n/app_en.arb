@@ -485,5 +485,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "enableWebdavDesc": "Sync library via private WebDAV server",
+  "autoSyncEnabled": "Auto Sync WebDAV",
+  "autoSyncEnabledDesc": "Automatically synchronize library on app launch or reader screen exit.",
+  "deleteDevice": "Delete from Device",
+  "deleteCloud": "Delete from Cloud",
+  "uploadCloud": "Upload to Cloud",
+  "localSource": "Local",
+  "cloudSource": "Cloud",
+  "syncProgress": "Sync Progress",
+  "autoSyncTitle": "Auto Sync (Sync Now)",
+  "autoSyncDesc": "Automatically synchronize reading progress of all books and cloud index.",
+  "forcePushDesc": "Force push all local book files and reading progress to WebDAV Cloud.",
+  "forcePullDesc": "Force pull all book files and reading progress from WebDAV Cloud to overwrite local data.",
+  "syncBookProgressDesc": "Synchronize reading progress of book \"{title}\"",
+  "forcePushProgressDesc": "Overwrite the current reading progress of this device to Cloud WebDAV.",
+  "forcePullProgressDesc": "Pull the reading progress from Cloud WebDAV to this device."
 }

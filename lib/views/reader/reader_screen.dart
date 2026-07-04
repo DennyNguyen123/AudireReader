@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart' hide print;
@@ -41,6 +43,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   double _sideMargin = 20.0;
   String? _customBackgroundColor;
   String? _customTextColor;
+  bool _webDavEnabled = false;
+  bool _isSyncing = false;
+  bool _autoSyncEnabled = true;
+  Timer? _periodicSyncTimer;
+  int? _lastSyncedChapterIndex;
+  int? _lastSyncedParagraphIndex;
+  bool _wasPlaying = false;
 
   final ScrollController _scrollController = ScrollController();
 
@@ -59,6 +68,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   @override
   void dispose() {
+    _periodicSyncTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (_isInitialized) {
       _ttsService.removeListener(_onTtsServiceChanged);
@@ -77,6 +87,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   }
 
   void _syncActiveBookProgressOnExit() {
+    if (!_autoSyncEnabled) {
+      LoggerService().log('[ReaderScreen] Auto-sync on exit is disabled.', tag: 'SYNC', level: LogLevel.info);
+      return;
+    }
     if (_isInitialized) {
       final book = _ttsService.activeBook;
       if (book != null) {
@@ -86,14 +100,25 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   }
 
   Future<void> _syncActiveBookProgressOnEntry() async {
+    if (!_autoSyncEnabled) {
+      LoggerService().log('[ReaderScreen] Auto-sync on entry is disabled.', tag: 'SYNC', level: LogLevel.info);
+      return;
+    }
     final book = _ttsService.activeBook;
     if (book != null) {
       LoggerService().log('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
       final syncResult = await SyncService.getInstance().syncBookProgress(book.uuid);
+      
+      // Khởi tạo vị trí đã sync gần nhất
+      final db = await DatabaseHelper.getInstance();
+      final progress = await db.getProgress(book.uuid);
+      if (progress != null) {
+        _lastSyncedChapterIndex = progress.currentChapterIndex;
+        _lastSyncedParagraphIndex = progress.currentParagraphIndex;
+      }
+
       if (syncResult.status == ProgressSyncStatus.updatedLocal && mounted) {
         LoggerService().log('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...', tag: 'SYNC', level: LogLevel.info);
-        final db = await DatabaseHelper.getInstance();
-        final progress = await db.getProgress(book.uuid);
         if (progress != null) {
           await _ttsService.loadBook(
             book, 
@@ -109,9 +134,39 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     }
   }
 
+  void _checkAndTriggerPeriodicSync() {
+    if (!_autoSyncEnabled || !_isInitialized || _isSyncing) return;
+    final book = _ttsService.activeBook;
+    if (book == null) return;
+
+    final currentChapter = _ttsService.currentChapterIndex;
+    final currentPara = _ttsService.currentParagraphIndex;
+
+    if (currentChapter != _lastSyncedChapterIndex || currentPara != _lastSyncedParagraphIndex) {
+      LoggerService().log('[ReaderScreen] Periodic autosync progress for "${book.title}" (Ch: $currentChapter, Para: $currentPara)', tag: 'SYNC', level: LogLevel.info);
+      _syncProgressBackground(book, currentChapter, currentPara);
+    }
+  }
+
+  Future<void> _syncProgressBackground(Book book, int chapter, int paragraph) async {
+    try {
+      final result = await SyncService.getInstance().syncBookProgress(book.uuid);
+      if (result.status == ProgressSyncStatus.uploadedToCloud || result.status == ProgressSyncStatus.upToDate) {
+        _lastSyncedChapterIndex = chapter;
+        _lastSyncedParagraphIndex = paragraph;
+      }
+    } catch (_) {}
+  }
+
   void _onTtsServiceChanged() {
     _updateBookmarkState();
     _loadBookmarksAndHighlights();
+
+    final isPlayingNow = _ttsService.isPlaying;
+    if (_wasPlaying && !isPlayingNow) {
+      _checkAndTriggerPeriodicSync();
+    }
+    _wasPlaying = isPlayingNow;
   }
 
   void _showConflictDialog(Book book, Map<String, dynamic> cloudProgress) {
@@ -166,6 +221,139 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               child: Text(AppLocalizations.of(context)?.useCloud ?? 'Use Cloud', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showSyncBottomSheet(BuildContext context) async {
+    final book = _ttsService.activeBook;
+    if (book == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ tiến trình',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppLocalizations.of(context)?.syncBookProgressDesc(book.title) ?? 'Đồng bộ hóa tiến trình đọc của truyện "${book.title}"',
+                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white54 : Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isSyncing)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else ...[
+                    ListTile(
+                      leading: Icon(Icons.cloud_upload_rounded, color: Theme.of(context).colorScheme.primary),
+                      title: Text(AppLocalizations.of(context)?.forcePush ?? 'Đẩy lên đám mây (Force Push)'),
+                      subtitle: Text(AppLocalizations.of(context)?.forcePushProgressDesc ?? 'Ghi đè tiến trình đọc hiện tại của máy này lên Cloud WebDAV.'),
+                      onTap: () async {
+                        setModalState(() { _isSyncing = true; });
+                        setState(() { _isSyncing = true; });
+                        try {
+                          final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: true);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(result.success
+                                    ? (AppLocalizations.of(context)?.forcePushBookSuccess(book.title) ?? 'Đẩy tiến trình đọc lên Cloud thành công!')
+                                    : (AppLocalizations.of(context)?.forcePushBookFailed(result.message) ?? 'Đẩy tiến trình thất bại: ${result.message}')),
+                                backgroundColor: result.success ? Colors.green : Colors.redAccent,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)?.forcePushBookFailed(e.toString()) ?? 'Lỗi: $e'),
+                              backgroundColor: Colors.redAccent,
+                            ));
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() { _isSyncing = false; });
+                          }
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(Icons.cloud_download_rounded, color: Theme.of(context).colorScheme.primary),
+                      title: Text(AppLocalizations.of(context)?.forcePull ?? 'Tải về thiết bị (Force Pull)'),
+                      subtitle: Text(AppLocalizations.of(context)?.forcePullProgressDesc ?? 'Kéo tiến trình đọc trên Cloud WebDAV về máy này.'),
+                      onTap: () async {
+                        setModalState(() { _isSyncing = true; });
+                        setState(() { _isSyncing = true; });
+                        try {
+                          final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: true);
+                          if (result.success) {
+                            // Tự động reload lại sách với tiến trình mới
+                            final db = await DatabaseHelper.getInstance();
+                            final progress = await db.getProgress(book.uuid);
+                            if (progress != null && mounted) {
+                              await _ttsService.loadBook(
+                                book,
+                                _ttsService.chapters,
+                                startChapter: progress.currentChapterIndex,
+                                startParagraph: progress.currentParagraphIndex,
+                              );
+                            }
+                          }
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(result.success
+                                    ? (AppLocalizations.of(context)?.forcePullBookSuccess(book.title) ?? 'Đồng bộ tiến trình từ Cloud thành công!')
+                                    : (AppLocalizations.of(context)?.forcePullBookFailed(result.message) ?? 'Kéo tiến trình thất bại: ${result.message}')),
+                                backgroundColor: result.success ? Colors.green : Colors.redAccent,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent));
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() { _isSyncing = false; });
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -479,6 +667,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     _ttsService = await TtsService.getInstance();
     final settings = await _ttsService.getSettings();
 
+    const storage = FlutterSecureStorage();
+    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
+
     setState(() {
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
@@ -496,6 +687,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       _sideMargin = settings.sideMargin.isNaN ? 20.0 : settings.sideMargin;
       _customBackgroundColor = settings.customBackgroundColor;
       _customTextColor = settings.customTextColor;
+      _webDavEnabled = settings.webDavEnabled;
+      _autoSyncEnabled = autoSyncStr == 'true';
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
@@ -508,6 +701,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
     // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
     _syncActiveBookProgressOnEntry();
+
+    _periodicSyncTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _checkAndTriggerPeriodicSync();
+    });
   }
 
 
@@ -725,6 +922,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           ],
                         ),
                       ),
+                    ),
+                  if (_webDavEnabled)
+                    IconButton(
+                      icon: const Icon(Icons.sync_rounded),
+                      onPressed: () => _showSyncBottomSheet(context),
                     ),
                   IconButton(
                     icon: const Icon(Icons.search_rounded),

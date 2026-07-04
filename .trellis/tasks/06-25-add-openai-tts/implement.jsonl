@@ -1,4 +1,0 @@
-{"file": "lib/models/settings.dart", "reason": "Add OpenAI TTS settings fields"}
-{"file": "lib/services/audio_handler.dart", "reason": "Add OpenAI TTS synthesis and caching logic"}
-{"file": "lib/services/tts_service.dart", "reason": "Add OpenAI TTS to voice provider logic"}
-{"file": "lib/services/openai_tts_service.dart", "reason": "Implement OpenAI TTS client"}

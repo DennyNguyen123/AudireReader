@@ -348,7 +348,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.';
 
   @override
-  String get autoSyncDesc => 'Auto-sync when launching or leaving a book';
+  String get autoSyncDesc =>
+      'Automatically synchronize reading progress of all books and cloud index.';
 
   @override
   String get webdavServerConfig => 'WebDAV Server Configuration';
@@ -875,4 +876,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String forcePullBookFailed(String error) {
     return 'Failed to pull book: $error';
   }
+
+  @override
+  String get enableWebdavDesc => 'Sync library via private WebDAV server';
+
+  @override
+  String get autoSyncEnabled => 'Auto Sync WebDAV';
+
+  @override
+  String get autoSyncEnabledDesc =>
+      'Automatically synchronize library on app launch or reader screen exit.';
+
+  @override
+  String get deleteDevice => 'Delete from Device';
+
+  @override
+  String get deleteCloud => 'Delete from Cloud';
+
+  @override
+  String get uploadCloud => 'Upload to Cloud';
+
+  @override
+  String get localSource => 'Local';
+
+  @override
+  String get cloudSource => 'Cloud';
+
+  @override
+  String get syncProgress => 'Sync Progress';
+
+  @override
+  String get autoSyncTitle => 'Auto Sync (Sync Now)';
+
+  @override
+  String get forcePushDesc =>
+      'Force push all local book files and reading progress to WebDAV Cloud.';
+
+  @override
+  String get forcePullDesc =>
+      'Force pull all book files and reading progress from WebDAV Cloud to overwrite local data.';
+
+  @override
+  String syncBookProgressDesc(Object title) {
+    return 'Synchronize reading progress of book \"$title\"';
+  }
+
+  @override
+  String get forcePushProgressDesc =>
+      'Overwrite the current reading progress of this device to Cloud WebDAV.';
+
+  @override
+  String get forcePullProgressDesc =>
+      'Pull the reading progress from Cloud WebDAV to this device.';
 }

@@ -22,6 +22,7 @@ import '../../services/sync_service.dart' hide print;
 import '../../services/logger_service.dart';
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
+import 'sync_history_screen.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -504,6 +505,93 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  void _showLibrarySyncBottomSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lastSyncText = _lastSyncTime == null
+        ? (AppLocalizations.of(context)?.lastSyncedNever ?? 'Đồng bộ lần cuối: Chưa bao giờ')
+        : (AppLocalizations.of(context)?.lastSyncedAt(_formatLastSyncTime()) ?? 'Đồng bộ lần cuối: ${_formatLastSyncTime()}');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ thư viện',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    lastSyncText,
+                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white54 : Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ListTile(
+                    leading: Icon(Icons.sync_rounded, color: Theme.of(context).colorScheme.primary),
+                    title: Text(AppLocalizations.of(context)?.autoSyncTitle ?? 'Đồng bộ tự động (Sync Now)'),
+                    subtitle: Text(AppLocalizations.of(context)?.autoSyncDesc ?? 'Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _startManualSync();
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.cloud_upload_rounded, color: Theme.of(context).colorScheme.primary),
+                    title: Text(AppLocalizations.of(context)?.forcePush ?? 'Đẩy thư viện lên Cloud (Force Push)'),
+                    subtitle: Text(AppLocalizations.of(context)?.forcePushDesc ?? 'Đẩy đè tất cả tệp sách cục bộ và tiến trình hiện tại lên WebDAV Cloud.'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _startForcePush();
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.cloud_download_rounded, color: Theme.of(context).colorScheme.primary),
+                    title: Text(AppLocalizations.of(context)?.forcePull ?? 'Tải thư viện từ Cloud (Force Pull)'),
+                    subtitle: Text(AppLocalizations.of(context)?.forcePullDesc ?? 'Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _startForcePull();
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.primary),
+                    title: Text(Localizations.localeOf(context).languageCode == 'vi' ? 'Lịch sử đồng bộ' : 'Sync History'),
+                    subtitle: Text(Localizations.localeOf(context).languageCode == 'vi' ? 'Xem 50 thay đổi tiến trình đọc gần nhất trên đám mây.' : 'View the last 50 progress changes on the cloud.'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SyncHistoryScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _startForcePushBook(Book book) async {
     if (_isSyncing) return;
 
@@ -755,6 +843,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _triggerAutoSync() async {
+    const storage = FlutterSecureStorage();
+    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
+    if (autoSyncStr != 'true') {
+      LoggerService().log('[AutoSync] Disabled by user configuration.', tag: 'SYNC', level: LogLevel.info);
+      return;
+    }
+
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     if (settings.webDavEnabled) {
@@ -1072,50 +1167,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         actions: [
-          if (_webDavEnabled && !_isSyncing) ...[
-            Tooltip(
-              message: AppLocalizations.of(context)?.forcePush ?? 'Force Push (Local -> Cloud)',
-              child: IconButton(
-                icon: const Icon(Icons.cloud_upload_rounded),
-                onPressed: _startForcePush,
-              ),
-            ),
-            Tooltip(
-              message: AppLocalizations.of(context)?.forcePull ?? 'Force Pull (Cloud -> Local)',
-              child: IconButton(
-                icon: const Icon(Icons.cloud_download_rounded),
-                onPressed: _startForcePull,
-              ),
-            ),
-          ],
           if (_webDavEnabled)
-            _isSyncing
-                ? SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                        ),
-                      ),
+            IconButton(
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Badge(
+                      backgroundColor: _getSyncBadgeColor(),
+                      child: const Icon(Icons.sync_rounded),
                     ),
-                  )
-                : Tooltip(
-                    message: _lastSyncTime == null
-                        ? (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never')
-                        : (AppLocalizations.of(context)?.lastSyncedAt(_formatLastSyncTime()) ?? 'Last Synced: ${_formatLastSyncTime()}'),
-                    child: IconButton(
-                      icon: Badge(
-                        backgroundColor: _getSyncBadgeColor(),
-                        child: const Icon(Icons.sync_rounded),
-                      ),
-                      onPressed: _startManualSync,
-                    ),
-                  ),
+              onPressed: _isSyncing ? null : () => _showLibrarySyncBottomSheet(context),
+            ),
           IconButton(
             icon: const Icon(Icons.bookmarks_rounded),
             onPressed: () {

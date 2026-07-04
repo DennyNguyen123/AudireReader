@@ -348,7 +348,8 @@ class AppLocalizationsVi extends AppLocalizations {
       'Đồng bộ kệ truyện, ảnh bìa, tiến trình đọc chính xác và nội dung sách giữa các thiết bị sử dụng máy chủ WebDAV cá nhân.';
 
   @override
-  String get autoSyncDesc => 'Tự động đồng bộ khi mở hoặc đóng sách';
+  String get autoSyncDesc =>
+      'Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.';
 
   @override
   String get webdavServerConfig => 'Cấu hình máy chủ WebDAV';
@@ -840,10 +841,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get importTrack => 'Thêm vào thư viện';
 
   @override
-  String get forcePushBook => 'Đẩy sách lên đám mây (Force Push)';
+  String get forcePushBook => 'Đẩy đè lên đám mây (Force Push)';
 
   @override
-  String get forcePullBook => 'Kéo sách về máy (Force Pull)';
+  String get forcePullBook => 'Kéo đè về thiết bị (Force Pull)';
 
   @override
   String get forcePushBookConfirmTitle => 'Xác nhận Force Push Sách';
@@ -878,4 +879,56 @@ class AppLocalizationsVi extends AppLocalizations {
   String forcePullBookFailed(String error) {
     return 'Kéo sách thất bại: $error';
   }
+
+  @override
+  String get enableWebdavDesc => 'Đồng bộ thư viện qua máy chủ WebDAV cá nhân';
+
+  @override
+  String get autoSyncEnabled => 'Tự động đồng bộ WebDAV';
+
+  @override
+  String get autoSyncEnabledDesc =>
+      'Tự động đồng bộ hóa thư viện khi khởi động ứng dụng và thoát màn hình đọc.';
+
+  @override
+  String get deleteDevice => 'Xóa trên thiết bị';
+
+  @override
+  String get deleteCloud => 'Xóa trên đám mây';
+
+  @override
+  String get uploadCloud => 'Tải lên đám mây';
+
+  @override
+  String get localSource => 'Thiết bị';
+
+  @override
+  String get cloudSource => 'Đám mây';
+
+  @override
+  String get syncProgress => 'Đồng bộ tiến trình';
+
+  @override
+  String get autoSyncTitle => 'Đồng bộ tự động (Sync Now)';
+
+  @override
+  String get forcePushDesc =>
+      'Đẩy đè tất cả tệp sách cục bộ và tiến trình hiện tại lên WebDAV Cloud.';
+
+  @override
+  String get forcePullDesc =>
+      'Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.';
+
+  @override
+  String syncBookProgressDesc(Object title) {
+    return 'Đồng bộ hóa tiến trình đọc của truyện \"$title\"';
+  }
+
+  @override
+  String get forcePushProgressDesc =>
+      'Ghi đè tiến trình đọc hiện tại của máy này lên Cloud WebDAV.';
+
+  @override
+  String get forcePullProgressDesc =>
+      'Kéo tiến trình đọc trên Cloud WebDAV về máy này.';
 }
