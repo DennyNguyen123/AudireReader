@@ -408,13 +408,13 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
                                   children: [
-                                    _buildSourceChip('file', Icons.folder_open_rounded, "File cục bộ"),
+                                    _buildSourceChip('file', Icons.folder_open_rounded, AppLocalizations.of(context)?.bgmLocalFile ?? "File cục bộ"),
                                     const SizedBox(width: 8),
-                                    _buildSourceChip('link', Icons.link_rounded, "Dán link"),
+                                    _buildSourceChip('link', Icons.link_rounded, AppLocalizations.of(context)?.bgmPasteLink ?? "Dán link"),
                                     const SizedBox(width: 8),
-                                    _buildSourceChip('radio', Icons.radio_rounded, "Internet Radio"),
+                                    _buildSourceChip('radio', Icons.radio_rounded, AppLocalizations.of(context)?.bgmInternetRadio ?? "Internet Radio"),
                                     const SizedBox(width: 8),
-                                    _buildSourceChip('lofi', Icons.coffee_rounded, "Lofi gợi ý"),
+                                    _buildSourceChip('lofi', Icons.coffee_rounded, AppLocalizations.of(context)?.bgmLofiSuggestions ?? "Lofi gợi ý"),
                                   ],
                                 ),
                               ),

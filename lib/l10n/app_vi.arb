@@ -310,5 +310,60 @@
   "deleteBookTitle": "Xóa sách",
   "downloadBook": "Tải xuống",
   "bookNotOnCloudCannotPull": "Cuốn sách này chưa từng được tải lên đám mây. Không thể kéo dữ liệu về.",
-  "bookNotOnCloudPushFull": "Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc."
+  "bookNotOnCloudPushFull": "Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc.",
+  "qrDeviceSync": "Đồng bộ nhanh thiết bị (QR)",
+  "qrSyncTitle": "Đồng bộ nhanh thiết bị (QR)",
+  "qrSyncDesc": "Chọn hành động đồng bộ cấu hình giữa các thiết bị của bạn.",
+  "receiveConfig": "Nhận cấu hình (Nhận)",
+  "receiveConfigDesc": "Hiện mã QR nhận cấu hình (Không cần Camera)",
+  "shareConfig": "Chia sẻ cấu hình (Cho)",
+  "shareConfigDesc": "Quét mã QR của máy nhận và gửi cấu hình đi",
+  "close": "Đóng",
+  "shareConfigQrScanner": "Chia sẻ cấu hình (Quét QR)",
+  "needCameraPermission": "Cần quyền truy cập Camera để quét QR code",
+  "cameraPermissionDesc": "Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.",
+  "openSettings": "Mở Cài đặt",
+  "scanQrCodeInstruction": "Di chuyển camera để quét mã QR kết nối của máy nhận",
+  "sendingConfig": "Đang truyền cấu hình tới thiết bị nhận...",
+  "shareConfigSuccess": "Chia sẻ cấu hình thành công!",
+  "sendConfigErrorTitle": "Lỗi gửi cấu hình",
+  "sendConfigErrorDesc": "Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: {error}",
+  "@sendConfigErrorDesc": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "rescan": "Quét lại",
+  "receiveConfigQr": "Nhận cấu hình qua QR",
+  "receiverDevice": "Thiết bị Nhận cấu hình",
+  "receiverDeviceDesc": "Sử dụng thiết bị khác quét mã QR bên dưới để tự động truyền cấu hình đồng bộ sang máy này.",
+  "connectingTunnel": "Đang kết nối SSH tunnel (localhost.run)...",
+  "failedToInitTunnel": "Không thể khởi tạo Tunnel. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.",
+  "retry": "Thử lại",
+  "applyingConfig": "Đang áp dụng cấu hình và đồng bộ...",
+  "webdavConnectionSuccess": "Kết nối WebDAV thành công! Đang đồng bộ thư viện...",
+  "librarySyncSuccess": "Đồng bộ thư viện thành công!",
+  "librarySyncFailed": "Đồng bộ thư viện thất bại: {message}",
+  "@librarySyncFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "webdavConnectionErrorTitle": "Lỗi kết nối WebDAV",
+  "webdavConnectionErrorDesc": "Cấu hình đã nhận từ \"{deviceName}\", nhưng không thể kết nối tới máy chủ WebDAV. Vui lòng kiểm tra lại cấu hình trên máy chủ WebDAV.",
+  "@webdavConnectionErrorDesc": {
+    "placeholders": {
+      "deviceName": { "type": "String" }
+    }
+  },
+  "applyConfigError": "Lỗi áp dụng cấu hình: {error}",
+  "@applyConfigError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "bgmLocalFile": "File cục bộ",
+  "bgmPasteLink": "Dán link",
+  "bgmInternetRadio": "Internet Radio",
+  "bgmLofiSuggestions": "Lofi gợi ý"
 }

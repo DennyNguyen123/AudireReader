@@ -973,4 +973,121 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get bookNotOnCloudPushFull =>
       'Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc.';
+
+  @override
+  String get qrDeviceSync => 'Đồng bộ nhanh thiết bị (QR)';
+
+  @override
+  String get qrSyncTitle => 'Đồng bộ nhanh thiết bị (QR)';
+
+  @override
+  String get qrSyncDesc =>
+      'Chọn hành động đồng bộ cấu hình giữa các thiết bị của bạn.';
+
+  @override
+  String get receiveConfig => 'Nhận cấu hình (Nhận)';
+
+  @override
+  String get receiveConfigDesc => 'Hiện mã QR nhận cấu hình (Không cần Camera)';
+
+  @override
+  String get shareConfig => 'Chia sẻ cấu hình (Cho)';
+
+  @override
+  String get shareConfigDesc => 'Quét mã QR của máy nhận và gửi cấu hình đi';
+
+  @override
+  String get shareConfigQrScanner => 'Chia sẻ cấu hình (Quét QR)';
+
+  @override
+  String get needCameraPermission =>
+      'Cần quyền truy cập Camera để quét QR code';
+
+  @override
+  String get cameraPermissionDesc =>
+      'Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.';
+
+  @override
+  String get openSettings => 'Mở Cài đặt';
+
+  @override
+  String get scanQrCodeInstruction =>
+      'Di chuyển camera để quét mã QR kết nối của máy nhận';
+
+  @override
+  String get sendingConfig => 'Đang truyền cấu hình tới thiết bị nhận...';
+
+  @override
+  String get shareConfigSuccess => 'Chia sẻ cấu hình thành công!';
+
+  @override
+  String get sendConfigErrorTitle => 'Lỗi gửi cấu hình';
+
+  @override
+  String sendConfigErrorDesc(String error) {
+    return 'Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: $error';
+  }
+
+  @override
+  String get rescan => 'Quét lại';
+
+  @override
+  String get receiveConfigQr => 'Nhận cấu hình qua QR';
+
+  @override
+  String get receiverDevice => 'Thiết bị Nhận cấu hình';
+
+  @override
+  String get receiverDeviceDesc =>
+      'Sử dụng thiết bị khác quét mã QR bên dưới để tự động truyền cấu hình đồng bộ sang máy này.';
+
+  @override
+  String get connectingTunnel => 'Đang kết nối SSH tunnel (localhost.run)...';
+
+  @override
+  String get failedToInitTunnel =>
+      'Không thể khởi tạo Tunnel. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau.';
+
+  @override
+  String get retry => 'Thử lại';
+
+  @override
+  String get applyingConfig => 'Đang áp dụng cấu hình và đồng bộ...';
+
+  @override
+  String get webdavConnectionSuccess =>
+      'Kết nối WebDAV thành công! Đang đồng bộ thư viện...';
+
+  @override
+  String get librarySyncSuccess => 'Đồng bộ thư viện thành công!';
+
+  @override
+  String librarySyncFailed(String message) {
+    return 'Đồng bộ thư viện thất bại: $message';
+  }
+
+  @override
+  String get webdavConnectionErrorTitle => 'Lỗi kết nối WebDAV';
+
+  @override
+  String webdavConnectionErrorDesc(String deviceName) {
+    return 'Cấu hình đã nhận từ \"$deviceName\", nhưng không thể kết nối tới máy chủ WebDAV. Vui lòng kiểm tra lại cấu hình trên máy chủ WebDAV.';
+  }
+
+  @override
+  String applyConfigError(String error) {
+    return 'Lỗi áp dụng cấu hình: $error';
+  }
+
+  @override
+  String get bgmLocalFile => 'File cục bộ';
+
+  @override
+  String get bgmPasteLink => 'Dán link';
+
+  @override
+  String get bgmInternetRadio => 'Internet Radio';
+
+  @override
+  String get bgmLofiSuggestions => 'Lofi gợi ý';
 }

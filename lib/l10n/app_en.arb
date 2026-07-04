@@ -527,5 +527,60 @@
   "deleteBookTitle": "Delete Book",
   "downloadBook": "Download Book",
   "bookNotOnCloudCannotPull": "This book has never been uploaded to the cloud. Cannot pull data.",
-  "bookNotOnCloudPushFull": "This book does not exist on the cloud. The entire book file and reading progress will be uploaded."
+  "bookNotOnCloudPushFull": "This book does not exist on the cloud. The entire book file and reading progress will be uploaded.",
+  "qrDeviceSync": "Quick Device Sync (QR)",
+  "qrSyncTitle": "Quick Device Sync (QR)",
+  "qrSyncDesc": "Choose synchronization action between your devices.",
+  "receiveConfig": "Receive Configuration (Receive)",
+  "receiveConfigDesc": "Show QR code to receive configuration (No Camera required)",
+  "shareConfig": "Share Configuration (Share)",
+  "shareConfigDesc": "Scan receiver''s QR code and send configuration",
+  "close": "Close",
+  "shareConfigQrScanner": "Share Configuration (Scan QR)",
+  "needCameraPermission": "Camera permission required to scan QR code",
+  "cameraPermissionDesc": "Please grant camera permission to the app in Device Settings to continue.",
+  "openSettings": "Open Settings",
+  "scanQrCodeInstruction": "Point camera at the receiver''s QR code to connect",
+  "sendingConfig": "Sending configuration to receiver...",
+  "shareConfigSuccess": "Configuration shared successfully!",
+  "sendConfigErrorTitle": "Send Configuration Error",
+  "sendConfigErrorDesc": "Failed to connect and transfer configuration to receiver. Details: {error}",
+  "@sendConfigErrorDesc": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "rescan": "Re-scan",
+  "receiveConfigQr": "Receive Configuration via QR",
+  "receiverDevice": "Receiver Device",
+  "receiverDeviceDesc": "Use another device to scan the QR code below to automatically transfer sync configuration to this machine.",
+  "connectingTunnel": "Connecting SSH tunnel (localhost.run)...",
+  "failedToInitTunnel": "Failed to initialize Tunnel. Please check network connection or try again later.",
+  "retry": "Retry",
+  "applyingConfig": "Applying configuration and syncing...",
+  "webdavConnectionSuccess": "WebDAV connection successful! Syncing library...",
+  "librarySyncSuccess": "Library synced successfully!",
+  "librarySyncFailed": "Library sync failed: {message}",
+  "@librarySyncFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "webdavConnectionErrorTitle": "WebDAV Connection Error",
+  "webdavConnectionErrorDesc": "Configuration received from \"{deviceName}\", but failed to connect to WebDAV server. Please verify configuration on WebDAV server.",
+  "@webdavConnectionErrorDesc": {
+    "placeholders": {
+      "deviceName": { "type": "String" }
+    }
+  },
+  "applyConfigError": "Failed to apply configuration: {error}",
+  "@applyConfigError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "bgmLocalFile": "Local File",
+  "bgmPasteLink": "Paste Link",
+  "bgmInternetRadio": "Internet Radio",
+  "bgmLofiSuggestions": "Lofi Suggestions"
 }

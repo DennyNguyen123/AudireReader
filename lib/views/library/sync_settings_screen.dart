@@ -23,6 +23,8 @@ import 'widgets/settings/appearance_settings_section.dart';
 import 'widgets/settings/hotkeys_settings_section.dart';
 import 'widgets/settings/webdav_settings_section.dart';
 import 'widgets/settings/developer_settings_section.dart';
+import 'tv_sync_screen.dart';
+import 'mobile_sync_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -774,6 +776,70 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     }
   }
 
+  Future<void> _handleQrSync() async {
+    final option = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final localizations = AppLocalizations.of(context);
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            localizations?.qrSyncTitle ?? 'Đồng bộ nhanh thiết bị (QR)',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                localizations?.qrSyncDesc ?? 'Chọn hành động đồng bộ cấu hình giữa các thiết bị của bạn.',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Icon(Icons.qr_code_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
+                title: Text(localizations?.receiveConfig ?? 'Nhận cấu hình (Nhận)', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(localizations?.receiveConfigDesc ?? 'Hiện mã QR nhận cấu hình (Không cần Camera)', style: const TextStyle(fontSize: 12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () => Navigator.pop(context, 'receive'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Icon(Icons.camera_alt_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
+                title: Text(localizations?.shareConfig ?? 'Chia sẻ cấu hình (Cho)', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(localizations?.shareConfigDesc ?? 'Quét mã QR của máy nhận và gửi cấu hình đi', style: const TextStyle(fontSize: 12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () => Navigator.pop(context, 'share'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(localizations?.close ?? 'Đóng'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (option == 'receive') {
+      final updated = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (context) => const TvSyncScreen()),
+      );
+      if (updated == true && mounted) {
+        _loadSettings();
+      }
+    } else if (option == 'share') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const MobileSyncScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -953,6 +1019,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           onForcePush: _forcePush,
                           onForcePull: _forcePull,
                           onSettingsChanged: _saveWebDavTextSettings,
+                          onQrSyncPressed: _handleQrSync,
                         ),
                         const SizedBox(height: 20),
                         DeveloperSettingsSection(

@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   hotkey_manager_windows
   isar_flutter_libs
   just_audio_windows
+  permission_handler_windows
   screen_retriever_windows
   tray_manager
   url_launcher_windows

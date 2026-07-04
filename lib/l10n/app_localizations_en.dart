@@ -970,4 +970,123 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bookNotOnCloudPushFull =>
       'This book does not exist on the cloud. The entire book file and reading progress will be uploaded.';
+
+  @override
+  String get qrDeviceSync => 'Quick Device Sync (QR)';
+
+  @override
+  String get qrSyncTitle => 'Quick Device Sync (QR)';
+
+  @override
+  String get qrSyncDesc =>
+      'Choose synchronization action between your devices.';
+
+  @override
+  String get receiveConfig => 'Receive Configuration (Receive)';
+
+  @override
+  String get receiveConfigDesc =>
+      'Show QR code to receive configuration (No Camera required)';
+
+  @override
+  String get shareConfig => 'Share Configuration (Share)';
+
+  @override
+  String get shareConfigDesc =>
+      'Scan receiver\'s QR code and send configuration';
+
+  @override
+  String get shareConfigQrScanner => 'Share Configuration (Scan QR)';
+
+  @override
+  String get needCameraPermission =>
+      'Camera permission required to scan QR code';
+
+  @override
+  String get cameraPermissionDesc =>
+      'Please grant camera permission to the app in Device Settings to continue.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get scanQrCodeInstruction =>
+      'Point camera at the receiver\'s QR code to connect';
+
+  @override
+  String get sendingConfig => 'Sending configuration to receiver...';
+
+  @override
+  String get shareConfigSuccess => 'Configuration shared successfully!';
+
+  @override
+  String get sendConfigErrorTitle => 'Send Configuration Error';
+
+  @override
+  String sendConfigErrorDesc(String error) {
+    return 'Failed to connect and transfer configuration to receiver. Details: $error';
+  }
+
+  @override
+  String get rescan => 'Re-scan';
+
+  @override
+  String get receiveConfigQr => 'Receive Configuration via QR';
+
+  @override
+  String get receiverDevice => 'Receiver Device';
+
+  @override
+  String get receiverDeviceDesc =>
+      'Use another device to scan the QR code below to automatically transfer sync configuration to this machine.';
+
+  @override
+  String get connectingTunnel => 'Connecting SSH tunnel (localhost.run)...';
+
+  @override
+  String get failedToInitTunnel =>
+      'Failed to initialize Tunnel. Please check network connection or try again later.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get applyingConfig => 'Applying configuration and syncing...';
+
+  @override
+  String get webdavConnectionSuccess =>
+      'WebDAV connection successful! Syncing library...';
+
+  @override
+  String get librarySyncSuccess => 'Library synced successfully!';
+
+  @override
+  String librarySyncFailed(String message) {
+    return 'Library sync failed: $message';
+  }
+
+  @override
+  String get webdavConnectionErrorTitle => 'WebDAV Connection Error';
+
+  @override
+  String webdavConnectionErrorDesc(String deviceName) {
+    return 'Configuration received from \"$deviceName\", but failed to connect to WebDAV server. Please verify configuration on WebDAV server.';
+  }
+
+  @override
+  String applyConfigError(String error) {
+    return 'Failed to apply configuration: $error';
+  }
+
+  @override
+  String get bgmLocalFile => 'Local File';
+
+  @override
+  String get bgmPasteLink => 'Paste Link';
+
+  @override
+  String get bgmInternetRadio => 'Internet Radio';
+
+  @override
+  String get bgmLofiSuggestions => 'Lofi Suggestions';
 }

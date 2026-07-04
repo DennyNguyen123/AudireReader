@@ -21,6 +21,7 @@ class WebdavSettingsSection extends StatelessWidget {
   final VoidCallback onForcePush;
   final VoidCallback onForcePull;
   final VoidCallback onSettingsChanged;
+  final VoidCallback? onQrSyncPressed;
 
   const WebdavSettingsSection({
     super.key,
@@ -42,6 +43,7 @@ class WebdavSettingsSection extends StatelessWidget {
     required this.onForcePush,
     required this.onForcePull,
     required this.onSettingsChanged,
+    this.onQrSyncPressed,
   });
 
   @override
@@ -233,6 +235,34 @@ class WebdavSettingsSection extends StatelessWidget {
               },
             ),
             const SizedBox(height: 20),
+
+            if (onQrSyncPressed != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: onQrSyncPressed,
+                      icon: const Icon(Icons.qr_code_scanner_rounded),
+                      label: Text(
+                        AppLocalizations.of(context)?.qrDeviceSync ?? 'Đồng bộ nhanh thiết bị (QR)',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor.withOpacity(0.12),
+                        foregroundColor: accentColor,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: accentColor.withOpacity(0.3), width: 1),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Nút Test Connection
             Row(

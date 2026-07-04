@@ -1830,6 +1830,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This book does not exist on the cloud. The entire book file and reading progress will be uploaded.'**
   String get bookNotOnCloudPushFull;
+
+  /// No description provided for @qrDeviceSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Device Sync (QR)'**
+  String get qrDeviceSync;
+
+  /// No description provided for @qrSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Device Sync (QR)'**
+  String get qrSyncTitle;
+
+  /// No description provided for @qrSyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose synchronization action between your devices.'**
+  String get qrSyncDesc;
+
+  /// No description provided for @receiveConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive Configuration (Receive)'**
+  String get receiveConfig;
+
+  /// No description provided for @receiveConfigDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show QR code to receive configuration (No Camera required)'**
+  String get receiveConfigDesc;
+
+  /// No description provided for @shareConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Configuration (Share)'**
+  String get shareConfig;
+
+  /// No description provided for @shareConfigDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan receiver\'\'s QR code and send configuration'**
+  String get shareConfigDesc;
+
+  /// No description provided for @shareConfigQrScanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Configuration (Scan QR)'**
+  String get shareConfigQrScanner;
+
+  /// No description provided for @needCameraPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission required to scan QR code'**
+  String get needCameraPermission;
+
+  /// No description provided for @cameraPermissionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Please grant camera permission to the app in Device Settings to continue.'**
+  String get cameraPermissionDesc;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @scanQrCodeInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Point camera at the receiver\'\'s QR code to connect'**
+  String get scanQrCodeInstruction;
+
+  /// No description provided for @sendingConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending configuration to receiver...'**
+  String get sendingConfig;
+
+  /// No description provided for @shareConfigSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration shared successfully!'**
+  String get shareConfigSuccess;
+
+  /// No description provided for @sendConfigErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Configuration Error'**
+  String get sendConfigErrorTitle;
+
+  /// No description provided for @sendConfigErrorDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to connect and transfer configuration to receiver. Details: {error}'**
+  String sendConfigErrorDesc(String error);
+
+  /// No description provided for @rescan.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-scan'**
+  String get rescan;
+
+  /// No description provided for @receiveConfigQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive Configuration via QR'**
+  String get receiveConfigQr;
+
+  /// No description provided for @receiverDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Receiver Device'**
+  String get receiverDevice;
+
+  /// No description provided for @receiverDeviceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another device to scan the QR code below to automatically transfer sync configuration to this machine.'**
+  String get receiverDeviceDesc;
+
+  /// No description provided for @connectingTunnel.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting SSH tunnel (localhost.run)...'**
+  String get connectingTunnel;
+
+  /// No description provided for @failedToInitTunnel.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to initialize Tunnel. Please check network connection or try again later.'**
+  String get failedToInitTunnel;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @applyingConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying configuration and syncing...'**
+  String get applyingConfig;
+
+  /// No description provided for @webdavConnectionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV connection successful! Syncing library...'**
+  String get webdavConnectionSuccess;
+
+  /// No description provided for @librarySyncSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Library synced successfully!'**
+  String get librarySyncSuccess;
+
+  /// No description provided for @librarySyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Library sync failed: {message}'**
+  String librarySyncFailed(String message);
+
+  /// No description provided for @webdavConnectionErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Connection Error'**
+  String get webdavConnectionErrorTitle;
+
+  /// No description provided for @webdavConnectionErrorDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration received from \"{deviceName}\", but failed to connect to WebDAV server. Please verify configuration on WebDAV server.'**
+  String webdavConnectionErrorDesc(String deviceName);
+
+  /// No description provided for @applyConfigError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to apply configuration: {error}'**
+  String applyConfigError(String error);
+
+  /// No description provided for @bgmLocalFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Local File'**
+  String get bgmLocalFile;
+
+  /// No description provided for @bgmPasteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste Link'**
+  String get bgmPasteLink;
+
+  /// No description provided for @bgmInternetRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet Radio'**
+  String get bgmInternetRadio;
+
+  /// No description provided for @bgmLofiSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Lofi Suggestions'**
+  String get bgmLofiSuggestions;
 }
 
 class _AppLocalizationsDelegate

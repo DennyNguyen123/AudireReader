@@ -1,0 +1,315 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/database/database_helper.dart';
+import '../../l10n/app_localizations.dart';
+
+class MobileSyncScreen extends StatefulWidget {
+  const MobileSyncScreen({super.key});
+
+  @override
+  State<MobileSyncScreen> createState() => _MobileSyncScreenState();
+}
+
+class _MobileSyncScreenState extends State<MobileSyncScreen> {
+  String? _scannedUrl;
+  bool _isLoading = false;
+  bool _hasCameraPermission = false;
+  bool _isCheckingPermission = true;
+  MobileScannerController? _scannerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+  }
+
+  @override
+  void dispose() {
+    _scannerController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkPermission() async {
+    setState(() {
+      _isCheckingPermission = true;
+    });
+
+    final status = await Permission.camera.status;
+    if (status.isGranted) {
+      setState(() {
+        _hasCameraPermission = true;
+        _isCheckingPermission = false;
+      });
+      _initScanner();
+    } else if (status.isPermanentlyDenied) {
+      setState(() {
+        _hasCameraPermission = false;
+        _isCheckingPermission = false;
+      });
+    } else {
+      final result = await Permission.camera.request();
+      setState(() {
+        _hasCameraPermission = result.isGranted;
+        _isCheckingPermission = false;
+      });
+      if (result.isGranted) {
+        _initScanner();
+      }
+    }
+  }
+
+  void _initScanner() {
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_scannedUrl != null || _isLoading) return;
+    final List<Barcode> barcodes = capture.barcodes;
+    for (final barcode in barcodes) {
+      final rawValue = barcode.rawValue;
+      if (rawValue != null && rawValue.startsWith('http') && rawValue.endsWith('/config')) {
+        HapticFeedback.lightImpact();
+        setState(() {
+          _scannedUrl = rawValue;
+        });
+        _sendConfig();
+        break;
+      }
+    }
+  }
+
+  Future<void> _sendConfig() async {
+    if (_scannedUrl == null) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      const storage = FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      // Đóng gói cấu hình hiện tại
+      final payload = {
+        'webDavUrl': settings.webDavUrl,
+        'webDavUsername': settings.webDavUsername,
+        'webDavPassword': webDavPassword,
+        'deviceName': settings.deviceName ?? 'Mobile Device',
+        'settings': {
+          'fontSize': settings.fontSize,
+          'speechRate': settings.speechRate,
+          'selectedVoiceName': settings.selectedVoiceName,
+          'selectedVoiceLocale': settings.selectedVoiceLocale,
+          'ttsProvider': settings.ttsProvider,
+          'openAiTtsEndpoint': settings.openAiTtsEndpoint,
+          'openAiTtsApiKey': settings.openAiTtsApiKey,
+          'openAiTtsModel': settings.openAiTtsModel,
+          'fontFamily': settings.fontFamily,
+          'themeMode': settings.themeMode,
+          'appLocale': settings.appLocale,
+          'lineHeight': settings.lineHeight,
+          'paragraphSpacing': settings.paragraphSpacing,
+          'textAlignment': settings.textAlignment,
+          'sideMargin': settings.sideMargin,
+          'customBackgroundColor': settings.customBackgroundColor,
+          'customTextColor': settings.customTextColor,
+          'primaryColorHex': settings.primaryColorHex,
+          'openLastReadOnLaunch': settings.openLastReadOnLaunch,
+          'hotkeyNextParagraph': settings.hotkeyNextParagraph,
+          'hotkeyPrevParagraph': settings.hotkeyPrevParagraph,
+          'hotkeyNextChapter': settings.hotkeyNextChapter,
+          'hotkeyPrevChapter': settings.hotkeyPrevChapter,
+          'hotkeyPlayPauseTts': settings.hotkeyPlayPauseTts,
+          'hotkeyOpenChapter': settings.hotkeyOpenChapter,
+          'hotkeyOpenSetting': settings.hotkeyOpenSetting,
+          'hotkeyBossKey': settings.hotkeyBossKey,
+          'bossKeyAction': settings.bossKeyAction,
+          'autoCheckUpdate': settings.autoCheckUpdate,
+          'bgmEnabled': settings.bgmEnabled,
+          'bgmVolume': settings.bgmVolume,
+          'bgmLoopMode': settings.bgmLoopMode,
+          'bgmProviderId': settings.bgmProviderId,
+          'sortBy': settings.sortBy,
+          'developerMode': settings.developerMode,
+          'enableDebugLogs': settings.enableDebugLogs,
+          'enableWebDavDebug': settings.enableWebDavDebug,
+        }
+      };
+
+      print('MobileSyncScreen: Đang gửi config tới $_scannedUrl...');
+      final response = await http.post(
+        Uri.parse(_scannedUrl!),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      ).timeout(const Duration(seconds: 15));
+
+      if (mounted) {
+        if (response.statusCode == 200) {
+          final resData = json.decode(response.body);
+          if (resData['success'] == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)?.shareConfigSuccess ?? 'Chia sẻ cấu hình thành công!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context, true);
+          } else {
+            throw Exception(resData['message'] ?? 'Phản hồi từ máy nhận không hợp lệ.');
+          }
+        } else {
+          throw Exception('Máy nhận trả về mã lỗi: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print('MobileSyncScreen: Lỗi gửi cấu hình: $e');
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(AppLocalizations.of(context)?.sendConfigErrorTitle ?? 'Lỗi gửi cấu hình'),
+            content: Text(AppLocalizations.of(context)?.sendConfigErrorDesc(e.toString()) ?? 'Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: $e'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _scannedUrl = null;
+                    _isLoading = false;
+                  });
+                },
+                child: Text(AppLocalizations.of(context)?.rescan ?? 'Quét lại'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)?.shareConfigQrScanner ?? 'Chia sẻ cấu hình (Quét QR)', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+      ),
+      body: _isCheckingPermission
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            )
+          : !_hasCameraPermission
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.camera_alt_outlined, color: Colors.white54, size: 64),
+                        const SizedBox(height: 16),
+                        Text(
+                          AppLocalizations.of(context)?.needCameraPermission ?? 'Cần quyền truy cập Camera để quét QR code',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          AppLocalizations.of(context)?.cameraPermissionDesc ?? 'Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () async {
+                            await openAppSettings();
+                            _checkPermission();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                          child: Text(AppLocalizations.of(context)?.openSettings ?? 'Mở Cài đặt'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Stack(
+                  children: [
+                    // Camera Scanner
+                    MobileScanner(
+                      controller: _scannerController,
+                      onDetect: _onDetect,
+                    ),
+
+                    // Overlay Khung quét
+                    Center(
+                      child: Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.primary, width: 3),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                    ),
+
+                    // Overlay Text hướng dẫn
+                    Positioned(
+                      bottom: 80,
+                      left: 20,
+                      right: 20,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)?.scanQrCodeInstruction ?? 'Di chuyển camera để quét mã QR kết nối của máy nhận',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Loading Indicator khi đang gửi
+                    if (_isLoading)
+                      Container(
+                        color: Colors.black87,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(color: Colors.white),
+                              const SizedBox(height: 16),
+                              Text(
+                                AppLocalizations.of(context)?.sendingConfig ?? 'Đang truyền cấu hình tới thiết bị nhận...',
+                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+    );
+  }
+}
