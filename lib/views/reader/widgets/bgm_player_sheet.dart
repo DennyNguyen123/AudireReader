@@ -7,6 +7,7 @@ import '../../../services/bgm_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/bgm_track.dart';
 import '../../../services/bgm/radio_browser_provider.dart';
+import '../../../services/bgm/open_lofi_provider.dart';
 
 class BgmPlayerSheet extends StatefulWidget {
   const BgmPlayerSheet({super.key});
@@ -20,13 +21,113 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
   final _bgmNameController = TextEditingController();
   final _bgmUrlController = TextEditingController();
   String? _bgmLocalPath;
-  bool _isAddingLink = false;
 
   // Trạng thái tìm kiếm Radio
   final _searchController = TextEditingController();
   bool _isLoadingRadio = false;
   bool _isSearching = false;
   List<BgmTrack> _searchedRadioTracks = [];
+
+  // Trạng thái thêm nhạc theo nguồn
+  String _addSourceType = 'file'; // 'file', 'link', 'radio', 'lofi'
+  bool _isLoadingLofi = false;
+  List<BgmTrack> _lofiTracks = [];
+
+  Future<void> _loadLofiTracks() async {
+    if (_lofiTracks.isNotEmpty) return;
+    setState(() {
+      _isLoadingLofi = true;
+    });
+    try {
+      final provider = OpenLofiProvider();
+      final results = await provider.fetchTracks();
+      setState(() {
+        _lofiTracks = results;
+        _isLoadingLofi = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingLofi = false;
+      });
+    }
+  }
+
+  Future<void> _performRadioSearch(String val) async {
+    if (val.trim().isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchedRadioTracks = [];
+      });
+      return;
+    }
+    setState(() {
+      _isLoadingRadio = true;
+      _isSearching = true;
+    });
+    try {
+      final provider = RadioBrowserProvider();
+      final results = await provider.searchTracks(val);
+      setState(() {
+        _searchedRadioTracks = results;
+        _isLoadingRadio = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingRadio = false;
+      });
+    }
+  }
+
+  Widget _buildSourceChip(String value, IconData icon, String label) {
+    final theme = Theme.of(context);
+    final isSelected = _addSourceType == value;
+    final accentColor = theme.colorScheme.primary;
+    final labelColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return ChoiceChip(
+      showCheckmark: false,
+      iconTheme: IconThemeData(
+        color: isSelected 
+            ? (isDark ? Colors.black : Colors.white) 
+            : labelColor.withValues(alpha: 0.6),
+        size: 16,
+      ),
+      avatar: Icon(icon),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: isSelected 
+              ? (isDark ? Colors.black : Colors.white) 
+              : labelColor.withValues(alpha: 0.8),
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: accentColor,
+      backgroundColor: labelColor.withValues(alpha: 0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? accentColor : Colors.transparent,
+        ),
+      ),
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _addSourceType = value;
+            _bgmNameController.clear();
+            _bgmUrlController.clear();
+            _bgmLocalPath = null;
+            if (value == 'lofi') {
+              _loadLofiTracks();
+            }
+          });
+        }
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -215,47 +316,6 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                             ),
                             
                             Divider(height: 1, color: secondaryColor.withValues(alpha: 0.2), indent: 56),
-
-                            // Provider Row
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.library_music_rounded, size: 22, color: secondaryColor),
-                                      const SizedBox(width: 16),
-                                      Text("Source", style: TextStyle(fontWeight: FontWeight.w600, color: labelColor, fontSize: 15)),
-                                    ],
-                                  ),
-                                  DropdownButton<String>(
-                                    value: bgmService.bgmProviderId,
-                                    underline: const SizedBox(),
-                                    icon: Icon(Icons.arrow_drop_down_rounded, color: secondaryColor),
-                                    dropdownColor: cardBg,
-                                    borderRadius: BorderRadius.circular(12),
-                                    items: bgmService.providers.map((p) => DropdownMenuItem(
-                                      value: p.id,
-                                      child: Text(p.name, style: TextStyle(fontSize: 14, color: labelColor, fontWeight: FontWeight.w600)),
-                                    )).toList(),
-                                    onChanged: (val) {
-                                      if (val != null) {
-                                        bgmService.changeProvider(val);
-                                        setState(() {
-                                          _searchController.clear();
-                                          _isSearching = false;
-                                          _isLoadingRadio = false;
-                                          _searchedRadioTracks = [];
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            Divider(height: 1, color: secondaryColor.withValues(alpha: 0.2), indent: 56),
                             
                             // Loop Mode Row
                             Padding(
@@ -305,141 +365,32 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                           "Playlist",
                           style: TextStyle(fontWeight: FontWeight.bold, color: labelColor, fontSize: 18),
                         ),
-                        if (bgmService.bgmProviderId == 'local')
-                          TextButton.icon(
-                            style: TextButton.styleFrom(
-                              foregroundColor: accentColor,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              backgroundColor: accentColor.withValues(alpha: 0.1),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            ),
-                            icon: Icon(
-                              _showAddBgmForm ? Icons.close_rounded : Icons.add_rounded,
-                              size: 18,
-                            ),
-                            label: Text(_showAddBgmForm ? (AppLocalizations.of(context)?.cancel ?? "Cancel") : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
-                            onPressed: () {
-                              setState(() {
-                                _showAddBgmForm = !_showAddBgmForm;
-                              });
-                            },
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: accentColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            backgroundColor: accentColor.withValues(alpha: 0.1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           ),
+                          icon: Icon(
+                            _showAddBgmForm ? Icons.close_rounded : Icons.add_rounded,
+                            size: 18,
+                          ),
+                          label: Text(_showAddBgmForm ? (AppLocalizations.of(context)?.cancel ?? "Cancel") : "Add Track", style: const TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () {
+                            setState(() {
+                              _showAddBgmForm = !_showAddBgmForm;
+                            });
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Thanh tìm kiếm cho Radio Browser
-                    if (bgmService.bgmProviderId == 'radio_browser') ...[
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                style: TextStyle(color: labelColor, fontSize: 14),
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(context)?.searchStation ?? "Tìm kiếm đài phát...",
-                                  hintStyle: TextStyle(color: secondaryColor, fontSize: 13),
-                                  prefixIcon: Icon(Icons.search_rounded, color: secondaryColor, size: 20),
-                                  suffixIcon: _searchController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: Icon(Icons.clear_rounded, color: secondaryColor, size: 20),
-                                          onPressed: () {
-                                            setState(() {
-                                              _searchController.clear();
-                                              _isSearching = false;
-                                              _searchedRadioTracks = [];
-                                            });
-                                          },
-                                        )
-                                      : null,
-                                  filled: true,
-                                  fillColor: secondaryColor.withValues(alpha: 0.05),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide(color: accentColor, width: 1),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                onSubmitted: (val) async {
-                                  if (val.trim().isEmpty) {
-                                    setState(() {
-                                      _isSearching = false;
-                                      _searchedRadioTracks = [];
-                                    });
-                                    return;
-                                  }
-                                  setState(() {
-                                    _isLoadingRadio = true;
-                                    _isSearching = true;
-                                  });
-                                  try {
-                                    final provider = bgmService.providers.firstWhere((p) => p.id == 'radio_browser') as RadioBrowserProvider;
-                                    final results = await provider.searchTracks(val);
-                                    setState(() {
-                                      _searchedRadioTracks = results;
-                                      _isLoadingRadio = false;
-                                    });
-                                  } catch (e) {
-                                    setState(() {
-                                      _isLoadingRadio = false;
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accentColor,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () async {
-                                final val = _searchController.text;
-                                if (val.trim().isEmpty) {
-                                  setState(() {
-                                    _isSearching = false;
-                                    _searchedRadioTracks = [];
-                                  });
-                                  return;
-                                }
-                                setState(() {
-                                  _isLoadingRadio = true;
-                                  _isSearching = true;
-                                });
-                                try {
-                                  final provider = bgmService.providers.firstWhere((p) => p.id == 'radio_browser') as RadioBrowserProvider;
-                                  final results = await provider.searchTracks(val);
-                                  setState(() {
-                                    _searchedRadioTracks = results;
-                                    _isLoadingRadio = false;
-                                  });
-                                } catch (e) {
-                                  setState(() {
-                                    _isLoadingRadio = false;
-                                  });
-                                }
-                              },
-                              child: const Icon(Icons.search_rounded, size: 20),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-
                     // Add Track Form (Animated)
                     AnimatedSize(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOutCubic,
-                      child: (!_showAddBgmForm || bgmService.bgmProviderId != 'local') ? const SizedBox.shrink() : Container(
+                      child: !_showAddBgmForm ? const SizedBox.shrink() : Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -450,71 +401,32 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Lựa chọn: File cục bộ hoặc Link URL
+                            // Bộ chọn nguồn nhạc (Chips)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: SegmentedButton<bool>(
-                                showSelectedIcon: false,
-                                style: SegmentedButton.styleFrom(
-                                  selectedBackgroundColor: accentColor.withValues(alpha: 0.15),
-                                  selectedForegroundColor: accentColor,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  visualDensity: VisualDensity.compact,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _buildSourceChip('file', Icons.folder_open_rounded, "File cục bộ"),
+                                    const SizedBox(width: 8),
+                                    _buildSourceChip('link', Icons.link_rounded, "Dán link"),
+                                    const SizedBox(width: 8),
+                                    _buildSourceChip('radio', Icons.radio_rounded, "Internet Radio"),
+                                    const SizedBox(width: 8),
+                                    _buildSourceChip('lofi', Icons.coffee_rounded, "Lofi gợi ý"),
+                                  ],
                                 ),
-                                segments: [
-                                  ButtonSegment(
-                                    value: false,
-                                    label: Text(
-                                      AppLocalizations.of(context)?.addFileOption ?? "Chọn file cục bộ",
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  ButtonSegment(
-                                    value: true,
-                                    label: Text(
-                                      AppLocalizations.of(context)?.addLinkOption ?? "Dán link trực tiếp",
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
-                                selected: {_isAddingLink},
-                                onSelectionChanged: (val) {
-                                  setState(() {
-                                    _isAddingLink = val.first;
-                                  });
-                                },
                               ),
                             ),
 
-                            // Track Name Input
-                            TextField(
-                              controller: _bgmNameController,
-                              style: TextStyle(color: labelColor, fontSize: 14),
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)?.trackName ?? "Tên nhạc nền/đài phát",
-                                labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
-                                floatingLabelStyle: TextStyle(color: accentColor),
-                                filled: true,
-                                fillColor: secondaryColor.withValues(alpha: 0.05),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(color: accentColor, width: 1),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-
-                            if (_isAddingLink) ...[
+                            if (_addSourceType == 'file') ...[
+                              // Track Name Input
                               TextField(
-                                controller: _bgmUrlController,
+                                controller: _bgmNameController,
                                 style: TextStyle(color: labelColor, fontSize: 14),
                                 decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)?.trackUrl ?? "Đường dẫn Link (URL)",
+                                  labelText: AppLocalizations.of(context)?.trackName ?? "Tên nhạc nền/đài phát",
                                   labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
                                   floatingLabelStyle: TextStyle(color: accentColor),
                                   filled: true,
@@ -530,8 +442,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                            ] else ...[
+                              const SizedBox(height: 12),
                               // Local Audio Picker Button
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
@@ -566,22 +477,107 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                 },
                               ),
                               const SizedBox(height: 16),
-                            ],
-                            
-                            // Import Button
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accentColor,
-                                foregroundColor: Colors.white,
-                                elevation: 2,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              // Import Button
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: accentColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 2,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: _bgmLocalPath == null
+                                    ? null
+                                    : () async {
+                                        try {
+                                          await bgmService.addTrackFromLocal(
+                                            _bgmNameController.text,
+                                            _bgmLocalPath!,
+                                          );
+                                          setState(() {
+                                            _showAddBgmForm = false;
+                                            _bgmNameController.clear();
+                                            _bgmLocalPath = null;
+                                          });
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(AppLocalizations.of(context)?.addSuccess ?? "Track added successfully!"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.green[700],
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Failed to add track: $e"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red[700],
+                                            ),
+                                          );
+                                        }
+                                      },
+                                child: Text(AppLocalizations.of(context)?.importTrack ?? "Import Track", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                               ),
-                              onPressed: (_isAddingLink ? _bgmUrlController.text.trim().isEmpty : _bgmLocalPath == null)
-                                  ? null
-                                  : () async {
-                                      try {
-                                        if (_isAddingLink) {
+                            ] else if (_addSourceType == 'link') ...[
+                              // Track Name Input
+                              TextField(
+                                controller: _bgmNameController,
+                                style: TextStyle(color: labelColor, fontSize: 14),
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(context)?.trackName ?? "Tên nhạc nền/đài phát",
+                                  labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
+                                  floatingLabelStyle: TextStyle(color: accentColor),
+                                  filled: true,
+                                  fillColor: secondaryColor.withValues(alpha: 0.05),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(color: accentColor, width: 1),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // URL Input
+                              TextField(
+                                controller: _bgmUrlController,
+                                style: TextStyle(color: labelColor, fontSize: 14),
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(context)?.trackUrl ?? "Đường dẫn Link (URL)",
+                                  labelStyle: TextStyle(color: secondaryColor, fontSize: 13),
+                                  floatingLabelStyle: TextStyle(color: accentColor),
+                                  filled: true,
+                                  fillColor: secondaryColor.withValues(alpha: 0.05),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(color: accentColor, width: 1),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Import Button
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: accentColor,
+                                  foregroundColor: Colors.white,
+                                  elevation: 2,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: _bgmUrlController.text.trim().isEmpty
+                                    ? null
+                                    : () async {
+                                        try {
                                           final url = _bgmUrlController.text.trim();
                                           if (!url.startsWith('http://') && !url.startsWith('https://')) {
                                             throw Exception("URL must start with http:// or https://");
@@ -589,40 +585,221 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                           await bgmService.addTrackFromUrl(
                                             _bgmNameController.text,
                                             url,
+                                            sourceType: 'direct_url',
                                           );
-                                        } else {
-                                          await bgmService.addTrackFromLocal(
-                                            _bgmNameController.text,
-                                            _bgmLocalPath!,
+                                          setState(() {
+                                            _showAddBgmForm = false;
+                                            _bgmNameController.clear();
+                                            _bgmUrlController.clear();
+                                          });
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(AppLocalizations.of(context)?.addSuccess ?? "Track added successfully!"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.green[700],
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Failed to add track: $e"),
+                                              behavior: SnackBarBehavior.floating,
+                                              backgroundColor: Colors.red[700],
+                                            ),
                                           );
                                         }
-                                        setState(() {
-                                          _showAddBgmForm = false;
-                                          _bgmNameController.clear();
-                                          _bgmUrlController.clear();
-                                          _bgmLocalPath = null;
-                                        });
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(AppLocalizations.of(context)?.addSuccess ?? "Track added successfully!"),
-                                            behavior: SnackBarBehavior.floating,
-                                            backgroundColor: Colors.green[700],
+                                      },
+                                child: Text(AppLocalizations.of(context)?.importTrack ?? "Import Track", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              ),
+                            ] else if (_addSourceType == 'radio') ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _searchController,
+                                      style: TextStyle(color: labelColor, fontSize: 14),
+                                      decoration: InputDecoration(
+                                        hintText: AppLocalizations.of(context)?.searchStation ?? "Tìm kiếm đài phát...",
+                                        hintStyle: TextStyle(color: secondaryColor, fontSize: 13),
+                                        prefixIcon: Icon(Icons.search_rounded, color: secondaryColor, size: 20),
+                                        suffixIcon: _searchController.text.isNotEmpty
+                                            ? IconButton(
+                                                icon: Icon(Icons.clear_rounded, color: secondaryColor, size: 20),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _searchController.clear();
+                                                    _isSearching = false;
+                                                    _searchedRadioTracks = [];
+                                                  });
+                                                },
+                                              )
+                                            : null,
+                                        filled: true,
+                                        fillColor: secondaryColor.withValues(alpha: 0.05),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                          borderSide: BorderSide(color: accentColor, width: 1),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      ),
+                                      onSubmitted: (val) => _performRadioSearch(val),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: accentColor,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () => _performRadioSearch(_searchController.text),
+                                    child: const Icon(Icons.search_rounded, size: 20),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (_isLoadingRadio)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(child: CircularProgressIndicator()),
+                                )
+                              else if (_isSearching && _searchedRadioTracks.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: Text(
+                                      AppLocalizations.of(context)?.emptySearch ?? "No matching results found",
+                                      style: TextStyle(color: secondaryColor, fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                              else if (_searchedRadioTracks.isNotEmpty)
+                                Container(
+                                  constraints: const BoxConstraints(maxHeight: 180),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: _searchedRadioTracks.length,
+                                    separatorBuilder: (context, index) => Divider(height: 1, color: secondaryColor.withValues(alpha: 0.15)),
+                                    itemBuilder: (context, index) {
+                                      final track = _searchedRadioTracks[index];
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(
+                                          track.name,
+                                          style: TextStyle(color: labelColor, fontSize: 14, fontWeight: FontWeight.w500),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        trailing: IconButton(
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: accentColor.withValues(alpha: 0.1),
+                                            foregroundColor: accentColor,
+                                            padding: const EdgeInsets.all(4),
                                           ),
-                                        );
-                                      } catch (e) {
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text("Failed to add track: $e"),
-                                            behavior: SnackBarBehavior.floating,
-                                            backgroundColor: Colors.red[700],
-                                          ),
-                                        );
-                                      }
+                                          icon: const Icon(Icons.add_rounded, size: 18),
+                                          onPressed: () async {
+                                            try {
+                                              await bgmService.addTrackFromUrl(track.name, track.sourcePath, sourceType: 'radio');
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(AppLocalizations.of(context)?.addSuccess ?? "Added to library successfully!"),
+                                                  behavior: SnackBarBehavior.floating,
+                                                  backgroundColor: Colors.green[700],
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Failed: $e"),
+                                                  behavior: SnackBarBehavior.floating,
+                                                  backgroundColor: Colors.red[700],
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      );
                                     },
-                              child: Text(AppLocalizations.of(context)?.importTrack ?? "Import Track", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                            ),
+                                  ),
+                                )
+                            ] else if (_addSourceType == 'lofi') ...[
+                              if (_isLoadingLofi)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(child: CircularProgressIndicator()),
+                                )
+                              else if (_lofiTracks.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: Text(
+                                      "Không có bản nhạc Lofi nào gợi ý",
+                                      style: TextStyle(color: secondaryColor, fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  constraints: const BoxConstraints(maxHeight: 180),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: _lofiTracks.length,
+                                    separatorBuilder: (context, index) => Divider(height: 1, color: secondaryColor.withValues(alpha: 0.15)),
+                                    itemBuilder: (context, index) {
+                                      final track = _lofiTracks[index];
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(
+                                          track.name,
+                                          style: TextStyle(color: labelColor, fontSize: 14, fontWeight: FontWeight.w500),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        trailing: IconButton(
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: accentColor.withValues(alpha: 0.1),
+                                            foregroundColor: accentColor,
+                                            padding: const EdgeInsets.all(4),
+                                          ),
+                                          icon: const Icon(Icons.add_rounded, size: 18),
+                                          onPressed: () async {
+                                            try {
+                                              await bgmService.addTrackFromUrl(track.name, track.sourcePath, sourceType: 'openlofi');
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(AppLocalizations.of(context)?.addSuccess ?? "Added to library successfully!"),
+                                                  behavior: SnackBarBehavior.floating,
+                                                  backgroundColor: Colors.green[700],
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Failed: $e"),
+                                                  behavior: SnackBarBehavior.floating,
+                                                  backgroundColor: Colors.red[700],
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                            ]
                           ],
                         ),
                       ),
@@ -722,39 +899,7 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (bgmService.bgmProviderId != 'local') ...[
-                                    IconButton(
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: secondaryColor.withValues(alpha: 0.1),
-                                        foregroundColor: accentColor,
-                                      ),
-                                      icon: const Icon(Icons.add_rounded, size: 20),
-                                      tooltip: AppLocalizations.of(context)?.importTrack ?? "Add to Library",
-                                      onPressed: () async {
-                                        try {
-                                          await bgmService.addTrackFromUrl(track.name, track.sourcePath);
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(AppLocalizations.of(context)?.addSuccess ?? "Added to library successfully!"),
-                                              behavior: SnackBarBehavior.floating,
-                                              backgroundColor: Colors.green[700],
-                                            ),
-                                          );
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text("Failed: $e"),
-                                              behavior: SnackBarBehavior.floating,
-                                              backgroundColor: Colors.red[700],
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
+
                                   IconButton(
                                     style: IconButton.styleFrom(
                                       backgroundColor: isCurrent ? accentColor : secondaryColor.withValues(alpha: 0.1),
@@ -774,141 +919,139 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                       }
                                     },
                                   ),
-                                  if (track.sourceType == 'local' || track.sourceType == 'direct_url') ...[
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      style: IconButton.styleFrom(
-                                        foregroundColor: accentColor,
-                                      ),
-                                      icon: const Icon(Icons.edit_outlined, size: 22),
-                                      onPressed: () {
-                                        final editNameController = TextEditingController(text: track.name);
-                                        final editUrlController = TextEditingController(text: track.sourcePath);
-                                        
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            backgroundColor: cardBg,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            title: Text(
-                                              AppLocalizations.of(context)?.editTrack ?? "Sửa thông tin nhạc",
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
-                                            ),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: accentColor,
+                                    ),
+                                    icon: const Icon(Icons.edit_outlined, size: 22),
+                                    onPressed: () {
+                                      final editNameController = TextEditingController(text: track.name);
+                                      final editUrlController = TextEditingController(text: track.sourcePath);
+                                      
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: cardBg,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          title: Text(
+                                            AppLocalizations.of(context)?.editTrack ?? "Sửa thông tin nhạc",
+                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              TextField(
+                                                controller: editNameController,
+                                                style: TextStyle(color: labelColor),
+                                                decoration: InputDecoration(
+                                                  labelText: AppLocalizations.of(context)?.trackName ?? "Tên bài hát",
+                                                ),
+                                              ),
+                                              if (track.sourceType == 'direct_url') ...[
+                                                const SizedBox(height: 12),
                                                 TextField(
-                                                  controller: editNameController,
+                                                  controller: editUrlController,
                                                   style: TextStyle(color: labelColor),
                                                   decoration: InputDecoration(
-                                                    labelText: AppLocalizations.of(context)?.trackName ?? "Tên bài hát",
+                                                    labelText: AppLocalizations.of(context)?.trackUrl ?? "Link URL",
                                                   ),
                                                 ),
-                                                if (track.sourceType == 'direct_url') ...[
-                                                  const SizedBox(height: 12),
-                                                  TextField(
-                                                    controller: editUrlController,
-                                                    style: TextStyle(color: labelColor),
-                                                    decoration: InputDecoration(
-                                                      labelText: AppLocalizations.of(context)?.trackUrl ?? "Link URL",
-                                                    ),
-                                                  ),
-                                                ],
                                               ],
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: Text(
-                                                  AppLocalizations.of(context)?.cancel ?? "Hủy",
-                                                  style: TextStyle(color: secondaryColor),
-                                                ),
-                                              ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: accentColor,
-                                                  foregroundColor: Colors.white,
-                                                  elevation: 0,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                                ),
-                                                onPressed: () async {
-                                                  try {
-                                                    await bgmService.updateTrack(
-                                                      track,
-                                                      name: editNameController.text,
-                                                      sourcePath: track.sourceType == 'direct_url' ? editUrlController.text : null,
-                                                    );
-                                                    if (!context.mounted) return;
-                                                    Navigator.pop(context);
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(AppLocalizations.of(context)?.updateSuccess ?? "Updated successfully!"),
-                                                        behavior: SnackBarBehavior.floating,
-                                                        backgroundColor: Colors.green[700],
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    if (!context.mounted) return;
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text("Failed to update: $e"),
-                                                        behavior: SnackBarBehavior.floating,
-                                                        backgroundColor: Colors.red[700],
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                child: Text(AppLocalizations.of(context)?.save ?? "Lưu"),
-                                              ),
                                             ],
                                           ),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(width: 4),
-                                    IconButton(
-                                      style: IconButton.styleFrom(
-                                        foregroundColor: Colors.redAccent,
-                                      ),
-                                      icon: const Icon(Icons.delete_outline_rounded, size: 22),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            backgroundColor: cardBg,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            title: Text(
-                                              AppLocalizations.of(context)?.confirmDelete ?? "Confirm Delete",
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
-                                            ),
-                                            content: Text("Are you sure you want to delete '${track.name}'?"),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: Text(
-                                                  AppLocalizations.of(context)?.cancel ?? "Cancel",
-                                                  style: TextStyle(color: secondaryColor),
-                                                ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: Text(
+                                                AppLocalizations.of(context)?.cancel ?? "Hủy",
+                                                style: TextStyle(color: secondaryColor),
                                               ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.redAccent,
-                                                  foregroundColor: Colors.white,
-                                                  elevation: 0,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                                ),
-                                                onPressed: () {
-                                                  bgmService.deleteTrack(track);
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: accentColor,
+                                                foregroundColor: Colors.white,
+                                                elevation: 0,
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              ),
+                                              onPressed: () async {
+                                                try {
+                                                  await bgmService.updateTrack(
+                                                    track,
+                                                    name: editNameController.text,
+                                                    sourcePath: track.sourceType == 'direct_url' ? editUrlController.text : null,
+                                                  );
+                                                  if (!context.mounted) return;
                                                   Navigator.pop(context);
-                                                },
-                                                child: Text(AppLocalizations.of(context)?.confirm ?? "Delete"),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(AppLocalizations.of(context)?.updateSuccess ?? "Updated successfully!"),
+                                                      behavior: SnackBarBehavior.floating,
+                                                      backgroundColor: Colors.green[700],
+                                                    ),
+                                                  );
+                                                } catch (e) {
+                                                  if (!context.mounted) return;
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text("Failed to update: $e"),
+                                                      behavior: SnackBarBehavior.floating,
+                                                      backgroundColor: Colors.red[700],
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              child: Text(AppLocalizations.of(context)?.save ?? "Lưu"),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
                                     ),
-                                  ],
+                                    icon: const Icon(Icons.delete_outline_rounded, size: 22),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: cardBg,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          title: Text(
+                                            AppLocalizations.of(context)?.confirmDelete ?? "Confirm Delete",
+                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                          content: Text("Are you sure you want to delete '${track.name}'?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: Text(
+                                                AppLocalizations.of(context)?.cancel ?? "Cancel",
+                                                style: TextStyle(color: secondaryColor),
+                                              ),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.redAccent,
+                                                foregroundColor: Colors.white,
+                                                elevation: 0,
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              ),
+                                              onPressed: () {
+                                                bgmService.deleteTrack(track);
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(AppLocalizations.of(context)?.confirm ?? "Delete"),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ],
                               ),
                             ),

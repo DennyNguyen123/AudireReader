@@ -284,3 +284,96 @@ Bo sung import va fix syntax Column children trong bgm_player_sheet, bo sung tru
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Cai tien chon nguon nhac nen BGM
+
+**Date**: 2026-07-03
+**Task**: Cai tien chon nguon nhac nen BGM
+**Branch**: `main`
+
+### Summary
+
+Da loai bo dropdown chon Source o cai dat chinh BGM, chuyen bo chon nguon thanh dang Tab/Chip trong form Add Track voi 4 tuy chon (File cuc bo, Link truc tiep, Radio, Lofi) luu thang vao thu vien nhac cuc bo.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 11: Sua loi BGM add track khong hien thi vao thu vien
+
+**Date**: 2026-07-04
+**Task**: Sua loi BGM add track khong hien thi vao thu vien
+**Branch**: `main`
+
+### Summary
+
+Da loai bo bo loc sourceType trong LocalBgmProvider.fetchTracks de load toan bo danh sach track (bao gom ca radio va openlofi) trong database len playlist chinh.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 12: Sua loi khong hien thi nut Sua Xoa trong thu vien BGM
+
+**Date**: 2026-07-04
+**Task**: Sua loi khong hien thi nut Sua Xoa trong thu vien BGM
+**Branch**: `main`
+
+### Summary
+
+Da loai bo dieu kien track.sourceType == 'local' || track.sourceType == 'direct_url' bao quanh nut Sua va Xoa trong bgm_player_sheet.dart, cho phep Sua va Xoa bat ky track nao trong thu vien.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

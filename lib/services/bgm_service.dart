@@ -174,9 +174,8 @@ class BgmService extends ChangeNotifier {
       _bgmEnabled = settings.bgmEnabled;
       _bgmVolume = settings.bgmVolume;
       
-      _bgmProviderId = settings.bgmProviderId;
-      if (!_providers.any((p) => p.id == _bgmProviderId)) {
-        _bgmProviderId = 'local';
+      _bgmProviderId = 'local';
+      if (settings.bgmProviderId != 'local') {
         settings.bgmProviderId = 'local';
         await db.saveSettings(settings);
       }
@@ -541,11 +540,11 @@ class BgmService extends ChangeNotifier {
     }
   }
 
-  Future<void> addTrackFromUrl(String name, String url) async {
+  Future<void> addTrackFromUrl(String name, String url, {String sourceType = 'direct_url'}) async {
     try {
       final track = BgmTrack()
         ..name = name.trim().isEmpty ? 'Direct Link' : name
-        ..sourceType = 'direct_url'
+        ..sourceType = sourceType
         ..sourcePath = url.trim()
         ..dateAdded = DateTime.now();
 

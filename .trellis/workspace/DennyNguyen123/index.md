@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
-- **Last Active**: 2026-07-03
+- **Total Sessions**: 12
+- **Last Active**: 2026-07-04
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~286 | Active |
+| `journal-1.md` | ~379 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 12 | 2026-07-04 | Sua loi khong hien thi nut Sua Xoa trong thu vien BGM | - | `main` |
+| 11 | 2026-07-04 | Sua loi BGM add track khong hien thi vao thu vien | - | `main` |
+| 10 | 2026-07-03 | Cai tien chon nguon nhac nen BGM | - | `main` |
 | 9 | 2026-07-03 | Sua loi compile settings va bgm_player_sheet | - | `main` |
 | 8 | 2026-07-03 | Hoan thanh tim kiem, them dai phat radio va nho vi tri theo URL | - | `main` |
 | 7 | 2026-07-03 | Bổ sung tùy chọn Chỉ ghi đè tiến trình đọc cho Force Push và Force Pull | - | `main` |

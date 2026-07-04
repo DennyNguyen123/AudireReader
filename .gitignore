@@ -48,3 +48,5 @@ app.*.map.json
 .trellis/
 
 %TEMP%
+.trellis/workspace/DennyNguyen123/index.md
+.trellis/workspace/DennyNguyen123/journal-1.md
