@@ -1758,6 +1758,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pull the reading progress from Cloud WebDAV to this device.'**
   String get forcePullProgressDesc;
+
+  /// No description provided for @deleteLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Only'**
+  String get deleteLocalOnly;
+
+  /// No description provided for @deleteBothLocalAndCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Both Local & Cloud'**
+  String get deleteBothLocalAndCloud;
+
+  /// No description provided for @deleteBookOptionsContent.
+  ///
+  /// In en, this message translates to:
+  /// **'How do you want to delete \"{title}\"?\n\n• Local Only: Delete caches on this device, keep it on WebDAV Cloud to download later.\n• Both Local & Cloud: Permanently delete from both this device and WebDAV Cloud.'**
+  String deleteBookOptionsContent(String title);
+
+  /// No description provided for @deletedFromLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted from Local'**
+  String get deletedFromLocal;
+
+  /// No description provided for @deletedFromBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted from both Local & Cloud'**
+  String get deletedFromBoth;
+
+  /// No description provided for @deleteFromCloudTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete from Cloud'**
+  String get deleteFromCloudTitle;
+
+  /// No description provided for @confirmDeleteFromCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{title}\" from WebDAV Cloud? Since this book is not downloaded, this action will permanently delete it.'**
+  String confirmDeleteFromCloud(String title);
+
+  /// No description provided for @requestedDeletionFromCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested deletion from Cloud'**
+  String get requestedDeletionFromCloud;
+
+  /// No description provided for @deleteBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Book'**
+  String get deleteBookTitle;
+
+  /// No description provided for @downloadBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Book'**
+  String get downloadBook;
+
+  /// No description provided for @bookNotOnCloudCannotPull.
+  ///
+  /// In en, this message translates to:
+  /// **'This book has never been uploaded to the cloud. Cannot pull data.'**
+  String get bookNotOnCloudCannotPull;
+
+  /// No description provided for @bookNotOnCloudPushFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This book does not exist on the cloud. The entire book file and reading progress will be uploaded.'**
+  String get bookNotOnCloudPushFull;
 }
 
 class _AppLocalizationsDelegate

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
@@ -17,14 +16,14 @@ import 'services/logger_service.dart';
 void main() async {
   // Đảm bảo bindings được khởi tạo hoàn chỉnh trước khi chạy các service chạy nền
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Khởi tạo Window Manager cho Desktop để quản lý cửa sổ (như ẩn/hiện/thu nhỏ cho Boss Key)
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
     await windowManager.ensureInitialized();
     await AppTrayManager.init();
     await GlobalHotkeyManager.init();
   }
-  
+
   // Khởi tạo dịch vụ Audio Service & TTS toàn cục trước khi ứng dụng chạy
   await TtsService.getInstance();
 
@@ -32,7 +31,7 @@ void main() async {
   final db = await DatabaseHelper.getInstance();
   final settings = await db.getSettings();
   ThemeNotifier.instance.init(
-    settings.themeMode, 
+    settings.themeMode,
     primaryColorHex: settings.primaryColorHex,
   );
   LocaleNotifier.instance.init(settings.appLocale);
@@ -68,11 +67,14 @@ class AudireReaderApp extends StatelessWidget {
       listenable: ThemeNotifier.instance,
       builder: (context, _) {
         final themeModeStr = ThemeNotifier.instance.themeMode;
-        final primaryColor = _parseColor(ThemeNotifier.instance.primaryColorHex, Colors.amber);
-        
+        final primaryColor = _parseColor(
+          ThemeNotifier.instance.primaryColorHex,
+          Colors.amber,
+        );
+
         ThemeMode appThemeMode;
         ThemeData? customTheme;
-        
+
         if (themeModeStr == 'Dark') {
           appThemeMode = ThemeMode.dark;
         } else if (themeModeStr == 'Light') {
@@ -106,7 +108,10 @@ class AudireReaderApp extends StatelessWidget {
               bodyLarge: TextStyle(color: Color(0xFF5B4636)),
               bodyMedium: TextStyle(color: Color(0xFF5B4636)),
               bodySmall: TextStyle(color: Color(0xFF5B4636)),
-              titleLarge: TextStyle(color: Color(0xFF5B4636), fontWeight: FontWeight.bold),
+              titleLarge: TextStyle(
+                color: Color(0xFF5B4636),
+                fontWeight: FontWeight.bold,
+              ),
               titleMedium: TextStyle(color: Color(0xFF5B4636)),
             ),
             iconTheme: const IconThemeData(color: Color(0xFF5B4636)),
@@ -125,26 +130,31 @@ class AudireReaderApp extends StatelessWidget {
             return MaterialApp(
               title: 'Audire Reader',
               debugShowCheckedModeBanner: false,
-              theme: customTheme ?? ThemeData(
-                brightness: Brightness.light,
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: primaryColor,
-                  brightness: Brightness.light,
-                ),
-                scaffoldBackgroundColor: const Color(0xFFF5F5F7),
-                cardColor: Colors.white,
-                dividerColor: Colors.black.withValues(alpha: 0.06),
-                useMaterial3: true,
-                pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: <TargetPlatform, PageTransitionsBuilder>{
-                    TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
-                    TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-                    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-                  },
-                ),
-              ),
+              theme:
+                  customTheme ??
+                  ThemeData(
+                    brightness: Brightness.light,
+                    colorScheme: ColorScheme.fromSeed(
+                      seedColor: primaryColor,
+                      brightness: Brightness.light,
+                    ),
+                    scaffoldBackgroundColor: const Color(0xFFF5F5F7),
+                    cardColor: Colors.white,
+                    dividerColor: Colors.black.withValues(alpha: 0.06),
+                    useMaterial3: true,
+                    pageTransitionsTheme: const PageTransitionsTheme(
+                      builders: <TargetPlatform, PageTransitionsBuilder>{
+                        TargetPlatform.android:
+                            FadeUpwardsPageTransitionsBuilder(),
+                        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                        TargetPlatform.windows:
+                            FadeUpwardsPageTransitionsBuilder(),
+                        TargetPlatform.linux:
+                            FadeUpwardsPageTransitionsBuilder(),
+                        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+                      },
+                    ),
+                  ),
               darkTheme: ThemeData(
                 brightness: Brightness.dark,
                 colorScheme: ColorScheme.fromSeed(
@@ -175,10 +185,7 @@ class AudireReaderApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale('en'),
-                Locale('vi'),
-              ],
+              supportedLocales: const [Locale('en'), Locale('vi')],
               home: const LibraryScreen(),
             );
           },

@@ -928,4 +928,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get forcePullProgressDesc =>
       'Pull the reading progress from Cloud WebDAV to this device.';
+
+  @override
+  String get deleteLocalOnly => 'Local Only';
+
+  @override
+  String get deleteBothLocalAndCloud => 'Both Local & Cloud';
+
+  @override
+  String deleteBookOptionsContent(String title) {
+    return 'How do you want to delete \"$title\"?\n\n• Local Only: Delete caches on this device, keep it on WebDAV Cloud to download later.\n• Both Local & Cloud: Permanently delete from both this device and WebDAV Cloud.';
+  }
+
+  @override
+  String get deletedFromLocal => 'Deleted from Local';
+
+  @override
+  String get deletedFromBoth => 'Deleted from both Local & Cloud';
+
+  @override
+  String get deleteFromCloudTitle => 'Delete from Cloud';
+
+  @override
+  String confirmDeleteFromCloud(String title) {
+    return 'Are you sure you want to delete \"$title\" from WebDAV Cloud? Since this book is not downloaded, this action will permanently delete it.';
+  }
+
+  @override
+  String get requestedDeletionFromCloud => 'Requested deletion from Cloud';
+
+  @override
+  String get deleteBookTitle => 'Delete Book';
+
+  @override
+  String get downloadBook => 'Download Book';
+
+  @override
+  String get bookNotOnCloudCannotPull =>
+      'This book has never been uploaded to the cloud. Cannot pull data.';
+
+  @override
+  String get bookNotOnCloudPushFull =>
+      'This book does not exist on the cloud. The entire book file and reading progress will be uploaded.';
 }

@@ -931,4 +931,46 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get forcePullProgressDesc =>
       'Kéo tiến trình đọc trên Cloud WebDAV về máy này.';
+
+  @override
+  String get deleteLocalOnly => 'Chỉ xóa Local';
+
+  @override
+  String get deleteBothLocalAndCloud => 'Xóa cả hai nơi';
+
+  @override
+  String deleteBookOptionsContent(String title) {
+    return 'Bạn muốn xóa cuốn sách \"$title\" theo hình thức nào?\n\n• Chỉ xóa Local: Giải phóng dung lượng máy, vẫn giữ sách trên đám mây để tải lại sau.\n• Xóa cả hai nơi: Xóa vĩnh viễn sách ở cả máy này và trên đám mây WebDAV.';
+  }
+
+  @override
+  String get deletedFromLocal => 'Đã xóa sách khỏi Local';
+
+  @override
+  String get deletedFromBoth => 'Đã xóa sách ở cả Local & Cloud';
+
+  @override
+  String get deleteFromCloudTitle => 'Xóa khỏi đám mây';
+
+  @override
+  String confirmDeleteFromCloud(String title) {
+    return 'Bạn có chắc chắn muốn xóa cuốn sách \"$title\" khỏi máy chủ đám mây WebDAV không? Cuốn sách này chưa được tải về máy, hành động này sẽ xóa vĩnh viễn sách khỏi mây.';
+  }
+
+  @override
+  String get requestedDeletionFromCloud => 'Đã gửi yêu cầu xóa khỏi Cloud';
+
+  @override
+  String get deleteBookTitle => 'Xóa sách';
+
+  @override
+  String get downloadBook => 'Tải xuống';
+
+  @override
+  String get bookNotOnCloudCannotPull =>
+      'Cuốn sách này chưa từng được tải lên đám mây. Không thể kéo dữ liệu về.';
+
+  @override
+  String get bookNotOnCloudPushFull =>
+      'Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc.';
 }

@@ -284,5 +284,31 @@
   "forcePullDesc": "Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.",
   "syncBookProgressDesc": "Đồng bộ hóa tiến trình đọc của truyện \"{title}\"",
   "forcePushProgressDesc": "Ghi đè tiến trình đọc hiện tại của máy này lên Cloud WebDAV.",
-  "forcePullProgressDesc": "Kéo tiến trình đọc trên Cloud WebDAV về máy này."
+  "forcePullProgressDesc": "Kéo tiến trình đọc trên Cloud WebDAV về máy này.",
+  "deleteLocalOnly": "Chỉ xóa Local",
+  "deleteBothLocalAndCloud": "Xóa cả hai nơi",
+  "deleteBookOptionsContent": "Bạn muốn xóa cuốn sách \"{title}\" theo hình thức nào?\n\n• Chỉ xóa Local: Giải phóng dung lượng máy, vẫn giữ sách trên đám mây để tải lại sau.\n• Xóa cả hai nơi: Xóa vĩnh viễn sách ở cả máy này và trên đám mây WebDAV.",
+  "@deleteBookOptionsContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedFromLocal": "Đã xóa sách khỏi Local",
+  "deletedFromBoth": "Đã xóa sách ở cả Local & Cloud",
+  "deleteFromCloudTitle": "Xóa khỏi đám mây",
+  "confirmDeleteFromCloud": "Bạn có chắc chắn muốn xóa cuốn sách \"{title}\" khỏi máy chủ đám mây WebDAV không? Cuốn sách này chưa được tải về máy, hành động này sẽ xóa vĩnh viễn sách khỏi mây.",
+  "@confirmDeleteFromCloud": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "requestedDeletionFromCloud": "Đã gửi yêu cầu xóa khỏi Cloud",
+  "deleteBookTitle": "Xóa sách",
+  "downloadBook": "Tải xuống",
+  "bookNotOnCloudCannotPull": "Cuốn sách này chưa từng được tải lên đám mây. Không thể kéo dữ liệu về.",
+  "bookNotOnCloudPushFull": "Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc."
 }

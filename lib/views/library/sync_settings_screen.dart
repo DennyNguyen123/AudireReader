@@ -149,7 +149,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     } catch (_) {}
 
     setState(() {
-      _isLoading = SyncService.getInstance().isSyncing;
+      _isLoading = false;
     });
   }
 
@@ -570,6 +570,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final settings = await db.getSettings();
     settings.webDavEnabled = val;
     await db.saveSettings(settings);
+    if (val) {
+      SyncService.getInstance().fetchCloudBooks();
+    }
   }
 
   Future<void> _saveWebDavTextSettings() async {
@@ -712,6 +715,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
             ? (AppLocalizations.of(context)?.connectionSuccessDesc ?? 'Connection successful! WebDAV server is active.')
             : (AppLocalizations.of(context)?.connectionFailedDesc ?? 'Connection failed. Please verify URL, username, and password.');
       });
+      if (success) {
+        SyncService.getInstance().fetchCloudBooks();
+      }
     }
   }
 

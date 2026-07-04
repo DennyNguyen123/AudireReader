@@ -501,5 +501,31 @@
   "forcePullDesc": "Force pull all book files and reading progress from WebDAV Cloud to overwrite local data.",
   "syncBookProgressDesc": "Synchronize reading progress of book \"{title}\"",
   "forcePushProgressDesc": "Overwrite the current reading progress of this device to Cloud WebDAV.",
-  "forcePullProgressDesc": "Pull the reading progress from Cloud WebDAV to this device."
+  "forcePullProgressDesc": "Pull the reading progress from Cloud WebDAV to this device.",
+  "deleteLocalOnly": "Local Only",
+  "deleteBothLocalAndCloud": "Both Local & Cloud",
+  "deleteBookOptionsContent": "How do you want to delete \"{title}\"?\n\n• Local Only: Delete caches on this device, keep it on WebDAV Cloud to download later.\n• Both Local & Cloud: Permanently delete from both this device and WebDAV Cloud.",
+  "@deleteBookOptionsContent": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedFromLocal": "Deleted from Local",
+  "deletedFromBoth": "Deleted from both Local & Cloud",
+  "deleteFromCloudTitle": "Delete from Cloud",
+  "confirmDeleteFromCloud": "Are you sure you want to delete \"{title}\" from WebDAV Cloud? Since this book is not downloaded, this action will permanently delete it.",
+  "@confirmDeleteFromCloud": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "requestedDeletionFromCloud": "Requested deletion from Cloud",
+  "deleteBookTitle": "Delete Book",
+  "downloadBook": "Download Book",
+  "bookNotOnCloudCannotPull": "This book has never been uploaded to the cloud. Cannot pull data.",
+  "bookNotOnCloudPushFull": "This book does not exist on the cloud. The entire book file and reading progress will be uploaded."
 }
