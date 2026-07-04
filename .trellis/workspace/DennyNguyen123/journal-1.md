@@ -377,3 +377,34 @@ Da loai bo dieu kien track.sourceType == 'local' || track.sourceType == 'direct_
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Triển khai Force Push và Force Pull đồng bộ WebDAV cho từng cuốn sách
+
+**Date**: 2026-07-04
+**Task**: Triển khai Force Push và Force Pull đồng bộ WebDAV cho từng cuốn sách
+**Branch**: `main`
+
+### Summary
+
+Thêm hàm forcePushBook và forcePullBook vào SyncService; Cập nhật PopupMenuButton của GridView và ListView trong LibraryScreen để hiển thị tùy chọn đồng bộ sách khi WebDAV được bật; Thêm dialog xác nhận có checkbox chọn đồng bộ nhanh tiến trình đọc; Bổ sung các bản dịch tiếng Việt/tiếng Anh tương ứng.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

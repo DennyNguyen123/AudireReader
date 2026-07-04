@@ -838,4 +838,44 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get importTrack => 'Thêm vào thư viện';
+
+  @override
+  String get forcePushBook => 'Đẩy sách lên đám mây (Force Push)';
+
+  @override
+  String get forcePullBook => 'Kéo sách về máy (Force Pull)';
+
+  @override
+  String get forcePushBookConfirmTitle => 'Xác nhận Force Push Sách';
+
+  @override
+  String get forcePushBookConfirmDesc =>
+      'Hành động này sẽ ghi đè cuốn sách này và tiến trình đọc của nó lên đám mây WebDAV. Bạn có chắc chắn muốn tiếp tục?';
+
+  @override
+  String get forcePullBookConfirmTitle => 'Xác nhận Force Pull Sách';
+
+  @override
+  String get forcePullBookConfirmDesc =>
+      'Hành động này sẽ tải cuốn sách này và tiến trình đọc của nó từ đám mây WebDAV về để ghi đè lên máy này. Bạn có chắc chắn muốn tiếp tục?';
+
+  @override
+  String forcePushBookSuccess(String title) {
+    return 'Đã đẩy sách \"$title\" lên đám mây thành công.';
+  }
+
+  @override
+  String forcePullBookSuccess(String title) {
+    return 'Đã kéo sách \"$title\" về máy thành công.';
+  }
+
+  @override
+  String forcePushBookFailed(String error) {
+    return 'Đẩy sách thất bại: $error';
+  }
+
+  @override
+  String forcePullBookFailed(String error) {
+    return 'Kéo sách thất bại: $error';
+  }
 }

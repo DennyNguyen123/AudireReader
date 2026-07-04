@@ -258,5 +258,15 @@
   "emptySearch": "Không tìm thấy kết quả phù hợp",
   "addFileOption": "Chọn file cục bộ",
   "addLinkOption": "Dán link trực tiếp",
-  "importTrack": "Thêm vào thư viện"
+  "importTrack": "Thêm vào thư viện",
+  "forcePushBook": "Đẩy sách lên đám mây (Force Push)",
+  "forcePullBook": "Kéo sách về máy (Force Pull)",
+  "forcePushBookConfirmTitle": "Xác nhận Force Push Sách",
+  "forcePushBookConfirmDesc": "Hành động này sẽ ghi đè cuốn sách này và tiến trình đọc của nó lên đám mây WebDAV. Bạn có chắc chắn muốn tiếp tục?",
+  "forcePullBookConfirmTitle": "Xác nhận Force Pull Sách",
+  "forcePullBookConfirmDesc": "Hành động này sẽ tải cuốn sách này và tiến trình đọc của nó từ đám mây WebDAV về để ghi đè lên máy này. Bạn có chắc chắn muốn tiếp tục?",
+  "forcePushBookSuccess": "Đã đẩy sách \"{title}\" lên đám mây thành công.",
+  "forcePullBookSuccess": "Đã kéo sách \"{title}\" về máy thành công.",
+  "forcePushBookFailed": "Đẩy sách thất bại: {error}",
+  "forcePullBookFailed": "Kéo sách thất bại: {error}"
 }

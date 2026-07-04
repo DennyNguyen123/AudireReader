@@ -835,4 +835,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importTrack => 'Add to Library';
+
+  @override
+  String get forcePushBook => 'Force Push Book';
+
+  @override
+  String get forcePullBook => 'Force Pull Book';
+
+  @override
+  String get forcePushBookConfirmTitle => 'Confirm Force Push Book';
+
+  @override
+  String get forcePushBookConfirmDesc =>
+      'This action will overwrite this book and its reading progress on the WebDAV cloud. Are you sure you want to continue?';
+
+  @override
+  String get forcePullBookConfirmTitle => 'Confirm Force Pull Book';
+
+  @override
+  String get forcePullBookConfirmDesc =>
+      'This action will download this book and its reading progress from the WebDAV cloud to overwrite local data. Are you sure you want to continue?';
+
+  @override
+  String forcePushBookSuccess(String title) {
+    return 'Successfully pushed book \"$title\" to cloud.';
+  }
+
+  @override
+  String forcePullBookSuccess(String title) {
+    return 'Successfully pulled book \"$title\" to local.';
+  }
+
+  @override
+  String forcePushBookFailed(String error) {
+    return 'Failed to push book: $error';
+  }
+
+  @override
+  String forcePullBookFailed(String error) {
+    return 'Failed to pull book: $error';
+  }
 }

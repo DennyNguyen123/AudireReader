@@ -504,6 +504,227 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  Future<void> _startForcePushBook(Book book) async {
+    if (_isSyncing) return;
+
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+
+    bool progressOnly = true;
+
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(AppLocalizations.of(context)?.forcePushBookConfirmTitle ?? 'Confirm Force Push Book'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)?.forcePushBookConfirmDesc ?? 'This action will overwrite this book and its reading progress on the WebDAV cloud. Are you sure you want to continue?'),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
+                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  value: progressOnly,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (val) {
+                    setDialogState(() {
+                      progressOnly = val ?? true;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isSyncing = true;
+      _syncFailed = false;
+    });
+
+    try {
+      final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: progressOnly);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.forcePushBookSuccess(book.title) ?? 'Successfully pushed book "${book.title}" to cloud.')
+                : (AppLocalizations.of(context)?.forcePushBookFailed(result.message) ?? 'Failed to push book: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.forcePushBookFailed(e.toString()) ?? 'Failed to push book: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _startForcePullBook(Book book) async {
+    if (_isSyncing) return;
+
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+
+    bool progressOnly = true;
+
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(AppLocalizations.of(context)?.forcePullBookConfirmTitle ?? 'Confirm Force Pull Book'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)?.forcePullBookConfirmDesc ?? 'This action will download this book and its reading progress from the WebDAV cloud to overwrite local data. Are you sure you want to continue?'),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
+                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  value: progressOnly,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (val) {
+                    setDialogState(() {
+                      progressOnly = val ?? true;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isSyncing = true;
+      _syncFailed = false;
+    });
+
+    try {
+      final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: progressOnly);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.forcePullBookSuccess(book.title) ?? 'Successfully pulled book "${book.title}" to local.')
+                : (AppLocalizations.of(context)?.forcePullBookFailed(result.message) ?? 'Failed to pull book: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+      if (result.success && result.localChanged) {
+        await _loadBooks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.forcePullBookFailed(e.toString()) ?? 'Failed to pull book: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
   Future<void> _checkUpdateOnLaunch() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -1436,6 +1657,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           }
                         } else if (value == 'delete') {
                           _showDeleteConfirm(book);
+                        } else if (value == 'force_push') {
+                          _startForcePushBook(book);
+                        } else if (value == 'force_pull') {
+                          _startForcePullBook(book);
                         }
                       },
                       itemBuilder: (context) => [
@@ -1445,9 +1670,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             children: [
                               const Icon(Icons.edit_rounded, size: 18),
                               const SizedBox(width: 8),
-                              Text(
+                              const Text(
                                 'Edit Book',
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(fontSize: 13),
                               ),
                             ],
                           ),
@@ -1465,6 +1690,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ],
                           ),
                         ),
+                        if (_webDavEnabled) ...[
+                          PopupMenuItem(
+                            value: 'force_push',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cloud_upload_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context)?.forcePushBook ?? 'Force Push Book',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'force_pull',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cloud_download_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context)?.forcePullBook ?? 'Force Pull Book',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1949,6 +2202,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     }
                   } else if (value == 'delete') {
                     _showDeleteConfirm(book);
+                  } else if (value == 'force_push') {
+                    _startForcePushBook(book);
+                  } else if (value == 'force_pull') {
+                    _startForcePullBook(book);
                   }
                 },
                 itemBuilder: (context) => [
@@ -1958,9 +2215,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       children: [
                         const Icon(Icons.edit_rounded, size: 18),
                         const SizedBox(width: 8),
-                        Text(
+                        const Text(
                           'Edit Book',
-                          style: const TextStyle(fontSize: 13),
+                          style: TextStyle(fontSize: 13),
                         ),
                       ],
                     ),
@@ -1978,6 +2235,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ],
                     ),
                   ),
+                  if (_webDavEnabled) ...[
+                    PopupMenuItem(
+                      value: 'force_push',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_upload_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context)?.forcePushBook ?? 'Force Push Book',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'force_pull',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_download_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context)?.forcePullBook ?? 'Force Pull Book',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

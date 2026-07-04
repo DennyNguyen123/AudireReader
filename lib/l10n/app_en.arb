@@ -447,5 +447,43 @@
   "emptySearch": "No matching results found",
   "addFileOption": "Select local file",
   "addLinkOption": "Paste direct link",
-  "importTrack": "Add to Library"
+  "importTrack": "Add to Library",
+  "forcePushBook": "Force Push Book",
+  "forcePullBook": "Force Pull Book",
+  "forcePushBookConfirmTitle": "Confirm Force Push Book",
+  "forcePushBookConfirmDesc": "This action will overwrite this book and its reading progress on the WebDAV cloud. Are you sure you want to continue?",
+  "forcePullBookConfirmTitle": "Confirm Force Pull Book",
+  "forcePullBookConfirmDesc": "This action will download this book and its reading progress from the WebDAV cloud to overwrite local data. Are you sure you want to continue?",
+  "forcePushBookSuccess": "Successfully pushed book \"{title}\" to cloud.",
+  "@forcePushBookSuccess": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "forcePullBookSuccess": "Successfully pulled book \"{title}\" to local.",
+  "@forcePullBookSuccess": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "forcePushBookFailed": "Failed to push book: {error}",
+  "@forcePushBookFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "forcePullBookFailed": "Failed to pull book: {error}",
+  "@forcePullBookFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

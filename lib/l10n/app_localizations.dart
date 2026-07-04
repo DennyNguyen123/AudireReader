@@ -1608,6 +1608,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Library'**
   String get importTrack;
+
+  /// No description provided for @forcePushBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Push Book'**
+  String get forcePushBook;
+
+  /// No description provided for @forcePullBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Pull Book'**
+  String get forcePullBook;
+
+  /// No description provided for @forcePushBookConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Force Push Book'**
+  String get forcePushBookConfirmTitle;
+
+  /// No description provided for @forcePushBookConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will overwrite this book and its reading progress on the WebDAV cloud. Are you sure you want to continue?'**
+  String get forcePushBookConfirmDesc;
+
+  /// No description provided for @forcePullBookConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Force Pull Book'**
+  String get forcePullBookConfirmTitle;
+
+  /// No description provided for @forcePullBookConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will download this book and its reading progress from the WebDAV cloud to overwrite local data. Are you sure you want to continue?'**
+  String get forcePullBookConfirmDesc;
+
+  /// No description provided for @forcePushBookSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully pushed book \"{title}\" to cloud.'**
+  String forcePushBookSuccess(String title);
+
+  /// No description provided for @forcePullBookSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully pulled book \"{title}\" to local.'**
+  String forcePullBookSuccess(String title);
+
+  /// No description provided for @forcePushBookFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to push book: {error}'**
+  String forcePushBookFailed(String error);
+
+  /// No description provided for @forcePullBookFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pull book: {error}'**
+  String forcePullBookFailed(String error);
 }
 
 class _AppLocalizationsDelegate
