@@ -28,7 +28,31 @@ class DatabaseHelper {
 
   Future<void> _init() async {
     final dir = await PathHelper.getAppDirectory();
-    isar = await Isar.open(
+    try {
+      isar = await _openIsar(dir.path);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[DatabaseHelper] Error opening Isar DB: $e. Recreating database...');
+      // Xóa tất cả các file liên quan đến Isar DB cũ bị lỗi Schema
+      final directory = Directory(dir.path);
+      if (await directory.exists()) {
+        final files = directory.listSync();
+        for (final file in files) {
+          final name = p.basename(file.path);
+          if (file is File && (name.endsWith('.isar') || name.contains('isar_lock'))) {
+            try {
+              await file.delete();
+            } catch (_) {}
+          }
+        }
+      }
+      isar = await _openIsar(dir.path);
+    }
+    await _migrateBookCoversPath(dir.path);
+  }
+
+  Future<Isar> _openIsar(String path) async {
+    return await Isar.open(
       [
         BookSchema,
         ChapterSchema,
@@ -39,9 +63,8 @@ class DatabaseHelper {
         HighlightSchema,
         BgmTrackSchema,
       ],
-      directory: dir.path,
+      directory: path,
     );
-    await _migrateBookCoversPath(dir.path);
   }
 
   Future<void> _migrateBookCoversPath(String newAppDirPath) async {
@@ -146,6 +169,22 @@ class DatabaseHelper {
   Future<void> deleteBook(String uuid) async {
     final book = await getBookByUuid(uuid);
     if (book != null) {
+      // 1. Xóa file ảnh bìa vật lý ở local nếu có
+      if (book.coverPath != null && book.coverPath!.isNotEmpty) {
+        try {
+          final file = File(book.coverPath!);
+          if (await file.exists()) {
+            await file.delete();
+            // ignore: avoid_print
+            print('[DatabaseHelper] Deleted physical cover file: ${book.coverPath}');
+          }
+        } catch (e) {
+          // ignore: avoid_print
+          print('[DatabaseHelper] Error deleting physical cover file: $e');
+        }
+      }
+
+      // 2. Xóa các bản ghi liên quan trong DB
       await isar.writeTxn(() async {
         // Delete all chapters
         await isar.chapters.filter().bookUuidEqualTo(uuid).deleteAll();

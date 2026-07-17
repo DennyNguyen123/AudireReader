@@ -27,10 +27,10 @@ const ChapterSchema = CollectionSchema(
       name: r'chapterIndex',
       type: IsarType.long,
     ),
-    r'paragraphs': PropertySchema(
+    r'paragraphsBytes': PropertySchema(
       id: 2,
-      name: r'paragraphs',
-      type: IsarType.stringList,
+      name: r'paragraphsBytes',
+      type: IsarType.byteList,
     ),
     r'title': PropertySchema(
       id: 3,
@@ -73,13 +73,7 @@ int _chapterEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.bookUuid.length * 3;
-  bytesCount += 3 + object.paragraphs.length * 3;
-  {
-    for (var i = 0; i < object.paragraphs.length; i++) {
-      final value = object.paragraphs[i];
-      bytesCount += value.length * 3;
-    }
-  }
+  bytesCount += 3 + object.paragraphsBytes.length;
   bytesCount += 3 + object.title.length * 3;
   return bytesCount;
 }
@@ -92,7 +86,7 @@ void _chapterSerialize(
 ) {
   writer.writeString(offsets[0], object.bookUuid);
   writer.writeLong(offsets[1], object.chapterIndex);
-  writer.writeStringList(offsets[2], object.paragraphs);
+  writer.writeByteList(offsets[2], object.paragraphsBytes);
   writer.writeString(offsets[3], object.title);
 }
 
@@ -106,7 +100,7 @@ Chapter _chapterDeserialize(
   object.bookUuid = reader.readString(offsets[0]);
   object.chapterIndex = reader.readLong(offsets[1]);
   object.id = id;
-  object.paragraphs = reader.readStringList(offsets[2]) ?? [];
+  object.paragraphsBytes = reader.readByteList(offsets[2]) ?? [];
   object.title = reader.readString(offsets[3]);
   return object;
 }
@@ -123,7 +117,7 @@ P _chapterDeserializeProp<P>(
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readByteList(offset) ?? []) as P;
     case 3:
       return (reader.readString(offset)) as P;
     default:
@@ -501,146 +495,66 @@ extension ChapterQueryFilter
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      paragraphsBytesElementEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'paragraphs',
+        property: r'paragraphsBytes',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementGreaterThan(
-    String value, {
+      paragraphsBytesElementGreaterThan(
+    int value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'paragraphs',
+        property: r'paragraphsBytes',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementLessThan(
-    String value, {
+      paragraphsBytesElementLessThan(
+    int value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'paragraphs',
+        property: r'paragraphsBytes',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementBetween(
-    String lower,
-    String upper, {
+      paragraphsBytesElementBetween(
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'paragraphs',
+        property: r'paragraphsBytes',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'paragraphs',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'paragraphs',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'paragraphs',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'paragraphs',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'paragraphs',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsElementIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'paragraphs',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition> paragraphsLengthEqualTo(
-      int length) {
+      paragraphsBytesLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         length,
         true,
         length,
@@ -649,10 +563,11 @@ extension ChapterQueryFilter
     });
   }
 
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition> paragraphsIsEmpty() {
+  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
+      paragraphsBytesIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         0,
         true,
         0,
@@ -661,10 +576,11 @@ extension ChapterQueryFilter
     });
   }
 
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition> paragraphsIsNotEmpty() {
+  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
+      paragraphsBytesIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         0,
         false,
         999999,
@@ -674,13 +590,13 @@ extension ChapterQueryFilter
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsLengthLessThan(
+      paragraphsBytesLengthLessThan(
     int length, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         0,
         true,
         length,
@@ -690,13 +606,13 @@ extension ChapterQueryFilter
   }
 
   QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
-      paragraphsLengthGreaterThan(
+      paragraphsBytesLengthGreaterThan(
     int length, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         length,
         include,
         999999,
@@ -705,7 +621,8 @@ extension ChapterQueryFilter
     });
   }
 
-  QueryBuilder<Chapter, Chapter, QAfterFilterCondition> paragraphsLengthBetween(
+  QueryBuilder<Chapter, Chapter, QAfterFilterCondition>
+      paragraphsBytesLengthBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -713,7 +630,7 @@ extension ChapterQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
-        r'paragraphs',
+        r'paragraphsBytes',
         lower,
         includeLower,
         upper,
@@ -963,9 +880,9 @@ extension ChapterQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Chapter, Chapter, QDistinct> distinctByParagraphs() {
+  QueryBuilder<Chapter, Chapter, QDistinct> distinctByParagraphsBytes() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'paragraphs');
+      return query.addDistinctBy(r'paragraphsBytes');
     });
   }
 
@@ -997,9 +914,9 @@ extension ChapterQueryProperty
     });
   }
 
-  QueryBuilder<Chapter, List<String>, QQueryOperations> paragraphsProperty() {
+  QueryBuilder<Chapter, List<int>, QQueryOperations> paragraphsBytesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'paragraphs');
+      return query.addPropertyName(r'paragraphsBytes');
     });
   }
 

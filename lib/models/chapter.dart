@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:isar/isar.dart';
 
 part 'chapter.g.dart';
@@ -12,6 +14,27 @@ class Chapter {
   late int chapterIndex;
   late String title;
   
-  // Lưu trữ danh sách đoạn văn giúp tối ưu hóa việc phân tách và highlight từng đoạn khi TTS đọc
-  late List<String> paragraphs;
+  // Lưu trữ dữ liệu danh sách đoạn văn đã nén dạng gzip bằng kiểu List<byte> của Isar để tối ưu hóa 8-bit dung lượng
+  late List<byte> paragraphsBytes;
+
+  @ignore
+  List<String>? _cachedParagraphs;
+
+  @ignore
+  List<String> get paragraphs {
+    if (_cachedParagraphs != null) return _cachedParagraphs!;
+    try {
+      final decodedJson = utf8.decode(gzip.decode(paragraphsBytes));
+      _cachedParagraphs = List<String>.from(json.decode(decodedJson));
+    } catch (e) {
+      _cachedParagraphs = [];
+    }
+    return _cachedParagraphs!;
+  }
+
+  set paragraphs(List<String> value) {
+    _cachedParagraphs = value;
+    final jsonStr = json.encode(value);
+    paragraphsBytes = gzip.encode(utf8.encode(jsonStr));
+  }
 }

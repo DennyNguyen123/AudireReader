@@ -625,73 +625,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
       return;
     }
 
-    final bool existsOnCloud = SyncService.getInstance().cloudBookUuidsNotifier.value.contains(book.uuid);
-    bool progressOnly = existsOnCloud;
-
-    if (!mounted) return;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePushBookConfirmTitle ?? 'Confirm Force Push Book'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(existsOnCloud
-                    ? (AppLocalizations.of(context)?.forcePushBookConfirmDesc ?? 'This action will overwrite this book and its reading progress on the WebDAV cloud. Are you sure you want to continue?')
-                    : (AppLocalizations.of(context)?.bookNotOnCloudPushFull ?? 'This book does not exist on the cloud. The entire book file and reading progress will be uploaded.')),
-                if (existsOnCloud) ...[
-                  const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                    subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
-                    value: progressOnly,
-                    contentPadding: EdgeInsets.zero,
-                    activeColor: Theme.of(context).colorScheme.primary,
-                    onChanged: (val) {
-                      setDialogState(() {
-                        progressOnly = val ?? true;
-                      });
-                    },
-                  ),
-                ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
-              ),
-            ],
-          );
-        }
-      ),
-    );
-
-    if (confirm != true) return;
-
     setState(() {
       _isSyncing = true;
       _syncFailed = false;
     });
 
     try {
-      final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: progressOnly);
+      final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: true);
       if (mounted) {
+        final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.success
-                ? (AppLocalizations.of(context)?.forcePushBookSuccess(book.title) ?? 'Successfully pushed book "${book.title}" to cloud.')
-                : (AppLocalizations.of(context)?.forcePushBookFailed(result.message) ?? 'Failed to push book: ${result.message}')),
+                ? (isVi ? 'Đã đẩy tiến trình đọc "${book.title}" lên cloud.' : 'Successfully pushed progress for "${book.title}" to cloud.')
+                : (isVi ? 'Đẩy tiến trình thất bại: ${result.message}' : 'Failed to push progress: ${result.message}')),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -701,9 +648,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.forcePushBookFailed(e.toString()) ?? 'Failed to push book: $e'),
+            content: Text(isVi ? 'Đẩy tiến trình thất bại: $e' : 'Failed to push progress: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -739,81 +687,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
       return;
     }
 
-    final bool existsOnCloud = SyncService.getInstance().cloudBookUuidsNotifier.value.contains(book.uuid);
-    if (!existsOnCloud) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)?.bookNotOnCloudCannotPull ?? 'This book has never been uploaded to the cloud. Cannot pull data.'),
-            backgroundColor: Colors.amber,
-          ),
-        );
-      }
-      return;
-    }
-
-    bool progressOnly = true;
-
-    if (!mounted) return;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePullBookConfirmTitle ?? 'Confirm Force Pull Book'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(AppLocalizations.of(context)?.forcePullBookConfirmDesc ?? 'This action will download this book and its reading progress from the WebDAV cloud to overwrite local data. Are you sure you want to continue?'),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
-                  value: progressOnly,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (val) {
-                    setDialogState(() {
-                      progressOnly = val ?? true;
-                    });
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                child: Text(AppLocalizations.of(context)?.confirm ?? 'Confirm'),
-              ),
-            ],
-          );
-        }
-      ),
-    );
-
-    if (confirm != true) return;
-
     setState(() {
       _isSyncing = true;
       _syncFailed = false;
     });
 
     try {
-      final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: progressOnly);
+      final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: true);
       if (mounted) {
+        final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.success
-                ? (AppLocalizations.of(context)?.forcePullBookSuccess(book.title) ?? 'Successfully pulled book "${book.title}" to local.')
-                : (AppLocalizations.of(context)?.forcePullBookFailed(result.message) ?? 'Failed to pull book: ${result.message}')),
+                ? (isVi ? 'Đã tải tiến trình đọc "${book.title}" về máy.' : 'Successfully pulled progress for "${book.title}" to local.')
+                : (isVi ? 'Tải tiến trình thất bại: ${result.message}' : 'Failed to pull progress: ${result.message}')),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -826,9 +713,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.forcePullBookFailed(e.toString()) ?? 'Failed to pull book: $e'),
+            content: Text(isVi ? 'Tải tiến trình thất bại: $e' : 'Failed to pull progress: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -914,55 +802,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     
-    // Lấy sách local nếu bộ lọc không phải là 'Cloud'
-    final List<Book> books = _selectedSource == 'Cloud'
-        ? []
-        : await db.getBooks(
-            tag: (_selectedTag == 'All' || _selectedTag == null) ? null : _selectedTag,
-            status: (_selectedStatus == 'All' || _selectedStatus == null) ? null : _selectedStatus,
-            sortBy: settings.sortBy,
-          );
+    // Lấy sách local
+    final List<Book> books = await db.getBooks(
+      tag: (_selectedTag == 'All' || _selectedTag == null) ? null : _selectedTag,
+      status: (_selectedStatus == 'All' || _selectedStatus == null) ? null : _selectedStatus,
+      sortBy: settings.sortBy,
+    );
     
     final tags = await db.getAllBookTags();
 
-    // Trộn sách chỉ có trên cloud nếu bộ lọc là 'Cloud' hoặc 'All'
-    final List<Book> cloudOnlyBooks = [];
-    final docDir = await PathHelper.getAppDirectory();
-    final localUuids = books.map((b) => b.uuid).toSet();
-
-    // Lấy danh sách local UUIDs đầy đủ để loại trừ khi lọc Cloud
-    final Set<String> allLocalUuids = _selectedSource == 'Cloud'
-        ? (await db.getAllBooks()).map((b) => b.uuid).toSet()
-        : localUuids;
-
-    if (_webDavEnabled && (_selectedSource == 'Cloud' || _selectedSource == 'All')) {
-      final cloudBooks = SyncService.getInstance().cloudBooksNotifier.value;
-      print('[DebugWebDAV] Current Cloud Books count: ${cloudBooks.length}, Titles: ${cloudBooks.map((b) => b['title']).toList()}');
-      for (final cb in cloudBooks) {
-        final uuid = cb['uuid'] as String;
-        if (!allLocalUuids.contains(uuid)) {
-          String? virtualCoverPath;
-          if (cb['hasCover'] == true) {
-            final ext = cb['coverExtension'] ?? '.png';
-            virtualCoverPath = path.join(docDir.path, 'covers', '$uuid$ext');
-          }
-
-          final virtualBook = Book()
-            ..id = -999 // Đánh dấu ID ảo
-            ..uuid = uuid
-            ..title = cb['title'] ?? 'Unknown'
-            ..author = cb['author'] ?? 'Unknown'
-            ..coverPath = virtualCoverPath
-            ..totalChapters = cb['totalChapters'] ?? 0
-            ..dateAdded = DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()
-            ..status = 'unread';
-
-          cloudOnlyBooks.add(virtualBook);
-        }
-      }
-    }
-
-    final List<Book> allBooks = [...books, ...cloudOnlyBooks];
+    final List<Book> allBooks = books;
 
     // Sắp xếp lại allBooks theo settings.sortBy
     if (settings.sortBy == 'title') {
@@ -973,12 +822,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
       // 'lastRead':
       final Map<String, DateTime> lastReadMap = {};
       for (final book in allBooks) {
-        if (book.id == -999) {
-          lastReadMap[book.uuid] = DateTime.fromMillisecondsSinceEpoch(0);
-        } else {
-          final progress = await db.getProgress(book.uuid);
-          lastReadMap[book.uuid] = progress?.lastRead ?? book.dateAdded;
-        }
+        final progress = await db.getProgress(book.uuid);
+        lastReadMap[book.uuid] = progress?.lastRead ?? book.dateAdded;
       }
       allBooks.sort((a, b) {
         final timeA = lastReadMap[a.uuid]!;
@@ -989,16 +834,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     
     final Map<String, double> pMap = {};
     for (final book in allBooks) {
-      if (book.id == -999) {
-        pMap[book.uuid] = 0.0;
+      final progress = await db.getProgress(book.uuid);
+      if (progress != null && book.totalChapters > 0) {
+        final percent = (progress.currentChapterIndex / book.totalChapters) * 100;
+        pMap[book.uuid] = percent.clamp(0.0, 100.0);
       } else {
-        final progress = await db.getProgress(book.uuid);
-        if (progress != null && book.totalChapters > 0) {
-          final percent = (progress.currentChapterIndex / book.totalChapters) * 100;
-          pMap[book.uuid] = percent.clamp(0.0, 100.0);
-        } else {
-          pMap[book.uuid] = 0.0;
-        }
+        pMap[book.uuid] = 0.0;
       }
     }
     
@@ -1012,92 +853,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  Future<void> _showDownloadCloudBookDialog(Book book) async {
-    final isVietnamese = Localizations.localeOf(context).languageCode == 'vi';
-    final title = isVietnamese ? 'Tải sách từ Cloud' : 'Download Book';
-    final content = isVietnamese 
-        ? 'Bạn có muốn tải xuống cuốn sách "${book.title}" từ Cloud WebDAV về thiết bị không?' 
-        : 'Do you want to download "${book.title}" from Cloud WebDAV to your device?';
-    final cancelText = isVietnamese ? 'Hủy' : 'Cancel';
-    final downloadText = isVietnamese ? 'Tải xuống' : 'Download';
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(cancelText),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            child: Text(downloadText),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      _downloadCloudBook(book);
-    }
-  }
-
-  Future<void> _downloadCloudBook(Book book) async {
-    final isVietnamese = Localizations.localeOf(context).languageCode == 'vi';
-    
-    setState(() {
-      _isSyncing = true;
-    });
-
-    try {
-      final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: false);
-      if (result.success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isVietnamese 
-                  ? 'Đã tải xuống sách "${book.title}" thành công!' 
-                  : 'Successfully downloaded "${book.title}"!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-        await _loadBooks();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isVietnamese 
-                  ? 'Tải xuống thất bại: ${result.message}' 
-                  : 'Download failed: ${result.message}'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVietnamese ? 'Lỗi: $e' : 'Error: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSyncing = false;
-        });
-      }
-    }
-  }
 
   void _showSortMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1938,149 +1694,97 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 Positioned(
                   top: 4,
                   right: 4,
-                  child: book.id == -999
-                      ? PopupMenuButton<String>(
-                          icon: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black54,
-                            ),
-                            child: const Icon(
-                              Icons.more_vert_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                          onSelected: (value) async {
-                            if (value == 'download') {
-                              _showDownloadCloudBookDialog(book);
-                            } else if (value == 'delete_cloud') {
-                              _showDeleteCloudOnlyConfirm(book);
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'download',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.cloud_download_rounded, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete_cloud',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    AppLocalizations.of(context)?.deleteCloud ?? 'Delete from Cloud',
-                                    style: const TextStyle(color: Colors.red, fontSize: 13),
-                                  ),
-                                ],
-                              ),
+                  child: PopupMenuButton<String>(
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black54,
+                      ),
+                      child: const Icon(
+                        Icons.more_vert_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => EditBookDialog(book: book),
+                        );
+                        if (result == true) {
+                          _loadBooks();
+                        }
+                      } else if (value == 'delete') {
+                        _showDeleteConfirm(book);
+                      } else if (value == 'force_push') {
+                        _startForcePushBook(book);
+                      } else if (value == 'force_pull') {
+                        _startForcePullBook(book);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Edit Book',
+                              style: TextStyle(fontSize: 13),
                             ),
                           ],
-                        )
-                      : () {
-                          final bool existsOnCloud = SyncService.getInstance().cloudBookUuidsNotifier.value.contains(book.uuid);
-                          return PopupMenuButton<String>(
-                            icon: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black54,
-                              ),
-                              child: const Icon(
-                                Icons.more_vert_rounded,
-                                color: Colors.white,
-                                size: 14,
-                              ),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
                             ),
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                final result = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => EditBookDialog(book: book),
-                                );
-                                if (result == true) {
-                                  _loadBooks();
-                                }
-                              } else if (value == 'delete') {
-                                _showDeleteConfirm(book);
-                              } else if (value == 'force_push') {
-                                _startForcePushBook(book);
-                              } else if (value == 'force_pull') {
-                                _startForcePullBook(book);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.edit_rounded, size: 18),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Edit Book',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                                  ],
-                                ),
+                          ],
+                        ),
+                      ),
+                      if (_webDavEnabled) ...[
+                        PopupMenuItem(
+                          value: 'force_push',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_upload_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                Localizations.localeOf(context).languageCode == 'vi'
+                                    ? 'Đẩy tiến trình'
+                                    : 'Push Progress',
+                                style: const TextStyle(fontSize: 13),
                               ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                                      style: const TextStyle(color: Colors.red, fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (_webDavEnabled) ...[
-                                PopupMenuItem(
-                                  value: 'force_push',
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.cloud_upload_rounded, size: 18),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        existsOnCloud
-                                            ? (AppLocalizations.of(context)?.forcePushBook ?? 'Force Push Book')
-                                            : (AppLocalizations.of(context)?.uploadCloud ?? 'Upload to Cloud'),
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (existsOnCloud)
-                                  PopupMenuItem(
-                                    value: 'force_pull',
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.cloud_download_rounded, size: 18),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          AppLocalizations.of(context)?.forcePullBook ?? 'Force Pull Book',
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
                             ],
-                          );
-                        }(),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'force_pull',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_download_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                Localizations.localeOf(context).languageCode == 'vi'
+                                    ? 'Tải tiến trình'
+                                    : 'Pull Progress',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -2151,18 +1855,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    return Opacity(
-      opacity: book.id == -999 ? 0.65 : 1.0,
-      child: GestureDetector(
-        onTap: () {
-          if (book.id == -999) {
-            _showDownloadCloudBookDialog(book);
-          } else {
-            _openBook(book);
-          }
-        },
-        child: card,
-      ),
+    return GestureDetector(
+      onTap: () {
+        _openBook(book);
+      },
+      child: card,
     );
   }
 
@@ -2221,37 +1918,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  void _showDeleteCloudOnlyConfirm(Book book) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)?.deleteFromCloudTitle ?? 'Delete from Cloud'),
-        content: Text(AppLocalizations.of(context)?.confirmDeleteFromCloud(book.title) ?? 'Are you sure you want to delete from cloud?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              SyncService.getInstance().deleteBookFromCloud(book.uuid).then((result) {
-                LoggerService().log('[Sync] Cloud deletion result for "${book.title}": ${result.message}', tag: 'SYNC', level: LogLevel.info);
-                SyncService.getInstance().fetchCloudBooks();
-              });
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context)?.requestedDeletionFromCloud ?? 'Requested deletion from Cloud')),
-                );
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(AppLocalizations.of(context)?.deleteCloud ?? 'Delete from Cloud'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildFilterChip(String label, bool isSelected, ValueChanged<bool> onSelected) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -2451,13 +2118,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          if (book.id == -999) {
-            _showDownloadCloudBookDialog(book);
-          } else {
-            _openBook(book);
-          }
-        },
+        onTap: () => _openBook(book),
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
@@ -2628,144 +2289,96 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              book.id == -999
-                  ? PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert_rounded,
-                        color: isDark ? Colors.white54 : Colors.black54,
-                        size: 20,
-                      ),
-                      onSelected: (value) async {
-                        if (value == 'download') {
-                          _showDownloadCloudBookDialog(book);
-                        } else if (value == 'delete_cloud') {
-                          _showDeleteCloudOnlyConfirm(book);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'download',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.cloud_download_rounded, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete_cloud',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)?.deleteCloud ?? 'Delete from Cloud',
-                                style: const TextStyle(color: Colors.red, fontSize: 13),
-                              ),
-                            ],
-                          ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                  size: 20,
+                ),
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => EditBookDialog(book: book),
+                    );
+                    if (result == true) {
+                      _loadBooks();
+                    }
+                  } else if (value == 'delete') {
+                    _showDeleteConfirm(book);
+                  } else if (value == 'force_push') {
+                    _startForcePushBook(book);
+                  } else if (value == 'force_pull') {
+                    _startForcePullBook(book);
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.edit_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Edit Book',
+                          style: TextStyle(fontSize: 13),
                         ),
                       ],
-                    )
-                  : () {
-                      final bool existsOnCloud = SyncService.getInstance().cloudBookUuidsNotifier.value.contains(book.uuid);
-                      return PopupMenuButton<String>(
-                        icon: Icon(
-                          Icons.more_vert_rounded,
-                          color: isDark ? Colors.white54 : Colors.black54,
-                          size: 20,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                          style: const TextStyle(color: Colors.red, fontSize: 13),
                         ),
-                        onSelected: (value) async {
-                          if (value == 'edit') {
-                            final result = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => EditBookDialog(book: book),
-                            );
-                            if (result == true) {
-                              _loadBooks();
-                            }
-                          } else if (value == 'delete') {
-                            _showDeleteConfirm(book);
-                          } else if (value == 'force_push') {
-                            _startForcePushBook(book);
-                          } else if (value == 'force_pull') {
-                            _startForcePullBook(book);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.edit_rounded, size: 18),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Edit Book',
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                              ],
-                            ),
+                      ],
+                    ),
+                  ),
+                  if (_webDavEnabled) ...[
+                    PopupMenuItem(
+                      value: 'force_push',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_upload_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            Localizations.localeOf(context).languageCode == 'vi'
+                                ? 'Đẩy tiến trình'
+                                : 'Push Progress',
+                            style: const TextStyle(fontSize: 13),
                           ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                                  style: const TextStyle(color: Colors.red, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_webDavEnabled) ...[
-                            PopupMenuItem(
-                              value: 'force_push',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.cloud_upload_rounded, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    existsOnCloud
-                                        ? (AppLocalizations.of(context)?.forcePushBook ?? 'Force Push Book')
-                                        : (AppLocalizations.of(context)?.uploadCloud ?? 'Upload to Cloud'),
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (existsOnCloud)
-                              PopupMenuItem(
-                                value: 'force_pull',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.cloud_download_rounded, size: 18),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppLocalizations.of(context)?.forcePullBook ?? 'Force Pull Book',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
                         ],
-                      );
-                    }(),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'force_pull',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_download_rounded, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            Localizations.localeOf(context).languageCode == 'vi'
+                                ? 'Tải tiến trình'
+                                : 'Pull Progress',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
 
-    return Opacity(
-      opacity: book.id == -999 ? 0.65 : 1.0,
-      child: listItem,
-    );
+    return listItem;
   }
 }
