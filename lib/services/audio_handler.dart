@@ -46,6 +46,16 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS (0.5 tương đương 1.0x)
   Timer? _windowsTimer; // Timer giả lập hoàn thành trên Windows
 
+  // Vị trí hiện tại được đồng bộ từ UI
+  String _currentBookTitle = "";
+  String _currentChapterTitle = "";
+  int _currentParagraphIndex = 0;
+
+  // Vị trí thực tế của đoạn âm thanh đang phát dở
+  String _playingBookTitle = "";
+  String _playingChapterTitle = "";
+  int _playingParagraphIndex = -1;
+
   TtsEngineType _activeEngine = TtsEngineType.system;
   final List<EdgeMetadataChunk> _edgeMetadata = [];
   int _lastHighlightIndex = 0;
@@ -533,6 +543,10 @@ try {
     double? chapterDuration,
     double? chapterPosition,
   }) async {
+    _currentBookTitle = bookTitle;
+    _currentChapterTitle = chapterTitle;
+    _currentParagraphIndex = paragraphIndex;
+
     Uri? artUri;
     if (coverPath != null && coverPath.isNotEmpty) {
       if (coverPath.startsWith('http://') || coverPath.startsWith('https://')) {
@@ -563,6 +577,10 @@ try {
   }
 
   Future<void> speak(String text) async {
+    _playingBookTitle = _currentBookTitle;
+    _playingChapterTitle = _currentChapterTitle;
+    _playingParagraphIndex = _currentParagraphIndex;
+
     // Gọi resume nhạc nền nếu được bật
     BgmService.getInstance().resumeBgm();
     
@@ -732,6 +750,19 @@ try {
   @override
   Future<void> play() async {
     BgmService.getInstance().resumeBgm();
+
+    final isPositionChanged = _currentBookTitle != _playingBookTitle ||
+                              _currentChapterTitle != _playingChapterTitle ||
+                              _currentParagraphIndex != _playingParagraphIndex;
+
+    if (isPositionChanged) {
+      if (_currentParagraphIndex >= 0 && _currentParagraphIndex < _currentParagraphs.length) {
+        final textToSpeak = _currentParagraphs[_currentParagraphIndex];
+        await speak(textToSpeak);
+      }
+      return;
+    }
+
     if (!_isSpeaking && _currentText.isNotEmpty) {
       if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
         _isSpeaking = true;
