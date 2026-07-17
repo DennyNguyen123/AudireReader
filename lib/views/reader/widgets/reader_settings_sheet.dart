@@ -13,6 +13,7 @@ class ReaderSettingsSheet extends StatefulWidget {
 
   final double lineHeight;
   final double paragraphSpacing;
+  final double paragraphIndent;
   final String textAlignment;
   final double sideMargin;
   final String? customBackgroundColor;
@@ -23,6 +24,7 @@ class ReaderSettingsSheet extends StatefulWidget {
   final ValueChanged<String> onFontFamilyChanged;
   final ValueChanged<double> onLineHeightChanged;
   final ValueChanged<double> onParagraphSpacingChanged;
+  final ValueChanged<double> onParagraphIndentChanged;
   final ValueChanged<String> onTextAlignmentChanged;
   final ValueChanged<double> onSideMarginChanged;
   final Function(String? bg, String? text) onCustomColorChanged;
@@ -35,6 +37,7 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.fontFamily,
     required this.lineHeight,
     required this.paragraphSpacing,
+    required this.paragraphIndent,
     required this.textAlignment,
     required this.sideMargin,
     this.customBackgroundColor,
@@ -44,6 +47,7 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.onFontFamilyChanged,
     required this.onLineHeightChanged,
     required this.onParagraphSpacingChanged,
+    required this.onParagraphIndentChanged,
     required this.onTextAlignmentChanged,
     required this.onSideMarginChanged,
     required this.onCustomColorChanged,
@@ -60,6 +64,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
   late double _lineHeight;
   late double _paragraphSpacing;
+  late double _paragraphIndent;
   late String _textAlignment;
   late double _sideMargin;
   String? _customBackgroundColor;
@@ -82,6 +87,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
     _lineHeight = widget.lineHeight;
     _paragraphSpacing = widget.paragraphSpacing;
+    _paragraphIndent = widget.paragraphIndent;
     _textAlignment = widget.textAlignment;
     _sideMargin = widget.sideMargin;
     _customBackgroundColor = widget.customBackgroundColor;
@@ -113,7 +119,114 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   }
 
   bool _getIsDark(BuildContext context) {
+    if (_themeMode == 'Dark' || _themeMode == 'Navy') return true;
+    if (_themeMode == 'Light' || _themeMode == 'Sepia' || _themeMode == 'Mint' || _themeMode == 'Parchment') return false;
     return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  Widget _buildThemeButton(String theme, bool isDark, Color labelColor, Color accentColor) {
+    final isSelected = _themeMode == theme;
+    Color btnBg;
+    Color textCol;
+    IconData icon;
+    
+    if (theme == 'System') {
+      btnBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
+      textCol = isDark ? Colors.white70 : Colors.black87;
+      icon = Icons.brightness_auto_rounded;
+    } else if (theme == 'Light') {
+      btnBg = Colors.white;
+      textCol = Colors.black87;
+      icon = Icons.wb_sunny_rounded;
+    } else if (theme == 'Dark') {
+      btnBg = const Color(0xFF121212);
+      textCol = Colors.white70;
+      icon = Icons.nightlight_round;
+    } else if (theme == 'Sepia') {
+      btnBg = const Color(0xFFF4ECD8);
+      textCol = const Color(0xFF5B4636);
+      icon = Icons.menu_book_rounded;
+    } else if (theme == 'Mint') {
+      btnBg = const Color(0xFFE8F5E9);
+      textCol = const Color(0xFF1B5E20);
+      icon = Icons.spa_rounded;
+    } else if (theme == 'Parchment') {
+      btnBg = const Color(0xFFF5F2EB);
+      textCol = const Color(0xFF3E2723);
+      icon = Icons.import_contacts_rounded;
+    } else if (theme == 'Navy') {
+      btnBg = const Color(0xFF0F172A);
+      textCol = const Color(0xFFE2E8F0);
+      icon = Icons.dark_mode_rounded;
+    } else {
+      btnBg = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE8EAF6);
+      textCol = isDark ? Colors.tealAccent : Colors.indigo;
+      icon = Icons.color_lens_rounded;
+    }
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _themeMode = theme;
+          });
+          widget.onThemeModeChanged(theme);
+          widget.ttsService.updateSettings(themeMode: theme);
+          ThemeNotifier.instance.updateTheme(theme);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: btnBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected 
+                  ? accentColor 
+                  : (isDark ? Colors.white10 : Colors.black12),
+              width: isSelected ? 2.5 : 1,
+            ),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.3),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              )
+            ] : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon, 
+                color: isSelected ? accentColor : textCol.withValues(alpha: 0.8), 
+                size: 18
+              ),
+              const SizedBox(height: 4),
+              Text(
+                theme == 'System' 
+                    ? AppLocalizations.of(context)!.system 
+                    : theme == 'Light' 
+                        ? AppLocalizations.of(context)!.light 
+                        : theme == 'Dark' 
+                            ? AppLocalizations.of(context)!.dark 
+                            : theme == 'Sepia'
+                                ? AppLocalizations.of(context)!.sepia
+                                : theme == 'Custom'
+                                    ? 'Custom'
+                                    : theme,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? accentColor : textCol,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
 
@@ -190,96 +303,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             Text(AppLocalizations.of(context)!.readingTheme, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: ['System', 'Light', 'Dark', 'Sepia', 'Custom'].map((theme) {
-                final isSelected = _themeMode == theme;
-                Color btnBg;
-                Color textCol;
-                IconData icon;
-                
-                if (theme == 'System') {
-                  btnBg = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE0E0E0);
-                  textCol = isDark ? Colors.white70 : Colors.black87;
-                  icon = Icons.brightness_auto_rounded;
-                } else if (theme == 'Light') {
-                  btnBg = Colors.white;
-                  textCol = Colors.black87;
-                  icon = Icons.wb_sunny_rounded;
-                } else if (theme == 'Dark') {
-                  btnBg = const Color(0xFF121212);
-                  textCol = Colors.white70;
-                  icon = Icons.nightlight_round;
-                } else if (theme == 'Sepia') {
-                  btnBg = const Color(0xFFF4ECD8);
-                  textCol = const Color(0xFF5B4636);
-                  icon = Icons.menu_book_rounded;
-                } else {
-                  btnBg = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE8EAF6);
-                  textCol = isDark ? Colors.tealAccent : Colors.indigo;
-                  icon = Icons.color_lens_rounded;
-                }
-                
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _themeMode = theme;
-                      });
-                      widget.onThemeModeChanged(theme);
-                      widget.ttsService.updateSettings(themeMode: theme);
-                      ThemeNotifier.instance.updateTheme(theme);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: btnBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected 
-                              ? accentColor 
-                              : (isDark ? Colors.white10 : Colors.black12),
-                          width: isSelected ? 2.5 : 1,
-                        ),
-                        boxShadow: isSelected ? [
-                          BoxShadow(
-                            color: accentColor.withValues(alpha: 0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          )
-                        ] : null,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            icon, 
-                            color: isSelected ? accentColor : textCol.withValues(alpha: 0.8), 
-                            size: 18
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            theme == 'System' 
-                                ? AppLocalizations.of(context)!.system 
-                                : theme == 'Light' 
-                                    ? AppLocalizations.of(context)!.light 
-                                    : theme == 'Dark' 
-                                        ? AppLocalizations.of(context)!.dark 
-                                        : theme == 'Sepia'
-                                            ? AppLocalizations.of(context)!.sepia
-                                            : 'Custom',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? accentColor : textCol,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+              children: ['System', 'Light', 'Dark', 'Sepia'].map((theme) => _buildThemeButton(theme, isDark, labelColor, accentColor)).toList(),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: ['Mint', 'Parchment', 'Navy', 'Custom'].map((theme) => _buildThemeButton(theme, isDark, labelColor, accentColor)).toList(),
             ),
             const SizedBox(height: 20),
 
@@ -421,6 +449,35 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                           });
                           widget.onSideMarginChanged(val);
                           widget.ttsService.updateSettings(sideMargin: val);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.format_indent_increase_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Paragraph Indent', style: TextStyle(fontSize: 12, color: labelColor)),
+                      Slider(
+                        value: _paragraphIndent,
+                        min: 0.0,
+                        max: 32.0,
+                        divisions: 16,
+                        activeColor: accentColor,
+                        label: _paragraphIndent.round().toString(),
+                        onChanged: (val) {
+                          setState(() {
+                            _paragraphIndent = val;
+                          });
+                          widget.onParagraphIndentChanged(val);
                         },
                       ),
                     ],

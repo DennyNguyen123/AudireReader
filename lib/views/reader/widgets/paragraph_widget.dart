@@ -8,6 +8,7 @@ class ParagraphWidget extends StatefulWidget {
   final double fontSize;
   final double lineHeight;
   final double paragraphSpacing;
+  final double paragraphIndent;
   final TextAlign textAlign;
   final int wordStart;
   final int wordEnd;
@@ -27,6 +28,7 @@ class ParagraphWidget extends StatefulWidget {
     required this.fontSize,
     required this.lineHeight,
     required this.paragraphSpacing,
+    this.paragraphIndent = 0.0,
     required this.textAlign,
     required this.wordStart,
     required this.wordEnd,
@@ -177,7 +179,17 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
         duration: const Duration(milliseconds: 300),
         style: style,
         textAlign: widget.textAlign,
-        child: Text(widget.text),
+        child: Text.rich(
+          TextSpan(
+            children: [
+              if (widget.paragraphIndent > 0)
+                WidgetSpan(
+                  child: SizedBox(width: widget.paragraphIndent),
+                ),
+              TextSpan(text: widget.text),
+            ],
+          ),
+        ),
       );
     }
 
@@ -192,6 +204,10 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       child: Text.rich(
         TextSpan(
           children: [
+            if (widget.paragraphIndent > 0)
+              WidgetSpan(
+                child: SizedBox(width: widget.paragraphIndent),
+              ),
             TextSpan(text: before),
             TextSpan(
               text: word,

@@ -40,6 +40,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   double _lineHeight = 1.6;
   double _paragraphSpacing = 14.0;
+  double _paragraphIndent = 0.0;
+  bool _showSystemUI = true;
+  double _scrollProgress = 0.0;
   String _textAlignment = 'left';
   double _sideMargin = 20.0;
   String? _customBackgroundColor;
@@ -67,6 +70,17 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     _initTtsService();
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll > 0) {
+      setState(() {
+        _scrollProgress = (currentScroll / maxScroll).clamp(0.0, 1.0);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _periodicSyncTimer?.cancel();
@@ -74,9 +88,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     if (_isInitialized) {
       _ttsService.removeListener(_onTtsServiceChanged);
     }
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _speedController.dispose();
     _syncActiveBookProgressOnExit();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -670,6 +686,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
     const storage = FlutterSecureStorage();
     final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
+    final indentStr = await storage.read(key: 'reader_paragraph_indent') ?? '0.0';
 
     setState(() {
       _fontSize = settings.fontSize;
@@ -684,6 +701,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       
       _lineHeight = settings.lineHeight.isNaN ? 1.6 : settings.lineHeight;
       _paragraphSpacing = settings.paragraphSpacing.isNaN ? 14.0 : settings.paragraphSpacing;
+      _paragraphIndent = double.tryParse(indentStr) ?? 0.0;
       _textAlignment = settings.textAlignment;
       _sideMargin = settings.sideMargin.isNaN ? 20.0 : settings.sideMargin;
       _customBackgroundColor = settings.customBackgroundColor;
@@ -693,6 +711,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
+    _scrollController.addListener(_onScroll);
     await _loadBookmarksAndHighlights();
     await _updateBookmarkState();
 
@@ -758,8 +777,8 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   }
 
   bool _getIsDark(BuildContext context) {
-    if (_themeMode == 'Dark') return true;
-    if (_themeMode == 'Light' || _themeMode == 'Sepia') return false;
+    if (_themeMode == 'Dark' || _themeMode == 'Navy') return true;
+    if (_themeMode == 'Light' || _themeMode == 'Sepia' || _themeMode == 'Mint' || _themeMode == 'Parchment') return false;
     return Theme.of(context).brightness == Brightness.dark;
   }
 
@@ -779,6 +798,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       return _parseColor(_customBackgroundColor, isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6));
     }
     if (_themeMode == 'Sepia') return const Color(0xFFF4ECD8);
+    if (_themeMode == 'Mint') return const Color(0xFFE8F5E9);
+    if (_themeMode == 'Parchment') return const Color(0xFFF5F2EB);
+    if (_themeMode == 'Navy') return const Color(0xFF0F172A);
     return isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6);
   }
 
@@ -787,6 +809,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       return _parseColor(_customTextColor, isDark ? Colors.white70 : Colors.black87);
     }
     if (_themeMode == 'Sepia') return const Color(0xFF5B4636);
+    if (_themeMode == 'Mint') return const Color(0xFF1B5E20);
+    if (_themeMode == 'Parchment') return const Color(0xFF3E2723);
+    if (_themeMode == 'Navy') return const Color(0xFFE2E8F0);
     return isDark ? Colors.white70 : Colors.black87;
   }
 
@@ -802,6 +827,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         fontFamily: _fontFamily,
         lineHeight: _lineHeight,
         paragraphSpacing: _paragraphSpacing,
+        paragraphIndent: _paragraphIndent,
         textAlignment: _textAlignment,
         sideMargin: _sideMargin,
         customBackgroundColor: _customBackgroundColor,
@@ -830,6 +856,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
           setState(() {
             _paragraphSpacing = val;
           });
+        },
+        onParagraphIndentChanged: (val) {
+          setState(() {
+            _paragraphIndent = val;
+          });
+          const storage = FlutterSecureStorage();
+          storage.write(key: 'reader_paragraph_indent', value: val.toString());
         },
         onTextAlignmentChanged: (val) {
           setState(() {
@@ -888,126 +921,174 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             final settings = snapshot.data;
             final Widget scaffoldContent = Scaffold(
               backgroundColor: backgroundColor,
-              appBar: AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                foregroundColor: textColor,
-                title: Text(
-                  book.title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                actions: [
-                  if (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration != null)
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.bedtime, size: 14, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
+              appBar: _showSystemUI
+                  ? AppBar(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      foregroundColor: textColor,
+                      title: Text(
+                        book.title,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      actions: [
+                        if (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration != null)
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.bedtime, size: 14, color: Theme.of(context).colorScheme.primary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
+                        if (_webDavEnabled)
+                          IconButton(
+                            icon: const Icon(Icons.sync_rounded),
+                            onPressed: () => _showSyncBottomSheet(context),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.search_rounded),
+                          onPressed: _showSearchInsideBook,
+                        ),
+                        IconButton(
+                          icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
+                          color: _isBookmarked ? Theme.of(context).colorScheme.primary : null,
+                          onPressed: _toggleBookmark,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.format_list_bulleted_rounded),
+                          onPressed: () => _showChapterList(context),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.palette_rounded),
+                          tooltip: 'Appearance Settings',
+                          onPressed: _showSettings,
+                        ),
+                        IconButton(
+                          icon: Icon(_showSystemUI ? Icons.fullscreen_rounded : Icons.fullscreen_exit_rounded),
+                          tooltip: 'Toggle Fullscreen',
+                          onPressed: () {
+                            setState(() {
+                              _showSystemUI = !_showSystemUI;
+                              SystemChrome.setEnabledSystemUIMode(
+                                _showSystemUI ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky
+                              );
+                            });
+                          },
+                        ),
+                      ],
+                    )
+                  : null,
+              body: GestureDetector(
+                onTap: () {
+                  if (!_showSystemUI) {
+                    setState(() {
+                      _showSystemUI = true;
+                      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                    });
+                  }
+                },
+                behavior: HitTestBehavior.translucent,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: _sideMargin, vertical: 10),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          chapter.title,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontFamily: _fontFamily == 'System' ? null : _fontFamily,
+                          ),
                         ),
                       ),
                     ),
-                  if (_webDavEnabled)
-                    IconButton(
-                      icon: const Icon(Icons.sync_rounded),
-                      onPressed: () => _showSyncBottomSheet(context),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        cacheExtent: 100000,
+                        padding: EdgeInsets.fromLTRB(_sideMargin, 10, _sideMargin, 100),
+                        itemCount: chapter.paragraphs.length,
+                        itemBuilder: (context, index) {
+                          final paragraphText = chapter.paragraphs[index];
+                          final isActive = index == _ttsService.currentParagraphIndex;
+
+                          final key = '${activeChapterIndex}_$index';
+                          final highlight = _highlightsMap[key];
+
+                          return ParagraphWidget(
+                            key: ValueKey(key),
+                            text: paragraphText,
+                            isActive: isActive,
+                            isPlaying: _ttsService.isPlaying,
+                            fontSize: _fontSize,
+                            lineHeight: _lineHeight,
+                            paragraphSpacing: _paragraphSpacing,
+                            paragraphIndent: _paragraphIndent,
+                            textAlign: _textAlignment == 'justify' ? TextAlign.justify : TextAlign.left,
+                            wordStart: isActive ? _ttsService.wordStart : 0,
+                            wordEnd: isActive ? _ttsService.wordEnd : 0,
+                            isDark: isDark,
+                            fontFamily: _fontFamily,
+                            textColor: textColor,
+                            highlightColorHex: highlight?.colorHex,
+                            hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
+                            onTap: () {
+                              if (!_showSystemUI) {
+                                setState(() {
+                                  _showSystemUI = true;
+                                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                                });
+                              } else {
+                                _ttsService.jumpToParagraph(index);
+                              }
+                            },
+                            onLongPress: () {
+                              _showParagraphMenu(activeChapterIndex, index, paragraphText);
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  IconButton(
-                    icon: const Icon(Icons.search_rounded),
-                    onPressed: _showSearchInsideBook,
-                  ),
-                  IconButton(
-                    icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
-                    color: _isBookmarked ? Theme.of(context).colorScheme.primary : null,
-                    onPressed: _toggleBookmark,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_list_bulleted_rounded),
-                    onPressed: () => _showChapterList(context),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.palette_rounded),
-                    tooltip: 'Appearance Settings',
-                    onPressed: _showSettings,
-                  ),
-                ],
-              ),
-              body: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: _sideMargin, vertical: 10),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        chapter.title,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontFamily: _fontFamily == 'System' ? null : _fontFamily,
+                    // Scroll Progress Indicator
+                    Container(
+                      height: 2,
+                      width: double.infinity,
+                      color: Colors.transparent,
+                      child: LinearProgressIndicator(
+                        value: _scrollProgress,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                         ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      cacheExtent: 100000,
-                      padding: EdgeInsets.fromLTRB(_sideMargin, 10, _sideMargin, 100),
-                      itemCount: chapter.paragraphs.length,
-                      itemBuilder: (context, index) {
-                        final paragraphText = chapter.paragraphs[index];
-                        final isActive = index == _ttsService.currentParagraphIndex;
-
-                        final key = '${activeChapterIndex}_$index';
-                        final highlight = _highlightsMap[key];
-
-                        return ParagraphWidget(
-                          key: ValueKey(key),
-                          text: paragraphText,
-                          isActive: isActive,
-                          isPlaying: _ttsService.isPlaying,
-                          fontSize: _fontSize,
-                          lineHeight: _lineHeight,
-                          paragraphSpacing: _paragraphSpacing,
-                          textAlign: _textAlignment == 'justify' ? TextAlign.justify : TextAlign.left,
-                          wordStart: isActive ? _ttsService.wordStart : 0,
-                          wordEnd: isActive ? _ttsService.wordEnd : 0,
-                          isDark: isDark,
-                          fontFamily: _fontFamily,
-                          textColor: textColor,
-                          highlightColorHex: highlight?.colorHex,
-                          hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
-                          onTap: () {
-                            _ttsService.jumpToParagraph(index);
-                          },
-                          onLongPress: () {
-                            _showParagraphMenu(activeChapterIndex, index, paragraphText);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark, textColor),
+              bottomNavigationBar: _showSystemUI
+                  ? _buildBottomAudioPanel(chapter, isDark, textColor)
+                  : null,
             );
 
             Widget mainWidget = scaffoldContent;
