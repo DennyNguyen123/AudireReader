@@ -1535,6 +1535,338 @@ class SyncService {
     }
   }
 
+  /// Upload một cuốn sách cục bộ lên đám mây WebDAV và cập nhật chỉ mục
+  Future<SyncResult> uploadSingleBook(String bookUuid) async {
+    if (_isSyncing) {
+      return SyncResult(success: false, message: 'Sync is already in progress.');
+    }
+    _isSyncing = true;
+    print('[Sync] Uploading single book UUID "$bookUuid" to cloud...');
+    _updateBookSyncStatus(bookUuid, 'syncing');
+
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      if (!settings.webDavEnabled ||
+          settings.webDavUrl.isEmpty ||
+          settings.webDavUsername.isEmpty ||
+          webDavPassword.isEmpty) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+      }
+
+      // Khởi tạo WebDAV Client
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      final connected = await _webdav.testConnection();
+      if (!connected) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');
+      }
+
+      final localBook = await db.getBookByUuid(bookUuid);
+      if (localBook == null) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Book not found locally.');
+      }
+
+      // Đảm bảo thư mục tồn tại
+      await _webdav.mkdir('/AudireReader');
+      await _webdav.mkdir('/AudireReader/covers');
+      await _webdav.mkdir('/AudireReader/books');
+      await _webdav.mkdir('/AudireReader/progress');
+
+      // A. Upload Ảnh bìa
+      bool hasCover = false;
+      if (localBook.coverPath != null) {
+        final coverFile = File(localBook.coverPath!);
+        if (await coverFile.exists()) {
+          final ext = p.extension(localBook.coverPath!);
+          final remoteCoverPath = '/AudireReader/covers/$bookUuid$ext';
+          hasCover = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
+        }
+      }
+
+      // B. Upload Nội dung chương truyện
+      final chapters = await db.getChaptersForBook(bookUuid);
+      final bookContent = {
+        'uuid': localBook.uuid,
+        'title': localBook.title,
+        'author': localBook.author,
+        'totalChapters': localBook.totalChapters,
+        'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+        'dateAdded': localBook.dateAdded.toIso8601String(),
+        'chapters': chapters.map((c) => {
+          'chapterIndex': c.chapterIndex,
+          'title': c.title,
+          'paragraphs': c.paragraphs
+        }).toList()
+      };
+
+      final jsonBytes = utf8.encode(json.encode(bookContent));
+      final compressedBytes = gzip.encode(jsonBytes);
+      final uploadContentOk = await _webdav.uploadBytes('/AudireReader/books/$bookUuid.json.gz', compressedBytes);
+
+      if (!uploadContentOk) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Failed to upload book content to WebDAV.');
+      }
+
+      // C. Cập nhật chỉ mục sync_data.json (Retry optimistic lock tối đa 3 lần)
+      int retryCount = 0;
+      bool indexUpdated = false;
+      String indexError = '';
+
+      while (retryCount < 3 && !indexUpdated) {
+        retryCount++;
+        print('[Sync] Attempt $retryCount to update library index for upload...');
+
+        String baseLastSyncTime = '';
+        final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+        
+        Map<String, dynamic> cloudSyncData = {
+          'version': 1,
+          'lastSyncTime': '',
+          'books': [],
+          'deleted': []
+        };
+
+        if (fileMeta != null) {
+          final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          if (bytes != null && bytes.isNotEmpty) {
+            try {
+              final jsonStr = utf8.decode(bytes);
+              cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
+              baseLastSyncTime = cloudSyncData['lastSyncTime'] ?? '';
+            } catch (_) {}
+          }
+        }
+
+        final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+        final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
+
+        // Xóa khỏi danh sách đã xóa nếu có
+        cloudDeletedList.removeWhere((item) {
+          if (item is String) return item == bookUuid;
+          if (item is Map<String, dynamic>) return item['uuid'] == bookUuid;
+          return false;
+        });
+
+        // Cập nhật hoặc thêm mới trong danh sách books
+        cloudBooksList.removeWhere((b) => b['uuid'] == bookUuid);
+        cloudBooksList.add({
+          'uuid': localBook.uuid,
+          'title': localBook.title,
+          'author': localBook.author,
+          'totalChapters': localBook.totalChapters,
+          'dateAdded': localBook.dateAdded.toIso8601String(),
+          'hasCover': hasCover,
+          'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+        });
+
+        // Kiểm tra conflict ghi đè đồng thời
+        final currentFileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+        String currentServerTime = '';
+        if (currentFileMeta != null) {
+          final checkBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          if (checkBytes != null && checkBytes.isNotEmpty) {
+            try {
+              final checkJson = json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
+              currentServerTime = checkJson['lastSyncTime'] ?? '';
+            } catch (_) {}
+          }
+        }
+
+        if (currentServerTime != baseLastSyncTime) {
+          print('[Sync] Conflict detected on index update. Retrying...');
+          indexError = 'Conflict detected.';
+          continue;
+        }
+
+        cloudSyncData['books'] = cloudBooksList;
+        cloudSyncData['deleted'] = cloudDeletedList;
+        cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
+
+        final updatedIndexBytes = utf8.encode(json.encode(cloudSyncData));
+        final uploadOk = await _webdav.uploadBytes('/AudireReader/sync_data.json', updatedIndexBytes);
+        if (uploadOk) {
+          indexUpdated = true;
+        } else {
+          indexError = 'Failed to upload sync_data.json';
+        }
+      }
+
+      _isSyncing = false;
+      if (indexUpdated) {
+        // Đồng thời đẩy cả tiến trình của sách này lên cloud luôn cho đồng bộ
+        final localProg = await db.getProgress(bookUuid);
+        if (localProg != null) {
+          final String remoteProgressPath = '/AudireReader/progress/$bookUuid.json';
+          final String deviceId = settings.deviceId ?? '';
+          final String deviceName = settings.deviceName ?? 'Unknown Device';
+          await _uploadLocalToCloud(remoteProgressPath, bookUuid, localProg, deviceId, deviceName);
+        }
+
+        _updateBookSyncStatus(bookUuid, 'success');
+        await fetchCloudBooks();
+        return SyncResult(success: true, message: 'Book uploaded to cloud successfully.');
+      } else {
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Failed to update cloud index: $indexError');
+      }
+    } catch (e) {
+      _isSyncing = false;
+      _updateBookSyncStatus(bookUuid, 'error');
+      print('[Sync] Error uploading single book: $e');
+      return SyncResult(success: false, message: 'Failed to upload book: $e');
+    }
+  }
+
+  /// Tải sách ảo từ Cloud về local
+  Future<SyncResult> downloadVirtualBook(String bookUuid) async {
+    if (_isSyncing) {
+      return SyncResult(success: false, message: 'Sync is already in progress.');
+    }
+    _isSyncing = true;
+    print('[Sync] Downloading virtual book UUID "$bookUuid" from cloud...');
+    _updateBookSyncStatus(bookUuid, 'syncing');
+
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+
+      final storage = const FlutterSecureStorage();
+      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+
+      if (!settings.webDavEnabled ||
+          settings.webDavUrl.isEmpty ||
+          settings.webDavUsername.isEmpty ||
+          webDavPassword.isEmpty) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+      }
+
+      // Khởi tạo WebDAV Client
+      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      final connected = await _webdav.testConnection();
+      if (!connected) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');
+      }
+
+      // Tải chỉ mục sync_data.json để lấy thông tin sách
+      final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+      if (fileMeta == null) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Cloud sync index not found.');
+      }
+
+      final indexBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+      if (indexBytes == null || indexBytes.isEmpty) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Cloud sync index is empty.');
+      }
+
+      final indexJson = json.decode(utf8.decode(indexBytes)) as Map<String, dynamic>;
+      final List<dynamic> cloudBooks = indexJson['books'] ?? [];
+      final cloudBook = cloudBooks.firstWhere(
+        (b) => b is Map<String, dynamic> && b['uuid'] == bookUuid,
+        orElse: () => null,
+      ) as Map<String, dynamic>?;
+
+      if (cloudBook == null) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Book metadata not found on cloud.');
+      }
+
+      // Tải file nội dung sách
+      final bytes = await _downloadBookContentBytes(bookUuid);
+      if (bytes == null || bytes.isEmpty) {
+        _isSyncing = false;
+        _updateBookSyncStatus(bookUuid, 'error');
+        return SyncResult(success: false, message: 'Failed to download book content from cloud.');
+      }
+
+      final docDir = await PathHelper.getAppDirectory();
+      final jsonStr = utf8.decode(bytes);
+      final bookContent = json.decode(jsonStr) as Map<String, dynamic>;
+
+      // Tải ảnh bìa (nếu có)
+      String? localCoverPath;
+      if (cloudBook['hasCover'] == true) {
+        final ext = cloudBook['coverExtension'] ?? '.png';
+        final coverDir = Directory(p.join(docDir.path, 'covers'));
+        if (!await coverDir.exists()) {
+          await coverDir.create(recursive: true);
+        }
+        final localPath = p.join(coverDir.path, '$bookUuid$ext');
+        final remotePath = '/AudireReader/covers/$bookUuid$ext';
+        final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+        if (downloadCoverOk) {
+          localCoverPath = localPath;
+        }
+      }
+
+      // Lưu Book
+      final newBook = Book()
+        ..uuid = bookUuid
+        ..title = cloudBook['title'] ?? 'Unknown'
+        ..author = cloudBook['author'] ?? 'Unknown'
+        ..coverPath = localCoverPath
+        ..totalChapters = cloudBook['totalChapters'] ?? 0
+        ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()
+        ..status = 'unread';
+
+      // Lưu Chapters
+      final List<Chapter> newChapters = [];
+      final parsedChapters = bookContent['chapters'] as List<dynamic>;
+      for (final c in parsedChapters) {
+        final chMap = c as Map<String, dynamic>;
+        final newCh = Chapter()
+          ..bookUuid = bookUuid
+          ..chapterIndex = chMap['chapterIndex']
+          ..title = chMap['title']
+          ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+        newChapters.add(newCh);
+      }
+
+      await db.saveBook(newBook);
+      await db.saveChapters(newChapters);
+
+      // Tải luôn tiến trình đọc của sách này nếu có trên mây
+      final remoteProgressPath = '/AudireReader/progress/$bookUuid.json';
+      final progressBytes = await _webdav.downloadBytes(remoteProgressPath);
+      if (progressBytes != null && progressBytes.isNotEmpty) {
+        try {
+          final progressJson = json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
+          final localProg = await db.getProgress(bookUuid);
+          await _updateLocalFromCloud(bookUuid, progressJson, localProg, db);
+        } catch (_) {}
+      }
+
+      _isSyncing = false;
+      _updateBookSyncStatus(bookUuid, 'success');
+      return SyncResult(success: true, message: 'Book downloaded successfully.', localChanged: true);
+    } catch (e) {
+      _isSyncing = false;
+      _updateBookSyncStatus(bookUuid, 'error');
+      print('[Sync] Error downloading virtual book: $e');
+      return SyncResult(success: false, message: 'Failed to download book: $e');
+    }
+  }
+
   Future<void> _addSyncHistoryEntry({
     required String bookUuid,
     required String action,

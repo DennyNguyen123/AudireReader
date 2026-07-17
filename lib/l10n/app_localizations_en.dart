@@ -9,6 +9,52 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get uploadBook => 'Upload Book';
+
+  @override
+  String get downloadBook => 'Download Book';
+
+  @override
+  String get uploadingBook => 'Uploading book...';
+
+  @override
+  String get downloadingBook => 'Downloading book...';
+
+  @override
+  String uploadSuccess(String title) {
+    return 'Successfully uploaded \"$title\" to Cloud!';
+  }
+
+  @override
+  String uploadFailed(String error) {
+    return 'Failed to upload book: $error';
+  }
+
+  @override
+  String downloadSuccess(String title) {
+    return 'Successfully downloaded \"$title\" to local!';
+  }
+
+  @override
+  String downloadFailed(String error) {
+    return 'Failed to download book: $error';
+  }
+
+  @override
+  String get downloadConfirmTitle => 'Download Book';
+
+  @override
+  String downloadConfirmDesc(String title) {
+    return 'Do you want to download \"$title\" from Cloud to this device?';
+  }
+
+  @override
+  String get cloudSourceText => 'Cloud Book';
+
+  @override
+  String get localSourceText => 'Local Book';
+
+  @override
   String get appTitle => 'Audire Reader';
 
   @override
@@ -959,9 +1005,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteBookTitle => 'Delete Book';
-
-  @override
-  String get downloadBook => 'Download Book';
 
   @override
   String get bookNotOnCloudCannotPull =>

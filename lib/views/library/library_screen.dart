@@ -55,6 +55,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   String _selectedSource = 'Local';
   List<String> _allTags = ['All'];
   Map<String, double> _progressMap = {};
+  Set<String> _localBookUuids = {};
 
   // Trạng thái đồng bộ đám mây WebDAV
   DateTime? _lastSyncTime;
@@ -734,6 +735,163 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  Future<void> _uploadBookToCloud(Book book) async {
+    if (_isSyncing) return;
+
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    if (!settings.webDavEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isSyncing = true;
+      _syncFailed = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.uploadingBook ?? 'Uploading book...'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+
+    try {
+      final result = await SyncService.getInstance().uploadSingleBook(book.uuid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.uploadSuccess(book.title) ?? 'Successfully uploaded "${book.title}" to Cloud!')
+                : (AppLocalizations.of(context)?.uploadFailed(result.message) ?? 'Failed to upload book: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+      if (result.success) {
+        await _loadBooks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.uploadFailed(e.toString()) ?? 'Failed to upload book: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _downloadVirtualBook(Book book) async {
+    if (_isSyncing) return;
+
+    setState(() {
+      _isSyncing = true;
+      _isLoading = true;
+      _syncFailed = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)?.downloadingBook ?? 'Downloading book...'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+
+    try {
+      final result = await SyncService.getInstance().downloadVirtualBook(book.uuid);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.success
+                ? (AppLocalizations.of(context)?.downloadSuccess(book.title) ?? 'Successfully downloaded "${book.title}" to local!')
+                : (AppLocalizations.of(context)?.downloadFailed(result.message) ?? 'Failed to download book: ${result.message}')),
+            backgroundColor: result.success ? Colors.green : Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = !result.success;
+        });
+      }
+      if (result.success) {
+        await _loadBooks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)?.downloadFailed(e.toString()) ?? 'Failed to download book: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        setState(() {
+          _syncFailed = true;
+        });
+      }
+    } finally {
+      await _loadSyncStatus();
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showDownloadConfirm(Book book) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(AppLocalizations.of(context)?.downloadConfirmTitle ?? 'Download Book'),
+        content: Text(AppLocalizations.of(context)?.downloadConfirmDesc(book.title) ?? 'Do you want to download "${book.title}" from Cloud to this device?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
+            child: Text(AppLocalizations.of(context)?.downloadBook ?? 'Download'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _downloadVirtualBook(book);
+    }
+  }
+
   Future<void> _checkUpdateOnLaunch() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -811,7 +969,46 @@ class _LibraryScreenState extends State<LibraryScreen> {
     
     final tags = await db.getAllBookTags();
 
-    final List<Book> allBooks = books;
+    // Lấy sách ảo trên Cloud (nếu WebDAV được bật)
+    final List<Book> cloudBooks = [];
+    if (_webDavEnabled) {
+      final docDir = await PathHelper.getAppDirectory();
+      final allLocalBooks = await db.getAllBooks();
+      final allLocalUuids = allLocalBooks.map((b) => b.uuid).toSet();
+      
+      final cloudBooksMetadata = SyncService.getInstance().cloudBooksNotifier.value;
+      for (final cb in cloudBooksMetadata) {
+        final String cuuid = cb['uuid'] ?? '';
+        if (cuuid.isNotEmpty && !allLocalUuids.contains(cuuid)) {
+          // Lọc theo tag (sách ảo chưa có tag) và status (sách ảo luôn là unread)
+          if (_selectedTag != 'All' && _selectedTag != null) continue;
+          if (_selectedStatus != 'All' && _selectedStatus != 'unread') continue;
+
+          final String? coverPath = cb['hasCover'] == true
+              ? path.join(docDir.path, 'covers', '$cuuid${cb['coverExtension'] ?? '.png'}')
+              : null;
+
+          final virtualBook = Book()
+            ..uuid = cuuid
+            ..title = cb['title'] ?? 'Unknown'
+            ..author = cb['author'] ?? 'Unknown'
+            ..coverPath = coverPath
+            ..totalChapters = cb['totalChapters'] ?? 0
+            ..dateAdded = DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()
+            ..status = 'unread';
+          cloudBooks.add(virtualBook);
+        }
+      }
+    }
+
+    final List<Book> allBooks;
+    if (_selectedSource == 'Local') {
+      allBooks = books;
+    } else if (_selectedSource == 'Cloud') {
+      allBooks = cloudBooks;
+    } else {
+      allBooks = [...books, ...cloudBooks];
+    }
 
     // Sắp xếp lại allBooks theo settings.sortBy
     if (settings.sortBy == 'title') {
@@ -842,10 +1039,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
         pMap[book.uuid] = 0.0;
       }
     }
+
+    final localBookUuids = books.map((b) => b.uuid).toSet();
     
     if (mounted) {
       setState(() {
         _books = allBooks;
+        _localBookUuids = localBookUuids;
         _sortBy = settings.sortBy;
         _allTags = ['All', ...tags];
         _progressMap = pMap;
@@ -1569,6 +1769,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final progressPercent = _progressMap[book.uuid] ?? 0.0;
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
     final accentColor = Theme.of(context).colorScheme.primary;
+    final isVirtual = !_localBookUuids.contains(book.uuid);
     
     Color statusColor = Colors.grey;
     if (bookStatus == 'reading') statusColor = accentColor;
@@ -1652,8 +1853,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   valueListenable: SyncService.getInstance().syncStateNotifier,
                   builder: (context, syncState, child) {
                     final status = syncState[book.uuid];
-                    if (status == null) return const SizedBox.shrink();
-                    
                     if (status == 'syncing') {
                       return Positioned(
                         bottom: 6,
@@ -1667,28 +1866,39 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           ),
                         ),
                       );
-                    } else if (status == 'success') {
-                      return Positioned(
-                        bottom: 6,
-                        right: 6,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                          child: const Icon(Icons.check, size: 12, color: Colors.white),
-                        ),
-                      );
-                    } else if (status == 'error') {
-                      return Positioned(
-                        bottom: 6,
-                        right: 6,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 12, color: Colors.white),
-                        ),
-                      );
                     }
-                    return const SizedBox.shrink();
+                    
+                    return ValueListenableBuilder<Set<String>>(
+                      valueListenable: SyncService.getInstance().cloudBookUuidsNotifier,
+                      builder: (context, cloudBookUuids, child) {
+                        if (!_webDavEnabled) return const SizedBox.shrink();
+                        
+                        final bool isSynced = cloudBookUuids.contains(book.uuid);
+                        final IconData icon;
+                        final Color color;
+                        
+                        if (isVirtual) {
+                          icon = Icons.cloud_download_rounded;
+                          color = Colors.blueAccent;
+                        } else if (isSynced) {
+                          icon = Icons.cloud_done_rounded;
+                          color = Colors.green;
+                        } else {
+                          icon = Icons.cloud_upload_rounded;
+                          color = Colors.orangeAccent;
+                        }
+                        
+                        return Positioned(
+                          bottom: 6,
+                          right: 6,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                            child: Icon(icon, size: 12, color: color),
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
                 Positioned(
@@ -1722,68 +1932,124 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         _startForcePushBook(book);
                       } else if (value == 'force_pull') {
                         _startForcePullBook(book);
+                      } else if (value == 'upload_book') {
+                        _uploadBookToCloud(book);
+                      } else if (value == 'download_book') {
+                        _showDownloadConfirm(book);
                       }
                     },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.edit_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Edit Book',
-                              style: TextStyle(fontSize: 13),
+                    itemBuilder: (context) {
+                      final cloudBookUuids = SyncService.getInstance().cloudBookUuidsNotifier.value;
+                      final isSynced = cloudBookUuids.contains(book.uuid);
+                      
+                      if (isVirtual) {
+                        return [
+                          PopupMenuItem(
+                            value: 'download_book',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cloud_download_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      if (_webDavEnabled) ...[
+                          ),
+                        ];
+                      }
+
+                      return [
                         PopupMenuItem(
-                          value: 'force_push',
+                          value: 'edit',
                           child: Row(
                             children: [
-                              const Icon(Icons.cloud_upload_rounded, size: 18),
+                              const Icon(Icons.edit_rounded, size: 18),
                               const SizedBox(width: 8),
-                              Text(
-                                Localizations.localeOf(context).languageCode == 'vi'
-                                    ? 'Đẩy tiến trình'
-                                    : 'Push Progress',
-                                style: const TextStyle(fontSize: 13),
+                              const Text(
+                                'Edit Book',
+                                style: TextStyle(fontSize: 13),
                               ),
                             ],
                           ),
                         ),
                         PopupMenuItem(
-                          value: 'force_pull',
+                          value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.cloud_download_rounded, size: 18),
+                              const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                Localizations.localeOf(context).languageCode == 'vi'
-                                    ? 'Tải tiến trình'
-                                    : 'Pull Progress',
-                                style: const TextStyle(fontSize: 13),
+                                AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                                style: const TextStyle(color: Colors.red, fontSize: 13),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ],
+                        if (_webDavEnabled) ...[
+                          if (isSynced) ...[
+                            PopupMenuItem(
+                              value: 'force_push',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.cloud_upload_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    Localizations.localeOf(context).languageCode == 'vi'
+                                        ? 'Đẩy tiến trình'
+                                        : 'Push Progress',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'force_pull',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.cloud_download_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    Localizations.localeOf(context).languageCode == 'vi'
+                                        ? 'Tải tiến trình'
+                                        : 'Pull Progress',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            PopupMenuItem(
+                              value: 'upload_book',
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.cloud_upload_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    AppLocalizations.of(context)?.uploadBook ?? 'Upload Book',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ];
+                    },
                   ),
                 ),
                 Positioned(
@@ -1857,9 +2123,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     return GestureDetector(
       onTap: () {
-        _openBook(book);
+        if (isVirtual) {
+          _showDownloadConfirm(book);
+        } else {
+          _openBook(book);
+        }
       },
-      child: card,
+      child: isVirtual ? Opacity(opacity: 0.65, child: card) : card,
     );
   }
 
@@ -2098,6 +2368,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget _buildBookListItem(Book book, bool isDark) {
     final progressPercent = _progressMap[book.uuid] ?? 0.0;
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
+    final isVirtual = !_localBookUuids.contains(book.uuid);
     
     Color statusColor = Colors.grey;
     if (bookStatus == 'reading') statusColor = Theme.of(context).colorScheme.primary;
@@ -2118,7 +2389,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _openBook(book),
+        onTap: () {
+          if (isVirtual) {
+            _showDownloadConfirm(book);
+          } else {
+            _openBook(book);
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
@@ -2154,9 +2431,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             return Container(
                               color: isDark ? Colors.grey[850] : Colors.grey[300],
                               child: Icon(
-                                Icons.book_rounded,
-                                size: 24,
-                                color: isDark ? Colors.white30 : Colors.black38,
+                                  Icons.book_rounded,
+                                  size: 24,
+                                  color: isDark ? Colors.white30 : Colors.black38,
                               ),
                             );
                           }
@@ -2185,8 +2462,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         valueListenable: SyncService.getInstance().syncStateNotifier,
                         builder: (context, syncState, child) {
                           final status = syncState[book.uuid];
-                          if (status == null) return const SizedBox.shrink();
-                          
                           if (status == 'syncing') {
                             return Positioned(
                               bottom: 4,
@@ -2200,28 +2475,39 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 ),
                               ),
                             );
-                          } else if (status == 'success') {
-                            return Positioned(
-                              bottom: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                                child: const Icon(Icons.check, size: 10, color: Colors.white),
-                              ),
-                            );
-                          } else if (status == 'error') {
-                            return Positioned(
-                              bottom: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                child: const Icon(Icons.close, size: 10, color: Colors.white),
-                              ),
-                            );
                           }
-                          return const SizedBox.shrink();
+                          
+                          return ValueListenableBuilder<Set<String>>(
+                            valueListenable: SyncService.getInstance().cloudBookUuidsNotifier,
+                            builder: (context, cloudBookUuids, child) {
+                              if (!_webDavEnabled) return const SizedBox.shrink();
+                              
+                              final bool isSynced = cloudBookUuids.contains(book.uuid);
+                              final IconData icon;
+                              final Color color;
+                              
+                              if (isVirtual) {
+                                icon = Icons.cloud_download_rounded;
+                                color = Colors.blueAccent;
+                              } else if (isSynced) {
+                                icon = Icons.cloud_done_rounded;
+                                color = Colors.green;
+                              } else {
+                                icon = Icons.cloud_upload_rounded;
+                                color = Colors.orangeAccent;
+                              }
+                              
+                              return Positioned(
+                                bottom: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                  child: Icon(icon, size: 10, color: color),
+                                ),
+                              );
+                            },
+                          );
                         },
                       ),
                     ],
@@ -2310,68 +2596,124 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     _startForcePushBook(book);
                   } else if (value == 'force_pull') {
                     _startForcePullBook(book);
+                  } else if (value == 'upload_book') {
+                    _uploadBookToCloud(book);
+                  } else if (value == 'download_book') {
+                    _showDownloadConfirm(book);
                   }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Edit Book',
-                          style: TextStyle(fontSize: 13),
+                itemBuilder: (context) {
+                  final cloudBookUuids = SyncService.getInstance().cloudBookUuidsNotifier.value;
+                  final isSynced = cloudBookUuids.contains(book.uuid);
+                  
+                  if (isVirtual) {
+                    return [
+                      PopupMenuItem(
+                        value: 'download_book',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.cloud_download_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                          style: const TextStyle(color: Colors.red, fontSize: 13),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  if (_webDavEnabled) ...[
+                      ),
+                    ];
+                  }
+
+                  return [
                     PopupMenuItem(
-                      value: 'force_push',
+                      value: 'edit',
                       child: Row(
                         children: [
-                          const Icon(Icons.cloud_upload_rounded, size: 18),
+                          const Icon(Icons.edit_rounded, size: 18),
                           const SizedBox(width: 8),
-                          Text(
-                            Localizations.localeOf(context).languageCode == 'vi'
-                                ? 'Đẩy tiến trình'
-                                : 'Push Progress',
-                            style: const TextStyle(fontSize: 13),
+                          const Text(
+                            'Edit Book',
+                            style: TextStyle(fontSize: 13),
                           ),
                         ],
                       ),
                     ),
                     PopupMenuItem(
-                      value: 'force_pull',
+                      value: 'delete',
                       child: Row(
                         children: [
-                          const Icon(Icons.cloud_download_rounded, size: 18),
+                          const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            Localizations.localeOf(context).languageCode == 'vi'
-                                ? 'Tải tiến trình'
-                                : 'Pull Progress',
-                            style: const TextStyle(fontSize: 13),
+                            AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
+                            style: const TextStyle(color: Colors.red, fontSize: 13),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ],
+                    if (_webDavEnabled) ...[
+                      if (isSynced) ...[
+                        PopupMenuItem(
+                          value: 'force_push',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_upload_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                Localizations.localeOf(context).languageCode == 'vi'
+                                    ? 'Đẩy tiến trình'
+                                    : 'Push Progress',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'force_pull',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_download_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                Localizations.localeOf(context).languageCode == 'vi'
+                                    ? 'Tải tiến trình'
+                                    : 'Pull Progress',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        PopupMenuItem(
+                          value: 'upload_book',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.cloud_upload_rounded, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppLocalizations.of(context)?.uploadBook ?? 'Upload Book',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ];
+                },
               ),
             ],
           ),
@@ -2379,6 +2721,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    return listItem;
+    return isVirtual ? Opacity(opacity: 0.65, child: listItem) : listItem;
   }
 }

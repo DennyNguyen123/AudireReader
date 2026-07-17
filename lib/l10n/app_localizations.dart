@@ -98,6 +98,78 @@ abstract class AppLocalizations {
     Locale('vi'),
   ];
 
+  /// No description provided for @uploadBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Book'**
+  String get uploadBook;
+
+  /// No description provided for @downloadBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Book'**
+  String get downloadBook;
+
+  /// No description provided for @uploadingBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading book...'**
+  String get uploadingBook;
+
+  /// No description provided for @downloadingBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading book...'**
+  String get downloadingBook;
+
+  /// No description provided for @uploadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully uploaded \"{title}\" to Cloud!'**
+  String uploadSuccess(String title);
+
+  /// No description provided for @uploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload book: {error}'**
+  String uploadFailed(String error);
+
+  /// No description provided for @downloadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully downloaded \"{title}\" to local!'**
+  String downloadSuccess(String title);
+
+  /// No description provided for @downloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to download book: {error}'**
+  String downloadFailed(String error);
+
+  /// No description provided for @downloadConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Book'**
+  String get downloadConfirmTitle;
+
+  /// No description provided for @downloadConfirmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to download \"{title}\" from Cloud to this device?'**
+  String downloadConfirmDesc(String title);
+
+  /// No description provided for @cloudSourceText.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Book'**
+  String get cloudSourceText;
+
+  /// No description provided for @localSourceText.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Book'**
+  String get localSourceText;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -1812,12 +1884,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Book'**
   String get deleteBookTitle;
-
-  /// No description provided for @downloadBook.
-  ///
-  /// In en, this message translates to:
-  /// **'Download Book'**
-  String get downloadBook;
 
   /// No description provided for @bookNotOnCloudCannotPull.
   ///

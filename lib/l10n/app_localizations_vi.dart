@@ -9,6 +9,52 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get uploadBook => 'Đẩy sách lên Cloud';
+
+  @override
+  String get downloadBook => 'Tải xuống';
+
+  @override
+  String get uploadingBook => 'Đang đẩy sách lên Cloud...';
+
+  @override
+  String get downloadingBook => 'Đang tải sách từ Cloud...';
+
+  @override
+  String uploadSuccess(String title) {
+    return 'Đã đẩy sách \"$title\" lên Cloud thành công!';
+  }
+
+  @override
+  String uploadFailed(String error) {
+    return 'Đẩy sách thất bại: $error';
+  }
+
+  @override
+  String downloadSuccess(String title) {
+    return 'Đã tải sách \"$title\" về máy thành công!';
+  }
+
+  @override
+  String downloadFailed(String error) {
+    return 'Tải sách thất bại: $error';
+  }
+
+  @override
+  String get downloadConfirmTitle => 'Tải Sách Về Máy';
+
+  @override
+  String downloadConfirmDesc(String title) {
+    return 'Bạn có muốn tải sách \"$title\" từ Cloud về thiết bị này để đọc không?';
+  }
+
+  @override
+  String get cloudSourceText => 'Sách trên Cloud';
+
+  @override
+  String get localSourceText => 'Sách cục bộ';
+
+  @override
   String get appTitle => 'Audire Reader';
 
   @override
@@ -962,9 +1008,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get deleteBookTitle => 'Xóa sách';
-
-  @override
-  String get downloadBook => 'Tải xuống';
 
   @override
   String get bookNotOnCloudCannotPull =>

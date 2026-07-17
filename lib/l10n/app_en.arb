@@ -1,5 +1,52 @@
 {
   "@@locale": "en",
+  "uploadBook": "Upload Book",
+  "downloadBook": "Download Book",
+  "uploadingBook": "Uploading book...",
+  "downloadingBook": "Downloading book...",
+  "uploadSuccess": "Successfully uploaded \"{title}\" to Cloud!",
+  "@uploadSuccess": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadFailed": "Failed to upload book: {error}",
+  "@uploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSuccess": "Successfully downloaded \"{title}\" to local!",
+  "@downloadSuccess": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadFailed": "Failed to download book: {error}",
+  "@downloadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadConfirmTitle": "Download Book",
+  "downloadConfirmDesc": "Do you want to download \"{title}\" from Cloud to this device?",
+  "@downloadConfirmDesc": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "cloudSourceText": "Cloud Book",
+  "localSourceText": "Local Book",
   "appTitle": "Audire Reader",
   "library": "Library",
   "settings": "Settings",
