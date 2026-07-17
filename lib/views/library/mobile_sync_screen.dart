@@ -18,49 +18,18 @@ class MobileSyncScreen extends StatefulWidget {
 class _MobileSyncScreenState extends State<MobileSyncScreen> {
   String? _scannedUrl;
   bool _isLoading = false;
-  bool _hasCameraPermission = false;
-  bool _isCheckingPermission = true;
   MobileScannerController? _scannerController;
 
   @override
   void initState() {
     super.initState();
-    _checkPermission();
+    _initScanner();
   }
 
   @override
   void dispose() {
     _scannerController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _checkPermission() async {
-    setState(() {
-      _isCheckingPermission = true;
-    });
-
-    final status = await Permission.camera.status;
-    if (status.isGranted) {
-      setState(() {
-        _hasCameraPermission = true;
-        _isCheckingPermission = false;
-      });
-      _initScanner();
-    } else if (status.isPermanentlyDenied) {
-      setState(() {
-        _hasCameraPermission = false;
-        _isCheckingPermission = false;
-      });
-    } else {
-      final result = await Permission.camera.request();
-      setState(() {
-        _hasCameraPermission = result.isGranted;
-        _isCheckingPermission = false;
-      });
-      if (result.isGranted) {
-        _initScanner();
-      }
-    }
   }
 
   void _initScanner() {
@@ -209,12 +178,15 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
       ),
-      body: _isCheckingPermission
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            )
-          : !_hasCameraPermission
-              ? Center(
+      body: Stack(
+        children: [
+          // Camera Scanner
+          MobileScanner(
+            controller: _scannerController,
+            onDetect: _onDetect,
+            errorBuilder: (context, error, child) {
+              if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
@@ -236,7 +208,6 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                         ElevatedButton(
                           onPressed: () async {
                             await openAppSettings();
-                            _checkPermission();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
@@ -248,68 +219,83 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                       ],
                     ),
                   ),
-                )
-              : Stack(
-                  children: [
-                    // Camera Scanner
-                    MobileScanner(
-                      controller: _scannerController,
-                      onDetect: _onDetect,
-                    ),
+                );
+              }
+              return Center(
+                child: Text(
+                  error.errorDetails?.message ?? 'Lỗi khởi động camera',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            },
+          ),
 
-                    // Overlay Khung quét
-                    Center(
+          // Chỉ vẽ các overlay quét nếu không bị lỗi quyền
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: _scannerController!,
+            builder: (context, state, child) {
+              if (state.error != null && state.error!.errorCode == MobileScannerErrorCode.permissionDenied) {
+                return const SizedBox.shrink();
+              }
+              return Stack(
+                children: [
+                  // Overlay Khung quét
+                  Center(
+                    child: Container(
+                      width: 250,
+                      height: 250,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.colorScheme.primary, width: 3),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+
+                  // Overlay Text hướng dẫn
+                  Positioned(
+                    bottom: 80,
+                    left: 20,
+                    right: 20,
+                    child: Center(
                       child: Container(
-                        width: 250,
-                        height: 250,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          border: Border.all(color: theme.colorScheme.primary, width: 3),
-                          borderRadius: BorderRadius.circular(24),
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context)?.scanQrCodeInstruction ?? 'Di chuyển camera để quét mã QR kết nối của máy nhận',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
+                  ),
+                ],
+              );
+            },
+          ),
 
-                    // Overlay Text hướng dẫn
-                    Positioned(
-                      bottom: 80,
-                      left: 20,
-                      right: 20,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            AppLocalizations.of(context)?.scanQrCodeInstruction ?? 'Di chuyển camera để quét mã QR kết nối của máy nhận',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
+          // Loading Indicator khi đang gửi
+          if (_isLoading)
+            Container(
+              color: Colors.black87,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: Colors.white),
+                    const SizedBox(height: 16),
+                    Text(
+                      AppLocalizations.of(context)?.sendingConfig ?? 'Đang truyền cấu hình tới thiết bị nhận...',
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
-
-                    // Loading Indicator khi đang gửi
-                    if (_isLoading)
-                      Container(
-                        color: Colors.black87,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const CircularProgressIndicator(color: Colors.white),
-                              const SizedBox(height: 16),
-                              Text(
-                                AppLocalizations.of(context)?.sendingConfig ?? 'Đang truyền cấu hình tới thiết bị nhận...',
-                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                   ],
                 ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
