@@ -498,6 +498,12 @@ class TtsService extends ChangeNotifier {
     String? customBackgroundColor,
     String? customTextColor,
     String? primaryColorHex,
+    bool? showAssistiveButton,
+    double? assistiveButtonX,
+    double? assistiveButtonY,
+    String? assistiveSingleTapAction,
+    String? assistiveDoubleTapAction,
+    String? assistiveLongPressAction,
   }) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -549,6 +555,13 @@ class TtsService extends ChangeNotifier {
     if (customBackgroundColor != null) settings.customBackgroundColor = customBackgroundColor;
     if (customTextColor != null) settings.customTextColor = customTextColor;
     if (primaryColorHex != null) settings.primaryColorHex = primaryColorHex;
+    
+    if (showAssistiveButton != null) settings.showAssistiveButton = showAssistiveButton;
+    if (assistiveButtonX != null) settings.assistiveButtonX = assistiveButtonX;
+    if (assistiveButtonY != null) settings.assistiveButtonY = assistiveButtonY;
+    if (assistiveSingleTapAction != null) settings.assistiveSingleTapAction = assistiveSingleTapAction;
+    if (assistiveDoubleTapAction != null) settings.assistiveDoubleTapAction = assistiveDoubleTapAction;
+    if (assistiveLongPressAction != null) settings.assistiveLongPressAction = assistiveLongPressAction;
     
     await db.saveSettings(settings);
     notifyListeners();

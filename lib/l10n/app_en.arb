@@ -582,5 +582,20 @@
   "bgmLocalFile": "Local File",
   "bgmPasteLink": "Paste Link",
   "bgmInternetRadio": "Internet Radio",
-  "bgmLofiSuggestions": "Lofi Suggestions"
+  "bgmLofiSuggestions": "Lofi Suggestions",
+  "assistiveButtonTitle": "ASSISTIVE BUTTON",
+  "showAssistiveButtonLabel": "Show floating assistive button",
+  "singleTapLabel": "Single Tap",
+  "doubleTapLabel": "Double Tap",
+  "longPressLabel": "Long Press",
+  "resetButtonPosition": "Reset Button Position",
+  "resetButtonPositionSuccess": "Floating button position reset to default",
+  "actionNone": "Do nothing",
+  "actionNextParagraph": "Next Paragraph",
+  "actionPrevParagraph": "Prev Paragraph",
+  "actionPlayPause": "Play / Pause",
+  "actionNextChapter": "Next Chapter",
+  "actionPrevChapter": "Prev Chapter",
+  "actionOpenTtsSettings": "Open TTS Settings",
+  "actionOpenBgmSettings": "Open BGM Settings"
 }

@@ -20,6 +20,7 @@ import 'widgets/book_search_dialog.dart';
 import 'widgets/reader_settings_sheet.dart';
 import 'widgets/bottom_audio_panel.dart';
 import 'widgets/chapter_list_sheet.dart';
+import 'widgets/assistive_button.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key});
@@ -1009,15 +1010,35 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               bottomNavigationBar: _buildBottomAudioPanel(chapter, isDark, textColor),
             );
 
+            Widget mainWidget = scaffoldContent;
+            if (settings != null && settings.showAssistiveButton) {
+              mainWidget = Stack(
+                children: [
+                  scaffoldContent,
+                  AssistiveButton(
+                    ttsService: _ttsService,
+                    settings: settings,
+                    isDark: isDark,
+                    onPositionChanged: (x, y) {
+                      _ttsService.updateSettings(
+                        assistiveButtonX: x,
+                        assistiveButtonY: y,
+                      );
+                    },
+                  ),
+                ],
+              );
+            }
+
             if (settings == null) {
-              return scaffoldContent;
+              return mainWidget;
             }
 
             return CallbackShortcuts(
               bindings: _buildShortcuts(settings),
               child: Focus(
                 autofocus: true,
-                child: scaffoldContent,
+                child: mainWidget,
               ),
             );
           },

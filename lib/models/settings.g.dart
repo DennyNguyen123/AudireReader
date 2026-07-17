@@ -22,253 +22,283 @@ const AppSettingsSchema = CollectionSchema(
       name: r'appLocale',
       type: IsarType.string,
     ),
-    r'autoCheckUpdate': PropertySchema(
+    r'assistiveButtonX': PropertySchema(
       id: 1,
+      name: r'assistiveButtonX',
+      type: IsarType.double,
+    ),
+    r'assistiveButtonY': PropertySchema(
+      id: 2,
+      name: r'assistiveButtonY',
+      type: IsarType.double,
+    ),
+    r'assistiveDoubleTapAction': PropertySchema(
+      id: 3,
+      name: r'assistiveDoubleTapAction',
+      type: IsarType.string,
+    ),
+    r'assistiveLongPressAction': PropertySchema(
+      id: 4,
+      name: r'assistiveLongPressAction',
+      type: IsarType.string,
+    ),
+    r'assistiveSingleTapAction': PropertySchema(
+      id: 5,
+      name: r'assistiveSingleTapAction',
+      type: IsarType.string,
+    ),
+    r'autoCheckUpdate': PropertySchema(
+      id: 6,
       name: r'autoCheckUpdate',
       type: IsarType.bool,
     ),
     r'bgmEnabled': PropertySchema(
-      id: 2,
+      id: 7,
       name: r'bgmEnabled',
       type: IsarType.bool,
     ),
     r'bgmLoopMode': PropertySchema(
-      id: 3,
+      id: 8,
       name: r'bgmLoopMode',
       type: IsarType.string,
     ),
     r'bgmProviderId': PropertySchema(
-      id: 4,
+      id: 9,
       name: r'bgmProviderId',
       type: IsarType.string,
     ),
     r'bgmVolume': PropertySchema(
-      id: 5,
+      id: 10,
       name: r'bgmVolume',
       type: IsarType.double,
     ),
     r'bossKeyAction': PropertySchema(
-      id: 6,
+      id: 11,
       name: r'bossKeyAction',
       type: IsarType.string,
     ),
     r'currentBgmTrackId': PropertySchema(
-      id: 7,
+      id: 12,
       name: r'currentBgmTrackId',
       type: IsarType.long,
     ),
     r'currentBgmTrackName': PropertySchema(
-      id: 8,
+      id: 13,
       name: r'currentBgmTrackName',
       type: IsarType.string,
     ),
     r'currentBgmTrackUrl': PropertySchema(
-      id: 9,
+      id: 14,
       name: r'currentBgmTrackUrl',
       type: IsarType.string,
     ),
     r'customBackgroundColor': PropertySchema(
-      id: 10,
+      id: 15,
       name: r'customBackgroundColor',
       type: IsarType.string,
     ),
     r'customTextColor': PropertySchema(
-      id: 11,
+      id: 16,
       name: r'customTextColor',
       type: IsarType.string,
     ),
     r'developerMode': PropertySchema(
-      id: 12,
+      id: 17,
       name: r'developerMode',
       type: IsarType.bool,
     ),
     r'deviceId': PropertySchema(
-      id: 13,
+      id: 18,
       name: r'deviceId',
       type: IsarType.string,
     ),
     r'deviceName': PropertySchema(
-      id: 14,
+      id: 19,
       name: r'deviceName',
       type: IsarType.string,
     ),
     r'enableDebugLogs': PropertySchema(
-      id: 15,
+      id: 20,
       name: r'enableDebugLogs',
       type: IsarType.bool,
     ),
     r'enableWebDavDebug': PropertySchema(
-      id: 16,
+      id: 21,
       name: r'enableWebDavDebug',
       type: IsarType.bool,
     ),
     r'fontFamily': PropertySchema(
-      id: 17,
+      id: 22,
       name: r'fontFamily',
       type: IsarType.string,
     ),
     r'fontSize': PropertySchema(
-      id: 18,
+      id: 23,
       name: r'fontSize',
       type: IsarType.double,
     ),
     r'hotkeyBossKey': PropertySchema(
-      id: 19,
+      id: 24,
       name: r'hotkeyBossKey',
       type: IsarType.string,
     ),
     r'hotkeyNextChapter': PropertySchema(
-      id: 20,
+      id: 25,
       name: r'hotkeyNextChapter',
       type: IsarType.string,
     ),
     r'hotkeyNextParagraph': PropertySchema(
-      id: 21,
+      id: 26,
       name: r'hotkeyNextParagraph',
       type: IsarType.string,
     ),
     r'hotkeyOpenChapter': PropertySchema(
-      id: 22,
+      id: 27,
       name: r'hotkeyOpenChapter',
       type: IsarType.string,
     ),
     r'hotkeyOpenSetting': PropertySchema(
-      id: 23,
+      id: 28,
       name: r'hotkeyOpenSetting',
       type: IsarType.string,
     ),
     r'hotkeyPlayPauseTts': PropertySchema(
-      id: 24,
+      id: 29,
       name: r'hotkeyPlayPauseTts',
       type: IsarType.string,
     ),
     r'hotkeyPrevChapter': PropertySchema(
-      id: 25,
+      id: 30,
       name: r'hotkeyPrevChapter',
       type: IsarType.string,
     ),
     r'hotkeyPrevParagraph': PropertySchema(
-      id: 26,
+      id: 31,
       name: r'hotkeyPrevParagraph',
       type: IsarType.string,
     ),
     r'lastLocalTrackUrl': PropertySchema(
-      id: 27,
+      id: 32,
       name: r'lastLocalTrackUrl',
       type: IsarType.string,
     ),
     r'lastLofiTrackName': PropertySchema(
-      id: 28,
+      id: 33,
       name: r'lastLofiTrackName',
       type: IsarType.string,
     ),
     r'lastLofiTrackUrl': PropertySchema(
-      id: 29,
+      id: 34,
       name: r'lastLofiTrackUrl',
       type: IsarType.string,
     ),
     r'lastRadioTrackName': PropertySchema(
-      id: 30,
+      id: 35,
       name: r'lastRadioTrackName',
       type: IsarType.string,
     ),
     r'lastRadioTrackUrl': PropertySchema(
-      id: 31,
+      id: 36,
       name: r'lastRadioTrackUrl',
       type: IsarType.string,
     ),
     r'lineHeight': PropertySchema(
-      id: 32,
+      id: 37,
       name: r'lineHeight',
       type: IsarType.double,
     ),
     r'openAiTtsApiKey': PropertySchema(
-      id: 33,
+      id: 38,
       name: r'openAiTtsApiKey',
       type: IsarType.string,
     ),
     r'openAiTtsEndpoint': PropertySchema(
-      id: 34,
+      id: 39,
       name: r'openAiTtsEndpoint',
       type: IsarType.string,
     ),
     r'openAiTtsModel': PropertySchema(
-      id: 35,
+      id: 40,
       name: r'openAiTtsModel',
       type: IsarType.string,
     ),
     r'openLastReadOnLaunch': PropertySchema(
-      id: 36,
+      id: 41,
       name: r'openLastReadOnLaunch',
       type: IsarType.bool,
     ),
     r'paragraphSpacing': PropertySchema(
-      id: 37,
+      id: 42,
       name: r'paragraphSpacing',
       type: IsarType.double,
     ),
     r'primaryColorHex': PropertySchema(
-      id: 38,
+      id: 43,
       name: r'primaryColorHex',
       type: IsarType.string,
     ),
     r'selectedVoiceLocale': PropertySchema(
-      id: 39,
+      id: 44,
       name: r'selectedVoiceLocale',
       type: IsarType.string,
     ),
     r'selectedVoiceName': PropertySchema(
-      id: 40,
+      id: 45,
       name: r'selectedVoiceName',
       type: IsarType.string,
     ),
+    r'showAssistiveButton': PropertySchema(
+      id: 46,
+      name: r'showAssistiveButton',
+      type: IsarType.bool,
+    ),
     r'sideMargin': PropertySchema(
-      id: 41,
+      id: 47,
       name: r'sideMargin',
       type: IsarType.double,
     ),
     r'sortBy': PropertySchema(
-      id: 42,
+      id: 48,
       name: r'sortBy',
       type: IsarType.string,
     ),
     r'speechRate': PropertySchema(
-      id: 43,
+      id: 49,
       name: r'speechRate',
       type: IsarType.double,
     ),
     r'textAlignment': PropertySchema(
-      id: 44,
+      id: 50,
       name: r'textAlignment',
       type: IsarType.string,
     ),
     r'themeMode': PropertySchema(
-      id: 45,
+      id: 51,
       name: r'themeMode',
       type: IsarType.string,
     ),
     r'ttsProvider': PropertySchema(
-      id: 46,
+      id: 52,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 47,
+      id: 53,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 48,
+      id: 54,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 49,
+      id: 55,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 50,
+      id: 56,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -294,6 +324,9 @@ int _appSettingsEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.appLocale.length * 3;
+  bytesCount += 3 + object.assistiveDoubleTapAction.length * 3;
+  bytesCount += 3 + object.assistiveLongPressAction.length * 3;
+  bytesCount += 3 + object.assistiveSingleTapAction.length * 3;
   bytesCount += 3 + object.bgmLoopMode.length * 3;
   bytesCount += 3 + object.bgmProviderId.length * 3;
   bytesCount += 3 + object.bossKeyAction.length * 3;
@@ -409,56 +442,62 @@ void _appSettingsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.appLocale);
-  writer.writeBool(offsets[1], object.autoCheckUpdate);
-  writer.writeBool(offsets[2], object.bgmEnabled);
-  writer.writeString(offsets[3], object.bgmLoopMode);
-  writer.writeString(offsets[4], object.bgmProviderId);
-  writer.writeDouble(offsets[5], object.bgmVolume);
-  writer.writeString(offsets[6], object.bossKeyAction);
-  writer.writeLong(offsets[7], object.currentBgmTrackId);
-  writer.writeString(offsets[8], object.currentBgmTrackName);
-  writer.writeString(offsets[9], object.currentBgmTrackUrl);
-  writer.writeString(offsets[10], object.customBackgroundColor);
-  writer.writeString(offsets[11], object.customTextColor);
-  writer.writeBool(offsets[12], object.developerMode);
-  writer.writeString(offsets[13], object.deviceId);
-  writer.writeString(offsets[14], object.deviceName);
-  writer.writeBool(offsets[15], object.enableDebugLogs);
-  writer.writeBool(offsets[16], object.enableWebDavDebug);
-  writer.writeString(offsets[17], object.fontFamily);
-  writer.writeDouble(offsets[18], object.fontSize);
-  writer.writeString(offsets[19], object.hotkeyBossKey);
-  writer.writeString(offsets[20], object.hotkeyNextChapter);
-  writer.writeString(offsets[21], object.hotkeyNextParagraph);
-  writer.writeString(offsets[22], object.hotkeyOpenChapter);
-  writer.writeString(offsets[23], object.hotkeyOpenSetting);
-  writer.writeString(offsets[24], object.hotkeyPlayPauseTts);
-  writer.writeString(offsets[25], object.hotkeyPrevChapter);
-  writer.writeString(offsets[26], object.hotkeyPrevParagraph);
-  writer.writeString(offsets[27], object.lastLocalTrackUrl);
-  writer.writeString(offsets[28], object.lastLofiTrackName);
-  writer.writeString(offsets[29], object.lastLofiTrackUrl);
-  writer.writeString(offsets[30], object.lastRadioTrackName);
-  writer.writeString(offsets[31], object.lastRadioTrackUrl);
-  writer.writeDouble(offsets[32], object.lineHeight);
-  writer.writeString(offsets[33], object.openAiTtsApiKey);
-  writer.writeString(offsets[34], object.openAiTtsEndpoint);
-  writer.writeString(offsets[35], object.openAiTtsModel);
-  writer.writeBool(offsets[36], object.openLastReadOnLaunch);
-  writer.writeDouble(offsets[37], object.paragraphSpacing);
-  writer.writeString(offsets[38], object.primaryColorHex);
-  writer.writeString(offsets[39], object.selectedVoiceLocale);
-  writer.writeString(offsets[40], object.selectedVoiceName);
-  writer.writeDouble(offsets[41], object.sideMargin);
-  writer.writeString(offsets[42], object.sortBy);
-  writer.writeDouble(offsets[43], object.speechRate);
-  writer.writeString(offsets[44], object.textAlignment);
-  writer.writeString(offsets[45], object.themeMode);
-  writer.writeString(offsets[46], object.ttsProvider);
-  writer.writeBool(offsets[47], object.webDavEnabled);
-  writer.writeDateTime(offsets[48], object.webDavLastSync);
-  writer.writeString(offsets[49], object.webDavUrl);
-  writer.writeString(offsets[50], object.webDavUsername);
+  writer.writeDouble(offsets[1], object.assistiveButtonX);
+  writer.writeDouble(offsets[2], object.assistiveButtonY);
+  writer.writeString(offsets[3], object.assistiveDoubleTapAction);
+  writer.writeString(offsets[4], object.assistiveLongPressAction);
+  writer.writeString(offsets[5], object.assistiveSingleTapAction);
+  writer.writeBool(offsets[6], object.autoCheckUpdate);
+  writer.writeBool(offsets[7], object.bgmEnabled);
+  writer.writeString(offsets[8], object.bgmLoopMode);
+  writer.writeString(offsets[9], object.bgmProviderId);
+  writer.writeDouble(offsets[10], object.bgmVolume);
+  writer.writeString(offsets[11], object.bossKeyAction);
+  writer.writeLong(offsets[12], object.currentBgmTrackId);
+  writer.writeString(offsets[13], object.currentBgmTrackName);
+  writer.writeString(offsets[14], object.currentBgmTrackUrl);
+  writer.writeString(offsets[15], object.customBackgroundColor);
+  writer.writeString(offsets[16], object.customTextColor);
+  writer.writeBool(offsets[17], object.developerMode);
+  writer.writeString(offsets[18], object.deviceId);
+  writer.writeString(offsets[19], object.deviceName);
+  writer.writeBool(offsets[20], object.enableDebugLogs);
+  writer.writeBool(offsets[21], object.enableWebDavDebug);
+  writer.writeString(offsets[22], object.fontFamily);
+  writer.writeDouble(offsets[23], object.fontSize);
+  writer.writeString(offsets[24], object.hotkeyBossKey);
+  writer.writeString(offsets[25], object.hotkeyNextChapter);
+  writer.writeString(offsets[26], object.hotkeyNextParagraph);
+  writer.writeString(offsets[27], object.hotkeyOpenChapter);
+  writer.writeString(offsets[28], object.hotkeyOpenSetting);
+  writer.writeString(offsets[29], object.hotkeyPlayPauseTts);
+  writer.writeString(offsets[30], object.hotkeyPrevChapter);
+  writer.writeString(offsets[31], object.hotkeyPrevParagraph);
+  writer.writeString(offsets[32], object.lastLocalTrackUrl);
+  writer.writeString(offsets[33], object.lastLofiTrackName);
+  writer.writeString(offsets[34], object.lastLofiTrackUrl);
+  writer.writeString(offsets[35], object.lastRadioTrackName);
+  writer.writeString(offsets[36], object.lastRadioTrackUrl);
+  writer.writeDouble(offsets[37], object.lineHeight);
+  writer.writeString(offsets[38], object.openAiTtsApiKey);
+  writer.writeString(offsets[39], object.openAiTtsEndpoint);
+  writer.writeString(offsets[40], object.openAiTtsModel);
+  writer.writeBool(offsets[41], object.openLastReadOnLaunch);
+  writer.writeDouble(offsets[42], object.paragraphSpacing);
+  writer.writeString(offsets[43], object.primaryColorHex);
+  writer.writeString(offsets[44], object.selectedVoiceLocale);
+  writer.writeString(offsets[45], object.selectedVoiceName);
+  writer.writeBool(offsets[46], object.showAssistiveButton);
+  writer.writeDouble(offsets[47], object.sideMargin);
+  writer.writeString(offsets[48], object.sortBy);
+  writer.writeDouble(offsets[49], object.speechRate);
+  writer.writeString(offsets[50], object.textAlignment);
+  writer.writeString(offsets[51], object.themeMode);
+  writer.writeString(offsets[52], object.ttsProvider);
+  writer.writeBool(offsets[53], object.webDavEnabled);
+  writer.writeDateTime(offsets[54], object.webDavLastSync);
+  writer.writeString(offsets[55], object.webDavUrl);
+  writer.writeString(offsets[56], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -469,57 +508,63 @@ AppSettings _appSettingsDeserialize(
 ) {
   final object = AppSettings();
   object.appLocale = reader.readString(offsets[0]);
-  object.autoCheckUpdate = reader.readBool(offsets[1]);
-  object.bgmEnabled = reader.readBool(offsets[2]);
-  object.bgmLoopMode = reader.readString(offsets[3]);
-  object.bgmProviderId = reader.readString(offsets[4]);
-  object.bgmVolume = reader.readDouble(offsets[5]);
-  object.bossKeyAction = reader.readString(offsets[6]);
-  object.currentBgmTrackId = reader.readLongOrNull(offsets[7]);
-  object.currentBgmTrackName = reader.readStringOrNull(offsets[8]);
-  object.currentBgmTrackUrl = reader.readStringOrNull(offsets[9]);
-  object.customBackgroundColor = reader.readStringOrNull(offsets[10]);
-  object.customTextColor = reader.readStringOrNull(offsets[11]);
-  object.developerMode = reader.readBool(offsets[12]);
-  object.deviceId = reader.readStringOrNull(offsets[13]);
-  object.deviceName = reader.readStringOrNull(offsets[14]);
-  object.enableDebugLogs = reader.readBool(offsets[15]);
-  object.enableWebDavDebug = reader.readBool(offsets[16]);
-  object.fontFamily = reader.readString(offsets[17]);
-  object.fontSize = reader.readDouble(offsets[18]);
-  object.hotkeyBossKey = reader.readString(offsets[19]);
-  object.hotkeyNextChapter = reader.readString(offsets[20]);
-  object.hotkeyNextParagraph = reader.readString(offsets[21]);
-  object.hotkeyOpenChapter = reader.readString(offsets[22]);
-  object.hotkeyOpenSetting = reader.readString(offsets[23]);
-  object.hotkeyPlayPauseTts = reader.readString(offsets[24]);
-  object.hotkeyPrevChapter = reader.readString(offsets[25]);
-  object.hotkeyPrevParagraph = reader.readString(offsets[26]);
+  object.assistiveButtonX = reader.readDouble(offsets[1]);
+  object.assistiveButtonY = reader.readDouble(offsets[2]);
+  object.assistiveDoubleTapAction = reader.readString(offsets[3]);
+  object.assistiveLongPressAction = reader.readString(offsets[4]);
+  object.assistiveSingleTapAction = reader.readString(offsets[5]);
+  object.autoCheckUpdate = reader.readBool(offsets[6]);
+  object.bgmEnabled = reader.readBool(offsets[7]);
+  object.bgmLoopMode = reader.readString(offsets[8]);
+  object.bgmProviderId = reader.readString(offsets[9]);
+  object.bgmVolume = reader.readDouble(offsets[10]);
+  object.bossKeyAction = reader.readString(offsets[11]);
+  object.currentBgmTrackId = reader.readLongOrNull(offsets[12]);
+  object.currentBgmTrackName = reader.readStringOrNull(offsets[13]);
+  object.currentBgmTrackUrl = reader.readStringOrNull(offsets[14]);
+  object.customBackgroundColor = reader.readStringOrNull(offsets[15]);
+  object.customTextColor = reader.readStringOrNull(offsets[16]);
+  object.developerMode = reader.readBool(offsets[17]);
+  object.deviceId = reader.readStringOrNull(offsets[18]);
+  object.deviceName = reader.readStringOrNull(offsets[19]);
+  object.enableDebugLogs = reader.readBool(offsets[20]);
+  object.enableWebDavDebug = reader.readBool(offsets[21]);
+  object.fontFamily = reader.readString(offsets[22]);
+  object.fontSize = reader.readDouble(offsets[23]);
+  object.hotkeyBossKey = reader.readString(offsets[24]);
+  object.hotkeyNextChapter = reader.readString(offsets[25]);
+  object.hotkeyNextParagraph = reader.readString(offsets[26]);
+  object.hotkeyOpenChapter = reader.readString(offsets[27]);
+  object.hotkeyOpenSetting = reader.readString(offsets[28]);
+  object.hotkeyPlayPauseTts = reader.readString(offsets[29]);
+  object.hotkeyPrevChapter = reader.readString(offsets[30]);
+  object.hotkeyPrevParagraph = reader.readString(offsets[31]);
   object.id = id;
-  object.lastLocalTrackUrl = reader.readStringOrNull(offsets[27]);
-  object.lastLofiTrackName = reader.readStringOrNull(offsets[28]);
-  object.lastLofiTrackUrl = reader.readStringOrNull(offsets[29]);
-  object.lastRadioTrackName = reader.readStringOrNull(offsets[30]);
-  object.lastRadioTrackUrl = reader.readStringOrNull(offsets[31]);
-  object.lineHeight = reader.readDouble(offsets[32]);
-  object.openAiTtsApiKey = reader.readString(offsets[33]);
-  object.openAiTtsEndpoint = reader.readString(offsets[34]);
-  object.openAiTtsModel = reader.readString(offsets[35]);
-  object.openLastReadOnLaunch = reader.readBool(offsets[36]);
-  object.paragraphSpacing = reader.readDouble(offsets[37]);
-  object.primaryColorHex = reader.readStringOrNull(offsets[38]);
-  object.selectedVoiceLocale = reader.readStringOrNull(offsets[39]);
-  object.selectedVoiceName = reader.readStringOrNull(offsets[40]);
-  object.sideMargin = reader.readDouble(offsets[41]);
-  object.sortBy = reader.readString(offsets[42]);
-  object.speechRate = reader.readDouble(offsets[43]);
-  object.textAlignment = reader.readString(offsets[44]);
-  object.themeMode = reader.readString(offsets[45]);
-  object.ttsProvider = reader.readString(offsets[46]);
-  object.webDavEnabled = reader.readBool(offsets[47]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[48]);
-  object.webDavUrl = reader.readString(offsets[49]);
-  object.webDavUsername = reader.readString(offsets[50]);
+  object.lastLocalTrackUrl = reader.readStringOrNull(offsets[32]);
+  object.lastLofiTrackName = reader.readStringOrNull(offsets[33]);
+  object.lastLofiTrackUrl = reader.readStringOrNull(offsets[34]);
+  object.lastRadioTrackName = reader.readStringOrNull(offsets[35]);
+  object.lastRadioTrackUrl = reader.readStringOrNull(offsets[36]);
+  object.lineHeight = reader.readDouble(offsets[37]);
+  object.openAiTtsApiKey = reader.readString(offsets[38]);
+  object.openAiTtsEndpoint = reader.readString(offsets[39]);
+  object.openAiTtsModel = reader.readString(offsets[40]);
+  object.openLastReadOnLaunch = reader.readBool(offsets[41]);
+  object.paragraphSpacing = reader.readDouble(offsets[42]);
+  object.primaryColorHex = reader.readStringOrNull(offsets[43]);
+  object.selectedVoiceLocale = reader.readStringOrNull(offsets[44]);
+  object.selectedVoiceName = reader.readStringOrNull(offsets[45]);
+  object.showAssistiveButton = reader.readBool(offsets[46]);
+  object.sideMargin = reader.readDouble(offsets[47]);
+  object.sortBy = reader.readString(offsets[48]);
+  object.speechRate = reader.readDouble(offsets[49]);
+  object.textAlignment = reader.readString(offsets[50]);
+  object.themeMode = reader.readString(offsets[51]);
+  object.ttsProvider = reader.readString(offsets[52]);
+  object.webDavEnabled = reader.readBool(offsets[53]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[54]);
+  object.webDavUrl = reader.readString(offsets[55]);
+  object.webDavUsername = reader.readString(offsets[56]);
   return object;
 }
 
@@ -533,51 +578,51 @@ P _appSettingsDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 2:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
-      return (reader.readDouble(offset)) as P;
-    case 6:
       return (reader.readString(offset)) as P;
-    case 7:
-      return (reader.readLongOrNull(offset)) as P;
-    case 8:
-      return (reader.readStringOrNull(offset)) as P;
-    case 9:
-      return (reader.readStringOrNull(offset)) as P;
-    case 10:
-      return (reader.readStringOrNull(offset)) as P;
-    case 11:
-      return (reader.readStringOrNull(offset)) as P;
-    case 12:
+    case 6:
       return (reader.readBool(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
+      return (reader.readString(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
+      return (reader.readDouble(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
+    case 12:
+      return (reader.readLongOrNull(offset)) as P;
     case 13:
       return (reader.readStringOrNull(offset)) as P;
     case 14:
       return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 16:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 17:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 18:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 19:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 21:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 22:
       return (reader.readString(offset)) as P;
     case 23:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 24:
       return (reader.readString(offset)) as P;
     case 25:
@@ -585,52 +630,64 @@ P _appSettingsDeserializeProp<P>(
     case 26:
       return (reader.readString(offset)) as P;
     case 27:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 28:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 29:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 30:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 31:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 32:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 33:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 34:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 35:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 36:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 37:
       return (reader.readDouble(offset)) as P;
     case 38:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 39:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 40:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 41:
-      return (reader.readDouble(offset)) as P;
-    case 42:
-      return (reader.readString(offset)) as P;
-    case 43:
-      return (reader.readDouble(offset)) as P;
-    case 44:
-      return (reader.readString(offset)) as P;
-    case 45:
-      return (reader.readString(offset)) as P;
-    case 46:
-      return (reader.readString(offset)) as P;
-    case 47:
       return (reader.readBool(offset)) as P;
+    case 42:
+      return (reader.readDouble(offset)) as P;
+    case 43:
+      return (reader.readStringOrNull(offset)) as P;
+    case 44:
+      return (reader.readStringOrNull(offset)) as P;
+    case 45:
+      return (reader.readStringOrNull(offset)) as P;
+    case 46:
+      return (reader.readBool(offset)) as P;
+    case 47:
+      return (reader.readDouble(offset)) as P;
     case 48:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 49:
       return (reader.readString(offset)) as P;
+    case 49:
+      return (reader.readDouble(offset)) as P;
     case 50:
+      return (reader.readString(offset)) as P;
+    case 51:
+      return (reader.readString(offset)) as P;
+    case 52:
+      return (reader.readString(offset)) as P;
+    case 53:
+      return (reader.readBool(offset)) as P;
+    case 54:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 55:
+      return (reader.readString(offset)) as P;
+    case 56:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -861,6 +918,552 @@ extension AppSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'appLocale',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonXEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveButtonX',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonXGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'assistiveButtonX',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonXLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'assistiveButtonX',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonXBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'assistiveButtonX',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonYEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveButtonY',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonYGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'assistiveButtonY',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonYLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'assistiveButtonY',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveButtonYBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'assistiveButtonY',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'assistiveDoubleTapAction',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'assistiveDoubleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'assistiveDoubleTapAction',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveDoubleTapAction',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveDoubleTapActionIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'assistiveDoubleTapAction',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'assistiveLongPressAction',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'assistiveLongPressAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'assistiveLongPressAction',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveLongPressAction',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveLongPressActionIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'assistiveLongPressAction',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'assistiveSingleTapAction',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'assistiveSingleTapAction',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'assistiveSingleTapAction',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'assistiveSingleTapAction',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      assistiveSingleTapActionIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'assistiveSingleTapAction',
         value: '',
       ));
     });
@@ -5512,6 +6115,16 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showAssistiveButtonEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showAssistiveButton',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       sideMarginEqualTo(
     double value, {
     double epsilon = Query.epsilon,
@@ -6562,6 +7175,76 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveButtonX() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonX', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveButtonXDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonX', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveButtonY() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonY', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveButtonYDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonY', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveDoubleTapAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveDoubleTapAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveDoubleTapActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveDoubleTapAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveLongPressAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveLongPressAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveLongPressActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveLongPressAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveSingleTapAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveSingleTapAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByAssistiveSingleTapActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveSingleTapAction', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByAutoCheckUpdate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'autoCheckUpdate', Sort.asc);
@@ -7096,6 +7779,20 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowAssistiveButton() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showAssistiveButton', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowAssistiveButtonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showAssistiveButton', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySideMargin() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sideMargin', Sort.asc);
@@ -7232,6 +7929,76 @@ extension AppSettingsQuerySortThenBy
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByAppLocaleDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'appLocale', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveButtonX() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonX', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveButtonXDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonX', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveButtonY() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonY', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveButtonYDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveButtonY', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveDoubleTapAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveDoubleTapAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveDoubleTapActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveDoubleTapAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveLongPressAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveLongPressAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveLongPressActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveLongPressAction', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveSingleTapAction() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveSingleTapAction', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByAssistiveSingleTapActionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'assistiveSingleTapAction', Sort.desc);
     });
   }
 
@@ -7781,6 +8548,20 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowAssistiveButton() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showAssistiveButton', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowAssistiveButtonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showAssistiveButton', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySideMargin() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sideMargin', Sort.asc);
@@ -7912,6 +8693,44 @@ extension AppSettingsQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'appLocale', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByAssistiveButtonX() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'assistiveButtonX');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByAssistiveButtonY() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'assistiveButtonY');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByAssistiveDoubleTapAction({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'assistiveDoubleTapAction',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByAssistiveLongPressAction({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'assistiveLongPressAction',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByAssistiveSingleTapAction({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'assistiveSingleTapAction',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -8215,6 +9034,13 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowAssistiveButton() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showAssistiveButton');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySideMargin() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sideMargin');
@@ -8295,6 +9121,41 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, String, QQueryOperations> appLocaleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'appLocale');
+    });
+  }
+
+  QueryBuilder<AppSettings, double, QQueryOperations>
+      assistiveButtonXProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'assistiveButtonX');
+    });
+  }
+
+  QueryBuilder<AppSettings, double, QQueryOperations>
+      assistiveButtonYProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'assistiveButtonY');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      assistiveDoubleTapActionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'assistiveDoubleTapAction');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      assistiveLongPressActionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'assistiveLongPressAction');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      assistiveSingleTapActionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'assistiveSingleTapAction');
     });
   }
 
@@ -8560,6 +9421,13 @@ extension AppSettingsQueryProperty
       selectedVoiceNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'selectedVoiceName');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations>
+      showAssistiveButtonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showAssistiveButton');
     });
   }
 

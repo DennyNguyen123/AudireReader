@@ -1089,4 +1089,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bgmLofiSuggestions => 'Lofi Suggestions';
+
+  @override
+  String get assistiveButtonTitle => 'ASSISTIVE BUTTON';
+
+  @override
+  String get showAssistiveButtonLabel => 'Show floating assistive button';
+
+  @override
+  String get singleTapLabel => 'Single Tap';
+
+  @override
+  String get doubleTapLabel => 'Double Tap';
+
+  @override
+  String get longPressLabel => 'Long Press';
+
+  @override
+  String get resetButtonPosition => 'Reset Button Position';
+
+  @override
+  String get resetButtonPositionSuccess =>
+      'Floating button position reset to default';
+
+  @override
+  String get actionNone => 'Do nothing';
+
+  @override
+  String get actionNextParagraph => 'Next Paragraph';
+
+  @override
+  String get actionPrevParagraph => 'Prev Paragraph';
+
+  @override
+  String get actionPlayPause => 'Play / Pause';
+
+  @override
+  String get actionNextChapter => 'Next Chapter';
+
+  @override
+  String get actionPrevChapter => 'Prev Chapter';
+
+  @override
+  String get actionOpenTtsSettings => 'Open TTS Settings';
+
+  @override
+  String get actionOpenBgmSettings => 'Open BGM Settings';
 }

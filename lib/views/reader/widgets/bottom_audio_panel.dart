@@ -83,6 +83,7 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     required VoidCallback? onPressed,
     required String tooltip,
     required Color textColor,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(10),
   }) {
     final isEnabled = onPressed != null;
     return Tooltip(
@@ -93,7 +94,7 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
           onTap: onPressed,
           customBorder: const CircleBorder(),
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: padding,
             child: Icon(
               icon,
               size: iconSize,
@@ -278,14 +279,15 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                       children: [
                         _buildControlButton(
                           icon: Icons.skip_previous_rounded,
-                          iconSize: 22,
+                          iconSize: 18,
                           onPressed: tts.currentChapterIndex > 0 ? tts.previousChapter : null,
                           tooltip: "Previous Chapter",
                           textColor: widget.textColor,
                         ),
                         _buildControlButton(
                           icon: Icons.fast_rewind_rounded,
-                          iconSize: 20,
+                          iconSize: 26,
+                          padding: const EdgeInsets.all(12),
                           onPressed: tts.previousParagraph,
                           tooltip: "Rewind Paragraph",
                           textColor: widget.textColor,
@@ -293,8 +295,8 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                         GestureDetector(
                           onTap: tts.togglePlayPause,
                           child: Container(
-                            width: 44,
-                            height: 44,
+                            width: 52,
+                            height: 52,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -315,21 +317,22 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                             ),
                             child: Icon(
                               tts.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                              size: 26,
+                              size: 30,
                               color: Colors.white,
                             ),
                           ),
                         ),
                         _buildControlButton(
                           icon: Icons.fast_forward_rounded,
-                          iconSize: 20,
+                          iconSize: 26,
+                          padding: const EdgeInsets.all(12),
                           onPressed: tts.nextParagraph,
                           tooltip: "Forward Paragraph",
                           textColor: widget.textColor,
                         ),
                         _buildControlButton(
                           icon: Icons.skip_next_rounded,
-                          iconSize: 22,
+                          iconSize: 18,
                           onPressed: tts.currentChapterIndex < tts.chapters.length - 1 ? tts.nextChapter : null,
                           tooltip: "Next Chapter",
                           textColor: widget.textColor,

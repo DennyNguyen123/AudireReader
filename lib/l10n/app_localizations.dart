@@ -2034,6 +2034,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lofi Suggestions'**
   String get bgmLofiSuggestions;
+
+  /// No description provided for @assistiveButtonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ASSISTIVE BUTTON'**
+  String get assistiveButtonTitle;
+
+  /// No description provided for @showAssistiveButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show floating assistive button'**
+  String get showAssistiveButtonLabel;
+
+  /// No description provided for @singleTapLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Single Tap'**
+  String get singleTapLabel;
+
+  /// No description provided for @doubleTapLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Double Tap'**
+  String get doubleTapLabel;
+
+  /// No description provided for @longPressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Long Press'**
+  String get longPressLabel;
+
+  /// No description provided for @resetButtonPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Button Position'**
+  String get resetButtonPosition;
+
+  /// No description provided for @resetButtonPositionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Floating button position reset to default'**
+  String get resetButtonPositionSuccess;
+
+  /// No description provided for @actionNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Do nothing'**
+  String get actionNone;
+
+  /// No description provided for @actionNextParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Paragraph'**
+  String get actionNextParagraph;
+
+  /// No description provided for @actionPrevParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Prev Paragraph'**
+  String get actionPrevParagraph;
+
+  /// No description provided for @actionPlayPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Play / Pause'**
+  String get actionPlayPause;
+
+  /// No description provided for @actionNextChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Chapter'**
+  String get actionNextChapter;
+
+  /// No description provided for @actionPrevChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Prev Chapter'**
+  String get actionPrevChapter;
+
+  /// No description provided for @actionOpenTtsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open TTS Settings'**
+  String get actionOpenTtsSettings;
+
+  /// No description provided for @actionOpenBgmSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open BGM Settings'**
+  String get actionOpenBgmSettings;
 }
 
 class _AppLocalizationsDelegate

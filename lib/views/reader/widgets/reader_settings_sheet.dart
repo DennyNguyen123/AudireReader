@@ -68,6 +68,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   late final TextEditingController _customBgController;
   late final TextEditingController _customTextController;
 
+  bool _showAssistiveButton = false;
+  String _assistiveSingleTapAction = 'nextParagraph';
+  String _assistiveDoubleTapAction = 'prevParagraph';
+  String _assistiveLongPressAction = 'playPause';
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +89,20 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
 
     _customBgController = TextEditingController(text: _customBackgroundColor);
     _customTextController = TextEditingController(text: _customTextColor);
+    
+    _loadAssistiveSettings();
+  }
+
+  void _loadAssistiveSettings() async {
+    final settings = await widget.ttsService.getSettings();
+    if (mounted) {
+      setState(() {
+        _showAssistiveButton = settings.showAssistiveButton;
+        _assistiveSingleTapAction = settings.assistiveSingleTapAction;
+        _assistiveDoubleTapAction = settings.assistiveDoubleTapAction;
+        _assistiveLongPressAction = settings.assistiveLongPressAction;
+      });
+    }
   }
 
   @override
@@ -560,11 +579,170 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               const SizedBox(height: 8),
               Text('Enter hex color like #1A1A1A or FFFFFF and press Enter', style: TextStyle(fontSize: 10, color: labelColor)),
             ],
+            
+            const SizedBox(height: 24),
+            
+            // ⚙️ NHÓM 3: HỖ TRỢ ĐỌC TRUYỆN (ASSISTIVE BUTTON)
+            Row(
+              children: [
+                Icon(Icons.accessibility_new_rounded, size: 16, color: accentColor),
+                const SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.assistiveButtonTitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Switch Bật/Tắt Nút Trợ Năng
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(AppLocalizations.of(context)!.showAssistiveButtonLabel, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+                Switch(
+                  value: _showAssistiveButton,
+                  activeColor: accentColor,
+                  onChanged: (val) {
+                    setState(() {
+                      _showAssistiveButton = val;
+                    });
+                    widget.ttsService.updateSettings(showAssistiveButton: val);
+                  },
+                ),
+              ],
+            ),
+            
+            if (_showAssistiveButton) ...[
+              const SizedBox(height: 16),
+              // Dropdown gán Single Tap
+              _buildGestureDropdown(
+                label: AppLocalizations.of(context)!.singleTapLabel,
+                value: _assistiveSingleTapAction,
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _assistiveSingleTapAction = val;
+                    });
+                    widget.ttsService.updateSettings(assistiveSingleTapAction: val);
+                  }
+                },
+                labelColor: labelColor,
+                sheetBg: sheetBg,
+              ),
+              const SizedBox(height: 16),
+              // Dropdown gán Double Tap
+              _buildGestureDropdown(
+                label: AppLocalizations.of(context)!.doubleTapLabel,
+                value: _assistiveDoubleTapAction,
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _assistiveDoubleTapAction = val;
+                    });
+                    widget.ttsService.updateSettings(assistiveDoubleTapAction: val);
+                  }
+                },
+                labelColor: labelColor,
+                sheetBg: sheetBg,
+              ),
+              const SizedBox(height: 16),
+              // Dropdown gán Long Press
+              _buildGestureDropdown(
+                label: AppLocalizations.of(context)!.longPressLabel,
+                value: _assistiveLongPressAction,
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _assistiveLongPressAction = val;
+                    });
+                    widget.ttsService.updateSettings(assistiveLongPressAction: val);
+                  }
+                },
+                labelColor: labelColor,
+                sheetBg: sheetBg,
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    widget.ttsService.updateSettings(
+                      assistiveButtonX: -1.0,
+                      assistiveButtonY: -1.0,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.resetButtonPositionSuccess),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.restore_rounded, size: 16),
+                  label: Text(AppLocalizations.of(context)!.resetButtonPosition, style: const TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
             ],
           ),
         ),
       ),
     ),
+  );
+}
+
+Widget _buildGestureDropdown({
+  required String label,
+  required String value,
+  required ValueChanged<String?> onChanged,
+  required Color labelColor,
+  required Color sheetBg,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final actionsMap = {
+    'none': l10n.actionNone,
+    'nextParagraph': l10n.actionNextParagraph,
+    'prevParagraph': l10n.actionPrevParagraph,
+    'playPause': l10n.actionPlayPause,
+    'nextChapter': l10n.actionNextChapter,
+    'prevChapter': l10n.actionPrevChapter,
+    'openTtsSettings': l10n.actionOpenTtsSettings,
+    'openBgmSettings': l10n.actionOpenBgmSettings,
+  };
+
+  // Đảm bảo value hợp lệ
+  final String safeValue = actionsMap.containsKey(value) ? value : 'none';
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: TextStyle(fontSize: 13, color: labelColor.withValues(alpha: 0.8))),
+      const SizedBox(height: 6),
+      DropdownButtonFormField<String>(
+        value: safeValue,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black12,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        ),
+        dropdownColor: sheetBg,
+        items: actionsMap.entries.map((entry) {
+          return DropdownMenuItem<String>(
+            value: entry.key,
+            child: Text(entry.value, style: TextStyle(color: labelColor, fontSize: 13)),
+          );
+        }).toList(),
+        onChanged: onChanged,
+      ),
+    ],
   );
 }
 

@@ -1090,4 +1090,50 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get bgmLofiSuggestions => 'Lofi gợi ý';
+
+  @override
+  String get assistiveButtonTitle => 'NÚT TRỢ NĂNG TRÔI NỔI (ASSISTIVE BUTTON)';
+
+  @override
+  String get showAssistiveButtonLabel => 'Hiển thị nút trợ năng trôi nổi';
+
+  @override
+  String get singleTapLabel => 'Chạm 1 lần (Single Tap)';
+
+  @override
+  String get doubleTapLabel => 'Chạm 2 lần (Double Tap)';
+
+  @override
+  String get longPressLabel => 'Nhấn giữ (Long Press)';
+
+  @override
+  String get resetButtonPosition => 'Đặt lại vị trí nút';
+
+  @override
+  String get resetButtonPositionSuccess =>
+      'Đã đặt lại vị trí nút trợ năng về mặc định';
+
+  @override
+  String get actionNone => 'Không làm gì';
+
+  @override
+  String get actionNextParagraph => 'Đoạn tiếp theo (Next Paragraph)';
+
+  @override
+  String get actionPrevParagraph => 'Đoạn trước đó (Prev Paragraph)';
+
+  @override
+  String get actionPlayPause => 'Phát / Tạm dừng (Play / Pause)';
+
+  @override
+  String get actionNextChapter => 'Chương tiếp theo (Next Chapter)';
+
+  @override
+  String get actionPrevChapter => 'Chương trước đó (Prev Chapter)';
+
+  @override
+  String get actionOpenTtsSettings => 'Mở Cài đặt TTS';
+
+  @override
+  String get actionOpenBgmSettings => 'Mở Cài đặt BGM (Nhạc nền)';
 }

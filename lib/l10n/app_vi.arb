@@ -365,5 +365,20 @@
   "bgmLocalFile": "File cục bộ",
   "bgmPasteLink": "Dán link",
   "bgmInternetRadio": "Internet Radio",
-  "bgmLofiSuggestions": "Lofi gợi ý"
+  "bgmLofiSuggestions": "Lofi gợi ý",
+  "assistiveButtonTitle": "NÚT TRỢ NĂNG TRÔI NỔI (ASSISTIVE BUTTON)",
+  "showAssistiveButtonLabel": "Hiển thị nút trợ năng trôi nổi",
+  "singleTapLabel": "Chạm 1 lần (Single Tap)",
+  "doubleTapLabel": "Chạm 2 lần (Double Tap)",
+  "longPressLabel": "Nhấn giữ (Long Press)",
+  "resetButtonPosition": "Đặt lại vị trí nút",
+  "resetButtonPositionSuccess": "Đã đặt lại vị trí nút trợ năng về mặc định",
+  "actionNone": "Không làm gì",
+  "actionNextParagraph": "Đoạn tiếp theo (Next Paragraph)",
+  "actionPrevParagraph": "Đoạn trước đó (Prev Paragraph)",
+  "actionPlayPause": "Phát / Tạm dừng (Play / Pause)",
+  "actionNextChapter": "Chương tiếp theo (Next Chapter)",
+  "actionPrevChapter": "Chương trước đó (Prev Chapter)",
+  "actionOpenTtsSettings": "Mở Cài đặt TTS",
+  "actionOpenBgmSettings": "Mở Cài đặt BGM (Nhạc nền)"
 }

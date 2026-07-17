@@ -72,6 +72,14 @@ class AppSettings {
   // Library Sorting Options: 'dateAdded', 'recentlyRead', 'title', 'author'
   String sortBy = 'dateAdded';
 
+  // --- Assistive Button Settings ---
+  bool showAssistiveButton = false;
+  double assistiveButtonX = -1.0;
+  double assistiveButtonY = -1.0;
+  String assistiveSingleTapAction = 'nextParagraph';
+  String assistiveDoubleTapAction = 'prevParagraph';
+  String assistiveLongPressAction = 'playPause';
+
   // --- Developer Settings ---
   bool developerMode = false;
   bool enableDebugLogs = false;
