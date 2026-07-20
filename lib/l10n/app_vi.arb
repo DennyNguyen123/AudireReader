@@ -392,5 +392,12 @@
   "actionNextChapter": "Chương tiếp theo (Next Chapter)",
   "actionPrevChapter": "Chương trước đó (Prev Chapter)",
   "actionOpenTtsSettings": "Mở Cài đặt TTS",
-  "actionOpenBgmSettings": "Mở Cài đặt BGM (Nhạc nền)"
+  "actionOpenBgmSettings": "Mở Cài đặt BGM (Nhạc nền)",
+  "searchInBook": "Tìm kiếm trong sách",
+  "syncWebdav": "Đồng bộ WebDAV",
+  "toggleFullscreen": "Đọc toàn màn hình",
+  "readerControlsTitle": "Điều khiển đọc sách",
+  "exitFullscreen": "Thoát toàn màn hình",
+  "expandControls": "Mở rộng thanh điều khiển",
+  "collapseControls": "Thu gọn thanh điều khiển"
 }

@@ -151,49 +151,11 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
     }
   }
 
-  void _showCustomSleepTimerDialog(BuildContext context) {
-    final TextEditingController textController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(context)?.sleepTimer ?? 'Sleep Timer'),
-          content: TextField(
-            controller: textController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Minutes',
-              hintText: 'Enter minutes',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final int? minutes = int.tryParse(textController.text);
-                if (minutes != null && minutes > 0) {
-                  widget.ttsService.startSleepTimer(minutes);
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final sheetBg = theme.scaffoldBackgroundColor;
-    final labelColor = theme.textTheme.bodyLarge?.color ?? (isDark ? Colors.white70 : Colors.black87);
     final accentColor = theme.colorScheme.primary;
 
     return ClipRRect(
@@ -264,116 +226,6 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                       ],
                     ),
                     const Divider(height: 1),
-                    const SizedBox(height: 16),
-
-                    // --- SLEEP TIMER ---
-                    Text(
-                      widget.ttsService.isSleepTimerActive
-                          ? AppLocalizations.of(context)!.sleepTimerRemaining(
-                              '${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}')
-                          : widget.ttsService.stopAtEndOfChapter
-                              ? AppLocalizations.of(context)!.sleepTimerStopAtEnd
-                              : AppLocalizations.of(context)!.sleepTimer,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: labelColor),
-                    ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          ChoiceChip(
-                            label: Text(AppLocalizations.of(context)!.off, style: const TextStyle(fontSize: 12)),
-                            selected: !widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: (!widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter)
-                                  ? Colors.white
-                                  : labelColor,
-                            ),
-                            onSelected: (val) {
-                              if (val) {
-                                widget.ttsService.cancelSleepTimer();
-                                widget.ttsService.enableStopAtEndOfChapter(false);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('15m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15)
-                                  ? Colors.white
-                                  : labelColor,
-                            ),
-                            onSelected: (val) {
-                              if (val) {
-                                widget.ttsService.startSleepTimer(15);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('30m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30)
-                                  ? Colors.white
-                                  : labelColor,
-                            ),
-                            onSelected: (val) {
-                              if (val) {
-                                widget.ttsService.startSleepTimer(30);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('45m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45)
-                                  ? Colors.white
-                                  : labelColor,
-                            ),
-                            onSelected: (val) {
-                              if (val) {
-                                widget.ttsService.startSleepTimer(45);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: Text(AppLocalizations.of(context)!.endChapter, style: const TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.stopAtEndOfChapter,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: widget.ttsService.stopAtEndOfChapter ? Colors.white : labelColor,
-                            ),
-                            onSelected: (val) {
-                              if (val) {
-                                widget.ttsService.enableStopAtEndOfChapter(true);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('Custom', style: TextStyle(fontSize: 12)),
-                            selected: false,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(color: labelColor),
-                            onSelected: (_) {
-                              _showCustomSleepTimerDialog(context);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
                     const SizedBox(height: 12),
 
                     // --- TTS SECTION ---

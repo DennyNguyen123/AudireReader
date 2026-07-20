@@ -1178,4 +1178,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionOpenBgmSettings => 'Open BGM Settings';
+
+  @override
+  String get searchInBook => 'Search in book';
+
+  @override
+  String get syncWebdav => 'Sync WebDAV';
+
+  @override
+  String get toggleFullscreen => 'Toggle Fullscreen';
+
+  @override
+  String get readerControlsTitle => 'Reading Controls';
+
+  @override
+  String get exitFullscreen => 'Exit Fullscreen';
+
+  @override
+  String get expandControls => 'Expand controls';
+
+  @override
+  String get collapseControls => 'Collapse controls';
 }

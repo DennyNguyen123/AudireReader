@@ -74,9 +74,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   late final TextEditingController _customTextController;
 
   bool _showAssistiveButton = false;
-  String _assistiveSingleTapAction = 'nextParagraph';
-  String _assistiveDoubleTapAction = 'prevParagraph';
-  String _assistiveLongPressAction = 'playPause';
 
   @override
   void initState() {
@@ -104,9 +101,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     if (mounted) {
       setState(() {
         _showAssistiveButton = settings.showAssistiveButton;
-        _assistiveSingleTapAction = settings.assistiveSingleTapAction;
-        _assistiveDoubleTapAction = settings.assistiveDoubleTapAction;
-        _assistiveLongPressAction = settings.assistiveLongPressAction;
       });
     }
   }
@@ -233,9 +227,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isSheetDark = theme.brightness == Brightness.dark;
     final isDark = _getIsDark(context);
     final sheetBg = theme.scaffoldBackgroundColor;
-    final labelColor = theme.textTheme.bodyLarge?.color ?? (isDark ? Colors.white70 : Colors.black87);
+    final labelColor = theme.textTheme.bodyLarge?.color ?? (isSheetDark ? Colors.white : Colors.black87);
+    final categoryHeaderColor = isSheetDark ? Colors.white70 : Colors.black54;
     final accentColor = theme.colorScheme.primary;
 
     return ClipRRect(
@@ -248,14 +244,14 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                sheetBg.withValues(alpha: isDark ? 0.75 : 0.85),
-                sheetBg.withValues(alpha: isDark ? 0.85 : 0.95),
+                sheetBg.withValues(alpha: isSheetDark ? 0.75 : 0.85),
+                sheetBg.withValues(alpha: isSheetDark ? 0.85 : 0.95),
               ],
             ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
-                color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                color: isSheetDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
                 width: 1.5,
               ),
             ),
@@ -271,7 +267,11 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.readerSettings,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: labelColor,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
@@ -285,19 +285,19 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 Row(
                   children: [
                     Icon(Icons.format_paint_rounded, size: 16, color: accentColor),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)!.displayTypography,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.displayTypography,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: categoryHeaderColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                const SizedBox(height: 16),
             
             // CHỌN CHỦ ĐỀ ĐỌC (Theme Mode Row)
             Text(AppLocalizations.of(context)!.readingTheme, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
@@ -309,15 +309,87 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             Row(
               children: ['Mint', 'Parchment', 'Navy', 'Custom'].map((theme) => _buildThemeButton(theme, isDark, labelColor, accentColor)).toList(),
             ),
+            if (_themeMode == 'Custom') ...[
+              const SizedBox(height: 16),
+              Text('Custom Colors', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _customBgController,
+                      decoration: InputDecoration(
+                        labelText: 'Background (Hex)',
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.palette_rounded),
+                          onPressed: () => _showColorPicker(_customBackgroundColor ?? '', (val) {
+                            setState(() {
+                              _customBackgroundColor = val;
+                              _customBgController.text = val;
+                            });
+                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                            widget.ttsService.updateSettings(customBackgroundColor: val);
+                          }),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          _customBackgroundColor = val;
+                        });
+                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                        widget.ttsService.updateSettings(customBackgroundColor: val);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _customTextController,
+                      decoration: InputDecoration(
+                        labelText: 'Text (Hex)',
+                        filled: true,
+                        fillColor: isDark ? Colors.white10 : Colors.black12,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.palette_rounded),
+                          onPressed: () => _showColorPicker(_customTextColor ?? '', (val) {
+                            setState(() {
+                              _customTextColor = val;
+                              _customTextController.text = val;
+                            });
+                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                            widget.ttsService.updateSettings(customTextColor: val);
+                          }),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          _customTextColor = val;
+                        });
+                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
+                        widget.ttsService.updateSettings(customTextColor: val);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Enter hex color like #1A1A1A or FFFFFF and press Enter', style: TextStyle(fontSize: 10, color: labelColor)),
+            ],
             const SizedBox(height: 20),
 
             // CỠ CHỮ VÀ FONT
             Text(AppLocalizations.of(context)!.fontStyle, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: ['System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'].contains(_fontFamily) 
-                  ? _fontFamily 
-                  : 'System',
+              initialValue: [
+                'System', 'Serif', 'Sans-Serif', 'Monospace', 
+                'Lora', 'Merriweather', 'Inter', 'Nunito',
+                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+              ].contains(_fontFamily) ? _fontFamily : 'System',
               decoration: InputDecoration(
                 filled: true,
                 fillColor: isDark ? Colors.white10 : Colors.black12,
@@ -328,14 +400,20 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               dropdownColor: sheetBg,
-              items: ['System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'].map((font) {
+              items: [
+                'System', 'Serif', 'Sans-Serif', 'Monospace', 
+                'Lora', 'Merriweather', 'Inter', 'Nunito',
+                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+              ].map((font) {
                 return DropdownMenuItem<String>(
                   value: font,
                   child: Text(
                     font,
                     style: TextStyle(
                       color: labelColor,
-                      fontFamily: font == 'System' ? null : font.toLowerCase()
+                      fontFamily: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(font)
+                          ? (font == 'System' ? null : font.toLowerCase())
+                          : font,
                     ),
                   ),
                 );
@@ -487,60 +565,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             ),
             const SizedBox(height: 16),
 
-            // CHỌN PHÔNG CHỮ (Font Family Dropdown)
-            Row(
-              children: [
-                const Icon(Icons.font_download_rounded),
-                const SizedBox(width: 12),
-                Text(AppLocalizations.of(context)!.fontStyle, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              initialValue: [
-                'System', 'Serif', 'Sans-Serif', 'Monospace', 
-                'Lora', 'Merriweather', 'Inter', 'Nunito',
-                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
-              ].contains(_fontFamily) ? _fontFamily : 'System',
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: isDark ? Colors.white10 : Colors.black12,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              dropdownColor: sheetBg,
-              items: [
-                'System', 'Serif', 'Sans-Serif', 'Monospace', 
-                'Lora', 'Merriweather', 'Inter', 'Nunito',
-                'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
-              ].map((font) {
-                return DropdownMenuItem<String>(
-                  value: font,
-                  child: Text(
-                    font,
-                    style: TextStyle(
-                      fontFamily: ['System', 'Serif', 'Sans-Serif', 'Monospace'].contains(font)
-                          ? (font == 'System' ? null : font.toLowerCase())
-                          : font,
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() {
-                    _fontFamily = val;
-                  });
-                  widget.onFontFamilyChanged(val);
-                  widget.ttsService.updateSettings(fontFamily: val);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
             // CĂN LỀ TEXT (ALIGNMENT)
             Row(
               children: [
@@ -564,79 +588,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            if (_themeMode == 'Custom') ...[
-              const SizedBox(height: 16),
-              Text('Custom Colors', style: TextStyle(fontWeight: FontWeight.bold, color: labelColor)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _customBgController,
-                      decoration: InputDecoration(
-                        labelText: 'Background (Hex)',
-                        filled: true,
-                        fillColor: isDark ? Colors.white10 : Colors.black12,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.palette_rounded),
-                          onPressed: () => _showColorPicker(_customBackgroundColor ?? '', (val) {
-                            setState(() {
-                              _customBackgroundColor = val;
-                              _customBgController.text = val;
-                            });
-                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
-                            widget.ttsService.updateSettings(customBackgroundColor: val);
-                          }),
-                        ),
-                      ),
-                      onChanged: (val) {
-                        setState(() {
-                          _customBackgroundColor = val;
-                        });
-                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
-                        widget.ttsService.updateSettings(customBackgroundColor: val);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _customTextController,
-                      decoration: InputDecoration(
-                        labelText: 'Text (Hex)',
-                        filled: true,
-                        fillColor: isDark ? Colors.white10 : Colors.black12,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.palette_rounded),
-                          onPressed: () => _showColorPicker(_customTextColor ?? '', (val) {
-                            setState(() {
-                              _customTextColor = val;
-                              _customTextController.text = val;
-                            });
-                            widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
-                            widget.ttsService.updateSettings(customTextColor: val);
-                          }),
-                        ),
-                      ),
-                      onChanged: (val) {
-                        setState(() {
-                          _customTextColor = val;
-                        });
-                        widget.onCustomColorChanged(_customBackgroundColor, _customTextColor);
-                        widget.ttsService.updateSettings(customTextColor: val);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text('Enter hex color like #1A1A1A or FFFFFF and press Enter', style: TextStyle(fontSize: 10, color: labelColor)),
-            ],
-            
             const SizedBox(height: 24),
             
             // ⚙️ NHÓM 3: HỖ TRỢ ĐỌC TRUYỆN (ASSISTIVE BUTTON)
@@ -650,7 +601,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.0,
-                    color: isDark ? Colors.white60 : Colors.black54,
+                    color: categoryHeaderColor,
                   ),
                 ),
               ],
@@ -676,54 +627,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
             ),
             
             if (_showAssistiveButton) ...[
-              const SizedBox(height: 16),
-              // Dropdown gán Single Tap
-              _buildGestureDropdown(
-                label: AppLocalizations.of(context)!.singleTapLabel,
-                value: _assistiveSingleTapAction,
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _assistiveSingleTapAction = val;
-                    });
-                    widget.ttsService.updateSettings(assistiveSingleTapAction: val);
-                  }
-                },
-                labelColor: labelColor,
-                sheetBg: sheetBg,
-              ),
-              const SizedBox(height: 16),
-              // Dropdown gán Double Tap
-              _buildGestureDropdown(
-                label: AppLocalizations.of(context)!.doubleTapLabel,
-                value: _assistiveDoubleTapAction,
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _assistiveDoubleTapAction = val;
-                    });
-                    widget.ttsService.updateSettings(assistiveDoubleTapAction: val);
-                  }
-                },
-                labelColor: labelColor,
-                sheetBg: sheetBg,
-              ),
-              const SizedBox(height: 16),
-              // Dropdown gán Long Press
-              _buildGestureDropdown(
-                label: AppLocalizations.of(context)!.longPressLabel,
-                value: _assistiveLongPressAction,
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _assistiveLongPressAction = val;
-                    });
-                    widget.ttsService.updateSettings(assistiveLongPressAction: val);
-                  }
-                },
-                labelColor: labelColor,
-                sheetBg: sheetBg,
-              ),
               const SizedBox(height: 12),
               Center(
                 child: TextButton.icon(
@@ -749,57 +652,6 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
         ),
       ),
     ),
-  );
-}
-
-Widget _buildGestureDropdown({
-  required String label,
-  required String value,
-  required ValueChanged<String?> onChanged,
-  required Color labelColor,
-  required Color sheetBg,
-}) {
-  final l10n = AppLocalizations.of(context)!;
-  final actionsMap = {
-    'none': l10n.actionNone,
-    'nextParagraph': l10n.actionNextParagraph,
-    'prevParagraph': l10n.actionPrevParagraph,
-    'playPause': l10n.actionPlayPause,
-    'nextChapter': l10n.actionNextChapter,
-    'prevChapter': l10n.actionPrevChapter,
-    'openTtsSettings': l10n.actionOpenTtsSettings,
-    'openBgmSettings': l10n.actionOpenBgmSettings,
-  };
-
-  // Đảm bảo value hợp lệ
-  final String safeValue = actionsMap.containsKey(value) ? value : 'none';
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label, style: TextStyle(fontSize: 13, color: labelColor.withValues(alpha: 0.8))),
-      const SizedBox(height: 6),
-      DropdownButtonFormField<String>(
-        value: safeValue,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black12,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        ),
-        dropdownColor: sheetBg,
-        items: actionsMap.entries.map((entry) {
-          return DropdownMenuItem<String>(
-            value: entry.key,
-            child: Text(entry.value, style: TextStyle(color: labelColor, fontSize: 13)),
-          );
-        }).toList(),
-        onChanged: onChanged,
-      ),
-    ],
   );
 }
 

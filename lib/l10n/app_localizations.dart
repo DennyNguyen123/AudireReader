@@ -2190,6 +2190,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open BGM Settings'**
   String get actionOpenBgmSettings;
+
+  /// No description provided for @searchInBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in book'**
+  String get searchInBook;
+
+  /// No description provided for @syncWebdav.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync WebDAV'**
+  String get syncWebdav;
+
+  /// No description provided for @toggleFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle Fullscreen'**
+  String get toggleFullscreen;
+
+  /// No description provided for @readerControlsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Controls'**
+  String get readerControlsTitle;
+
+  /// No description provided for @exitFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Fullscreen'**
+  String get exitFullscreen;
+
+  /// No description provided for @expandControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand controls'**
+  String get expandControls;
+
+  /// No description provided for @collapseControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse controls'**
+  String get collapseControls;
 }
 
 class _AppLocalizationsDelegate

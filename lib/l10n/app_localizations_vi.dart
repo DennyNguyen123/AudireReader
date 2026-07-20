@@ -1179,4 +1179,25 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get actionOpenBgmSettings => 'Mở Cài đặt BGM (Nhạc nền)';
+
+  @override
+  String get searchInBook => 'Tìm kiếm trong sách';
+
+  @override
+  String get syncWebdav => 'Đồng bộ WebDAV';
+
+  @override
+  String get toggleFullscreen => 'Đọc toàn màn hình';
+
+  @override
+  String get readerControlsTitle => 'Điều khiển đọc sách';
+
+  @override
+  String get exitFullscreen => 'Thoát toàn màn hình';
+
+  @override
+  String get expandControls => 'Mở rộng thanh điều khiển';
+
+  @override
+  String get collapseControls => 'Thu gọn thanh điều khiển';
 }

@@ -958,15 +958,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                               ),
                             ),
                           ),
-                        if (_webDavEnabled)
-                          IconButton(
-                            icon: const Icon(Icons.sync_rounded),
-                            onPressed: () => _showSyncBottomSheet(context),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.search_rounded),
-                          onPressed: _showSearchInsideBook,
-                        ),
                         IconButton(
                           icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
                           color: _isBookmarked ? Theme.of(context).colorScheme.primary : null,
@@ -981,16 +972,40 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           tooltip: 'Appearance Settings',
                           onPressed: _showSettings,
                         ),
-                        IconButton(
-                          icon: Icon(_showSystemUI ? Icons.fullscreen_rounded : Icons.fullscreen_exit_rounded),
-                          tooltip: 'Toggle Fullscreen',
-                          onPressed: () {
-                            setState(() {
-                              _showSystemUI = !_showSystemUI;
-                              SystemChrome.setEnabledSystemUIMode(
-                                _showSystemUI ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky
-                              );
-                            });
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded),
+                          onSelected: (value) {
+                            if (value == 'search') {
+                              _showSearchInsideBook();
+                            } else if (value == 'sync') {
+                              _showSyncBottomSheet(context);
+                            }
+                          },
+                          itemBuilder: (context) {
+                            final l10n = AppLocalizations.of(context)!;
+                            return [
+                              PopupMenuItem(
+                                value: 'search',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.search_rounded, size: 20),
+                                    const SizedBox(width: 12),
+                                    Text(l10n.searchInBook),
+                                  ],
+                                ),
+                              ),
+                              if (_webDavEnabled)
+                                PopupMenuItem(
+                                  value: 'sync',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.sync_rounded, size: 20),
+                                      const SizedBox(width: 12),
+                                      Text(l10n.syncWebdav),
+                                    ],
+                                  ),
+                                ),
+                            ];
                           },
                         ),
                       ],
@@ -1092,7 +1107,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             );
 
             Widget mainWidget = scaffoldContent;
-            if (settings != null && settings.showAssistiveButton) {
+            if (settings != null && (settings.showAssistiveButton || !_showSystemUI)) {
               mainWidget = Stack(
                 children: [
                   scaffoldContent,
@@ -1100,6 +1115,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     ttsService: _ttsService,
                     settings: settings,
                     isDark: isDark,
+                    onExitFullscreen: () {
+                      setState(() {
+                        _showSystemUI = true;
+                        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                      });
+                    },
                     onPositionChanged: (x, y) {
                       _ttsService.updateSettings(
                         assistiveButtonX: x,
@@ -1135,6 +1156,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       isDark: isDark,
       textColor: textColor,
       themeMode: _themeMode,
+      onToggleFullscreen: () {
+        setState(() {
+          _showSystemUI = false;
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        });
+      },
     );
   }
 

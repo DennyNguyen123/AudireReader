@@ -644,5 +644,12 @@
   "actionNextChapter": "Next Chapter",
   "actionPrevChapter": "Prev Chapter",
   "actionOpenTtsSettings": "Open TTS Settings",
-  "actionOpenBgmSettings": "Open BGM Settings"
+  "actionOpenBgmSettings": "Open BGM Settings",
+  "searchInBook": "Search in book",
+  "syncWebdav": "Sync WebDAV",
+  "toggleFullscreen": "Toggle Fullscreen",
+  "readerControlsTitle": "Reading Controls",
+  "exitFullscreen": "Exit Fullscreen",
+  "expandControls": "Expand controls",
+  "collapseControls": "Collapse controls"
 }
