@@ -9,7 +9,7 @@ class ShortcutHelper {
       // Sử dụng F24 làm fallback an toàn (vì LogicalKeyboardKey không có none)
       return const SingleActivator(LogicalKeyboardKey.f24);
     }
-    
+
     final parts = shortcutStr.split('+');
     bool control = false;
     bool shift = false;
@@ -68,10 +68,7 @@ class ShortcutHelper {
 
     if (key == LogicalKeyboardKey.f24) return null;
 
-    return HotKey(
-      key: key,
-      modifiers: modifiers.isEmpty ? null : modifiers,
-    );
+    return HotKey(key: key, modifiers: modifiers.isEmpty ? null : modifiers);
   }
 
   // Chuyển chuỗi phím tắt thành nhãn hiển thị trực quan đẹp mắt
@@ -79,7 +76,7 @@ class ShortcutHelper {
     if (shortcutStr.isEmpty || shortcutStr == 'None') return 'None';
     final parts = shortcutStr.split('+');
     final List<String> labels = [];
-    
+
     for (var part in parts) {
       part = part.trim();
       final lower = part.toLowerCase();
@@ -136,60 +133,108 @@ class ShortcutHelper {
       case 'delete':
       case 'del':
         return LogicalKeyboardKey.delete;
-      
+
       // Phím chữ cái từ a-z
-      case 'a': return LogicalKeyboardKey.keyA;
-      case 'b': return LogicalKeyboardKey.keyB;
-      case 'c': return LogicalKeyboardKey.keyC;
-      case 'd': return LogicalKeyboardKey.keyD;
-      case 'e': return LogicalKeyboardKey.keyE;
-      case 'f': return LogicalKeyboardKey.keyF;
-      case 'g': return LogicalKeyboardKey.keyG;
-      case 'h': return LogicalKeyboardKey.keyH;
-      case 'i': return LogicalKeyboardKey.keyI;
-      case 'j': return LogicalKeyboardKey.keyJ;
-      case 'k': return LogicalKeyboardKey.keyK;
-      case 'l': return LogicalKeyboardKey.keyL;
-      case 'm': return LogicalKeyboardKey.keyM;
-      case 'n': return LogicalKeyboardKey.keyN;
-      case 'o': return LogicalKeyboardKey.keyO;
-      case 'p': return LogicalKeyboardKey.keyP;
-      case 'q': return LogicalKeyboardKey.keyQ;
-      case 'r': return LogicalKeyboardKey.keyR;
-      case 's': return LogicalKeyboardKey.keyS;
-      case 't': return LogicalKeyboardKey.keyT;
-      case 'u': return LogicalKeyboardKey.keyU;
-      case 'v': return LogicalKeyboardKey.keyV;
-      case 'w': return LogicalKeyboardKey.keyW;
-      case 'x': return LogicalKeyboardKey.keyX;
-      case 'y': return LogicalKeyboardKey.keyY;
-      case 'z': return LogicalKeyboardKey.keyZ;
+      case 'a':
+        return LogicalKeyboardKey.keyA;
+      case 'b':
+        return LogicalKeyboardKey.keyB;
+      case 'c':
+        return LogicalKeyboardKey.keyC;
+      case 'd':
+        return LogicalKeyboardKey.keyD;
+      case 'e':
+        return LogicalKeyboardKey.keyE;
+      case 'f':
+        return LogicalKeyboardKey.keyF;
+      case 'g':
+        return LogicalKeyboardKey.keyG;
+      case 'h':
+        return LogicalKeyboardKey.keyH;
+      case 'i':
+        return LogicalKeyboardKey.keyI;
+      case 'j':
+        return LogicalKeyboardKey.keyJ;
+      case 'k':
+        return LogicalKeyboardKey.keyK;
+      case 'l':
+        return LogicalKeyboardKey.keyL;
+      case 'm':
+        return LogicalKeyboardKey.keyM;
+      case 'n':
+        return LogicalKeyboardKey.keyN;
+      case 'o':
+        return LogicalKeyboardKey.keyO;
+      case 'p':
+        return LogicalKeyboardKey.keyP;
+      case 'q':
+        return LogicalKeyboardKey.keyQ;
+      case 'r':
+        return LogicalKeyboardKey.keyR;
+      case 's':
+        return LogicalKeyboardKey.keyS;
+      case 't':
+        return LogicalKeyboardKey.keyT;
+      case 'u':
+        return LogicalKeyboardKey.keyU;
+      case 'v':
+        return LogicalKeyboardKey.keyV;
+      case 'w':
+        return LogicalKeyboardKey.keyW;
+      case 'x':
+        return LogicalKeyboardKey.keyX;
+      case 'y':
+        return LogicalKeyboardKey.keyY;
+      case 'z':
+        return LogicalKeyboardKey.keyZ;
 
       // Phím số từ 0-9
-      case '0': return LogicalKeyboardKey.digit0;
-      case '1': return LogicalKeyboardKey.digit1;
-      case '2': return LogicalKeyboardKey.digit2;
-      case '3': return LogicalKeyboardKey.digit3;
-      case '4': return LogicalKeyboardKey.digit4;
-      case '5': return LogicalKeyboardKey.digit5;
-      case '6': return LogicalKeyboardKey.digit6;
-      case '7': return LogicalKeyboardKey.digit7;
-      case '8': return LogicalKeyboardKey.digit8;
-      case '9': return LogicalKeyboardKey.digit9;
+      case '0':
+        return LogicalKeyboardKey.digit0;
+      case '1':
+        return LogicalKeyboardKey.digit1;
+      case '2':
+        return LogicalKeyboardKey.digit2;
+      case '3':
+        return LogicalKeyboardKey.digit3;
+      case '4':
+        return LogicalKeyboardKey.digit4;
+      case '5':
+        return LogicalKeyboardKey.digit5;
+      case '6':
+        return LogicalKeyboardKey.digit6;
+      case '7':
+        return LogicalKeyboardKey.digit7;
+      case '8':
+        return LogicalKeyboardKey.digit8;
+      case '9':
+        return LogicalKeyboardKey.digit9;
 
       // Phím chức năng từ F1-F12
-      case 'f1': return LogicalKeyboardKey.f1;
-      case 'f2': return LogicalKeyboardKey.f2;
-      case 'f3': return LogicalKeyboardKey.f3;
-      case 'f4': return LogicalKeyboardKey.f4;
-      case 'f5': return LogicalKeyboardKey.f5;
-      case 'f6': return LogicalKeyboardKey.f6;
-      case 'f7': return LogicalKeyboardKey.f7;
-      case 'f8': return LogicalKeyboardKey.f8;
-      case 'f9': return LogicalKeyboardKey.f9;
-      case 'f10': return LogicalKeyboardKey.f10;
-      case 'f11': return LogicalKeyboardKey.f11;
-      case 'f12': return LogicalKeyboardKey.f12;
+      case 'f1':
+        return LogicalKeyboardKey.f1;
+      case 'f2':
+        return LogicalKeyboardKey.f2;
+      case 'f3':
+        return LogicalKeyboardKey.f3;
+      case 'f4':
+        return LogicalKeyboardKey.f4;
+      case 'f5':
+        return LogicalKeyboardKey.f5;
+      case 'f6':
+        return LogicalKeyboardKey.f6;
+      case 'f7':
+        return LogicalKeyboardKey.f7;
+      case 'f8':
+        return LogicalKeyboardKey.f8;
+      case 'f9':
+        return LogicalKeyboardKey.f9;
+      case 'f10':
+        return LogicalKeyboardKey.f10;
+      case 'f11':
+        return LogicalKeyboardKey.f11;
+      case 'f12':
+        return LogicalKeyboardKey.f12;
 
       default:
         // Phím fallback an toàn

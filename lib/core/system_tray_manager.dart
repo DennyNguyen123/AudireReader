@@ -15,24 +15,20 @@ class AppTrayManager with TrayListener {
 
     // Đặt biểu tượng ở khay hệ thống
     await trayManager.setIcon(
-      Platform.isWindows ? 'assets/images/app_icon.ico' : 'assets/images/logo.png'
+      Platform.isWindows
+          ? 'assets/images/app_icon.ico'
+          : 'assets/images/logo.png',
     );
-    
+
     // Khắc phục triệt để lỗi hiển thị rác unicode (ToolTip bắt buộc phải set)
     await trayManager.setToolTip('Audire Reader');
-    
+
     // Tạo Context Menu (Menu chuột phải)
     Menu menu = Menu(
       items: [
-        MenuItem(
-          key: 'show_app',
-          label: 'Show Audire Reader',
-        ),
+        MenuItem(key: 'show_app', label: 'Show Audire Reader'),
         MenuItem.separator(),
-        MenuItem(
-          key: 'exit_app',
-          label: 'Exit',
-        ),
+        MenuItem(key: 'exit_app', label: 'Exit'),
       ],
     );
     await trayManager.setContextMenu(menu);

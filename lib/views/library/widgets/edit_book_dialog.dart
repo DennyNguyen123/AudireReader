@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:audire_reader/models/book.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:audire_reader/core/database/database_helper.dart';
 import 'package:audire_reader/l10n/app_localizations.dart';
 
@@ -36,9 +36,7 @@ class _EditBookDialogState extends State<EditBookDialog> {
 
   Future<void> _pickNewCover() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-      );
+      final result = await FilePicker.platform.pickFiles(type: FileType.image);
       if (result != null && result.files.single.path != null) {
         setState(() {
           _newCoverPath = result.files.single.path;
@@ -46,9 +44,9 @@ class _EditBookDialogState extends State<EditBookDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
     }
   }
@@ -58,18 +56,20 @@ class _EditBookDialogState extends State<EditBookDialog> {
     final newAuthor = _authorController.text.trim();
 
     if (newTitle.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title cannot be empty')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Title cannot be empty')));
       return;
     }
 
-    widget.book.title = newTitle;
-    widget.book.author = newAuthor.isEmpty ? 'Unknown' : newAuthor;
-    widget.book.coverPath = _newCoverPath;
+    final updatedBook = widget.book.copyWith(
+      title: newTitle,
+      author: newAuthor.isEmpty ? 'Unknown' : newAuthor,
+      coverPath: _newCoverPath,
+    );
 
     final db = await DatabaseHelper.getInstance();
-    await db.saveBook(widget.book);
+    await db.saveBook(updatedBook);
 
     if (mounted) {
       Navigator.pop(context, true); // true = has changes
@@ -99,7 +99,9 @@ class _EditBookDialogState extends State<EditBookDialog> {
                   decoration: BoxDecoration(
                     color: isDark ? Colors.grey[850] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(8),
-                    image: _newCoverPath != null && File(_newCoverPath!).existsSync()
+                    image:
+                        _newCoverPath != null &&
+                            File(_newCoverPath!).existsSync()
                         ? DecorationImage(
                             image: FileImage(File(_newCoverPath!)),
                             fit: BoxFit.cover,
@@ -110,13 +112,25 @@ class _EditBookDialogState extends State<EditBookDialog> {
                       width: 1,
                     ),
                   ),
-                  child: (_newCoverPath == null || !File(_newCoverPath!).existsSync())
+                  child:
+                      (_newCoverPath == null ||
+                          !File(_newCoverPath!).existsSync())
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_photo_alternate_rounded, size: 40, color: isDark ? Colors.white54 : Colors.black54),
+                            Icon(
+                              Icons.add_photo_alternate_rounded,
+                              size: 40,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
                             const SizedBox(height: 8),
-                            Text('Change Cover', style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54)),
+                            Text(
+                              'Change Cover',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                              ),
+                            ),
                           ],
                         )
                       : Container(
@@ -125,13 +139,22 @@ class _EditBookDialogState extends State<EditBookDialog> {
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
-                              colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                              colors: [
+                                Colors.black.withValues(alpha: 0.7),
+                                Colors.transparent,
+                              ],
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
-                            child: Text('Tap to change', style: TextStyle(color: Colors.white, fontSize: 10)),
+                            child: Text(
+                              'Tap to change',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
                           ),
                         ),
                 ),
@@ -144,7 +167,10 @@ class _EditBookDialogState extends State<EditBookDialog> {
                 labelText: 'Title',
                 filled: true,
                 fillColor: isDark ? Colors.white10 : Colors.black12,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -154,7 +180,10 @@ class _EditBookDialogState extends State<EditBookDialog> {
                 labelText: 'Author',
                 filled: true,
                 fillColor: isDark ? Colors.white10 : Colors.black12,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ],
@@ -163,14 +192,19 @@ class _EditBookDialogState extends State<EditBookDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+          child: Text(
+            AppLocalizations.of(context)?.cancel ?? 'Cancel',
+            style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+          ),
         ),
         ElevatedButton(
           onPressed: _saveChanges,
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: Text(AppLocalizations.of(context)?.save ?? 'Save'),
         ),

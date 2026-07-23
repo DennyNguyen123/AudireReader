@@ -9,8 +9,7 @@ import '../../services/webdav_service.dart';
 import '../../services/sync_service.dart' hide print;
 import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
-import '../../models/book.dart';
-import '../../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../models/progress.dart';
 import '../../core/global_hotkey_manager.dart';
 import '../../core/theme_notifier.dart';
@@ -38,7 +37,7 @@ class SyncSettingsScreen extends StatefulWidget {
 
 class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _webDavEnabled = false;
   bool _autoSyncEnabled = true;
   bool _openLastReadOnLaunch = false;
@@ -48,7 +47,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _deviceNameController = TextEditingController();
-  
+
   DateTime? _lastSync;
   bool _isLoading = false;
   bool _isTestingConnection = false;
@@ -96,7 +95,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     const storage = FlutterSecureStorage();
@@ -108,7 +107,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _autoSyncEnabled = autoSyncStr == 'true';
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
       _autoCheckUpdate = settings.autoCheckUpdate;
-      _appLocaleCode = (settings.appLocale == 'vi' || settings.appLocale == 'en') ? settings.appLocale : 'en';
+      _appLocaleCode =
+          (settings.appLocale == 'vi' || settings.appLocale == 'en')
+          ? settings.appLocale
+          : 'en';
       _urlController.text = settings.webDavUrl;
       _usernameController.text = settings.webDavUsername;
       _passwordController.text = webDavPassword;
@@ -117,8 +119,12 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
       // Load cấu hình đọc sách
       _fontSize = settings.fontSize;
-      _fontFamily = settings.fontFamily.trim().isEmpty ? 'System' : settings.fontFamily;
-      _themeMode = settings.themeMode.trim().isEmpty ? 'System' : settings.themeMode;
+      _fontFamily = settings.fontFamily.trim().isEmpty
+          ? 'System'
+          : settings.fontFamily;
+      _themeMode = settings.themeMode.trim().isEmpty
+          ? 'System'
+          : settings.themeMode;
       _primaryColorHex = settings.primaryColorHex;
 
       // Load Hotkeys & Boss Key Configurations
@@ -171,7 +177,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     }
   }
 
-
   Future<void> _saveGeneralPreference(bool val) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
@@ -209,8 +214,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     try {
       final docDir = await PathHelper.getAppDirectory();
       final db = await DatabaseHelper.getInstance();
-      final booksCount = await db.isar.books.count();
-      final chaptersCount = await db.isar.chapters.count();
+      final books = await db.getAllBooks();
+      final booksCount = books.length;
+      final chaptersCount = books.fold<int>(0, (sum, b) => sum + b.totalChapters);
       final progressCount = await db.isar.readingProgress.count();
 
       if (mounted) {
@@ -220,22 +226,42 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return AlertDialog(
               backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('Database Inspector', style: TextStyle(fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                'Database Inspector',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Database Type: Isar NoSQL', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Database Type: Isar NoSQL',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
-                  const Text('Storage Path:', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                  SelectableText(docDir.path, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                  const Text(
+                    'Storage Path:',
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  SelectableText(
+                    docDir.path,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Books Count:'),
-                      Text('$booksCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '$booksCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -243,7 +269,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Chapters Count:'),
-                      Text('$chaptersCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '$chaptersCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -251,7 +280,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Progress Records:'),
-                      Text('$progressCount', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '$progressCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ],
@@ -259,7 +291,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -318,18 +356,29 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         _lastSync = null;
       });
 
-      LoggerService().log('Cleared $deletedCount temporary files & reset WebDAV sync status', tag: 'SYNC', level: LogLevel.warning);
+      LoggerService().log(
+        'Cleared $deletedCount temporary files & reset WebDAV sync status',
+        tag: 'SYNC',
+        level: LogLevel.warning,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Cache cleared and sync data reset successfully.'),
+            content: const Text(
+              'Cache cleared and sync data reset successfully.',
+            ),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
     } catch (e) {
-      LoggerService().log('Failed to clear cache & reset sync', tag: 'SYNC', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        'Failed to clear cache & reset sync',
+        tag: 'SYNC',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -346,7 +395,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   }
 
   Future<void> _forceSyncNow() async {
-    LoggerService().log('Force sync triggered by developer', tag: 'SYNC', level: LogLevel.warning);
+    LoggerService().log(
+      'Force sync triggered by developer',
+      tag: 'SYNC',
+      level: LogLevel.warning,
+    );
     await _triggerManualSync();
   }
 
@@ -356,7 +409,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     if (!_webDavEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.enableWebdavFirst ?? 'Please enable WebDAV Sync first.'),
+          content: Text(
+            AppLocalizations.of(context)?.enableWebdavFirst ??
+                'Please enable WebDAV Sync first.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -370,17 +426,31 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePushConfirmTitle ?? 'Confirm Force Push'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              AppLocalizations.of(context)?.forcePushConfirmTitle ??
+                  'Confirm Force Push',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)?.forcePushConfirmDesc ?? 'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?'),
+                Text(
+                  AppLocalizations.of(context)?.forcePushConfirmDesc ??
+                      'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?',
+                ),
                 const SizedBox(height: 16),
                 CheckboxListTile(
-                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  title: Text(
+                    AppLocalizations.of(context)?.onlySyncProgress ??
+                        'Chỉ ghi đè tiến trình đọc',
+                  ),
+                  subtitle: Text(
+                    AppLocalizations.of(context)?.onlySyncProgressDesc ??
+                        'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách',
+                  ),
                   value: progressOnly,
                   contentPadding: EdgeInsets.zero,
                   activeColor: Theme.of(context).colorScheme.primary,
@@ -404,7 +474,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
               ),
             ],
           );
-        }
+        },
       ),
     );
 
@@ -414,7 +484,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _isLoading = true;
     });
 
-    final syncResult = await SyncService.getInstance().forcePush(progressOnly: progressOnly);
+    final syncResult = await SyncService.getInstance().forcePush(
+      progressOnly: progressOnly,
+    );
 
     if (mounted) {
       setState(() {
@@ -431,13 +503,24 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(syncResult.success 
-              ? (AppLocalizations.of(context)?.syncSuccessful ?? 'Sync Successful') 
-              : (AppLocalizations.of(context)?.syncFailed(syncResult.message) ?? 'Sync Failed')),
-          content: Text(syncResult.success
-              ? (AppLocalizations.of(context)?.forcePushSuccess ?? 'Force push completed successfully!')
-              : syncResult.message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            syncResult.success
+                ? (AppLocalizations.of(context)?.syncSuccessful ??
+                      'Sync Successful')
+                : (AppLocalizations.of(
+                        context,
+                      )?.syncFailed(syncResult.message) ??
+                      'Sync Failed'),
+          ),
+          content: Text(
+            syncResult.success
+                ? (AppLocalizations.of(context)?.forcePushSuccess ??
+                      'Force push completed successfully!')
+                : syncResult.message,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -455,7 +538,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     if (!_webDavEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.enableWebdavFirst ?? 'Please enable WebDAV Sync first.'),
+          content: Text(
+            AppLocalizations.of(context)?.enableWebdavFirst ??
+                'Please enable WebDAV Sync first.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -469,17 +555,31 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePullConfirmTitle ?? 'Confirm Force Pull'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              AppLocalizations.of(context)?.forcePullConfirmTitle ??
+                  'Confirm Force Pull',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)?.forcePullConfirmDesc ?? 'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?'),
+                Text(
+                  AppLocalizations.of(context)?.forcePullConfirmDesc ??
+                      'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?',
+                ),
                 const SizedBox(height: 16),
                 CheckboxListTile(
-                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  title: Text(
+                    AppLocalizations.of(context)?.onlySyncProgress ??
+                        'Chỉ ghi đè tiến trình đọc',
+                  ),
+                  subtitle: Text(
+                    AppLocalizations.of(context)?.onlySyncProgressDesc ??
+                        'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách',
+                  ),
                   value: progressOnly,
                   contentPadding: EdgeInsets.zero,
                   activeColor: Theme.of(context).colorScheme.primary,
@@ -503,7 +603,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
               ),
             ],
           );
-        }
+        },
       ),
     );
 
@@ -513,7 +613,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _isLoading = true;
     });
 
-    final syncResult = await SyncService.getInstance().forcePull(progressOnly: progressOnly);
+    final syncResult = await SyncService.getInstance().forcePull(
+      progressOnly: progressOnly,
+    );
 
     if (mounted) {
       setState(() {
@@ -530,13 +632,24 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(syncResult.success 
-              ? (AppLocalizations.of(context)?.syncSuccessful ?? 'Sync Successful') 
-              : (AppLocalizations.of(context)?.syncFailed(syncResult.message) ?? 'Sync Failed')),
-          content: Text(syncResult.success
-              ? (AppLocalizations.of(context)?.forcePullSuccess ?? 'Force pull completed successfully!')
-              : syncResult.message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            syncResult.success
+                ? (AppLocalizations.of(context)?.syncSuccessful ??
+                      'Sync Successful')
+                : (AppLocalizations.of(
+                        context,
+                      )?.syncFailed(syncResult.message) ??
+                      'Sync Failed'),
+          ),
+          content: Text(
+            syncResult.success
+                ? (AppLocalizations.of(context)?.forcePullSuccess ??
+                      'Force pull completed successfully!')
+                : syncResult.message,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -586,14 +699,17 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     await db.saveSettings(settings);
 
     const storage = FlutterSecureStorage();
-    await storage.write(key: 'webdav_password', value: _passwordController.text);
+    await storage.write(
+      key: 'webdav_password',
+      value: _passwordController.text,
+    );
   }
 
   // --- Hotkeys Settings Operations ---
   Future<void> _saveHotkeySetting(String key, String value) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     switch (key) {
       case 'nextParagraph':
         settings.hotkeyNextParagraph = value;
@@ -623,9 +739,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         settings.bossKeyAction = value;
         break;
     }
-    
+
     await db.saveSettings(settings);
-    
+
     try {
       final ttsService = await TtsService.getInstance();
       ttsService.notifyListeners();
@@ -650,7 +766,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     settings.hotkeyNextParagraph = 'Arrow Down';
     settings.hotkeyPrevParagraph = 'Arrow Up';
     settings.hotkeyNextChapter = 'Control+Arrow Right';
@@ -660,9 +776,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     settings.hotkeyOpenSetting = 'Control+comma';
     settings.hotkeyBossKey = 'Control+b';
     settings.bossKeyAction = 'minimize';
-    
+
     await db.saveSettings(settings);
-    
+
     try {
       final ttsService = await TtsService.getInstance();
       ttsService.notifyListeners();
@@ -670,25 +786,28 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
     // Cập nhật lại Boss Key toàn cục
     await GlobalHotkeyManager.updateBossKey();
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.resetHotkeysSuccess ?? 'All hotkeys reset to default values.'),
+          content: Text(
+            AppLocalizations.of(context)?.resetHotkeysSuccess ??
+                'All hotkeys reset to default values.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
   }
 
-
-
   Future<void> _testConnection() async {
-    if (_urlController.text.isEmpty || 
-        _usernameController.text.isEmpty || 
+    if (_urlController.text.isEmpty ||
+        _usernameController.text.isEmpty ||
         _passwordController.text.isEmpty) {
       setState(() {
-        _testResult = AppLocalizations.of(context)?.fillCredentialsHint ?? 'Please fill in all credentials first.';
+        _testResult =
+            AppLocalizations.of(context)?.fillCredentialsHint ??
+            'Please fill in all credentials first.';
         _testSuccess = false;
       });
       return;
@@ -713,9 +832,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       setState(() {
         _isTestingConnection = false;
         _testSuccess = success;
-        _testResult = success 
-            ? (AppLocalizations.of(context)?.connectionSuccessDesc ?? 'Connection successful! WebDAV server is active.')
-            : (AppLocalizations.of(context)?.connectionFailedDesc ?? 'Connection failed. Please verify URL, username, and password.');
+        _testResult = success
+            ? (AppLocalizations.of(context)?.connectionSuccessDesc ??
+                  'Connection successful! WebDAV server is active.')
+            : (AppLocalizations.of(context)?.connectionFailedDesc ??
+                  'Connection failed. Please verify URL, username, and password.');
       });
       if (success) {
         SyncService.getInstance().fetchCloudBooks();
@@ -726,12 +847,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   Future<void> _triggerManualSync() async {
     // Lưu cấu hình trước khi đồng bộ
     await _saveWebDavTextSettings();
-    
+
     if (!mounted) return;
     if (!_webDavEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.enableWebdavFirst ?? 'Please enable WebDAV Sync first.'),
+          content: Text(
+            AppLocalizations.of(context)?.enableWebdavFirst ??
+                'Please enable WebDAV Sync first.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -748,7 +872,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       // Reload last sync time
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
@@ -760,10 +884,18 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(syncResult.success 
-              ? (AppLocalizations.of(context)?.syncSuccessful ?? 'Sync Successful') 
-              : (AppLocalizations.of(context)?.syncFailed(syncResult.message) ?? 'Sync Failed')),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            syncResult.success
+                ? (AppLocalizations.of(context)?.syncSuccessful ??
+                      'Sync Successful')
+                : (AppLocalizations.of(
+                        context,
+                      )?.syncFailed(syncResult.message) ??
+                      'Sync Failed'),
+          ),
           content: Text(syncResult.message),
           actions: [
             TextButton(
@@ -784,7 +916,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
         final localizations = AppLocalizations.of(context);
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             localizations?.qrSyncTitle ?? 'Đồng bộ nhanh thiết bị (QR)',
             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -793,23 +927,50 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                localizations?.qrSyncDesc ?? 'Chọn hành động đồng bộ cấu hình giữa các thiết bị của bạn.',
+                localizations?.qrSyncDesc ??
+                    'Chọn hành động đồng bộ cấu hình giữa các thiết bị của bạn.',
                 style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const SizedBox(height: 20),
               ListTile(
-                leading: Icon(Icons.qr_code_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
-                title: Text(localizations?.receiveConfig ?? 'Nhận cấu hình (Nhận)', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(localizations?.receiveConfigDesc ?? 'Hiện mã QR nhận cấu hình (Không cần Camera)', style: const TextStyle(fontSize: 12)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Icon(
+                  Icons.qr_code_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                title: Text(
+                  localizations?.receiveConfig ?? 'Nhận cấu hình (Nhận)',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  localizations?.receiveConfigDesc ??
+                      'Hiện mã QR nhận cấu hình (Không cần Camera)',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 onTap: () => Navigator.pop(context, 'receive'),
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: Icon(Icons.camera_alt_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
-                title: Text(localizations?.shareConfig ?? 'Chia sẻ cấu hình (Cho)', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(localizations?.shareConfigDesc ?? 'Quét mã QR của máy nhận và gửi cấu hình đi', style: const TextStyle(fontSize: 12)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                leading: Icon(
+                  Icons.camera_alt_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                title: Text(
+                  localizations?.shareConfig ?? 'Chia sẻ cấu hình (Cho)',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  localizations?.shareConfigDesc ??
+                      'Quét mã QR của máy nhận và gửi cấu hình đi',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 onTap: () => Navigator.pop(context, 'share'),
               ),
             ],
@@ -843,7 +1004,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -857,7 +1018,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       ),
       body: _isLoading && _urlController.text.isEmpty
           ? Center(
-              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             )
           : Stack(
               children: [
@@ -910,14 +1073,20 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               _themeMode = tMode;
                             });
                             _saveReadingPreference(themeMode: tMode);
-                            ThemeNotifier.instance.updateTheme(tMode, primaryColorHex: _primaryColorHex);
+                            ThemeNotifier.instance.updateTheme(
+                              tMode,
+                              primaryColorHex: _primaryColorHex,
+                            );
                           },
                           onPrimaryColorChanged: (hexStr) {
                             setState(() {
                               _primaryColorHex = hexStr;
                             });
                             _saveReadingPreference(primaryColorHex: hexStr);
-                            ThemeNotifier.instance.updateTheme(_themeMode, primaryColorHex: hexStr);
+                            ThemeNotifier.instance.updateTheme(
+                              _themeMode,
+                              primaryColorHex: hexStr,
+                            );
                           },
                           onFontSizeChanged: (val) {
                             setState(() {
@@ -935,7 +1104,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ...[
+                        if (!kIsWeb &&
+                            (Platform.isWindows ||
+                                Platform.isLinux ||
+                                Platform.isMacOS)) ...[
                           HotkeysSettingsSection(
                             hotkeyNextParagraph: _hotkeyNextParagraph,
                             hotkeyPrevParagraph: _hotkeyPrevParagraph,
@@ -1012,7 +1184,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               _autoSyncEnabled = val;
                             });
                             const storage = FlutterSecureStorage();
-                            await storage.write(key: 'webdav_auto_sync', value: val ? 'true' : 'false');
+                            await storage.write(
+                              key: 'webdav_auto_sync',
+                              value: val ? 'true' : 'false',
+                            );
                           },
                           onTestConnection: _testConnection,
                           onSyncNow: _triggerManualSync,
@@ -1028,7 +1203,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           onOpenDebugConsole: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const DeveloperConsoleScreen()),
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const DeveloperConsoleScreen(),
+                              ),
                             );
                           },
                           onShowDatabaseInspector: _showDatabaseInspector,
@@ -1041,10 +1219,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16.0),
                             child: Center(
                               child: Text(
-                                AppLocalizations.of(context)?.version(_appVersion) ?? 'Version $_appVersion',
+                                AppLocalizations.of(
+                                      context,
+                                    )?.version(_appVersion) ??
+                                    'Version $_appVersion',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.black38,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1054,7 +1237,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                     ),
                   ),
                 ),
-                
+
                 // Màn hình loading đồng bộ toàn bộ mây
                 if (_isLoading)
                   ClipRect(
@@ -1067,11 +1250,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                AppLocalizations.of(context)?.synchronizing ?? 'Synchronizing...',
+                                AppLocalizations.of(context)?.synchronizing ??
+                                    'Synchronizing...',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -1080,7 +1266,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                AppLocalizations.of(context)?.processingSync ?? 'Processing books, cover arts, and reading progress...',
+                                AppLocalizations.of(context)?.processingSync ??
+                                    'Processing books, cover arts, and reading progress...',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 12,
@@ -1096,5 +1283,4 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
             ),
     );
   }
-
 }

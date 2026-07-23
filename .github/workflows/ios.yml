@@ -26,6 +26,11 @@ jobs:
         run: flutter pub get
 
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
       - name: Run Code Generation (Isar Schemas)
         run: dart run build_runner build --delete-conflicting-outputs
 

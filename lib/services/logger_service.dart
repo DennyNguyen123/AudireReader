@@ -49,7 +49,12 @@ class LoggerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void log(String message, {LogLevel level = LogLevel.info, String tag = 'APP', String? error}) {
+  void log(
+    String message, {
+    LogLevel level = LogLevel.info,
+    String tag = 'APP',
+    String? error,
+  }) {
     final entry = LogEntry(
       timestamp: DateTime.now(),
       level: level,
@@ -74,7 +79,8 @@ class LoggerService extends ChangeNotifier {
     // Đối với môi trường debug (kDebugMode), luôn in ra console các log được phép ghi nhận
     bool shouldPrintToConsole = kDebugMode || _enableDebugLogs;
     if (shouldPrintToConsole) {
-      final consoleMsg = '[$tag][${entry.levelName}] $message${error != null ? ' | Error: $error' : ''}';
+      final consoleMsg =
+          '[$tag][${entry.levelName}] $message${error != null ? ' | Error: $error' : ''}';
       debugPrint(consoleMsg);
     }
 

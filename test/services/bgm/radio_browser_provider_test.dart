@@ -14,27 +14,39 @@ void main() {
       expect(provider.name, 'Internet Radio (Lofi)');
     });
 
-    test('fetchTracks returns a list of BgmTrack with valid stream URLs', () async {
-      // Act
-      final tracks = await provider.fetchTracks();
+    test(
+      'fetchTracks returns a list of BgmTrack with valid stream URLs',
+      () async {
+        // Act
+        final tracks = await provider.fetchTracks();
 
-      // Assert
-      expect(tracks, isNotNull);
-      // It might be empty if there's a network issue during the test, 
-      // but assuming the network is fine, it should return some tracks.
-      if (tracks.isNotEmpty) {
-        expect(tracks.length, lessThanOrEqualTo(20)); // because we set limit=20
+        // Assert
+        expect(tracks, isNotNull);
+        // It might be empty if there's a network issue during the test,
+        // but assuming the network is fine, it should return some tracks.
+        if (tracks.isNotEmpty) {
+          expect(
+            tracks.length,
+            lessThanOrEqualTo(20),
+          ); // because we set limit=20
 
-        for (final track in tracks) {
-          expect(track.sourceType, 'radio');
-          expect(track.name, isNotEmpty);
-          expect(track.sourcePath, isNotEmpty);
-          expect(track.sourcePath.startsWith('http'), isTrue, reason: 'URL should start with http or https');
+          for (final track in tracks) {
+            expect(track.sourceType, 'radio');
+            expect(track.name, isNotEmpty);
+            expect(track.sourcePath, isNotEmpty);
+            expect(
+              track.sourcePath.startsWith('http'),
+              isTrue,
+              reason: 'URL should start with http or https',
+            );
+          }
+        } else {
+          // Warning if empty, though could happen in CI without internet
+          print(
+            'Warning: RadioBrowser returned empty list. Check internet connection.',
+          );
         }
-      } else {
-        // Warning if empty, though could happen in CI without internet
-        print('Warning: RadioBrowser returned empty list. Check internet connection.');
-      }
-    });
+      },
+    );
   });
 }

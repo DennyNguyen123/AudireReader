@@ -9,9 +9,8 @@ import '../../services/tts_service.dart' hide print;
 import '../../services/sync_service.dart' hide print;
 import '../../services/logger_service.dart';
 import '../../core/database/database_helper.dart';
-import '../../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../models/settings.dart';
-import '../../models/book.dart';
 
 import '../../models/bookmark.dart';
 import '../../models/highlight.dart';
@@ -29,7 +28,8 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver {
+class _ReaderScreenState extends State<ReaderScreen>
+    with WidgetsBindingObserver {
   late final TtsService _ttsService;
   bool _isInitialized = false;
   double _fontSize = 18.0;
@@ -105,7 +105,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   void _syncActiveBookProgressOnExit() {
     if (!_autoSyncEnabled) {
-      LoggerService().log('[ReaderScreen] Auto-sync on exit is disabled.', tag: 'SYNC', level: LogLevel.info);
+      LoggerService().log(
+        '[ReaderScreen] Auto-sync on exit is disabled.',
+        tag: 'SYNC',
+        level: LogLevel.info,
+      );
       return;
     }
     if (_isInitialized) {
@@ -118,14 +122,24 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   Future<void> _syncActiveBookProgressOnEntry() async {
     if (!_autoSyncEnabled) {
-      LoggerService().log('[ReaderScreen] Auto-sync on entry is disabled.', tag: 'SYNC', level: LogLevel.info);
+      LoggerService().log(
+        '[ReaderScreen] Auto-sync on entry is disabled.',
+        tag: 'SYNC',
+        level: LogLevel.info,
+      );
       return;
     }
     final book = _ttsService.activeBook;
     if (book != null) {
-      LoggerService().log('[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...', tag: 'SYNC', level: LogLevel.info);
-      final syncResult = await SyncService.getInstance().syncBookProgress(book.uuid);
-      
+      LoggerService().log(
+        '[ReaderScreen] Auto-syncing progress on book open for "${book.title}"...',
+        tag: 'SYNC',
+        level: LogLevel.info,
+      );
+      final syncResult = await SyncService.getInstance().syncBookProgress(
+        book.uuid,
+      );
+
       // Khởi tạo vị trí đã sync gần nhất
       final db = await DatabaseHelper.getInstance();
       final progress = await db.getProgress(book.uuid);
@@ -135,16 +149,22 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       }
 
       if (syncResult.status == ProgressSyncStatus.updatedLocal && mounted) {
-        LoggerService().log('[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...', tag: 'SYNC', level: LogLevel.info);
+        LoggerService().log(
+          '[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...',
+          tag: 'SYNC',
+          level: LogLevel.info,
+        );
         if (progress != null) {
           await _ttsService.loadBook(
-            book, 
-            _ttsService.chapters, 
-            startChapter: progress.currentChapterIndex, 
-            startParagraph: progress.currentParagraphIndex
+            book,
+            _ttsService.chapters,
+            startChapter: progress.currentChapterIndex,
+            startParagraph: progress.currentParagraphIndex,
           );
         }
-      } else if (syncResult.status == ProgressSyncStatus.conflict && mounted && syncResult.cloudProgress != null) {
+      } else if (syncResult.status == ProgressSyncStatus.conflict &&
+          mounted &&
+          syncResult.cloudProgress != null) {
         // SHOW CONFLICT DIALOG
         _showConflictDialog(book, syncResult.cloudProgress!);
       }
@@ -159,16 +179,28 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     final currentChapter = _ttsService.currentChapterIndex;
     final currentPara = _ttsService.currentParagraphIndex;
 
-    if (currentChapter != _lastSyncedChapterIndex || currentPara != _lastSyncedParagraphIndex) {
-      LoggerService().log('[ReaderScreen] Periodic autosync progress for "${book.title}" (Ch: $currentChapter, Para: $currentPara)', tag: 'SYNC', level: LogLevel.info);
+    if (currentChapter != _lastSyncedChapterIndex ||
+        currentPara != _lastSyncedParagraphIndex) {
+      LoggerService().log(
+        '[ReaderScreen] Periodic autosync progress for "${book.title}" (Ch: $currentChapter, Para: $currentPara)',
+        tag: 'SYNC',
+        level: LogLevel.info,
+      );
       _syncProgressBackground(book, currentChapter, currentPara);
     }
   }
 
-  Future<void> _syncProgressBackground(Book book, int chapter, int paragraph) async {
+  Future<void> _syncProgressBackground(
+    Book book,
+    int chapter,
+    int paragraph,
+  ) async {
     try {
-      final result = await SyncService.getInstance().syncBookProgress(book.uuid);
-      if (result.status == ProgressSyncStatus.uploadedToCloud || result.status == ProgressSyncStatus.upToDate) {
+      final result = await SyncService.getInstance().syncBookProgress(
+        book.uuid,
+      );
+      if (result.status == ProgressSyncStatus.uploadedToCloud ||
+          result.status == ProgressSyncStatus.upToDate) {
         _lastSyncedChapterIndex = chapter;
         _lastSyncedParagraphIndex = paragraph;
       }
@@ -192,17 +224,20 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)?.syncConflictTitle ?? 'Sync Conflict Detected'),
+          title: Text(
+            AppLocalizations.of(context)?.syncConflictTitle ??
+                'Sync Conflict Detected',
+          ),
           content: Text(
             AppLocalizations.of(context)?.syncConflictDesc(
-              cloudProgress['deviceName'] ?? 'Unknown Device',
-              (cloudProgress['currentChapterIndex'] ?? 0).toString(),
-              _ttsService.currentChapterIndex.toString(),
-            ) ??
-            'Your current reading progress conflicts with data from "${cloudProgress['deviceName']}".\n\n'
-            'Cloud: Chapter ${cloudProgress['currentChapterIndex']}\n'
-            'Local: Chapter ${_ttsService.currentChapterIndex}\n\n'
-            'Which progress would you like to keep?',
+                  cloudProgress['deviceName'] ?? 'Unknown Device',
+                  (cloudProgress['currentChapterIndex'] ?? 0).toString(),
+                  _ttsService.currentChapterIndex.toString(),
+                ) ??
+                'Your current reading progress conflicts with data from "${cloudProgress['deviceName']}".\n\n'
+                    'Cloud: Chapter ${cloudProgress['currentChapterIndex']}\n'
+                    'Local: Chapter ${_ttsService.currentChapterIndex}\n\n'
+                    'Which progress would you like to keep?',
           ),
           actions: [
             TextButton(
@@ -214,28 +249,44 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 final settings = await db.getSettings();
                 if (localProg != null) {
                   // Bypass conflict and force upload
-                  SyncService.getInstance().forceUploadLocalProgress(book.uuid, localProg, settings.deviceId ?? '', settings.deviceName ?? '');
+                  SyncService.getInstance().forceUploadLocalProgress(
+                    book.uuid,
+                    localProg,
+                    settings.deviceId ?? '',
+                    settings.deviceName ?? '',
+                  );
                 }
               },
-              child: Text(AppLocalizations.of(context)?.keepLocal ?? 'Keep Local', style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                AppLocalizations.of(context)?.keepLocal ?? 'Keep Local',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
                 // Keep Cloud: Overwrite local
                 final db = await DatabaseHelper.getInstance();
-                await SyncService.getInstance().forceUpdateLocalFromCloud(book.uuid, cloudProgress, await db.getProgress(book.uuid), db);
+                await SyncService.getInstance().forceUpdateLocalFromCloud(
+                  book.uuid,
+                  cloudProgress,
+                  await db.getProgress(book.uuid),
+                  db,
+                );
                 final updatedProg = await db.getProgress(book.uuid);
                 if (updatedProg != null && mounted) {
                   await _ttsService.loadBook(
-                    book, 
-                    _ttsService.chapters, 
-                    startChapter: updatedProg.currentChapterIndex, 
-                    startParagraph: updatedProg.currentParagraphIndex
+                    book,
+                    _ttsService.chapters,
+                    startChapter: updatedProg.currentChapterIndex,
+                    startParagraph: updatedProg.currentParagraphIndex,
                   );
                 }
               },
-              child: Text(AppLocalizations.of(context)?.useCloud ?? 'Use Cloud', style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                AppLocalizations.of(context)?.useCloud ?? 'Use Cloud',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -257,7 +308,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             return Container(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
               ),
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               child: Column(
@@ -265,14 +318,24 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ tiến trình',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    AppLocalizations.of(context)?.syncProgress ??
+                        'Đồng bộ tiến trình',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    AppLocalizations.of(context)?.syncBookProgressDesc(book.title) ?? 'Đồng bộ hóa tiến trình đọc của truyện "${book.title}"',
-                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white54 : Colors.black54),
+                    AppLocalizations.of(
+                          context,
+                        )?.syncBookProgressDesc(book.title) ??
+                        'Đồng bộ hóa tiến trình đọc của truyện "${book.title}"',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -285,50 +348,101 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     )
                   else ...[
                     ListTile(
-                      leading: Icon(Icons.cloud_upload_rounded, color: Theme.of(context).colorScheme.primary),
-                      title: Text(AppLocalizations.of(context)?.forcePush ?? 'Đẩy lên đám mây (Force Push)'),
-                      subtitle: Text(AppLocalizations.of(context)?.forcePushProgressDesc ?? 'Ghi đè tiến trình đọc hiện tại của máy này lên Cloud WebDAV.'),
+                      leading: Icon(
+                        Icons.cloud_upload_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(
+                        AppLocalizations.of(context)?.forcePush ??
+                            'Đẩy lên đám mây (Force Push)',
+                      ),
+                      subtitle: Text(
+                        AppLocalizations.of(context)?.forcePushProgressDesc ??
+                            'Ghi đè tiến trình đọc hiện tại của máy này lên Cloud WebDAV.',
+                      ),
                       onTap: () async {
-                        setModalState(() { _isSyncing = true; });
-                        setState(() { _isSyncing = true; });
+                        setModalState(() {
+                          _isSyncing = true;
+                        });
+                        setState(() {
+                          _isSyncing = true;
+                        });
                         try {
-                          final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: true);
+                          final result = await SyncService.getInstance()
+                              .forcePushBook(book.uuid, progressOnly: true);
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(result.success
-                                    ? (AppLocalizations.of(context)?.forcePushBookSuccess(book.title) ?? 'Đẩy tiến trình đọc lên Cloud thành công!')
-                                    : (AppLocalizations.of(context)?.forcePushBookFailed(result.message) ?? 'Đẩy tiến trình thất bại: ${result.message}')),
-                                backgroundColor: result.success ? Colors.green : Colors.redAccent,
+                                content: Text(
+                                  result.success
+                                      ? (AppLocalizations.of(
+                                              context,
+                                            )?.forcePushBookSuccess(
+                                              book.title,
+                                            ) ??
+                                            'Đẩy tiến trình đọc lên Cloud thành công!')
+                                      : (AppLocalizations.of(
+                                              context,
+                                            )?.forcePushBookFailed(
+                                              result.message,
+                                            ) ??
+                                            'Đẩy tiến trình thất bại: ${result.message}'),
+                                ),
+                                backgroundColor: result.success
+                                    ? Colors.green
+                                    : Colors.redAccent,
                               ),
                             );
                           }
                         } catch (e) {
                           if (context.mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(AppLocalizations.of(context)?.forcePushBookFailed(e.toString()) ?? 'Lỗi: $e'),
-                              backgroundColor: Colors.redAccent,
-                            ));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(
+                                        context,
+                                      )?.forcePushBookFailed(e.toString()) ??
+                                      'Lỗi: $e',
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
                           }
                         } finally {
                           if (mounted) {
-                            setState(() { _isSyncing = false; });
+                            setState(() {
+                              _isSyncing = false;
+                            });
                           }
                         }
                       },
                     ),
                     const Divider(),
                     ListTile(
-                      leading: Icon(Icons.cloud_download_rounded, color: Theme.of(context).colorScheme.primary),
-                      title: Text(AppLocalizations.of(context)?.forcePull ?? 'Tải về thiết bị (Force Pull)'),
-                      subtitle: Text(AppLocalizations.of(context)?.forcePullProgressDesc ?? 'Kéo tiến trình đọc trên Cloud WebDAV về máy này.'),
+                      leading: Icon(
+                        Icons.cloud_download_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(
+                        AppLocalizations.of(context)?.forcePull ??
+                            'Tải về thiết bị (Force Pull)',
+                      ),
+                      subtitle: Text(
+                        AppLocalizations.of(context)?.forcePullProgressDesc ??
+                            'Kéo tiến trình đọc trên Cloud WebDAV về máy này.',
+                      ),
                       onTap: () async {
-                        setModalState(() { _isSyncing = true; });
-                        setState(() { _isSyncing = true; });
+                        setModalState(() {
+                          _isSyncing = true;
+                        });
+                        setState(() {
+                          _isSyncing = true;
+                        });
                         try {
-                          final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: true);
+                          final result = await SyncService.getInstance()
+                              .forcePullBook(book.uuid, progressOnly: true);
                           if (result.success) {
                             // Tự động reload lại sách với tiến trình mới
                             final db = await DatabaseHelper.getInstance();
@@ -346,21 +460,42 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(result.success
-                                    ? (AppLocalizations.of(context)?.forcePullBookSuccess(book.title) ?? 'Đồng bộ tiến trình từ Cloud thành công!')
-                                    : (AppLocalizations.of(context)?.forcePullBookFailed(result.message) ?? 'Kéo tiến trình thất bại: ${result.message}')),
-                                backgroundColor: result.success ? Colors.green : Colors.redAccent,
+                                content: Text(
+                                  result.success
+                                      ? (AppLocalizations.of(
+                                              context,
+                                            )?.forcePullBookSuccess(
+                                              book.title,
+                                            ) ??
+                                            'Đồng bộ tiến trình từ Cloud thành công!')
+                                      : (AppLocalizations.of(
+                                              context,
+                                            )?.forcePullBookFailed(
+                                              result.message,
+                                            ) ??
+                                            'Kéo tiến trình thất bại: ${result.message}'),
+                                ),
+                                backgroundColor: result.success
+                                    ? Colors.green
+                                    : Colors.redAccent,
                               ),
                             );
                           }
                         } catch (e) {
                           if (context.mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Lỗi: $e'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
                           }
                         } finally {
                           if (mounted) {
-                            setState(() { _isSyncing = false; });
+                            setState(() {
+                              _isSyncing = false;
+                            });
                           }
                         }
                       },
@@ -392,7 +527,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         });
       }
     } catch (e) {
-      LoggerService().log('Failed to update bookmark state', tag: 'APP', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        'Failed to update bookmark state',
+        tag: 'APP',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     }
   }
 
@@ -403,12 +543,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       final db = await DatabaseHelper.getInstance();
       final bookmarks = await db.getBookmarksForBook(book.uuid);
       final highlights = await db.getHighlightsForBook(book.uuid);
-      
+
       final Map<String, Highlight> hMap = {};
       for (final h in highlights) {
         hMap['${h.chapterIndex}_${h.paragraphIndex}'] = h;
       }
-      
+
       if (mounted) {
         setState(() {
           _bookmarks = bookmarks;
@@ -417,7 +557,12 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         });
       }
     } catch (e) {
-      LoggerService().log('Failed to load bookmarks and highlights', tag: 'APP', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        'Failed to load bookmarks and highlights',
+        tag: 'APP',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     }
   }
 
@@ -428,10 +573,17 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     try {
       final db = await DatabaseHelper.getInstance();
       if (_isBookmarked) {
-        await db.deleteBookmarkAt(book.uuid, _ttsService.currentChapterIndex, _ttsService.currentParagraphIndex);
+        await db.deleteBookmarkAt(
+          book.uuid,
+          _ttsService.currentChapterIndex,
+          _ttsService.currentParagraphIndex,
+        );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.bookmarkRemoved), duration: const Duration(seconds: 1)),
+          SnackBar(
+            content: Text(l10n.bookmarkRemoved),
+            duration: const Duration(seconds: 1),
+          ),
         );
       } else {
         final chapter = _ttsService.chapters[_ttsService.currentChapterIndex];
@@ -440,18 +592,29 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
           ..bookUuid = book.uuid
           ..chapterIndex = _ttsService.currentChapterIndex
           ..paragraphIndex = _ttsService.currentParagraphIndex
-          ..contentSnippet = snippet.substring(0, snippet.length > 60 ? 60 : snippet.length)
+          ..contentSnippet = snippet.substring(
+            0,
+            snippet.length > 60 ? 60 : snippet.length,
+          )
           ..dateAdded = DateTime.now();
         await db.saveBookmark(bookmark);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.bookmarkAdded), duration: const Duration(seconds: 1)),
+          SnackBar(
+            content: Text(l10n.bookmarkAdded),
+            duration: const Duration(seconds: 1),
+          ),
         );
       }
       await _updateBookmarkState();
       await _loadBookmarksAndHighlights();
     } catch (e) {
-      LoggerService().log('Failed to toggle bookmark', tag: 'APP', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        'Failed to toggle bookmark',
+        tag: 'APP',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     }
   }
 
@@ -469,7 +632,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     );
   }
 
-  void _showParagraphMenu(int chapterIndex, int paragraphIndex, String paragraphText) async {
+  void _showParagraphMenu(
+    int chapterIndex,
+    int paragraphIndex,
+    String paragraphText,
+  ) async {
     final isDark = _getIsDark(context);
     final textColor = _getTextColor(isDark);
     final key = '${chapterIndex}_$paragraphIndex';
@@ -497,10 +664,14 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                     sheetBg.withValues(alpha: isDark ? 0.85 : 0.95),
                   ],
                 ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.06),
                     width: 1.5,
                   ),
                 ),
@@ -512,47 +683,99 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 children: [
                   Text(
                     l10n.paragraphActions,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildColorButton(context, Colors.yellow, '#FFFFEB3B', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
-                      _buildColorButton(context, Colors.green, '#FF4CAF50', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
-                      _buildColorButton(context, Colors.blue, '#FF2196F3', existingHighlight, chapterIndex, paragraphIndex, paragraphText),
+                      _buildColorButton(
+                        context,
+                        Colors.yellow,
+                        '#FFFFEB3B',
+                        existingHighlight,
+                        chapterIndex,
+                        paragraphIndex,
+                        paragraphText,
+                      ),
+                      _buildColorButton(
+                        context,
+                        Colors.green,
+                        '#FF4CAF50',
+                        existingHighlight,
+                        chapterIndex,
+                        paragraphIndex,
+                        paragraphText,
+                      ),
+                      _buildColorButton(
+                        context,
+                        Colors.blue,
+                        '#FF2196F3',
+                        existingHighlight,
+                        chapterIndex,
+                        paragraphIndex,
+                        paragraphText,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
-                  
+
                   ListTile(
-                    leading: Icon(Icons.sticky_note_2_rounded, color: accentColor),
-                    title: Text(existingHighlight?.note != null ? l10n.editNote : l10n.addNote, style: TextStyle(color: textColor)),
+                    leading: Icon(
+                      Icons.sticky_note_2_rounded,
+                      color: accentColor,
+                    ),
+                    title: Text(
+                      existingHighlight?.note != null
+                          ? l10n.editNote
+                          : l10n.addNote,
+                      style: TextStyle(color: textColor),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
-                      _showAddNoteDialog(chapterIndex, paragraphIndex, paragraphText, existingHighlight);
+                      _showAddNoteDialog(
+                        chapterIndex,
+                        paragraphIndex,
+                        paragraphText,
+                        existingHighlight,
+                      );
                     },
                   ),
-                  
+
                   ListTile(
                     leading: Icon(Icons.copy_rounded, color: accentColor),
-                    title: Text(l10n.copyText, style: TextStyle(color: textColor)),
+                    title: Text(
+                      l10n.copyText,
+                      style: TextStyle(color: textColor),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Clipboard.setData(ClipboardData(text: paragraphText));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.copiedToClipboard), duration: const Duration(seconds: 1)),
+                        SnackBar(
+                          content: Text(l10n.copiedToClipboard),
+                          duration: const Duration(seconds: 1),
+                        ),
                       );
                     },
                   ),
 
                   if (existingHighlight != null)
                     ListTile(
-                      leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                      title: Text(l10n.removeHighlight, style: const TextStyle(color: Colors.redAccent)),
+                      leading: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                      ),
+                      title: Text(
+                        l10n.removeHighlight,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
                       onTap: () async {
                         Navigator.pop(context);
                         final db = await DatabaseHelper.getInstance();
@@ -560,7 +783,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                         await _loadBookmarksAndHighlights();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.highlightRemoved), duration: const Duration(seconds: 1)),
+                            SnackBar(
+                              content: Text(l10n.highlightRemoved),
+                              duration: const Duration(seconds: 1),
+                            ),
                           );
                         }
                       },
@@ -575,13 +801,13 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   }
 
   Widget _buildColorButton(
-    BuildContext context, 
-    Color color, 
-    String hex, 
-    Highlight? existing, 
-    int chapterIndex, 
-    int paragraphIndex, 
-    String text
+    BuildContext context,
+    Color color,
+    String hex,
+    Highlight? existing,
+    int chapterIndex,
+    int paragraphIndex,
+    String text,
   ) {
     final isSelected = existing?.colorHex == hex;
     final accentColor = Theme.of(context).colorScheme.primary;
@@ -591,21 +817,24 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
         final db = await DatabaseHelper.getInstance();
         final book = _ttsService.activeBook;
         if (book == null) return;
-        
+
         final highlight = existing ?? Highlight()
           ..bookUuid = book.uuid
           ..chapterIndex = chapterIndex
           ..paragraphIndex = paragraphIndex
           ..text = text
           ..dateAdded = DateTime.now();
-        
+
         highlight.colorHex = hex;
         await db.saveHighlight(highlight);
         await _loadBookmarksAndHighlights();
         if (context.mounted) {
           final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.highlightSaved), duration: const Duration(seconds: 1)),
+            SnackBar(
+              content: Text(l10n.highlightSaved),
+              duration: const Duration(seconds: 1),
+            ),
           );
         }
       },
@@ -620,12 +849,19 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
             width: isSelected ? 3 : 1.5,
           ),
         ),
-        child: isSelected ? Icon(Icons.check, color: accentColor, size: 20) : null,
+        child: isSelected
+            ? Icon(Icons.check, color: accentColor, size: 20)
+            : null,
       ),
     );
   }
 
-  void _showAddNoteDialog(int chapterIndex, int paragraphIndex, String text, Highlight? existing) {
+  void _showAddNoteDialog(
+    int chapterIndex,
+    int paragraphIndex,
+    String text,
+    Highlight? existing,
+  ) {
     final isDark = _getIsDark(context);
     final controller = TextEditingController(text: existing?.note);
     final l10n = AppLocalizations.of(context)!;
@@ -633,7 +869,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text(existing != null ? l10n.editNote : l10n.addNote, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          existing != null ? l10n.editNote : l10n.addNote,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           maxLines: 3,
@@ -669,7 +908,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
               await _loadBookmarksAndHighlights();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.noteSaved), duration: const Duration(seconds: 1)),
+                  SnackBar(
+                    content: Text(l10n.noteSaved),
+                    duration: const Duration(seconds: 1),
+                  ),
                 );
               }
             },
@@ -686,21 +928,28 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
     const storage = FlutterSecureStorage();
     final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
-    final indentStr = await storage.read(key: 'reader_paragraph_indent') ?? '0.0';
+    final indentStr =
+        await storage.read(key: 'reader_paragraph_indent') ?? '0.0';
 
     setState(() {
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
-      
+
       dynamic rawFont = settings.fontFamily;
-      _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty) ? 'System' : rawFont.toString();
-      
+      _fontFamily = (rawFont == null || rawFont.toString().trim().isEmpty)
+          ? 'System'
+          : rawFont.toString();
+
       dynamic rawTheme = settings.themeMode;
-      _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty) ? 'System' : rawTheme.toString();
-      
+      _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty)
+          ? 'System'
+          : rawTheme.toString();
+
       _lineHeight = settings.lineHeight.isNaN ? 1.6 : settings.lineHeight;
-      _paragraphSpacing = settings.paragraphSpacing.isNaN ? 14.0 : settings.paragraphSpacing;
+      _paragraphSpacing = settings.paragraphSpacing.isNaN
+          ? 14.0
+          : settings.paragraphSpacing;
       _paragraphIndent = double.tryParse(indentStr) ?? 0.0;
       _textAlignment = settings.textAlignment;
       _sideMargin = settings.sideMargin.isNaN ? 20.0 : settings.sideMargin;
@@ -726,9 +975,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
       _checkAndTriggerPeriodicSync();
     });
   }
-
-
-
 
   // --- Hotkeys & Boss Key Handlers ---
   void _handleNextParagraph() {
@@ -763,7 +1009,6 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     _showSettings();
   }
 
-
   Map<ShortcutActivator, VoidCallback> _buildShortcuts(AppSettings settings) {
     return {
       ShortcutHelper.parse(settings.hotkeyNextParagraph): _handleNextParagraph,
@@ -778,7 +1023,11 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   bool _getIsDark(BuildContext context) {
     if (_themeMode == 'Dark' || _themeMode == 'Navy') return true;
-    if (_themeMode == 'Light' || _themeMode == 'Sepia' || _themeMode == 'Mint' || _themeMode == 'Parchment') return false;
+    if (_themeMode == 'Light' ||
+        _themeMode == 'Sepia' ||
+        _themeMode == 'Mint' ||
+        _themeMode == 'Parchment')
+      return false;
     return Theme.of(context).brightness == Brightness.dark;
   }
 
@@ -795,7 +1044,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   Color _getBackgroundColor(bool isDark) {
     if (_themeMode == 'Custom') {
-      return _parseColor(_customBackgroundColor, isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6));
+      return _parseColor(
+        _customBackgroundColor,
+        isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6),
+      );
     }
     if (_themeMode == 'Sepia') return const Color(0xFFF4ECD8);
     if (_themeMode == 'Mint') return const Color(0xFFE8F5E9);
@@ -806,7 +1058,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
   Color _getTextColor(bool isDark) {
     if (_themeMode == 'Custom') {
-      return _parseColor(_customTextColor, isDark ? Colors.white70 : Colors.black87);
+      return _parseColor(
+        _customTextColor,
+        isDark ? Colors.white70 : Colors.black87,
+      );
     }
     if (_themeMode == 'Sepia') return const Color(0xFF5B4636);
     if (_themeMode == 'Mint') return const Color(0xFF1B5E20);
@@ -887,11 +1142,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final isDark = _getIsDark(context);
@@ -928,30 +1179,51 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                       foregroundColor: textColor,
                       title: Text(
                         book.title,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       actions: [
-                        if (_ttsService.isSleepTimerActive && _ttsService.sleepTimerDuration != null)
+                        if (_ttsService.isSleepTimerActive &&
+                            _ttsService.sleepTimerDuration != null)
                           Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               margin: const EdgeInsets.only(right: 8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+                                border: Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.5),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.bedtime, size: 14, color: Theme.of(context).colorScheme.primary),
+                                  Icon(
+                                    Icons.bedtime,
+                                    size: 14,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                 ],
@@ -968,8 +1240,14 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           onPressed: _showSearchInsideBook,
                         ),
                         IconButton(
-                          icon: Icon(_isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
-                          color: _isBookmarked ? Theme.of(context).colorScheme.primary : null,
+                          icon: Icon(
+                            _isBookmarked
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                          ),
+                          color: _isBookmarked
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
                           onPressed: _toggleBookmark,
                         ),
                         IconButton(
@@ -982,13 +1260,19 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                           onPressed: _showSettings,
                         ),
                         IconButton(
-                          icon: Icon(_showSystemUI ? Icons.fullscreen_rounded : Icons.fullscreen_exit_rounded),
+                          icon: Icon(
+                            _showSystemUI
+                                ? Icons.fullscreen_rounded
+                                : Icons.fullscreen_exit_rounded,
+                          ),
                           tooltip: 'Toggle Fullscreen',
                           onPressed: () {
                             setState(() {
                               _showSystemUI = !_showSystemUI;
                               SystemChrome.setEnabledSystemUIMode(
-                                _showSystemUI ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky
+                                _showSystemUI
+                                    ? SystemUiMode.edgeToEdge
+                                    : SystemUiMode.immersiveSticky,
                               );
                             });
                           },
@@ -1001,7 +1285,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                   if (!_showSystemUI) {
                     setState(() {
                       _showSystemUI = true;
-                      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                      SystemChrome.setEnabledSystemUIMode(
+                        SystemUiMode.edgeToEdge,
+                      );
                     });
                   }
                 },
@@ -1009,7 +1295,10 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                 child: Column(
                   children: [
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: _sideMargin, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: _sideMargin,
+                        vertical: 10,
+                      ),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -1018,7 +1307,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: Theme.of(context).colorScheme.primary,
-                            fontFamily: _fontFamily == 'System' ? null : _fontFamily,
+                            fontFamily: _fontFamily == 'System'
+                                ? null
+                                : _fontFamily,
                           ),
                         ),
                       ),
@@ -1027,11 +1318,17 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                       child: ListView.builder(
                         controller: _scrollController,
                         cacheExtent: 100000,
-                        padding: EdgeInsets.fromLTRB(_sideMargin, 10, _sideMargin, 100),
+                        padding: EdgeInsets.fromLTRB(
+                          _sideMargin,
+                          10,
+                          _sideMargin,
+                          100,
+                        ),
                         itemCount: chapter.paragraphs.length,
                         itemBuilder: (context, index) {
                           final paragraphText = chapter.paragraphs[index];
-                          final isActive = index == _ttsService.currentParagraphIndex;
+                          final isActive =
+                              index == _ttsService.currentParagraphIndex;
 
                           final key = '${activeChapterIndex}_$index';
                           final highlight = _highlightsMap[key];
@@ -1045,26 +1342,36 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                             lineHeight: _lineHeight,
                             paragraphSpacing: _paragraphSpacing,
                             paragraphIndent: _paragraphIndent,
-                            textAlign: _textAlignment == 'justify' ? TextAlign.justify : TextAlign.left,
+                            textAlign: _textAlignment == 'justify'
+                                ? TextAlign.justify
+                                : TextAlign.left,
                             wordStart: isActive ? _ttsService.wordStart : 0,
                             wordEnd: isActive ? _ttsService.wordEnd : 0,
                             isDark: isDark,
                             fontFamily: _fontFamily,
                             textColor: textColor,
                             highlightColorHex: highlight?.colorHex,
-                            hasNote: highlight?.note != null && highlight!.note!.isNotEmpty,
+                            hasNote:
+                                highlight?.note != null &&
+                                highlight!.note!.isNotEmpty,
                             onTap: () {
                               if (!_showSystemUI) {
                                 setState(() {
                                   _showSystemUI = true;
-                                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                                  SystemChrome.setEnabledSystemUIMode(
+                                    SystemUiMode.edgeToEdge,
+                                  );
                                 });
                               } else {
                                 _ttsService.jumpToParagraph(index);
                               }
                             },
                             onLongPress: () {
-                              _showParagraphMenu(activeChapterIndex, index, paragraphText);
+                              _showParagraphMenu(
+                                activeChapterIndex,
+                                index,
+                                paragraphText,
+                              );
                             },
                           );
                         },
@@ -1079,7 +1386,9 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
                         value: _scrollProgress,
                         backgroundColor: Colors.transparent,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.8),
                         ),
                       ),
                     ),
@@ -1117,10 +1426,7 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
 
             return CallbackShortcuts(
               bindings: _buildShortcuts(settings),
-              child: Focus(
-                autofocus: true,
-                child: mainWidget,
-              ),
+              child: Focus(autofocus: true, child: mainWidget),
             );
           },
         );

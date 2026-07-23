@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as p;
 import '../utils/path_helper.dart';
-import '../../models/book.dart';
-import '../../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
+import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
 import '../../models/progress.dart';
 import '../../models/settings.dart';
 import '../../models/pronunciation_rule.dart';
@@ -33,14 +33,17 @@ class DatabaseHelper {
       isar = await _openIsar(dir.path);
     } catch (e) {
       // ignore: avoid_print
-      print('[DatabaseHelper] Error opening Isar DB: $e. Recreating database...');
+      print(
+        '[DatabaseHelper] Error opening Isar DB: $e. Recreating database...',
+      );
       // Xóa tất cả các file liên quan đến Isar DB cũ bị lỗi Schema
       final directory = Directory(dir.path);
       if (await directory.exists()) {
         final files = directory.listSync();
         for (final file in files) {
           final name = p.basename(file.path);
-          if (file is File && (name.endsWith('.isar') || name.contains('isar_lock'))) {
+          if (file is File &&
+              (name.endsWith('.isar') || name.contains('isar_lock'))) {
             try {
               await file.delete();
             } catch (_) {}
@@ -49,74 +52,31 @@ class DatabaseHelper {
       }
       isar = await _openIsar(dir.path);
     }
-    await _migrateBookCoversPath(dir.path);
   }
 
   Future<Isar> _openIsar(String path) async {
-    return await Isar.open(
-      [
-        BookSchema,
-        ChapterSchema,
-        ReadingProgressSchema,
-        AppSettingsSchema,
-        PronunciationRuleSchema,
-        BookmarkSchema,
-        HighlightSchema,
-        BgmTrackSchema,
-        OfflineTtsRecordSchema,
-      ],
-      directory: path,
-    );
-  }
-
-  Future<void> _migrateBookCoversPath(String newAppDirPath) async {
-    try {
-      final books = await isar.books.where().findAll();
-      final List<Book> booksToUpdate = [];
-      for (final book in books) {
-        final path = book.coverPath;
-        if (path != null && path.isNotEmpty) {
-          final fileName = p.basename(path);
-          final newPath = p.join(newAppDirPath, 'covers', fileName);
-          final fileExists = File(newPath).existsSync();
-          // ignore: avoid_print
-          print('[Migration] Book "${book.title}":\n  Old Path: $path\n  New Path: $newPath\n  File exists: $fileExists');
-          
-          if (path != newPath) {
-            book.coverPath = newPath;
-            booksToUpdate.add(book);
-          }
-        } else {
-          // ignore: avoid_print
-          print('[Migration] Book "${book.title}": coverPath is null or empty');
-        }
-      }
-      if (booksToUpdate.isNotEmpty) {
-        await isar.writeTxn(() async {
-          await isar.books.putAll(booksToUpdate);
-        });
-        // ignore: avoid_print
-        print('[Migration] Migrated ${booksToUpdate.length} book cover paths to new directory.');
-      }
-    } catch (e) {
-      // ignore: avoid_print
-      print('[Migration] Error migrating book cover paths in database: $e');
-    }
+    return await Isar.open([
+      ReadingProgressSchema,
+      AppSettingsSchema,
+      PronunciationRuleSchema,
+      BookmarkSchema,
+      HighlightSchema,
+      BgmTrackSchema,
+      OfflineTtsRecordSchema,
+    ], directory: path);
   }
 
   // --- Book Operations ---
   Future<void> saveBook(Book book) async {
-    await isar.writeTxn(() async {
-      await isar.books.put(book);
-    });
+    await rust_db.insertBook(book: book);
   }
 
   Future<List<Book>> getAllBooks() async {
-    return await isar.books.where().sortByDateAddedDesc().findAll();
+    return await rust_db.getAllBooks();
   }
 
   Future<List<String>> getAllBookTags() async {
-    final books = await getAllBooks();
+    final books = await rust_db.getAllBooks();
     final Set<String> tags = {};
     for (final book in books) {
       tags.addAll(book.tags);
@@ -124,25 +84,36 @@ class DatabaseHelper {
     return tags.toList();
   }
 
-  Future<List<Book>> getBooks({String? tag, String? status, String sortBy = 'dateAdded'}) async {
-    var query = isar.books.where();
-    List<Book> books;
-    
+  Future<List<Book>> getBooks({
+    String? tag,
+    String? status,
+    String sortBy = 'dateAdded',
+  }) async {
+    List<Book> books = await rust_db.getAllBooks();
+
     if (sortBy == 'title') {
-      books = await query.sortByTitle().findAll();
+      books.sort((a, b) => a.title.compareTo(b.title));
     } else if (sortBy == 'author') {
-      books = await query.sortByAuthor().findAll();
+      books.sort((a, b) => a.author.compareTo(b.author));
+    } else if (sortBy == 'recentlyRead') {
+      final progressList = await isar.readingProgress
+          .where()
+          .sortByLastReadDesc()
+          .findAll();
+      final progressMap = {for (var p in progressList) p.bookUuid: p.lastRead};
+      books.sort((a, b) {
+        final timeA = progressMap[a.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final timeB = progressMap[b.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return timeB.compareTo(timeA);
+      });
     } else {
-      // Mặc định sort theo ngày thêm
-      books = await query.sortByDateAddedDesc().findAll();
+      books.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
     }
 
-    // Lọc theo tag
     if (tag != null && tag != 'All') {
       books = books.where((b) => b.tags.contains(tag)).toList();
     }
-    
-    // Lọc theo status
+
     if (status != null && status != 'All') {
       books = books.where((b) {
         final bStatus = b.status.trim().isEmpty ? 'unread' : b.status;
@@ -150,28 +121,20 @@ class DatabaseHelper {
       }).toList();
     }
 
-    // Sắp xếp theo recentlyRead
-    if (sortBy == 'recentlyRead') {
-      final progressList = await isar.readingProgress.where().sortByLastReadDesc().findAll();
-      final progressMap = {for (var p in progressList) p.bookUuid: p.lastRead};
-      books.sort((a, b) {
-        final timeA = progressMap[a.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final timeB = progressMap[b.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return timeB.compareTo(timeA); // Sách đọc gần đây nhất xếp lên đầu
-      });
-    }
-
     return books;
   }
 
   Future<Book?> getBookByUuid(String uuid) async {
-    return await isar.books.filter().uuidEqualTo(uuid).findFirst();
+    final books = await rust_db.getAllBooks();
+    for (var b in books) {
+      if (b.uuid == uuid) return b;
+    }
+    return null;
   }
 
   Future<void> deleteBook(String uuid) async {
     final book = await getBookByUuid(uuid);
     if (book != null) {
-      // 1. Xóa ảnh bìa của sách nếu có
       if (book.coverPath != null && book.coverPath!.isNotEmpty) {
         try {
           final file = File(book.coverPath!);
@@ -179,12 +142,10 @@ class DatabaseHelper {
             await file.delete();
           }
         } catch (e) {
-          // ignore: avoid_print
           print('[DatabaseHelper] Error deleting physical cover file: $e');
         }
       }
 
-      // Xóa các file TTS offline của sách
       try {
         final appDir = await PathHelper.getAppDirectory();
         final ttsDir = Directory(p.join(appDir.path, 'tts_offline', uuid));
@@ -192,50 +153,39 @@ class DatabaseHelper {
           await ttsDir.delete(recursive: true);
         }
       } catch (e) {
-        // ignore: avoid_print
         print('[DatabaseHelper] Error deleting offline TTS directory: $e');
       }
 
-      // 2. Xóa các bản ghi liên quan trong DB
+      try {
+        await rust_db.deleteBook(uuid: uuid);
+      } catch (e) {
+        print('[DatabaseHelper] Rust DB deleteBook error: $e');
+      }
+
       await isar.writeTxn(() async {
-        // Delete all chapters
-        await isar.chapters.filter().bookUuidEqualTo(uuid).deleteAll();
-        // Delete progress
         await isar.readingProgress.filter().bookUuidEqualTo(uuid).deleteAll();
-        // Delete bookmarks
         await isar.bookmarks.filter().bookUuidEqualTo(uuid).deleteAll();
-        // Delete highlights
         await isar.highlights.filter().bookUuidEqualTo(uuid).deleteAll();
-        // Delete offline TTS records
         await isar.offlineTtsRecords.filter().bookUuidEqualTo(uuid).deleteAll();
-        // Delete book
-        await isar.books.delete(book.id);
       });
     }
   }
 
   // --- Chapter Operations ---
   Future<void> saveChapters(List<Chapter> chapters) async {
-    await isar.writeTxn(() async {
-      await isar.chapters.putAll(chapters);
-    });
+    await rust_db.insertChapters(chapters: chapters);
   }
 
   Future<List<Chapter>> getChaptersForBook(String bookUuid) async {
-    return await isar.chapters
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .sortByChapterIndex()
-        .findAll();
+    return await rust_db.getChapters(bookUuid: bookUuid);
   }
 
   Future<Chapter?> getChapter(String bookUuid, int chapterIndex) async {
-    return await isar.chapters
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .and()
-        .chapterIndexEqualTo(chapterIndex)
-        .findFirst();
+    final chapters = await rust_db.getChapters(bookUuid: bookUuid);
+    for (var c in chapters) {
+      if (c.chapterIndex == chapterIndex) return c;
+    }
+    return null;
   }
 
   // --- Reading Progress Operations ---
@@ -268,7 +218,8 @@ class DatabaseHelper {
         settings.deviceName ??= DeviceHelper.getDefaultDeviceName();
         needSave = true;
       }
-      if (settings.ttsDownloadConcurrency < 1 || settings.ttsDownloadConcurrency > 10) {
+      if (settings.ttsDownloadConcurrency < 1 ||
+          settings.ttsDownloadConcurrency > 10) {
         settings.ttsDownloadConcurrency = 3;
         needSave = true;
       }
@@ -276,8 +227,7 @@ class DatabaseHelper {
         await saveSettings(settings);
       }
       return settings;
-    }
- else {
+    } else {
       final newSettings = AppSettings();
       newSettings.deviceId = DeviceHelper.generateDeviceId();
       newSettings.deviceName = DeviceHelper.getDefaultDeviceName();
@@ -322,7 +272,11 @@ class DatabaseHelper {
         .findAll();
   }
 
-  Future<Bookmark?> getBookmarkAt(String bookUuid, int chapterIndex, int paragraphIndex) async {
+  Future<Bookmark?> getBookmarkAt(
+    String bookUuid,
+    int chapterIndex,
+    int paragraphIndex,
+  ) async {
     return await isar.bookmarks
         .filter()
         .bookUuidEqualTo(bookUuid)
@@ -339,7 +293,11 @@ class DatabaseHelper {
     });
   }
 
-  Future<void> deleteBookmarkAt(String bookUuid, int chapterIndex, int paragraphIndex) async {
+  Future<void> deleteBookmarkAt(
+    String bookUuid,
+    int chapterIndex,
+    int paragraphIndex,
+  ) async {
     await isar.writeTxn(() async {
       await isar.bookmarks
           .filter()
@@ -367,7 +325,11 @@ class DatabaseHelper {
         .findAll();
   }
 
-  Future<Highlight?> getHighlightAt(String bookUuid, int chapterIndex, int paragraphIndex) async {
+  Future<Highlight?> getHighlightAt(
+    String bookUuid,
+    int chapterIndex,
+    int paragraphIndex,
+  ) async {
     return await isar.highlights
         .filter()
         .bookUuidEqualTo(bookUuid)
@@ -384,7 +346,11 @@ class DatabaseHelper {
     });
   }
 
-  Future<void> deleteHighlightAt(String bookUuid, int chapterIndex, int paragraphIndex) async {
+  Future<void> deleteHighlightAt(
+    String bookUuid,
+    int chapterIndex,
+    int paragraphIndex,
+  ) async {
     await isar.writeTxn(() async {
       await isar.highlights
           .filter()
@@ -425,12 +391,20 @@ class DatabaseHelper {
     });
   }
 
-  Future<OfflineTtsRecord?> getOfflineTtsRecord(String bookUuid, int chapterIndex) async {
+  Future<OfflineTtsRecord?> getOfflineTtsRecord(
+    String bookUuid,
+    int chapterIndex,
+  ) async {
     final key = '${bookUuid}_$chapterIndex';
-    return await isar.offlineTtsRecords.filter().bookChapterKeyEqualTo(key).findFirst();
+    return await isar.offlineTtsRecords
+        .filter()
+        .bookChapterKeyEqualTo(key)
+        .findFirst();
   }
 
-  Future<List<OfflineTtsRecord>> getOfflineTtsRecordsForBook(String bookUuid) async {
+  Future<List<OfflineTtsRecord>> getOfflineTtsRecordsForBook(
+    String bookUuid,
+  ) async {
     return await isar.offlineTtsRecords
         .filter()
         .bookUuidEqualTo(bookUuid)
@@ -441,14 +415,19 @@ class DatabaseHelper {
   Future<void> deleteOfflineTtsRecord(String bookUuid, int chapterIndex) async {
     final key = '${bookUuid}_$chapterIndex';
     await isar.writeTxn(() async {
-      await isar.offlineTtsRecords.filter().bookChapterKeyEqualTo(key).deleteAll();
+      await isar.offlineTtsRecords
+          .filter()
+          .bookChapterKeyEqualTo(key)
+          .deleteAll();
     });
   }
 
   Future<void> deleteOfflineTtsRecordsForBook(String bookUuid) async {
     await isar.writeTxn(() async {
-      await isar.offlineTtsRecords.filter().bookUuidEqualTo(bookUuid).deleteAll();
+      await isar.offlineTtsRecords
+          .filter()
+          .bookUuidEqualTo(bookUuid)
+          .deleteAll();
     });
   }
 }
-

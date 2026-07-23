@@ -18,17 +18,17 @@ class ThemeNotifier extends ChangeNotifier {
   void updateTheme(String mode, {String? primaryColorHex}) {
     final normalized = mode.isEmpty ? 'System' : mode;
     bool changed = false;
-    
+
     if (_themeMode != normalized) {
       _themeMode = normalized;
       changed = true;
     }
-    
+
     if (_primaryColorHex != primaryColorHex) {
       _primaryColorHex = primaryColorHex;
       changed = true;
     }
-    
+
     if (changed) {
       notifyListeners();
     }

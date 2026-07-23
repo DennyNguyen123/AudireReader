@@ -26,6 +26,7 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -39,6 +40,11 @@ jobs:
             sed -i 's/compileSdkVersion 30/compileSdkVersion 34\n    namespace "dev.isar.isar_flutter_libs"/g' "$file"
             sed -i 's/minSdkVersion 16/minSdkVersion 21/g' "$file"
           done
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
@@ -74,12 +80,18 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Run Tests
         run: flutter test
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
@@ -124,6 +136,7 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
+          cache: true
 
       - name: Setup CocoaPods
         uses: maxim-lobanov/setup-cocoapods@v1
@@ -136,6 +149,11 @@ jobs:
 
       - name: Run Tests
         run: flutter test
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs

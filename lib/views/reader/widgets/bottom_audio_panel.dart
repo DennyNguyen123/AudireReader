@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
-import '../../../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';
 import 'bgm_player_sheet.dart';
 import 'reader_tts_settings_sheet.dart';
@@ -60,7 +60,9 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -113,12 +115,16 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
       panelBg = const Color(0xFFEAD8B1);
     }
 
-    final Color glassColor = panelBg.withValues(alpha: widget.isDark ? 0.75 : 0.85);
+    final Color glassColor = panelBg.withValues(
+      alpha: widget.isDark ? 0.75 : 0.85,
+    );
 
     final tts = widget.ttsService;
     final totalParagraphs = widget.chapter.paragraphs.length;
     final currentParagraph = tts.currentParagraphIndex + 1;
-    final double percent = totalParagraphs > 0 ? (currentParagraph / totalParagraphs * 100) : 0.0;
+    final double percent = totalParagraphs > 0
+        ? (currentParagraph / totalParagraphs * 100)
+        : 0.0;
     final percentStr = percent.toStringAsFixed(1);
     final currentChapter = tts.currentChapterIndex + 1;
     final totalChapters = tts.chapters.length;
@@ -150,7 +156,9 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: widget.isDark ? 0.15 : 0.04),
+                color: Colors.black.withValues(
+                  alpha: widget.isDark ? 0.15 : 0.04,
+                ),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -166,23 +174,38 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                 builder: (context, snapshot) {
                   final position = snapshot.data ?? Duration.zero;
                   final currentPositionSec = position.inSeconds.toDouble();
-                  
-                  double sliderValue = _isDragging ? _dragValue : currentPositionSec;
-                  if (sliderValue < 0) sliderValue = 0.0;
-                  if (sliderValue > chapterDuration) sliderValue = chapterDuration;
 
-                  final currentPositionStr = _formatDuration(Duration(seconds: sliderValue.toInt()));
-                  final durationStr = _formatDuration(Duration(seconds: chapterDuration.toInt()));
+                  double sliderValue = _isDragging
+                      ? _dragValue
+                      : currentPositionSec;
+                  if (sliderValue < 0) sliderValue = 0.0;
+                  if (sliderValue > chapterDuration)
+                    sliderValue = chapterDuration;
+
+                  final currentPositionStr = _formatDuration(
+                    Duration(seconds: sliderValue.toInt()),
+                  );
+                  final durationStr = _formatDuration(
+                    Duration(seconds: chapterDuration.toInt()),
+                  );
 
                   return Column(
                     children: [
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
-                          activeTrackColor: Theme.of(context).colorScheme.primary,
-                          inactiveTrackColor: widget.textColor.withValues(alpha: 0.2),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 5,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 10,
+                          ),
+                          activeTrackColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          inactiveTrackColor: widget.textColor.withValues(
+                            alpha: 0.2,
+                          ),
                           thumbColor: Theme.of(context).colorScheme.primary,
                         ),
                         child: Slider(
@@ -206,9 +229,15 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                                   if (charPerSec > 0) {
                                     double total = 0.0;
                                     int targetIndex = 0;
-                                    final paragraphs = widget.chapter.paragraphs;
-                                    for (int i = 0; i < paragraphs.length; i++) {
-                                      final dur = paragraphs[i].length / charPerSec;
+                                    final paragraphs =
+                                        widget.chapter.paragraphs;
+                                    for (
+                                      int i = 0;
+                                      i < paragraphs.length;
+                                      i++
+                                    ) {
+                                      final dur =
+                                          paragraphs[i].length / charPerSec;
                                       if (value <= total + dur) {
                                         targetIndex = i;
                                         break;
@@ -280,7 +309,9 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                         _buildControlButton(
                           icon: Icons.skip_previous_rounded,
                           iconSize: 18,
-                          onPressed: tts.currentChapterIndex > 0 ? tts.previousChapter : null,
+                          onPressed: tts.currentChapterIndex > 0
+                              ? tts.previousChapter
+                              : null,
                           tooltip: "Previous Chapter",
                           textColor: widget.textColor,
                         ),
@@ -301,7 +332,9 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [
-                                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.85),
                                   Theme.of(context).colorScheme.primary,
                                 ],
                                 begin: Alignment.topLeft,
@@ -309,14 +342,18 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.45),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Icon(
-                              tts.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              tts.isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
                               size: 30,
                               color: Colors.white,
                             ),
@@ -333,7 +370,10 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                         _buildControlButton(
                           icon: Icons.skip_next_rounded,
                           iconSize: 18,
-                          onPressed: tts.currentChapterIndex < tts.chapters.length - 1 ? tts.nextChapter : null,
+                          onPressed:
+                              tts.currentChapterIndex < tts.chapters.length - 1
+                              ? tts.nextChapter
+                              : null,
                           tooltip: "Next Chapter",
                           textColor: widget.textColor,
                         ),
@@ -361,12 +401,19 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
 
               // 3. Compact Stats
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: widget.isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                  color: widget.isDark
+                      ? Colors.white.withValues(alpha: 0.03)
+                      : Colors.black.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                    color: widget.isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
                     width: 1,
                   ),
                 ),
@@ -406,4 +453,3 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     );
   }
 }
-

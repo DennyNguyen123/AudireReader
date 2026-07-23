@@ -45,7 +45,7 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
       final dt = DateTime.parse(timestampStr).toLocal();
       final now = DateTime.now();
       final diff = now.difference(dt);
-      
+
       final locale = Localizations.localeOf(context).languageCode;
       final isVi = locale == 'vi';
 
@@ -88,95 +88,101 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _history.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.history_toggle_off_rounded,
-                        size: 64,
-                        color: isDark ? Colors.white30 : Colors.black26,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        isVi ? 'Không có lịch sử đồng bộ' : 'No sync history found',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white54 : Colors.black54,
-                        ),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.history_toggle_off_rounded,
+                    size: 64,
+                    color: isDark ? Colors.white30 : Colors.black26,
                   ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  itemCount: _history.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = _history[index];
-                    final action = item['action'] as String? ?? 'push';
-                    final isPush = action == 'push';
-                    
-                    final timestamp = item['timestamp'] as String? ?? '';
-                    final deviceName = item['deviceName'] as String? ?? 'Unknown Device';
-                    final bookTitle = item['bookTitle'] as String? ?? 'Unknown Book';
-                    final chapterIndex = (item['chapterIndex'] as num?)?.toInt() ?? 0;
-                    final paragraphIndex = (item['paragraphIndex'] as num?)?.toInt() ?? 0;
+                  const SizedBox(height: 16),
+                  Text(
+                    isVi ? 'Không có lịch sử đồng bộ' : 'No sync history found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              itemCount: _history.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final item = _history[index];
+                final action = item['action'] as String? ?? 'push';
+                final isPush = action == 'push';
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isPush
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.orange.withOpacity(0.15),
-                        child: Icon(
-                          isPush ? Icons.cloud_upload_rounded : Icons.cloud_download_rounded,
-                          color: isPush ? Colors.green : Colors.orange,
+                final timestamp = item['timestamp'] as String? ?? '';
+                final deviceName =
+                    item['deviceName'] as String? ?? 'Unknown Device';
+                final bookTitle =
+                    item['bookTitle'] as String? ?? 'Unknown Book';
+                final chapterIndex =
+                    (item['chapterIndex'] as num?)?.toInt() ?? 0;
+                final paragraphIndex =
+                    (item['paragraphIndex'] as num?)?.toInt() ?? 0;
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: isPush
+                        ? Colors.green.withOpacity(0.15)
+                        : Colors.orange.withOpacity(0.15),
+                    child: Icon(
+                      isPush
+                          ? Icons.cloud_upload_rounded
+                          : Icons.cloud_download_rounded,
+                      color: isPush ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                  title: Text(
+                    bookTitle,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isVi
+                              ? 'Thiết bị: $deviceName'
+                              : 'Device: $deviceName',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
                         ),
-                      ),
-                      title: Text(
-                        bookTitle,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                        const SizedBox(height: 2),
+                        Text(
+                          isVi
+                              ? 'Tiến trình: Chương ${chapterIndex + 1}, Đoạn ${paragraphIndex + 1}'
+                              : 'Progress: Ch ${chapterIndex + 1}, Paragraph ${paragraphIndex + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white54 : Colors.black54,
+                          ),
                         ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isVi
-                                  ? 'Thiết bị: $deviceName'
-                                  : 'Device: $deviceName',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark ? Colors.white70 : Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              isVi
-                                  ? 'Tiến trình: Chương ${chapterIndex + 1}, Đoạn ${paragraphIndex + 1}'
-                                  : 'Progress: Ch ${chapterIndex + 1}, Paragraph ${paragraphIndex + 1}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? Colors.white54 : Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      trailing: Text(
-                        _formatTimestamp(context, timestamp),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white30 : Colors.black38,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  ),
+                  trailing: Text(
+                    _formatTimestamp(context, timestamp),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white30 : Colors.black38,
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

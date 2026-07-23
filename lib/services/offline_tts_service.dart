@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 import 'package:path/path.dart' as p;
 import '../core/database/database_helper.dart';
 import '../core/utils/path_helper.dart';
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../models/offline_tts_record.dart';
 import '../models/settings.dart';
 import 'edge_tts_service.dart';
 import 'openai_tts_service.dart';
 import 'supertonic_service.dart';
+import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import 'tts_service.dart';
 
 enum DownloadState { idle, downloading, paused, completed, error }
@@ -38,7 +36,7 @@ class OfflineTtsService extends ChangeNotifier {
   final Map<int, double> _chapterProgress = {};
   // Chapter index -> status string ('idle', 'downloading', 'completed', 'error')
   final Map<int, String> _chapterStatus = {};
-  
+
   Map<int, double> get chapterProgress => Map.unmodifiable(_chapterProgress);
   Map<int, String> get chapterStatus => Map.unmodifiable(_chapterStatus);
 
@@ -63,16 +61,20 @@ class OfflineTtsService extends ChangeNotifier {
 
   OfflineTtsService._();
 
-
   static OfflineTtsService getInstance() {
     _instance ??= OfflineTtsService._();
     return _instance!;
   }
 
   /// Get the offline directory for a specific book and chapter
-  Future<Directory> getOfflineChapterDir(String bookUuid, int chapterIndex) async {
+  Future<Directory> getOfflineChapterDir(
+    String bookUuid,
+    int chapterIndex,
+  ) async {
     final appDir = await PathHelper.getAppDirectory();
-    final dir = Directory(p.join(appDir.path, 'tts_offline', bookUuid, 'ch_$chapterIndex'));
+    final dir = Directory(
+      p.join(appDir.path, 'tts_offline', bookUuid, 'ch_$chapterIndex'),
+    );
     if (!dir.existsSync()) {
       await dir.create(recursive: true);
     }
@@ -83,10 +85,10 @@ class OfflineTtsService extends ChangeNotifier {
   Future<int> getStorageUsage([String? bookUuid]) async {
     try {
       final appDir = await PathHelper.getAppDirectory();
-      final targetPath = bookUuid != null 
+      final targetPath = bookUuid != null
           ? p.join(appDir.path, 'tts_offline', bookUuid)
           : p.join(appDir.path, 'tts_offline');
-      
+
       final dir = Directory(targetPath);
       if (!dir.existsSync()) return 0;
 
@@ -130,14 +132,19 @@ class OfflineTtsService extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('[OfflineTtsService] Error calculating chapter storage sizes: $e');
+      debugPrint(
+        '[OfflineTtsService] Error calculating chapter storage sizes: $e',
+      );
     }
     return sizes;
   }
 
-
   /// Check if a chapter has valid offline TTS files matching current settings
-  Future<bool> isChapterDownloaded(String bookUuid, int chapterIndex, AppSettings settings) async {
+  Future<bool> isChapterDownloaded(
+    String bookUuid,
+    int chapterIndex,
+    AppSettings settings,
+  ) async {
     try {
       final db = await DatabaseHelper.getInstance();
       final record = await db.getOfflineTtsRecord(bookUuid, chapterIndex);
@@ -160,7 +167,9 @@ class OfflineTtsService extends ChangeNotifier {
       final dir = await getOfflineChapterDir(bookUuid, chapterIndex);
       if (!dir.existsSync()) return false;
 
-      final audioFiles = dir.listSync().whereType<File>().where((f) => f.path.endsWith('.wav') || f.path.endsWith('.mp3'));
+      final audioFiles = dir.listSync().whereType<File>().where(
+        (f) => f.path.endsWith('.wav') || f.path.endsWith('.mp3'),
+      );
       return audioFiles.isNotEmpty;
     } catch (e) {
       return false;
@@ -221,31 +230,19 @@ class OfflineTtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Process download queue with configured concurrency
+  /// Process download queue sequentially for chapters
   Future<void> _processQueue(Book book, AppSettings settings) async {
     final concurrency = settings.ttsDownloadConcurrency.clamp(1, 10);
-    final List<Future<void>> workers = [];
 
-    for (int i = 0; i < concurrency; i++) {
-      workers.add(_workerLoop(book, settings));
-    }
-
-    await Future.wait(workers);
-
-    if (_pendingQueue.isEmpty && _activeDownloadingIndices.isEmpty && _state == DownloadState.downloading) {
-      _state = DownloadState.completed;
-      _notifyListenersImmediate();
-    }
-  }
-
-  Future<void> _workerLoop(Book book, AppSettings settings) async {
-    while (_pendingQueue.isNotEmpty && _state == DownloadState.downloading && !_cancelRequested) {
+    while (_pendingQueue.isNotEmpty &&
+        _state == DownloadState.downloading &&
+        !_cancelRequested) {
       final chapter = _pendingQueue.removeAt(0);
       _activeDownloadingIndices.add(chapter.chapterIndex);
       _chapterStatus[chapter.chapterIndex] = 'downloading';
       _notifyListenersDebounced();
 
-      await _downloadChapterWorker(book, chapter, settings);
+      await _downloadChapterWorker(book, chapter, settings, concurrency);
 
       _activeDownloadingIndices.remove(chapter.chapterIndex);
       if (_chapterStatus[chapter.chapterIndex] == 'completed') {
@@ -253,10 +250,22 @@ class OfflineTtsService extends ChangeNotifier {
       }
       _notifyListenersDebounced();
     }
+
+    if (_pendingQueue.isEmpty &&
+        _activeDownloadingIndices.isEmpty &&
+        _state == DownloadState.downloading) {
+      _state = DownloadState.completed;
+      _notifyListenersImmediate();
+    }
   }
 
   /// Worker to download a single chapter
-  Future<void> _downloadChapterWorker(Book book, Chapter chapter, AppSettings settings) async {
+  Future<void> _downloadChapterWorker(
+    Book book,
+    Chapter chapter,
+    AppSettings settings,
+    int concurrency,
+  ) async {
     final chIdx = chapter.chapterIndex;
     final paragraphs = chapter.paragraphs;
 
@@ -270,81 +279,133 @@ class OfflineTtsService extends ChangeNotifier {
     final ttsService = await TtsService.getInstance();
 
     final provider = settings.ttsProvider;
-    final voiceName = settings.selectedVoiceName ?? (provider == 'supertonic' ? 'M1' : 'vi-VN-HoaiMyNeural');
+    final voiceName =
+        settings.selectedVoiceName ??
+        (provider == 'supertonic' ? 'M1' : 'vi-VN-HoaiMyNeural');
     final rate = settings.speechRate;
 
     final dir = await getOfflineChapterDir(book.uuid, chIdx);
     int totalBytes = 0;
     int downloadedCount = 0;
 
-    for (int pIdx = 0; pIdx < paragraphs.length; pIdx++) {
-      if (_cancelRequested || _state == DownloadState.paused) {
-        break;
-      }
+    // Use a queue of paragraph indices
+    final pendingParagraphs = List.generate(paragraphs.length, (i) => i);
+    final List<Future<void>> workers = [];
 
-      final rawText = paragraphs[pIdx].trim();
-      if (rawText.isEmpty) {
-        downloadedCount++;
-        _chapterProgress[chIdx] = downloadedCount / paragraphs.length;
-        _notifyListenersDebounced();
-        continue;
-      }
+    for (int i = 0; i < concurrency; i++) {
+      workers.add(() async {
+        while (pendingParagraphs.isNotEmpty && !_cancelRequested && _state != DownloadState.paused) {
+          final pIdx = pendingParagraphs.removeAt(0);
 
-      // Apply pronunciation dictionary rules
-      final processedText = ttsService.applyPronunciationRules(rawText);
+          final rawText = paragraphs[pIdx].trim();
+          if (rawText.isEmpty) {
+            downloadedCount++;
+            _chapterProgress[chIdx] = downloadedCount / paragraphs.length;
+            _notifyListenersDebounced();
+            continue;
+          }
 
-      final audioPath = p.join(dir.path, 'p_$pIdx.wav');
-      final audioFile = File(audioPath);
+          // Apply pronunciation dictionary rules
+          final processedText = ttsService.applyPronunciationRules(rawText);
 
+          final audioPath = p.join(dir.path, 'p_$pIdx.wav');
+          final audioFile = File(audioPath);
 
-      if (!audioFile.existsSync() || audioFile.lengthSync() == 0) {
-        try {
-          if (provider == 'microsoft_edge') {
-            final bytesWritten = await EdgeTtsService.synthesizeToFile(
-              text: processedText,
-              voice: voiceName,
-              targetFile: audioFile,
-              rate: rate,
-            );
-            if (bytesWritten > 0) {
-              totalBytes += bytesWritten;
-              debugPrint('[RAM Trace] Ch $chIdx P $pIdx/${paragraphs.length} streamed (${(bytesWritten / 1024).toStringAsFixed(1)} KB). Process RSS RAM: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB');
-            }
-          } else if (provider == 'openai') {
-
-            final path = await OpenAiTtsService.synthesizeToWav(processedText, voiceName, rate);
-            final generatedFile = File(path);
-            if (generatedFile.existsSync()) {
-              await generatedFile.copy(audioPath);
-              totalBytes += await audioFile.length();
-            }
-          } else if (provider == 'supertonic') {
-            final supertonic = SupertonicService.getInstance();
-            await supertonic.initializeEngine(voiceStyle: voiceName);
-            final detectedLang = supertonic.detectLanguage(processedText);
-            final path = await supertonic.synthesizeToWav(processedText, speed: rate * 2.0, lang: detectedLang);
-            if (path != null) {
-              final generatedFile = File(path);
-              if (generatedFile.existsSync()) {
-                await generatedFile.copy(audioPath);
-                totalBytes += await audioFile.length();
+          if (!audioFile.existsSync() || audioFile.lengthSync() == 0) {
+            bool success = false;
+            int retries = 0;
+            
+            while (!success && retries < 3 && !_cancelRequested && _state != DownloadState.paused) {
+              try {
+                if (provider == 'microsoft_edge') {
+                  final audioBytes = await rust_tts.synthesizeEdgeTts(
+                    text: processedText,
+                    voiceId: voiceName,
+                    rate: rate,
+                  );
+                  if (audioBytes.isNotEmpty) {
+                    await audioFile.writeAsBytes(audioBytes);
+                    totalBytes += audioBytes.length;
+                    debugPrint(
+                      '[RAM Trace] Ch $chIdx P $pIdx/${paragraphs.length} streamed (${(audioBytes.length / 1024).toStringAsFixed(1)} KB). Process RSS RAM: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB',
+                    );
+                    success = true;
+                  } else {
+                    throw Exception("Empty audio bytes returned");
+                  }
+                } else if (provider == 'openai') {
+                  final apiKey = settings.openAiTtsApiKey ?? '';
+                  final audioBytes = await rust_tts.synthesizeOpenaiTts(
+                    text: processedText,
+                    voice: voiceName,
+                    apiKey: apiKey,
+                    speed: rate,
+                  );
+                  if (audioBytes.isNotEmpty) {
+                    await audioFile.writeAsBytes(audioBytes);
+                    totalBytes += audioBytes.length;
+                    success = true;
+                  } else {
+                    throw Exception("Empty audio bytes returned");
+                  }
+                } else if (provider == 'supertonic') {
+                  final supertonic = SupertonicService.getInstance();
+                  await supertonic.initializeEngine(voiceStyle: voiceName);
+                  final detectedLang = supertonic.detectLanguage(processedText);
+                  final path = await supertonic.synthesizeToWav(
+                    processedText,
+                    speed: rate * 2.0,
+                    lang: detectedLang,
+                  );
+                  if (path != null) {
+                    final generatedFile = File(path);
+                    if (generatedFile.existsSync()) {
+                      await generatedFile.copy(audioPath);
+                      totalBytes += await audioFile.length();
+                      success = true;
+                    } else {
+                      throw Exception("Audio file not found after generation");
+                    }
+                  } else {
+                    throw Exception("Supertonic synthesize returned null");
+                  }
+                }
+              } catch (e) {
+                retries++;
+                debugPrint(
+                  '[OfflineTtsService] Error downloading paragraph $pIdx of chapter $chIdx (Attempt $retries/3): $e',
+                );
+                
+                if (retries >= 3) {
+                  _state = DownloadState.paused;
+                  _chapterStatus[chIdx] = 'error';
+                  _notifyListenersImmediate();
+                  break;
+                } else {
+                  await Future.delayed(const Duration(seconds: 2));
+                }
               }
             }
+            
+            if (!success) {
+              // Pause execution if max retries exceeded
+              break;
+            }
+          } else {
+            totalBytes += audioFile.lengthSync();
           }
-        } catch (e) {
-          debugPrint('[OfflineTtsService] Error downloading paragraph $pIdx of chapter $chIdx: $e');
+
+          downloadedCount++;
+          _chapterProgress[chIdx] = downloadedCount / paragraphs.length;
+          _notifyListenersDebounced();
+
+          // Nhường Event Loop để Dart VM Garbage Collector có thời gian thu hồi bộ nhớ RAM
+          await Future.microtask(() {});
         }
-      } else {
-        totalBytes += audioFile.lengthSync();
-      }
-
-      downloadedCount++;
-      _chapterProgress[chIdx] = downloadedCount / paragraphs.length;
-      _notifyListenersDebounced();
-
-      // Nhường Event Loop để Dart VM Garbage Collector có thời gian thu hồi bộ nhớ RAM nhị phân Uint8List
-      await Future.microtask(() {});
+      }());
     }
+
+    await Future.wait(workers);
 
     if (downloadedCount >= paragraphs.length && !_cancelRequested) {
       _chapterStatus[chIdx] = 'completed';
@@ -369,13 +430,17 @@ class OfflineTtsService extends ChangeNotifier {
     }
 
     // Xoá cache văn bản giải nén của chương để nhả RAM lập tức
-    chapter.clearCache();
-    debugPrint('[RAM Diagnostic] Finished Chapter $chIdx. Process RSS RAM: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB');
+    // // chapter.clearCache();
+    debugPrint(
+      '[RAM Diagnostic] Finished Chapter $chIdx. Process RSS RAM: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB',
+    );
   }
 
-
   /// Delete offline TTS audio and record for a specific chapter
-  Future<void> deleteOfflineTtsForChapter(String bookUuid, int chapterIndex) async {
+  Future<void> deleteOfflineTtsForChapter(
+    String bookUuid,
+    int chapterIndex,
+  ) async {
     try {
       final db = await DatabaseHelper.getInstance();
       await db.deleteOfflineTtsRecord(bookUuid, chapterIndex);
@@ -389,12 +454,17 @@ class OfflineTtsService extends ChangeNotifier {
       _chapterProgress.remove(chapterIndex);
       notifyListeners();
     } catch (e) {
-      debugPrint('[OfflineTtsService] Failed to delete offline TTS for chapter $chapterIndex: $e');
+      debugPrint(
+        '[OfflineTtsService] Failed to delete offline TTS for chapter $chapterIndex: $e',
+      );
     }
   }
 
   /// Delete offline TTS audio and records for multiple chapters
-  Future<void> deleteOfflineTtsForChapters(String bookUuid, List<int> chapterIndices) async {
+  Future<void> deleteOfflineTtsForChapters(
+    String bookUuid,
+    List<int> chapterIndices,
+  ) async {
     try {
       final db = await DatabaseHelper.getInstance();
       for (final chIdx in chapterIndices) {
@@ -408,7 +478,9 @@ class OfflineTtsService extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      debugPrint('[OfflineTtsService] Failed to delete offline TTS for chapters: $e');
+      debugPrint(
+        '[OfflineTtsService] Failed to delete offline TTS for chapters: $e',
+      );
     }
   }
 
@@ -430,7 +502,9 @@ class OfflineTtsService extends ChangeNotifier {
       _currentBookUuid = null;
       notifyListeners();
     } catch (e) {
-      debugPrint('[OfflineTtsService] Failed to delete offline TTS for book $bookUuid: $e');
+      debugPrint(
+        '[OfflineTtsService] Failed to delete offline TTS for book $bookUuid: $e',
+      );
     }
   }
 }

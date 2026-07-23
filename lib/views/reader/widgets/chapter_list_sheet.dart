@@ -15,8 +15,10 @@ class ChapterListSheet extends StatefulWidget {
   final bool isDark;
   final Color textColor;
   final Color sheetBg;
-  final Future<void> Function() onRefreshData; // Gọi khi xóa bookmark/highlight để load lại dữ liệu ở màn hình chính
-  final Future<void> Function() onUpdateBookmarkState; // Cập nhật lại icon bookmark ở AppBar
+  final Future<void> Function()
+  onRefreshData; // Gọi khi xóa bookmark/highlight để load lại dữ liệu ở màn hình chính
+  final Future<void> Function()
+  onUpdateBookmarkState; // Cập nhật lại icon bookmark ở AppBar
   final ScrollController? scrollController;
 
   const ChapterListSheet({
@@ -52,12 +54,15 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
     _offlineService.addListener(_loadDownloadedStatus);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.scrollController != null && widget.scrollController!.hasClients) {
+      if (widget.scrollController != null &&
+          widget.scrollController!.hasClients) {
         final currentIdx = widget.ttsService.currentChapterIndex;
         if (currentIdx > 0) {
           final offset = (currentIdx * 52.0) - 52.0;
           final maxScroll = widget.scrollController!.position.maxScrollExtent;
-          widget.scrollController!.jumpTo(offset > maxScroll ? maxScroll : (offset > 0 ? offset : 0));
+          widget.scrollController!.jumpTo(
+            offset > maxScroll ? maxScroll : (offset > 0 ? offset : 0),
+          );
         }
       }
     });
@@ -77,7 +82,11 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
 
     final downloaded = <int>{};
     for (final ch in widget.ttsService.chapters) {
-      final isDownloaded = await _offlineService.isChapterDownloaded(book.uuid, ch.chapterIndex, settings);
+      final isDownloaded = await _offlineService.isChapterDownloaded(
+        book.uuid,
+        ch.chapterIndex,
+        settings,
+      );
       if (isDownloaded) {
         downloaded.add(ch.chapterIndex);
       }
@@ -147,10 +156,14 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                   widget.sheetBg.withValues(alpha: widget.isDark ? 0.85 : 0.95),
                 ],
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               border: Border(
                 top: BorderSide(
-                  color: widget.isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                  color: widget.isDark
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.06),
                   width: 1.5,
                 ),
               ),
@@ -172,9 +185,27 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                   indicatorColor: primaryColor,
                   indicatorWeight: 3,
                   tabs: [
-                    Tab(text: AppLocalizations.of(context)?.chaptersTab ?? 'Chapters', icon: const Icon(Icons.format_list_bulleted_rounded, size: 20)),
-                    Tab(text: AppLocalizations.of(context)?.bookmarksTab ?? 'Bookmarks', icon: const Icon(Icons.bookmark_rounded, size: 20)),
-                    Tab(text: AppLocalizations.of(context)?.highlightsTab ?? 'Highlights', icon: const Icon(Icons.border_color_rounded, size: 20)),
+                    Tab(
+                      text:
+                          AppLocalizations.of(context)?.chaptersTab ??
+                          'Chapters',
+                      icon: const Icon(
+                        Icons.format_list_bulleted_rounded,
+                        size: 20,
+                      ),
+                    ),
+                    Tab(
+                      text:
+                          AppLocalizations.of(context)?.bookmarksTab ??
+                          'Bookmarks',
+                      icon: const Icon(Icons.bookmark_rounded, size: 20),
+                    ),
+                    Tab(
+                      text:
+                          AppLocalizations.of(context)?.highlightsTab ??
+                          'Highlights',
+                      icon: const Icon(Icons.border_color_rounded, size: 20),
+                    ),
                   ],
                 ),
                 const Divider(height: 1),
@@ -191,16 +222,35 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                   child: TextField(
                                     style: TextStyle(color: widget.textColor),
                                     decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(context)?.searchChaptersHint ?? 'Search chapters...',
-                                      hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
-                                      prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
+                                      hintText:
+                                          AppLocalizations.of(
+                                            context,
+                                          )?.searchChaptersHint ??
+                                          'Search chapters...',
+                                      hintStyle: TextStyle(
+                                        color: widget.textColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.search_rounded,
+                                        color: widget.textColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
                                       filled: true,
-                                      fillColor: widget.isDark ? Colors.white10 : Colors.black12,
+                                      fillColor: widget.isDark
+                                          ? Colors.white10
+                                          : Colors.black12,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 8,
+                                          ),
                                     ),
                                     onChanged: (val) {
                                       setState(() {
@@ -211,11 +261,18 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                 ),
                                 const SizedBox(width: 8),
                                 IconButton(
-                                  icon: Icon(Icons.download_for_offline_rounded, color: primaryColor),
+                                  icon: Icon(
+                                    Icons.download_for_offline_rounded,
+                                    color: primaryColor,
+                                  ),
                                   tooltip: 'Quản lý TTS Offline',
                                   style: IconButton.styleFrom(
-                                    backgroundColor: primaryColor.withValues(alpha: 0.15),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    backgroundColor: primaryColor.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                   onPressed: _openDownloadManager,
                                 ),
@@ -226,8 +283,15 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                             child: filteredChapters.isEmpty
                                 ? Center(
                                     child: Text(
-                                      AppLocalizations.of(context)?.noChaptersMatch ?? 'No chapters match your search',
-                                      style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                                      AppLocalizations.of(
+                                            context,
+                                          )?.noChaptersMatch ??
+                                          'No chapters match your search',
+                                      style: TextStyle(
+                                        color: widget.textColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
                                     ),
                                   )
                                 : ListView.builder(
@@ -237,11 +301,19 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                       final entry = filteredChapters[index];
                                       final originalIndex = entry.key;
                                       final chapter = entry.value;
-                                      final isCurrent = originalIndex == currentChapterIdx;
-                                      final isDownloaded = _downloadedChapterIndices.contains(originalIndex);
+                                      final isCurrent =
+                                          originalIndex == currentChapterIdx;
+                                      final isDownloaded =
+                                          _downloadedChapterIndices.contains(
+                                            originalIndex,
+                                          );
 
                                       return ListTile(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 2,
+                                            ),
                                         title: Row(
                                           children: [
                                             Expanded(
@@ -249,8 +321,10 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                                 chapter.title,
                                                 style: TextStyle(
                                                   fontSize: 14,
-                                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                                                  color: isCurrent 
+                                                  fontWeight: isCurrent
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                  color: isCurrent
                                                       ? primaryColor
                                                       : widget.textColor,
                                                 ),
@@ -258,23 +332,34 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                             ),
                                             if (isDownloaded)
                                               Padding(
-                                                padding: const EdgeInsets.only(left: 6),
-                                                child: Icon(Icons.check_circle_rounded, color: Colors.green.withValues(alpha: 0.8), size: 16),
+                                                padding: const EdgeInsets.only(
+                                                  left: 6,
+                                                ),
+                                                child: Icon(
+                                                  Icons.check_circle_rounded,
+                                                  color: Colors.green
+                                                      .withValues(alpha: 0.8),
+                                                  size: 16,
+                                                ),
                                               ),
                                           ],
                                         ),
-                                        trailing: isCurrent 
+                                        trailing: isCurrent
                                             ? Icon(
-                                                Icons.volume_up_rounded, 
-                                                color: primaryColor
-                                              ) 
+                                                Icons.volume_up_rounded,
+                                                color: primaryColor,
+                                              )
                                             : null,
-                                        tileColor: isCurrent 
-                                            ? primaryColor.withValues(alpha: 0.15)
+                                        tileColor: isCurrent
+                                            ? primaryColor.withValues(
+                                                alpha: 0.15,
+                                              )
                                             : null,
                                         onTap: () {
                                           Navigator.pop(context);
-                                          widget.ttsService.jumpToChapter(originalIndex);
+                                          widget.ttsService.jumpToChapter(
+                                            originalIndex,
+                                          );
                                         },
                                       );
                                     },
@@ -285,32 +370,64 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                       _localBookmarks.isEmpty
                           ? Center(
                               child: Text(
-                                AppLocalizations.of(context)?.noBookmarksSaved ?? 'No bookmarks saved yet',
-                                style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                                AppLocalizations.of(
+                                      context,
+                                    )?.noBookmarksSaved ??
+                                    'No bookmarks saved yet',
+                                style: TextStyle(
+                                  color: widget.textColor.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
                               controller: widget.scrollController,
                               itemCount: _localBookmarks.length,
-                              separatorBuilder: (context, index) => Divider(color: widget.isDark ? Colors.white10 : Colors.black12, height: 1),
+                              separatorBuilder: (context, index) => Divider(
+                                color: widget.isDark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                                height: 1,
+                              ),
                               itemBuilder: (context, index) {
                                 final b = _localBookmarks[index];
-                                final chTitle = b.chapterIndex < chapters.length ? chapters[b.chapterIndex].title : 'Chapter ${b.chapterIndex + 1}';
+                                final chTitle = b.chapterIndex < chapters.length
+                                    ? chapters[b.chapterIndex].title
+                                    : 'Chapter ${b.chapterIndex + 1}';
                                 return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
                                   title: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
                                         child: Text(
                                           chTitle,
-                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primaryColor),
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: primaryColor,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       Text(
-                                        AppLocalizations.of(context)?.paragraphIndexLabel(b.paragraphIndex + 1) ?? 'Paragraph ${b.paragraphIndex + 1}',
-                                        style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
+                                        AppLocalizations.of(
+                                              context,
+                                            )?.paragraphIndexLabel(
+                                              b.paragraphIndex + 1,
+                                            ) ??
+                                            'Paragraph ${b.paragraphIndex + 1}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: widget.textColor.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -318,15 +435,23 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Text(
                                       b.contentSnippet,
-                                      style: TextStyle(fontSize: 13, color: widget.textColor, fontStyle: FontStyle.italic),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: widget.textColor,
+                                        fontStyle: FontStyle.italic,
+                                      ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                    ),
                                     onPressed: () async {
-                                      final db = await DatabaseHelper.getInstance();
+                                      final db =
+                                          await DatabaseHelper.getInstance();
                                       await db.deleteBookmark(b.id);
                                       await widget.onRefreshData();
                                       await widget.onUpdateBookmarkState();
@@ -339,8 +464,12 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                   ),
                                   onTap: () {
                                     Navigator.pop(context);
-                                    widget.ttsService.jumpToChapter(b.chapterIndex);
-                                    widget.ttsService.jumpToParagraph(b.paragraphIndex);
+                                    widget.ttsService.jumpToChapter(
+                                      b.chapterIndex,
+                                    );
+                                    widget.ttsService.jumpToParagraph(
+                                      b.paragraphIndex,
+                                    );
                                   },
                                 );
                               },
@@ -348,27 +477,47 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                       _localHighlights.isEmpty
                           ? Center(
                               child: Text(
-                                AppLocalizations.of(context)?.noHighlightsSaved ?? 'No highlights saved yet',
-                                style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                                AppLocalizations.of(
+                                      context,
+                                    )?.noHighlightsSaved ??
+                                    'No highlights saved yet',
+                                style: TextStyle(
+                                  color: widget.textColor.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
                               controller: widget.scrollController,
                               itemCount: _localHighlights.length,
-                              separatorBuilder: (context, index) => Divider(color: widget.isDark ? Colors.white10 : Colors.black12, height: 1),
+                              separatorBuilder: (context, index) => Divider(
+                                color: widget.isDark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                                height: 1,
+                              ),
                               itemBuilder: (context, index) {
                                 final h = _localHighlights[index];
-                                final chTitle = h.chapterIndex < chapters.length ? chapters[h.chapterIndex].title : 'Chapter ${h.chapterIndex + 1}';
-                                
+                                final chTitle = h.chapterIndex < chapters.length
+                                    ? chapters[h.chapterIndex].title
+                                    : 'Chapter ${h.chapterIndex + 1}';
+
                                 Color hColor = Colors.yellow;
-                                if (h.colorHex.toLowerCase() == '#ff4caf50' || h.colorHex.toLowerCase() == '0xff4caf50') {
+                                if (h.colorHex.toLowerCase() == '#ff4caf50' ||
+                                    h.colorHex.toLowerCase() == '0xff4caf50') {
                                   hColor = Colors.green;
-                                } else if (h.colorHex.toLowerCase() == '#ff2196f3' || h.colorHex.toLowerCase() == '0xff2196f3') {
+                                } else if (h.colorHex.toLowerCase() ==
+                                        '#ff2196f3' ||
+                                    h.colorHex.toLowerCase() == '0xff2196f3') {
                                   hColor = Colors.blue;
                                 }
-                                
+
                                 return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
                                   title: Row(
                                     children: [
                                       Container(
@@ -383,46 +532,84 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                       Expanded(
                                         child: Text(
                                           chTitle,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       Text(
-                                        AppLocalizations.of(context)?.paragraphIndexLabel(h.paragraphIndex + 1) ?? 'Paragraph ${h.paragraphIndex + 1}',
-                                        style: TextStyle(fontSize: 11, color: widget.textColor.withValues(alpha: 0.5)),
+                                        AppLocalizations.of(
+                                              context,
+                                            )?.paragraphIndexLabel(
+                                              h.paragraphIndex + 1,
+                                            ) ??
+                                            'Paragraph ${h.paragraphIndex + 1}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: widget.textColor.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: hColor.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: hColor.withValues(alpha: 0.3)),
+                                            color: hColor.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: hColor.withValues(
+                                                alpha: 0.3,
+                                              ),
+                                            ),
                                           ),
                                           child: Text(
                                             h.text,
-                                            style: TextStyle(fontSize: 13, color: widget.textColor),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: widget.textColor,
+                                            ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
-                                      if (h.note != null && h.note!.isNotEmpty) ...[
+                                      if (h.note != null &&
+                                          h.note!.isNotEmpty) ...[
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Icon(Icons.sticky_note_2_rounded, size: 14, color: primaryColor),
+                                            Icon(
+                                              Icons.sticky_note_2_rounded,
+                                              size: 14,
+                                              color: primaryColor,
+                                            ),
                                             const SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
                                                 h.note!,
-                                                style: TextStyle(fontSize: 12, color: widget.textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: widget.textColor
+                                                      .withValues(alpha: 0.8),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -433,9 +620,13 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     ],
                                   ),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                    ),
                                     onPressed: () async {
-                                      final db = await DatabaseHelper.getInstance();
+                                      final db =
+                                          await DatabaseHelper.getInstance();
                                       await db.deleteHighlight(h.id);
                                       await widget.onRefreshData();
                                       if (mounted) {
@@ -447,8 +638,12 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                   ),
                                   onTap: () {
                                     Navigator.pop(context);
-                                    widget.ttsService.jumpToChapter(h.chapterIndex);
-                                    widget.ttsService.jumpToParagraph(h.paragraphIndex);
+                                    widget.ttsService.jumpToChapter(
+                                      h.chapterIndex,
+                                    );
+                                    widget.ttsService.jumpToParagraph(
+                                      h.paragraphIndex,
+                                    );
                                   },
                                 );
                               },

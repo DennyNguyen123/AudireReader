@@ -45,8 +45,10 @@ class _AssistiveButtonState extends State<AssistiveButton> {
   void didUpdateWidget(covariant AssistiveButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Nếu tọa độ lưu trong settings thay đổi từ bên ngoài (ví dụ reset)
-    if (widget.settings.assistiveButtonX != oldWidget.settings.assistiveButtonX ||
-        widget.settings.assistiveButtonY != oldWidget.settings.assistiveButtonY) {
+    if (widget.settings.assistiveButtonX !=
+            oldWidget.settings.assistiveButtonX ||
+        widget.settings.assistiveButtonY !=
+            oldWidget.settings.assistiveButtonY) {
       setState(() {
         _x = widget.settings.assistiveButtonX;
         _y = widget.settings.assistiveButtonY;
@@ -89,7 +91,8 @@ class _AssistiveButtonState extends State<AssistiveButton> {
         widget.ttsService.togglePlayPause();
         break;
       case 'nextChapter':
-        if (widget.ttsService.currentChapterIndex < widget.ttsService.chapters.length - 1) {
+        if (widget.ttsService.currentChapterIndex <
+            widget.ttsService.chapters.length - 1) {
           widget.ttsService.nextChapter();
         }
         break;
@@ -103,9 +106,8 @@ class _AssistiveButtonState extends State<AssistiveButton> {
           context: context,
           backgroundColor: Colors.transparent,
           isScrollControlled: true,
-          builder: (context) => ReaderTtsSettingsSheet(
-            ttsService: widget.ttsService,
-          ),
+          builder: (context) =>
+              ReaderTtsSettingsSheet(ttsService: widget.ttsService),
         );
         break;
       case 'openBgmSettings':
@@ -141,7 +143,7 @@ class _AssistiveButtonState extends State<AssistiveButton> {
     final maxX = screenSize.width - buttonSize - 8.0;
     final minY = padding.top + 8.0;
     final maxY = screenSize.height - padding.bottom - buttonSize - 8.0;
-    
+
     _x = _x.clamp(minX, maxX);
     _y = _y.clamp(minY, maxY);
 
@@ -171,9 +173,12 @@ class _AssistiveButtonState extends State<AssistiveButton> {
           widget.onPositionChanged(_x, _y);
           _resetDimTimer();
         },
-        onTap: () => _executeAction(context, widget.settings.assistiveSingleTapAction),
-        onDoubleTap: () => _executeAction(context, widget.settings.assistiveDoubleTapAction),
-        onLongPress: () => _executeAction(context, widget.settings.assistiveLongPressAction),
+        onTap: () =>
+            _executeAction(context, widget.settings.assistiveSingleTapAction),
+        onDoubleTap: () =>
+            _executeAction(context, widget.settings.assistiveDoubleTapAction),
+        onLongPress: () =>
+            _executeAction(context, widget.settings.assistiveLongPressAction),
         child: AnimatedOpacity(
           opacity: _opacity,
           duration: const Duration(milliseconds: 250),
@@ -182,7 +187,9 @@ class _AssistiveButtonState extends State<AssistiveButton> {
             height: buttonSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.8),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.8),
                 width: 1.5,

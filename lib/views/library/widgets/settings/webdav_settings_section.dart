@@ -62,7 +62,8 @@ class WebdavSettingsSection extends StatelessWidget {
               Icon(Icons.cloud_sync_rounded, color: accentColor, size: 28),
               const SizedBox(width: 12),
               Text(
-                AppLocalizations.of(context)?.cloudLibrarySync ?? 'Cloud Library Sync',
+                AppLocalizations.of(context)?.cloudLibrarySync ??
+                    'Cloud Library Sync',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -91,11 +92,13 @@ class WebdavSettingsSection extends StatelessWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              AppLocalizations.of(context)?.enableWebdav ?? 'Enable WebDAV Sync',
+              AppLocalizations.of(context)?.enableWebdav ??
+                  'Enable WebDAV Sync',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             subtitle: Text(
-              AppLocalizations.of(context)?.enableWebdavDesc ?? 'Đồng bộ thư viện qua máy chủ WebDAV cá nhân',
+              AppLocalizations.of(context)?.enableWebdavDesc ??
+                  'Đồng bộ thư viện qua máy chủ WebDAV cá nhân',
               style: const TextStyle(fontSize: 12),
             ),
             value: webDavEnabled,
@@ -111,11 +114,16 @@ class WebdavSettingsSection extends StatelessWidget {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                AppLocalizations.of(context)?.autoSyncEnabled ?? 'Auto Sync WebDAV',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                AppLocalizations.of(context)?.autoSyncEnabled ??
+                    'Auto Sync WebDAV',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
-                AppLocalizations.of(context)?.autoSyncEnabledDesc ?? 'Automatically synchronize library on launch or leaving a book',
+                AppLocalizations.of(context)?.autoSyncEnabledDesc ??
+                    'Automatically synchronize library on launch or leaving a book',
                 style: const TextStyle(fontSize: 12),
               ),
               value: autoSyncEnabled,
@@ -132,7 +140,8 @@ class WebdavSettingsSection extends StatelessWidget {
             ),
 
             Text(
-              AppLocalizations.of(context)?.webdavServerConfig ?? 'WebDAV Server Configuration',
+              AppLocalizations.of(context)?.webdavServerConfig ??
+                  'WebDAV Server Configuration',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -146,7 +155,9 @@ class WebdavSettingsSection extends StatelessWidget {
               controller: urlController,
               onChanged: (_) => onSettingsChanged(),
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)?.webdavServerUrl ?? 'WebDAV Server URL',
+                labelText:
+                    AppLocalizations.of(context)?.webdavServerUrl ??
+                    'WebDAV Server URL',
                 hintText: 'https://webdav.yandex.ru',
                 prefixIcon: const Icon(Icons.link_rounded),
                 filled: true,
@@ -158,7 +169,8 @@ class WebdavSettingsSection extends StatelessWidget {
               ),
               validator: (val) {
                 if (webDavEnabled && (val == null || val.trim().isEmpty)) {
-                  return AppLocalizations.of(context)?.enterWebdavUrl ?? 'Please enter WebDAV URL';
+                  return AppLocalizations.of(context)?.enterWebdavUrl ??
+                      'Please enter WebDAV URL';
                 }
                 return null;
               },
@@ -181,7 +193,8 @@ class WebdavSettingsSection extends StatelessWidget {
               ),
               validator: (val) {
                 if (webDavEnabled && (val == null || val.trim().isEmpty)) {
-                  return AppLocalizations.of(context)?.enterUsername ?? 'Please enter Username';
+                  return AppLocalizations.of(context)?.enterUsername ??
+                      'Please enter Username';
                 }
                 return null;
               },
@@ -194,7 +207,9 @@ class WebdavSettingsSection extends StatelessWidget {
               obscureText: true,
               onChanged: (_) => onSettingsChanged(),
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)?.passwordAppPassword ?? 'Password / App Password',
+                labelText:
+                    AppLocalizations.of(context)?.passwordAppPassword ??
+                    'Password / App Password',
                 prefixIcon: const Icon(Icons.lock_outline_rounded),
                 filled: true,
                 fillColor: isDark ? Colors.black26 : Colors.grey[100],
@@ -205,7 +220,8 @@ class WebdavSettingsSection extends StatelessWidget {
               ),
               validator: (val) {
                 if (webDavEnabled && (val == null || val.isEmpty)) {
-                  return AppLocalizations.of(context)?.enterPassword ?? 'Please enter Password';
+                  return AppLocalizations.of(context)?.enterPassword ??
+                      'Please enter Password';
                 }
                 return null;
               },
@@ -217,7 +233,8 @@ class WebdavSettingsSection extends StatelessWidget {
               controller: deviceNameController,
               onChanged: (_) => onSettingsChanged(),
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)?.deviceName ?? 'Device Name',
+                labelText:
+                    AppLocalizations.of(context)?.deviceName ?? 'Device Name',
                 hintText: 'My Phone',
                 prefixIcon: const Icon(Icons.devices_rounded),
                 filled: true,
@@ -229,7 +246,8 @@ class WebdavSettingsSection extends StatelessWidget {
               ),
               validator: (val) {
                 if (webDavEnabled && (val == null || val.trim().isEmpty)) {
-                  return AppLocalizations.of(context)?.enterDeviceName ?? 'Please enter Device Name';
+                  return AppLocalizations.of(context)?.enterDeviceName ??
+                      'Please enter Device Name';
                 }
                 return null;
               },
@@ -244,7 +262,8 @@ class WebdavSettingsSection extends StatelessWidget {
                       onPressed: onQrSyncPressed,
                       icon: const Icon(Icons.qr_code_scanner_rounded),
                       label: Text(
-                        AppLocalizations.of(context)?.qrDeviceSync ?? 'Đồng bộ nhanh thiết bị (QR)',
+                        AppLocalizations.of(context)?.qrDeviceSync ??
+                            'Đồng bộ nhanh thiết bị (QR)',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -253,7 +272,10 @@ class WebdavSettingsSection extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: accentColor.withOpacity(0.3), width: 1),
+                          side: BorderSide(
+                            color: accentColor.withOpacity(0.3),
+                            width: 1,
+                          ),
                         ),
                         elevation: 0,
                       ),
@@ -274,18 +296,24 @@ class WebdavSettingsSection extends StatelessWidget {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.network_ping_rounded),
                     label: Text(
-                      AppLocalizations.of(context)?.testConnection ?? 'Test Connection',
+                      AppLocalizations.of(context)?.testConnection ??
+                          'Test Connection',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[850],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -298,7 +326,9 @@ class WebdavSettingsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: testSuccess ? Colors.green.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
+                  color: testSuccess
+                      ? Colors.green.withValues(alpha: 0.15)
+                      : Colors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: testSuccess ? Colors.green : Colors.red,
@@ -308,7 +338,9 @@ class WebdavSettingsSection extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      testSuccess ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
+                      testSuccess
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.error_outline_rounded,
                       color: testSuccess ? Colors.green : Colors.red,
                     ),
                     const SizedBox(width: 10),
@@ -316,7 +348,9 @@ class WebdavSettingsSection extends StatelessWidget {
                       child: Text(
                         testResult!,
                         style: TextStyle(
-                          color: testSuccess ? Colors.green[300] : Colors.red[300],
+                          color: testSuccess
+                              ? Colors.green[300]
+                              : Colors.red[300],
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -338,14 +372,24 @@ class WebdavSettingsSection extends StatelessWidget {
               children: [
                 Text(
                   AppLocalizations.of(context)?.syncStatus ?? 'Sync Status',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 Text(
                   lastSync != null
-                      ? (AppLocalizations.of(context)?.lastSyncedAt(lastSync!.toLocal().toString().split('.')[0]) ??
-                          'Last Synced: ${lastSync!.toLocal().toString().split('.')[0]}')
-                      : (AppLocalizations.of(context)?.lastSyncedNever ?? 'Last Synced: Never'),
-                  style: TextStyle(fontSize: 12, color: accentColor, fontWeight: FontWeight.w600),
+                      ? (AppLocalizations.of(context)?.lastSyncedAt(
+                              lastSync!.toLocal().toString().split('.')[0],
+                            ) ??
+                            'Last Synced: ${lastSync!.toLocal().toString().split('.')[0]}')
+                      : (AppLocalizations.of(context)?.lastSyncedNever ??
+                            'Last Synced: Never'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: accentColor,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -355,13 +399,18 @@ class WebdavSettingsSection extends StatelessWidget {
               icon: const Icon(Icons.sync_rounded),
               label: Text(
                 AppLocalizations.of(context)?.syncNow ?? 'Sync Now',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 4,
               ),
             ),
@@ -380,7 +429,9 @@ class WebdavSettingsSection extends StatelessWidget {
                       backgroundColor: Colors.orange[800],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -397,7 +448,9 @@ class WebdavSettingsSection extends StatelessWidget {
                       backgroundColor: Colors.blue[800],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),

@@ -12,7 +12,7 @@ class PathHelper {
 
     final supportDir = await getApplicationSupportDirectory();
     final targetDir = Directory(p.join(supportDir.path, 'AudireReader'));
-    
+
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);
     }
@@ -27,7 +27,7 @@ class PathHelper {
 
     final appDir = await getAppDirectory();
     final targetCacheDir = Directory(p.join(appDir.path, 'cache'));
-    
+
     if (!await targetCacheDir.exists()) {
       await targetCacheDir.create(recursive: true);
     }

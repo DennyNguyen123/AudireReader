@@ -8,10 +8,11 @@ class AppSettings {
 
   double fontSize = 18.0;
   double speechRate = 0.5;
-  
+
   String? selectedVoiceName;
   String? selectedVoiceLocale;
-  String ttsProvider = 'system'; // 'system' hoặc 'microsoft_edge' hoặc 'supertonic' hoặc 'openai'
+  String ttsProvider =
+      'system'; // 'system' hoặc 'microsoft_edge' hoặc 'supertonic' hoặc 'openai'
 
   // --- OpenAI TTS Settings ---
   String openAiTtsEndpoint = 'https://api.openai.com/v1';
@@ -21,10 +22,10 @@ class AppSettings {
   // --- Offline TTS Download Settings ---
   int ttsDownloadConcurrency = 3;
 
-
-  String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'
-  String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia', 'Custom'
-  String appLocale = 'en';      // 'en' hoặc 'vi'
+  String fontFamily =
+      'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'
+  String themeMode = 'System'; // 'System', 'Light', 'Dark', 'Sepia', 'Custom'
+  String appLocale = 'en'; // 'en' hoặc 'vi'
 
   double lineHeight = 1.6;
   double paragraphSpacing = 14.0;

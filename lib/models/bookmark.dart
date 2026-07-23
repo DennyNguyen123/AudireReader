@@ -11,7 +11,7 @@ class Bookmark {
 
   late int chapterIndex;
   late int paragraphIndex;
-  
+
   late String contentSnippet; // Đoạn text ngắn để hiển thị trên danh sách
   late DateTime dateAdded;
 }

@@ -5,11 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 
 class EpubParser {
-  static Future<ParsedBookData> parseEpubFile(String filePath, String documentsDirPath) async {
+  static Future<ParsedBookData> parseEpubFile(
+    String filePath,
+    String documentsDirPath,
+  ) async {
     final file = File(filePath);
     if (!await file.exists()) {
       throw Exception("File not found: $filePath");
@@ -20,16 +22,21 @@ class EpubParser {
 
     final String title = epubBook.Title ?? "Unknown Title";
     final String author = epubBook.Author ?? "Unknown Author";
-    final String uuid = "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
+    final String uuid =
+        "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
 
     // 1. Save Cover Image
     String? coverPath;
-    
+
     // Cách 1: Đọc ảnh bìa chuẩn qua metadata (CoverImage)
     try {
-      if (kDebugMode) debugPrint("Total files in EPUB: ${epubBook.Content?.AllFiles?.length}");
-      if (kDebugMode) debugPrint("Total images in EPUB: ${epubBook.Content?.Images?.length}");
-      
+      if (kDebugMode)
+        debugPrint(
+          "Total files in EPUB: ${epubBook.Content?.AllFiles?.length}",
+        );
+      if (kDebugMode)
+        debugPrint("Total images in EPUB: ${epubBook.Content?.Images?.length}");
+
       final coverImage = epubBook.CoverImage;
       if (coverImage != null) {
         final docDir = Directory(documentsDirPath);
@@ -50,16 +57,19 @@ class EpubParser {
     // Cách 2: Quét file raw trong Content.Images nếu Cách 1 trống hoặc lỗi
     if (coverPath == null) {
       try {
-        if (epubBook.Content?.Images != null && epubBook.Content!.Images!.isNotEmpty) {
+        if (epubBook.Content?.Images != null &&
+            epubBook.Content!.Images!.isNotEmpty) {
           final images = epubBook.Content!.Images!;
           String coverKey = images.keys.firstWhere(
             (k) => k.toLowerCase().contains('cover'),
             orElse: () => '',
           );
-          
+
           if (coverKey.isEmpty) {
             coverKey = images.keys.firstWhere(
-              (k) => k.toLowerCase().contains('thumb') || k.toLowerCase().contains('image'),
+              (k) =>
+                  k.toLowerCase().contains('thumb') ||
+                  k.toLowerCase().contains('image'),
               orElse: () => images.keys.first,
             );
           }
@@ -73,13 +83,18 @@ class EpubParser {
               if (!await coverDir.exists()) {
                 await coverDir.create(recursive: true);
               }
-              
+
               final ext = path.extension(coverKey).toLowerCase();
               final fileExt = ext.isNotEmpty ? ext : '.png';
-              final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
+              final savedCoverFile = File(
+                path.join(coverDir.path, '$uuid$fileExt'),
+              );
               await savedCoverFile.writeAsBytes(contentBytes);
               coverPath = savedCoverFile.path;
-              if (kDebugMode) debugPrint("Method 2 (Images scanning) succeeded with: $coverKey");
+              if (kDebugMode)
+                debugPrint(
+                  "Method 2 (Images scanning) succeeded with: $coverKey",
+                );
             }
           }
         }
@@ -91,49 +106,46 @@ class EpubParser {
     // Cách 3 (Siêu dự phòng): Quét toàn bộ tệp tin trong EPUB (AllFiles) tìm tệp ảnh
     if (coverPath == null) {
       try {
-        if (epubBook.Content?.AllFiles != null && epubBook.Content!.AllFiles!.isNotEmpty) {
+        if (epubBook.Content?.AllFiles != null &&
+            epubBook.Content!.AllFiles!.isNotEmpty) {
           final allFiles = epubBook.Content!.AllFiles!;
-          
-          String coverKey = allFiles.keys.firstWhere(
-            (k) {
+
+          String coverKey = allFiles.keys.firstWhere((k) {
+            final lowerK = k.toLowerCase();
+            final isImage =
+                lowerK.endsWith('.jpg') ||
+                lowerK.endsWith('.jpeg') ||
+                lowerK.endsWith('.png') ||
+                lowerK.endsWith('.webp') ||
+                lowerK.endsWith('.gif');
+            return isImage && lowerK.contains('cover');
+          }, orElse: () => '');
+
+          if (coverKey.isEmpty) {
+            coverKey = allFiles.keys.firstWhere((k) {
               final lowerK = k.toLowerCase();
-              final isImage = lowerK.endsWith('.jpg') || 
-                              lowerK.endsWith('.jpeg') || 
-                              lowerK.endsWith('.png') || 
-                              lowerK.endsWith('.webp') ||
-                              lowerK.endsWith('.gif');
-              return isImage && lowerK.contains('cover');
-            },
-            orElse: () => '',
-          );
-          
-          if (coverKey.isEmpty) {
-            coverKey = allFiles.keys.firstWhere(
-              (k) {
-                final lowerK = k.toLowerCase();
-                final isImage = lowerK.endsWith('.jpg') || 
-                                lowerK.endsWith('.jpeg') || 
-                                lowerK.endsWith('.png') || 
-                                lowerK.endsWith('.webp') ||
-                                lowerK.endsWith('.gif');
-                return isImage && (lowerK.contains('thumb') || lowerK.contains('image') || lowerK.contains('avatar'));
-              },
-              orElse: () => '',
-            );
+              final isImage =
+                  lowerK.endsWith('.jpg') ||
+                  lowerK.endsWith('.jpeg') ||
+                  lowerK.endsWith('.png') ||
+                  lowerK.endsWith('.webp') ||
+                  lowerK.endsWith('.gif');
+              return isImage &&
+                  (lowerK.contains('thumb') ||
+                      lowerK.contains('image') ||
+                      lowerK.contains('avatar'));
+            }, orElse: () => '');
           }
-          
+
           if (coverKey.isEmpty) {
-            coverKey = allFiles.keys.firstWhere(
-              (k) {
-                final lowerK = k.toLowerCase();
-                return lowerK.endsWith('.jpg') || 
-                       lowerK.endsWith('.jpeg') || 
-                       lowerK.endsWith('.png') || 
-                       lowerK.endsWith('.webp') ||
-                       lowerK.endsWith('.gif');
-              },
-              orElse: () => '',
-            );
+            coverKey = allFiles.keys.firstWhere((k) {
+              final lowerK = k.toLowerCase();
+              return lowerK.endsWith('.jpg') ||
+                  lowerK.endsWith('.jpeg') ||
+                  lowerK.endsWith('.png') ||
+                  lowerK.endsWith('.webp') ||
+                  lowerK.endsWith('.gif');
+            }, orElse: () => '');
           }
 
           if (coverKey.isNotEmpty) {
@@ -148,10 +160,15 @@ class EpubParser {
                 }
                 final ext = path.extension(coverKey).toLowerCase();
                 final fileExt = ext.isNotEmpty ? ext : '.png';
-                final savedCoverFile = File(path.join(coverDir.path, '$uuid$fileExt'));
+                final savedCoverFile = File(
+                  path.join(coverDir.path, '$uuid$fileExt'),
+                );
                 await savedCoverFile.writeAsBytes(contentBytes);
                 coverPath = savedCoverFile.path;
-                if (kDebugMode) debugPrint("Method 3 (AllFiles scanning) succeeded with: $coverKey");
+                if (kDebugMode)
+                  debugPrint(
+                    "Method 3 (AllFiles scanning) succeeded with: $coverKey",
+                  );
               }
             }
           }
@@ -167,23 +184,26 @@ class EpubParser {
 
     void extractChaptersRecursive(List<EpubChapter> epubChapters) {
       for (final epubChapter in epubChapters) {
-        final String chapterTitle = epubChapter.Title ?? "Chapter ${chapterIndex + 1}";
+        final String chapterTitle =
+            epubChapter.Title ?? "Chapter ${chapterIndex + 1}";
         final String htmlContent = epubChapter.HtmlContent ?? "";
 
         // Parse HTML to clean plain text paragraphs
         final paragraphs = parseHtmlToParagraphs(htmlContent);
 
         if (paragraphs.isNotEmpty) {
-          final chapter = Chapter()
-            ..bookUuid = uuid
-            ..chapterIndex = chapterIndex
-            ..title = chapterTitle
-            ..paragraphs = paragraphs;
+          final chapter = Chapter(
+            bookUuid: uuid,
+            chapterIndex: chapterIndex,
+            title: chapterTitle,
+            paragraphs: paragraphs,
+          );
           chapters.add(chapter);
           chapterIndex++;
         }
 
-        if (epubChapter.SubChapters != null && epubChapter.SubChapters!.isNotEmpty) {
+        if (epubChapter.SubChapters != null &&
+            epubChapter.SubChapters!.isNotEmpty) {
           extractChaptersRecursive(epubChapter.SubChapters!);
         }
       }
@@ -199,17 +219,20 @@ class EpubParser {
       chapters.sort((a, b) => _naturalSortCompare(a.title, b.title));
       // Re-assign chapterIndex after sorting
       for (int i = 0; i < chapters.length; i++) {
-        chapters[i].chapterIndex = i;
+        chapters[i] = chapters[i].copyWith(chapterIndex: i);
       }
     }
 
-    final book = Book()
-      ..uuid = uuid
-      ..title = title
-      ..author = author
-      ..coverPath = coverPath
-      ..totalChapters = chapters.length
-      ..dateAdded = DateTime.now();
+    final book = Book(
+      uuid: uuid,
+      title: title,
+      author: author,
+      coverPath: coverPath,
+      totalChapters: chapters.length,
+      dateAdded: DateTime.now().millisecondsSinceEpoch,
+      status: 'unread',
+      tags: [],
+    );
 
     return ParsedBookData(book: book, chapters: chapters);
   }
@@ -256,7 +279,7 @@ class EpubParser {
     final List<String> cleanParas = [];
     // Quét qua các thẻ tiêu đề và thẻ đoạn văn phổ biến
     final tags = body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
-    
+
     for (final tag in tags) {
       final txt = tag.text.trim().replaceAll(RegExp(r'\s+'), ' ');
       if (txt.isNotEmpty && txt.length > 2) {
@@ -267,15 +290,19 @@ class EpubParser {
     }
 
     final rawText = body.text.trim();
-    final int totalCleanLength = cleanParas.fold<int>(0, (sum, p) => sum + p.length);
+    final int totalCleanLength = cleanParas.fold<int>(
+      0,
+      (sum, p) => sum + p.length,
+    );
 
     // Nếu không tìm thấy thẻ đoạn văn tiêu chuẩn nào,
     // HOẶC nếu tìm thấy nhưng tổng lượng văn bản trích xuất được quá nhỏ so với văn bản thô của body
     // (chênh lệch giữa văn bản thô và phần trích xuất > 40 ký tự, và phần trích xuất chiếm dưới 70% tổng văn bản thô),
     // chứng tỏ nội dung truyện đang nằm ở các thẻ khác như div, span, text tự do...
     // Chúng ta sẽ fallback sang phân tách toàn bộ văn bản thô theo dòng.
-    final bool isMissingSignificantContent = (rawText.length - totalCleanLength > 40) && 
-                                              (totalCleanLength < rawText.length * 0.7);
+    final bool isMissingSignificantContent =
+        (rawText.length - totalCleanLength > 40) &&
+        (totalCleanLength < rawText.length * 0.7);
 
     if (cleanParas.isEmpty || isMissingSignificantContent) {
       return rawText

@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:syncfusion_flutter_pdf/pdf.dart';
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import 'epub_parser.dart'; // Để dùng ParsedBookData
 import 'text_book_segmenter.dart';
 
@@ -14,7 +13,7 @@ class PdfParser {
     }
 
     final bytes = await file.readAsBytes();
-    
+
     // Khởi tạo tài liệu PDF từ bytes
     final PdfDocument document = PdfDocument(inputBytes: bytes);
     String rawText = "";
@@ -32,18 +31,22 @@ class PdfParser {
     final filename = path.basenameWithoutExtension(filePath);
     final String title = filename.replaceAll('_', ' ').trim();
     final String author = "Unknown Author";
-    final String uuid = "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
+    final String uuid =
+        "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
 
     // Phân tách chương và đoạn văn bằng Segmenter dùng chung
     final List<Chapter> chapters = TextBookSegmenter.segment(rawText, uuid);
 
-    final book = Book()
-      ..uuid = uuid
-      ..title = title
-      ..author = author
-      ..coverPath = null
-      ..totalChapters = chapters.length
-      ..dateAdded = DateTime.now();
+    final book = Book(
+      uuid: uuid,
+      title: title,
+      author: author,
+      coverPath: null,
+      totalChapters: chapters.length,
+      dateAdded: DateTime.now().millisecondsSinceEpoch,
+      status: 'unread',
+      tags: [],
+    );
 
     return ParsedBookData(book: book, chapters: chapters);
   }

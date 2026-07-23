@@ -8,7 +8,8 @@ class BgmTrack {
 
   late String name; // Tên hiển thị bài nhạc nền
   late String sourceType; // 'youtube', 'direct_url', 'local'
-  late String sourcePath; // ID video youtube, link stream hoặc đường dẫn file cục bộ
-  
+  late String
+  sourcePath; // ID video youtube, link stream hoặc đường dẫn file cục bộ
+
   DateTime dateAdded = DateTime.now();
 }

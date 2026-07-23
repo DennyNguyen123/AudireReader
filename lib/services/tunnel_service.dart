@@ -9,7 +9,7 @@ class TunnelService {
   HttpServer? _httpServer;
   SSHClient? _sshClient;
   String? publicUrl;
-  
+
   // Hàm callback khi nhận được cấu hình
   Future<void> Function(Map<String, dynamic>)? onConfigReceived;
 
@@ -17,21 +17,29 @@ class TunnelService {
     try {
       // 1. Khởi tạo Local Server
       final handler = const Pipeline().addHandler(_handleRequest);
-      _httpServer = await shelf_io.serve(handler, InternetAddress.loopbackIPv4, 0);
+      _httpServer = await shelf_io.serve(
+        handler,
+        InternetAddress.loopbackIPv4,
+        0,
+      );
       final localPort = _httpServer!.port;
       print('TunnelService: Local server running on port $localPort');
 
       // 2. Mở SSH Tunnel tới localhost.run
       print('TunnelService: Bắt đầu kết nối SSH tới localhost.run...');
-      final socket = await SSHSocket.connect('localhost.run', 22, timeout: const Duration(seconds: 10));
+      final socket = await SSHSocket.connect(
+        'localhost.run',
+        22,
+        timeout: const Duration(seconds: 10),
+      );
       print('TunnelService: Đã mở socket, đang khởi tạo SSH Client...');
-      
+
       _sshClient = SSHClient(
-        socket, 
+        socket,
         username: 'nokey',
         onPasswordRequest: () => '',
       );
-      
+
       final completer = Completer<String?>();
 
       // Khởi tạo shell session để đọc public URL từ stdout của localhost.run
@@ -39,7 +47,9 @@ class TunnelService {
       session.stdout.cast<List<int>>().transform(utf8.decoder).listen((data) {
         print('TunnelService SSH Output: $data');
         // Tìm URL tunnel trong stdout
-        final regExp = RegExp(r'https://[a-zA-Z0-9.-]+\.(lhr\.life|lhr\.pro|localhost\.run)');
+        final regExp = RegExp(
+          r'https://[a-zA-Z0-9.-]+\.(lhr\.life|lhr\.pro|localhost\.run)',
+        );
         final match = regExp.firstMatch(data);
         if (match != null && !completer.isCompleted) {
           publicUrl = match.group(0);
@@ -51,13 +61,15 @@ class TunnelService {
       // Gửi yêu cầu remote port forwarding (nhận kết nối từ cổng 80 của localhost.run)
       print('TunnelService: Đang yêu cầu forwardRemote port 80...');
       final forward = await _sshClient!.forwardRemote(port: 80);
-      
+
       if (forward != null) {
         forward.connections.listen((connection) async {
           try {
-            print('TunnelService: Nhận kết nối mới từ tunnel, đang chuyển tiếp tới local port $localPort...');
+            print(
+              'TunnelService: Nhận kết nối mới từ tunnel, đang chuyển tiếp tới local port $localPort...',
+            );
             final localSocket = await Socket.connect('127.0.0.1', localPort);
-            
+
             // Chuyển tiếp dữ liệu hai chiều
             connection.stream.listen(
               (data) {
@@ -71,7 +83,7 @@ class TunnelService {
                 localSocket.destroy();
               },
             );
-            
+
             localSocket.listen(
               (data) {
                 connection.sink.add(data);
@@ -123,14 +135,17 @@ class TunnelService {
       try {
         final body = await request.readAsString();
         final data = json.decode(body) as Map<String, dynamic>;
-        
+
         print('TunnelService: Nhận được config qua tunnel.');
         if (onConfigReceived != null) {
           await onConfigReceived!(data);
         }
-        
+
         return Response.ok(
-          json.encode({'success': true, 'message': 'Config applied successfully!'}),
+          json.encode({
+            'success': true,
+            'message': 'Config applied successfully!',
+          }),
           headers: {...corsHeaders, 'content-type': 'application/json'},
         );
       } catch (e) {

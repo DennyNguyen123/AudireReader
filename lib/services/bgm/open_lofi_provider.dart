@@ -15,16 +15,16 @@ class OpenLofiProvider implements BgmProvider {
     final tracksData = [
       {
         'name': 'Lofi Chill 1 (Sample)',
-        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
       },
       {
         'name': 'Lofi Study (Sample)',
-        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
       },
       {
         'name': 'Ambient Lofi (Sample)',
-        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
-      }
+        'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      },
     ];
 
     return tracksData.map((data) {

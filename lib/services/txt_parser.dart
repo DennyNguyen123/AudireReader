@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import 'epub_parser.dart'; // Để dùng ParsedBookData
 import 'text_book_segmenter.dart';
 
@@ -21,18 +20,22 @@ class TxtParser {
     final filename = path.basenameWithoutExtension(filePath);
     final String title = filename.replaceAll('_', ' ').trim();
     final String author = "Unknown Author";
-    final String uuid = "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
+    final String uuid =
+        "${DateTime.now().millisecondsSinceEpoch}_${title.hashCode.abs()}";
 
     // Phân tách chương và đoạn văn bằng Segmenter dùng chung
     final List<Chapter> chapters = TextBookSegmenter.segment(rawText, uuid);
 
-    final book = Book()
-      ..uuid = uuid
-      ..title = title
-      ..author = author
-      ..coverPath = null
-      ..totalChapters = chapters.length
-      ..dateAdded = DateTime.now();
+    final book = Book(
+      uuid: uuid,
+      title: title,
+      author: author,
+      coverPath: null,
+      totalChapters: chapters.length,
+      dateAdded: DateTime.now().millisecondsSinceEpoch,
+      status: 'unread',
+      tags: [],
+    );
 
     return ParsedBookData(book: book, chapters: chapters);
   }

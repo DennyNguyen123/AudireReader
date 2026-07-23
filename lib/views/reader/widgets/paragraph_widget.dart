@@ -57,13 +57,14 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   @override
   void didUpdateWidget(covariant ParagraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Tự động cuộn khi:
     // 1. Đoạn văn này vừa trở thành active (isActive: false -> true)
     // 2. Đoạn văn này đang active và TTS bắt đầu phát (isPlaying: false -> true)
     final becameActive = widget.isActive && !oldWidget.isActive;
-    final startedPlayingWhileActive = widget.isActive && widget.isPlaying && !oldWidget.isPlaying;
-    
+    final startedPlayingWhileActive =
+        widget.isActive && widget.isPlaying && !oldWidget.isPlaying;
+
     if (becameActive || startedPlayingWhileActive) {
       _scrollToVisible();
     }
@@ -103,9 +104,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
         duration: const Duration(milliseconds: 300),
         margin: EdgeInsets.only(bottom: widget.paragraphSpacing),
         padding: EdgeInsets.zero,
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -124,9 +123,9 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.sticky_note_2_rounded, 
-                    size: 12, 
-                    color: Colors.white
+                    Icons.sticky_note_2_rounded,
+                    size: 12,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -141,8 +140,15 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       return const TextStyle();
     }
     if ([
-      'Lora', 'Merriweather', 'Inter', 'Nunito',
-      'Roboto', 'Open Sans', 'Playfair Display', 'PT Serif', 'Quicksand'
+      'Lora',
+      'Merriweather',
+      'Inter',
+      'Nunito',
+      'Roboto',
+      'Open Sans',
+      'Playfair Display',
+      'PT Serif',
+      'Quicksand',
     ].contains(widget.fontFamily)) {
       try {
         return GoogleFonts.getFont(widget.fontFamily);
@@ -156,11 +162,15 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
   Widget _buildRichText(Color defaultColor) {
     Color? textBgColor;
     if (widget.isActive) {
-      textBgColor = Theme.of(context).colorScheme.primary.withValues(alpha: widget.isDark ? 0.2 : 0.15);
+      textBgColor = Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: widget.isDark ? 0.2 : 0.15);
     } else if (widget.highlightColorHex != null) {
       try {
         final parsedColor = _parseHexColor(widget.highlightColorHex!);
-        textBgColor = parsedColor.withValues(alpha: widget.isDark ? 0.25 : 0.35);
+        textBgColor = parsedColor.withValues(
+          alpha: widget.isDark ? 0.25 : 0.35,
+        );
       } catch (e) {
         textBgColor = Colors.yellow.withValues(alpha: 0.3);
       }
@@ -174,7 +184,9 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       backgroundColor: textBgColor,
     );
 
-    if (!widget.isActive || widget.wordStart >= widget.wordEnd || widget.wordEnd > widget.text.length) {
+    if (!widget.isActive ||
+        widget.wordStart >= widget.wordEnd ||
+        widget.wordEnd > widget.text.length) {
       return AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 300),
         style: style,
@@ -183,9 +195,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
           TextSpan(
             children: [
               if (widget.paragraphIndent > 0)
-                WidgetSpan(
-                  child: SizedBox(width: widget.paragraphIndent),
-                ),
+                WidgetSpan(child: SizedBox(width: widget.paragraphIndent)),
               TextSpan(text: widget.text),
             ],
           ),
@@ -205,9 +215,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
         TextSpan(
           children: [
             if (widget.paragraphIndent > 0)
-              WidgetSpan(
-                child: SizedBox(width: widget.paragraphIndent),
-              ),
+              WidgetSpan(child: SizedBox(width: widget.paragraphIndent)),
             TextSpan(text: before),
             TextSpan(
               text: word,

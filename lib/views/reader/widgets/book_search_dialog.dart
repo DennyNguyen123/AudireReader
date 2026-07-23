@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';
 
 class BookSearchDialog extends StatefulWidget {
@@ -71,7 +71,10 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
     return AlertDialog(
       backgroundColor: widget.isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(AppLocalizations.of(context)!.searchInsideBook, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        AppLocalizations.of(context)!.searchInsideBook,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       content: SizedBox(
         width: double.maxFinite,
         height: MediaQuery.of(context).size.height * 0.6,
@@ -82,8 +85,13 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
               style: TextStyle(color: widget.textColor),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.typeKeyword,
-                hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
-                prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(
+                  color: widget.textColor.withValues(alpha: 0.5),
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: widget.textColor.withValues(alpha: 0.5),
+                ),
                 filled: true,
                 fillColor: widget.isDark ? Colors.white10 : Colors.black12,
                 border: OutlineInputBorder(
@@ -98,73 +106,106 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
               child: _isSearching
                   ? const Center(child: CircularProgressIndicator())
                   : _results.isEmpty
-                      ? Center(
-                          child: Text(
-                            _searchController.text.isEmpty
-                                ? AppLocalizations.of(context)!.enterKeywordToSearch
-                                : AppLocalizations.of(context)!.noResultsFound,
-                            style: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _results.length,
-                          itemBuilder: (context, index) {
-                            final res = _results[index];
-                            final text = res['text'] as String;
-                            final query = _searchController.text;
-                            
-                            final queryLower = query.toLowerCase();
-                            final textLower = text.toLowerCase();
-                            final startIdx = textLower.indexOf(queryLower);
-                            
-                            Widget textWidget;
-                            if (startIdx != -1) {
-                              final endIdx = startIdx + query.length;
-                              final before = text.substring(0, startIdx);
-                              final keyword = text.substring(startIdx, endIdx);
-                              final after = text.substring(endIdx);
-                              textWidget = RichText(
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                text: TextSpan(
-                                  style: TextStyle(color: widget.textColor, fontSize: 13, height: 1.4),
-                                  children: [
-                                    TextSpan(text: before.length > 50 ? '...${before.substring(before.length - 40)}' : before),
-                                    TextSpan(
-                                      text: keyword,
-                                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
-                                    ),
-                                    TextSpan(text: after.length > 50 ? '${after.substring(0, 40)}...' : after),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              textWidget = Text(
-                                text,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: widget.textColor, fontSize: 13),
-                              );
-                            }
+                  ? Center(
+                      child: Text(
+                        _searchController.text.isEmpty
+                            ? AppLocalizations.of(context)!.enterKeywordToSearch
+                            : AppLocalizations.of(context)!.noResultsFound,
+                        style: TextStyle(
+                          color: widget.textColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _results.length,
+                      itemBuilder: (context, index) {
+                        final res = _results[index];
+                        final text = res['text'] as String;
+                        final query = _searchController.text;
 
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                              title: Text(
-                                res['chapterTitle'],
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                        final queryLower = query.toLowerCase();
+                        final textLower = text.toLowerCase();
+                        final startIdx = textLower.indexOf(queryLower);
+
+                        Widget textWidget;
+                        if (startIdx != -1) {
+                          final endIdx = startIdx + query.length;
+                          final before = text.substring(0, startIdx);
+                          final keyword = text.substring(startIdx, endIdx);
+                          final after = text.substring(endIdx);
+                          textWidget = RichText(
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              style: TextStyle(
+                                color: widget.textColor,
+                                fontSize: 13,
+                                height: 1.4,
                               ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                        child: textWidget,
-                              ),
-                              onTap: () {
-                                Navigator.pop(context);
-                                widget.ttsService.jumpToChapter(res['chapterIndex']);
-                                widget.ttsService.jumpToParagraph(res['paragraphIndex']);
-                              },
+                              children: [
+                                TextSpan(
+                                  text: before.length > 50
+                                      ? '...${before.substring(before.length - 40)}'
+                                      : before,
+                                ),
+                                TextSpan(
+                                  text: keyword,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: after.length > 50
+                                      ? '${after.substring(0, 40)}...'
+                                      : after,
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          textWidget = Text(
+                            text,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: widget.textColor,
+                              fontSize: 13,
+                            ),
+                          );
+                        }
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          title: Text(
+                            res['chapterTitle'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: textWidget,
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.ttsService.jumpToChapter(
+                              res['chapterIndex'],
+                            );
+                            widget.ttsService.jumpToParagraph(
+                              res['paragraphIndex'],
                             );
                           },
-                        ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

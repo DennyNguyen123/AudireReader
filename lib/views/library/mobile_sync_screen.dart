@@ -45,7 +45,9 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       final rawValue = barcode.rawValue;
-      if (rawValue != null && rawValue.startsWith('http') && rawValue.endsWith('/config')) {
+      if (rawValue != null &&
+          rawValue.startsWith('http') &&
+          rawValue.endsWith('/config')) {
         HapticFeedback.lightImpact();
         setState(() {
           _scannedUrl = rawValue;
@@ -112,15 +114,17 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
           'developerMode': settings.developerMode,
           'enableDebugLogs': settings.enableDebugLogs,
           'enableWebDavDebug': settings.enableWebDavDebug,
-        }
+        },
       };
 
       print('MobileSyncScreen: Đang gửi config tới $_scannedUrl...');
-      final response = await http.post(
-        Uri.parse(_scannedUrl!),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse(_scannedUrl!),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode(payload),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (mounted) {
         if (response.statusCode == 200) {
@@ -128,13 +132,18 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
           if (resData['success'] == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context)?.shareConfigSuccess ?? 'Chia sẻ cấu hình thành công!'),
+                content: Text(
+                  AppLocalizations.of(context)?.shareConfigSuccess ??
+                      'Chia sẻ cấu hình thành công!',
+                ),
                 backgroundColor: Colors.green,
               ),
             );
             Navigator.pop(context, true);
           } else {
-            throw Exception(resData['message'] ?? 'Phản hồi từ máy nhận không hợp lệ.');
+            throw Exception(
+              resData['message'] ?? 'Phản hồi từ máy nhận không hợp lệ.',
+            );
           }
         } else {
           throw Exception('Máy nhận trả về mã lỗi: ${response.statusCode}');
@@ -146,8 +155,14 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(AppLocalizations.of(context)?.sendConfigErrorTitle ?? 'Lỗi gửi cấu hình'),
-            content: Text(AppLocalizations.of(context)?.sendConfigErrorDesc(e.toString()) ?? 'Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: $e'),
+            title: Text(
+              AppLocalizations.of(context)?.sendConfigErrorTitle ??
+                  'Lỗi gửi cấu hình',
+            ),
+            content: Text(
+              AppLocalizations.of(context)?.sendConfigErrorDesc(e.toString()) ??
+                  'Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: $e',
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -173,7 +188,14 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)?.shareConfigQrScanner ?? 'Chia sẻ cấu hình (Quét QR)', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          AppLocalizations.of(context)?.shareConfigQrScanner ??
+              'Chia sẻ cấu hình (Quét QR)',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
@@ -192,17 +214,30 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.camera_alt_outlined, color: Colors.white54, size: 64),
+                        const Icon(
+                          Icons.camera_alt_outlined,
+                          color: Colors.white54,
+                          size: 64,
+                        ),
                         const SizedBox(height: 16),
                         Text(
-                          AppLocalizations.of(context)?.needCameraPermission ?? 'Cần quyền truy cập Camera để quét QR code',
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          AppLocalizations.of(context)?.needCameraPermission ??
+                              'Cần quyền truy cập Camera để quét QR code',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          AppLocalizations.of(context)?.cameraPermissionDesc ?? 'Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.',
+                          AppLocalizations.of(context)?.cameraPermissionDesc ??
+                              'Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
@@ -212,9 +247,15 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                           ),
-                          child: Text(AppLocalizations.of(context)?.openSettings ?? 'Mở Cài đặt'),
+                          child: Text(
+                            AppLocalizations.of(context)?.openSettings ??
+                                'Mở Cài đặt',
+                          ),
                         ),
                       ],
                     ),
@@ -234,7 +275,9 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _scannerController!,
             builder: (context, state, child) {
-              if (state.error != null && state.error!.errorCode == MobileScannerErrorCode.permissionDenied) {
+              if (state.error != null &&
+                  state.error!.errorCode ==
+                      MobileScannerErrorCode.permissionDenied) {
                 return const SizedBox.shrink();
               }
               return Stack(
@@ -245,7 +288,10 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                       width: 250,
                       height: 250,
                       decoration: BoxDecoration(
-                        border: Border.all(color: theme.colorScheme.primary, width: 3),
+                        border: Border.all(
+                          color: theme.colorScheme.primary,
+                          width: 3,
+                        ),
                         borderRadius: BorderRadius.circular(24),
                       ),
                     ),
@@ -258,15 +304,23 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                     right: 20,
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          AppLocalizations.of(context)?.scanQrCodeInstruction ?? 'Di chuyển camera để quét mã QR kết nối của máy nhận',
+                          AppLocalizations.of(context)?.scanQrCodeInstruction ??
+                              'Di chuyển camera để quét mã QR kết nối của máy nhận',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -287,8 +341,13 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                     const CircularProgressIndicator(color: Colors.white),
                     const SizedBox(height: 16),
                     Text(
-                      AppLocalizations.of(context)?.sendingConfig ?? 'Đang truyền cấu hình tới thiết bị nhận...',
-                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      AppLocalizations.of(context)?.sendingConfig ??
+                          'Đang truyền cấu hình tới thiết bị nhận...',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

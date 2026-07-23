@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-
 abstract class EdgeTtsChunk {}
 
 class EdgeAudioChunk extends EdgeTtsChunk {
@@ -34,9 +33,12 @@ class EdgeToken {
 
 class EdgeTtsService {
   static const String trustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
-  static const String baseUri = "speech.platform.bing.com/consumer/speech/synthesize/readaloud";
-  static const String voiceListUrl = "https://$baseUri/voices/list?trustedclienttoken=$trustedClientToken";
-  static const String _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  static const String baseUri =
+      "speech.platform.bing.com/consumer/speech/synthesize/readaloud";
+  static const String voiceListUrl =
+      "https://$baseUri/voices/list?trustedclienttoken=$trustedClientToken";
+  static const String _userAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
   static EdgeToken? _cachedToken;
   static int _tokenTime = 0;
@@ -71,7 +73,9 @@ class EdgeTtsService {
     }
 
     final html = res.body;
-    final regex = RegExp(r'params_AbusePreventionHelper\s*=\s*\[([^,]+),([^,]+),');
+    final regex = RegExp(
+      r'params_AbusePreventionHelper\s*=\s*\[([^,]+),([^,]+),',
+    );
     final match = regex.firstMatch(html);
 
     if (match == null) {
@@ -103,7 +107,14 @@ class EdgeTtsService {
     try {
       for (final chunkText in chunksText) {
         final token = await _getToken(client);
-        final bytesWritten = await _ttsRequestStreamToSink(chunkText, voice, rate, token, sink, client);
+        final bytesWritten = await _ttsRequestStreamToSink(
+          chunkText,
+          voice,
+          rate,
+          token,
+          sink,
+          client,
+        );
         totalBytesWritten += bytesWritten;
       }
     } finally {
@@ -116,9 +127,9 @@ class EdgeTtsService {
   }
 
   static Future<int> _ttsRequestStreamToSink(
-    String text, 
-    String voiceId, 
-    double rate, 
+    String text,
+    String voiceId,
+    double rate,
     EdgeToken token,
     IOSink sink,
     http.Client client,
@@ -127,7 +138,7 @@ class EdgeTtsService {
     final parts = voiceId.split("-");
     final xmlLang = parts.length >= 2 ? parts.sublist(0, 2).join("-") : "en-US";
     final gender = voiceId.toLowerCase().contains("male") ? "Male" : "Female";
-    
+
     final escapedText = text
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -135,9 +146,12 @@ class EdgeTtsService {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
 
-    final ssml = "<speak version='1.0' xml:lang='$xmlLang'><voice xml:lang='$xmlLang' xml:gender='$gender' name='$voiceId'><prosody rate='$rateStr'>$escapedText</prosody></voice></speak>";
+    final ssml =
+        "<speak version='1.0' xml:lang='$xmlLang'><voice xml:lang='$xmlLang' xml:gender='$gender' name='$voiceId'><prosody rate='$rateStr'>$escapedText</prosody></voice></speak>";
 
-    final url = Uri.parse("https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1");
+    final url = Uri.parse(
+      "https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1",
+    );
     final req = http.Request('POST', url);
     req.headers.addAll({
       "Content-Type": "application/x-www-form-urlencoded",
@@ -150,11 +164,7 @@ class EdgeTtsService {
     if (token.cookie.isNotEmpty) {
       req.headers["Cookie"] = token.cookie;
     }
-    req.bodyFields = {
-      "ssml": ssml,
-      "token": token.token,
-      "key": token.key,
-    };
+    req.bodyFields = {"ssml": ssml, "token": token.token, "key": token.key};
 
     final response = await client.send(req);
 
@@ -198,13 +208,17 @@ class EdgeTtsService {
     return count;
   }
 
-  static Future<List<int>> _ttsRequest(String text, String voiceId, double rate, EdgeToken token) async {
-
+  static Future<List<int>> _ttsRequest(
+    String text,
+    String voiceId,
+    double rate,
+    EdgeToken token,
+  ) async {
     final rateStr = convertRate(rate);
     final parts = voiceId.split("-");
     final xmlLang = parts.length >= 2 ? parts.sublist(0, 2).join("-") : "en-US";
     final gender = voiceId.toLowerCase().contains("male") ? "Male" : "Female";
-    
+
     final escapedText = text
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -212,13 +226,10 @@ class EdgeTtsService {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
 
-    final ssml = "<speak version='1.0' xml:lang='$xmlLang'><voice xml:lang='$xmlLang' xml:gender='$gender' name='$voiceId'><prosody rate='$rateStr'>$escapedText</prosody></voice></speak>";
+    final ssml =
+        "<speak version='1.0' xml:lang='$xmlLang'><voice xml:lang='$xmlLang' xml:gender='$gender' name='$voiceId'><prosody rate='$rateStr'>$escapedText</prosody></voice></speak>";
 
-    final body = {
-      "ssml": ssml,
-      "token": token.token,
-      "key": token.key,
-    };
+    final body = {"ssml": ssml, "token": token.token, "key": token.key};
 
     final headers = {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -233,7 +244,9 @@ class EdgeTtsService {
     }
 
     final res = await http.post(
-      Uri.parse("https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1"),
+      Uri.parse(
+        "https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1",
+      ),
       body: body,
       headers: headers,
     );
@@ -242,24 +255,24 @@ class EdgeTtsService {
       _cachedToken = null;
       _tokenTime = 0;
       final newToken = await _getToken(http.Client());
-      
+
       final newHeaders = Map<String, String>.from(headers);
       if (newToken.cookie.isNotEmpty) {
         newHeaders["Cookie"] = newToken.cookie;
       }
-      
+
       final retryRes = await http.post(
-        Uri.parse("https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1"),
-        body: {
-          "ssml": ssml,
-          "token": newToken.token,
-          "key": newToken.key,
-        },
+        Uri.parse(
+          "https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1",
+        ),
+        body: {"ssml": ssml, "token": newToken.token, "key": newToken.key},
         headers: newHeaders,
       );
-      
+
       if (retryRes.statusCode != 200) {
-        throw Exception("Bing TTS failed on retry: ${retryRes.statusCode} - ${retryRes.body}");
+        throw Exception(
+          "Bing TTS failed on retry: ${retryRes.statusCode} - ${retryRes.body}",
+        );
       }
       return retryRes.bodyBytes;
     }
@@ -269,7 +282,9 @@ class EdgeTtsService {
     }
 
     if (res.bodyBytes.length < 1024) {
-      throw Exception("Bing TTS returned empty or very small audio. SSML: $ssml");
+      throw Exception(
+        "Bing TTS returned empty or very small audio. SSML: $ssml",
+      );
     }
 
     return res.bodyBytes;
@@ -289,9 +304,13 @@ class EdgeTtsService {
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data.map((item) => Map<String, dynamic>.from(item)));
+        return List<Map<String, dynamic>>.from(
+          data.map((item) => Map<String, dynamic>.from(item)),
+        );
       } else {
-        throw Exception("Failed to fetch Edge TTS voices: ${response.statusCode}");
+        throw Exception(
+          "Failed to fetch Edge TTS voices: ${response.statusCode}",
+        );
       }
     } catch (e) {
       print("Error fetching Edge TTS voices: $e");
@@ -324,7 +343,7 @@ class EdgeTtsService {
         final idx = text.lastIndexOf(' ', end);
         breakPoint = idx > start ? idx : end;
       } else {
-        breakPoint++; 
+        breakPoint++;
       }
       chunks.add(text.substring(start, breakPoint).trim());
       start = breakPoint;

@@ -57,7 +57,7 @@ class BgmService extends ChangeNotifier {
   Future<void> _init() async {
     LoggerService().log("_init started", tag: 'BGM');
     if (_isInit) return;
-    
+
     // Lắng nghe sự kiện phát hết nhạc
     _audioPlayer.onPlayerComplete.listen((_) {
       _onTrackComplete();
@@ -68,7 +68,12 @@ class BgmService extends ChangeNotifier {
       _isInit = true;
       LoggerService().log("_init completed", tag: 'BGM');
     } catch (e) {
-      LoggerService().log("init error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "init error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     } finally {
       if (!_initCompleter.isCompleted) {
         _initCompleter.complete();
@@ -78,10 +83,18 @@ class BgmService extends ChangeNotifier {
 
   Future<void> _loadPlaylistForCurrentProvider() async {
     try {
-      final provider = _providers.firstWhere((p) => p.id == _bgmProviderId, orElse: () => _providers.first);
+      final provider = _providers.firstWhere(
+        (p) => p.id == _bgmProviderId,
+        orElse: () => _providers.first,
+      );
       _bgmPlaylist = await provider.fetchTracks();
     } catch (e) {
-      LoggerService().log("Fetch tracks error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Fetch tracks error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       _bgmPlaylist = [];
     }
   }
@@ -90,14 +103,14 @@ class BgmService extends ChangeNotifier {
     if (_bgmProviderId == providerId) return;
     _bgmProviderId = providerId;
     await stopBgm();
-    
+
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     settings.bgmProviderId = providerId;
     await db.saveSettings(settings);
 
     await _loadPlaylistForCurrentProvider();
-    
+
     // Khôi phục track lịch sử của provider mới
     String? targetUrl;
     String? targetName;
@@ -119,8 +132,12 @@ class BgmService extends ChangeNotifier {
           matchedTrack = matches.first;
         }
       }
-      if (matchedTrack == null && settings.currentBgmTrackId != null && providerId == 'local') {
-        final matches = _bgmPlaylist.where((t) => t.id == settings.currentBgmTrackId);
+      if (matchedTrack == null &&
+          settings.currentBgmTrackId != null &&
+          providerId == 'local') {
+        final matches = _bgmPlaylist.where(
+          (t) => t.id == settings.currentBgmTrackId,
+        );
         if (matches.isNotEmpty) {
           matchedTrack = matches.first;
         }
@@ -158,34 +175,47 @@ class BgmService extends ChangeNotifier {
 
   Future<void> loadSettingsAndPlaylist() async {
     try {
-      LoggerService().log("loadSettingsAndPlaylist started, getting DatabaseHelper", tag: 'BGM');
+      LoggerService().log(
+        "loadSettingsAndPlaylist started, getting DatabaseHelper",
+        tag: 'BGM',
+      );
       final db = await DatabaseHelper.getInstance();
-      
+
       // Load settings
-      LoggerService().log("loadSettingsAndPlaylist, getting settings", tag: 'BGM');
+      LoggerService().log(
+        "loadSettingsAndPlaylist, getting settings",
+        tag: 'BGM',
+      );
       final settings = await db.getSettings();
-      
+
       // Sửa lỗi Isar deserialize trường double mới thành NaN trên bản ghi cũ
-      if (settings.bgmVolume.isNaN || settings.bgmVolume < 0.0 || settings.bgmVolume > 1.0) {
+      if (settings.bgmVolume.isNaN ||
+          settings.bgmVolume < 0.0 ||
+          settings.bgmVolume > 1.0) {
         settings.bgmVolume = 0.15;
         await db.saveSettings(settings);
       }
-      
+
       _bgmEnabled = settings.bgmEnabled;
       _bgmVolume = settings.bgmVolume;
-      
+
       _bgmProviderId = 'local';
       if (settings.bgmProviderId != 'local') {
         settings.bgmProviderId = 'local';
         await db.saveSettings(settings);
       }
       // Load playlist depending on provider
-      LoggerService().log("loadSettingsAndPlaylist, loading tracks for provider $_bgmProviderId", tag: 'BGM');
+      LoggerService().log(
+        "loadSettingsAndPlaylist, loading tracks for provider $_bgmProviderId",
+        tag: 'BGM',
+      );
       await _loadPlaylistForCurrentProvider();
-      
+
       // Cú pháp an toàn phòng khi Isar deserialize ra null
       dynamic rawLoopMode = settings.bgmLoopMode;
-      _bgmLoopMode = (rawLoopMode == null || rawLoopMode.toString().isEmpty) ? 'all' : rawLoopMode.toString();
+      _bgmLoopMode = (rawLoopMode == null || rawLoopMode.toString().isEmpty)
+          ? 'all'
+          : rawLoopMode.toString();
       if (rawLoopMode == null) {
         settings.bgmLoopMode = _bgmLoopMode;
         await db.saveSettings(settings);
@@ -193,17 +223,28 @@ class BgmService extends ChangeNotifier {
 
       _currentBgmTrackId = settings.currentBgmTrackId;
 
-      LoggerService().log("loadSettingsAndPlaylist, setting audio volume to $_bgmVolume", tag: 'BGM');
+      LoggerService().log(
+        "loadSettingsAndPlaylist, setting audio volume to $_bgmVolume",
+        tag: 'BGM',
+      );
       try {
         if (!_bgmVolume.isNaN) {
           await _audioPlayer.setVolume(_bgmVolume);
-          LoggerService().log("loadSettingsAndPlaylist, setVolume completed", tag: 'BGM');
+          LoggerService().log(
+            "loadSettingsAndPlaylist, setVolume completed",
+            tag: 'BGM',
+          );
         } else {
           _bgmVolume = 0.15;
           await _audioPlayer.setVolume(0.15);
         }
       } catch (volErr) {
-        LoggerService().log("loadSettingsAndPlaylist, setVolume error", tag: 'BGM', level: LogLevel.error, error: volErr.toString());
+        LoggerService().log(
+          "loadSettingsAndPlaylist, setVolume error",
+          tag: 'BGM',
+          level: LogLevel.error,
+          error: volErr.toString(),
+        );
       }
 
       // Thiết lập currentTrack
@@ -222,14 +263,18 @@ class BgmService extends ChangeNotifier {
       BgmTrack? matchedTrack;
       if (_bgmPlaylist.isNotEmpty) {
         if (targetUrl != null) {
-          final urlMatches = _bgmPlaylist.where((t) => t.sourcePath == targetUrl);
+          final urlMatches = _bgmPlaylist.where(
+            (t) => t.sourcePath == targetUrl,
+          );
           if (urlMatches.isNotEmpty) {
             matchedTrack = urlMatches.first;
           }
         }
-        
+
         if (matchedTrack == null && _currentBgmTrackId != null) {
-          final idMatches = _bgmPlaylist.where((t) => t.id == _currentBgmTrackId);
+          final idMatches = _bgmPlaylist.where(
+            (t) => t.id == _currentBgmTrackId,
+          );
           if (idMatches.isNotEmpty) {
             matchedTrack = idMatches.first;
           }
@@ -244,7 +289,9 @@ class BgmService extends ChangeNotifier {
         final tempTrack = BgmTrack()
           ..id = targetUrl.hashCode.abs()
           ..name = targetName ?? 'Last Station'
-          ..sourceType = _bgmProviderId == 'radio_browser' ? 'radio' : 'openlofi'
+          ..sourceType = _bgmProviderId == 'radio_browser'
+              ? 'radio'
+              : 'openlofi'
           ..sourcePath = targetUrl
           ..dateAdded = DateTime.now();
         _currentTrack = tempTrack;
@@ -256,12 +303,23 @@ class BgmService extends ChangeNotifier {
         _currentTrack = null;
         _currentBgmTrackId = null;
       }
-      
-      LoggerService().log("loadSettingsAndPlaylist, calling notifyListeners", tag: 'BGM');
+
+      LoggerService().log(
+        "loadSettingsAndPlaylist, calling notifyListeners",
+        tag: 'BGM',
+      );
       notifyListeners();
-      LoggerService().log("loadSettingsAndPlaylist completed successfully", tag: 'BGM');
+      LoggerService().log(
+        "loadSettingsAndPlaylist completed successfully",
+        tag: 'BGM',
+      );
     } catch (e) {
-      LoggerService().log("init error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "init error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     }
   }
 
@@ -336,7 +394,7 @@ class BgmService extends ChangeNotifier {
   Future<void> playTrack(BgmTrack track) async {
     await _audioPlayer.stop();
     _currentTrack = track;
-    
+
     _currentBgmTrackId = track.id;
     await updateSettings(
       currentBgmTrackId: track.id,
@@ -363,24 +421,34 @@ class BgmService extends ChangeNotifier {
         } else {
           throw Exception("Local BGM file does not exist: ${file.path}");
         }
-      } else if (track.sourceType == 'radio' || track.sourceType == 'openlofi' || track.sourceType == 'direct_url') {
+      } else if (track.sourceType == 'radio' ||
+          track.sourceType == 'openlofi' ||
+          track.sourceType == 'direct_url') {
         // Stream from internet
         await _audioPlayer.play(UrlSource(track.sourcePath));
         _hasSource = true;
       } else {
         throw Exception("Unsupported BGM source type: ${track.sourceType}");
       }
-      
+
       await _audioPlayer.setVolume(_bgmVolume);
     } catch (e) {
-      LoggerService().log("Error playing BGM", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Error playing BGM",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       _isPlaying = false;
       _hasSource = false;
       notifyListeners();
 
       // Tự động Fallback sang Local nếu đang dùng Internet Provider bị lỗi
       if (_bgmProviderId != 'local') {
-        LoggerService().log("Network BGM failed, falling back to local provider...", tag: 'BGM');
+        LoggerService().log(
+          "Network BGM failed, falling back to local provider...",
+          tag: 'BGM',
+        );
         await changeProvider('local');
         if (_currentTrack != null) {
           await playTrack(_currentTrack!);
@@ -396,7 +464,7 @@ class BgmService extends ChangeNotifier {
     }
 
     if (!_bgmEnabled || _isPlaying) return;
-    
+
     if (_currentTrack != null) {
       if (_currentTrack!.sourceType == 'local') {
         final appDir = await PathHelper.getAppDirectory();
@@ -443,7 +511,9 @@ class BgmService extends ChangeNotifier {
       return;
     }
 
-    final currentIndex = _bgmPlaylist.indexWhere((t) => t.id == _currentTrack!.id);
+    final currentIndex = _bgmPlaylist.indexWhere(
+      (t) => t.id == _currentTrack!.id,
+    );
     if (currentIndex == -1 || currentIndex >= _bgmPlaylist.length - 1) {
       await playTrack(_bgmPlaylist.first);
     } else {
@@ -458,7 +528,9 @@ class BgmService extends ChangeNotifier {
       return;
     }
 
-    final currentIndex = _bgmPlaylist.indexWhere((t) => t.id == _currentTrack!.id);
+    final currentIndex = _bgmPlaylist.indexWhere(
+      (t) => t.id == _currentTrack!.id,
+    );
     if (currentIndex == -1 || currentIndex == 0) {
       await playTrack(_bgmPlaylist.last);
     } else {
@@ -468,7 +540,7 @@ class BgmService extends ChangeNotifier {
 
   void _onTrackComplete() {
     if (!_isPlaying) return;
-    
+
     if (_bgmLoopMode == 'one') {
       if (_currentTrack != null) {
         playTrack(_currentTrack!);
@@ -502,7 +574,9 @@ class BgmService extends ChangeNotifier {
       }
 
       final track = BgmTrack()
-        ..name = name.trim().isEmpty ? p.basenameWithoutExtension(originalFilePath) : name
+        ..name = name.trim().isEmpty
+            ? p.basenameWithoutExtension(originalFilePath)
+            : name
         ..sourceType = 'local'
         ..sourcePath = destPath
         ..dateAdded = DateTime.now();
@@ -511,7 +585,12 @@ class BgmService extends ChangeNotifier {
       await db.saveBgmTrack(track);
       await loadSettingsAndPlaylist();
     } catch (e) {
-      LoggerService().log("Add local track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Add local track error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       rethrow;
     }
   }
@@ -536,11 +615,20 @@ class BgmService extends ChangeNotifier {
       await db.deleteBgmTrack(track.id);
       await loadSettingsAndPlaylist();
     } catch (e) {
-      LoggerService().log("Delete track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Delete track error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
     }
   }
 
-  Future<void> addTrackFromUrl(String name, String url, {String sourceType = 'direct_url'}) async {
+  Future<void> addTrackFromUrl(
+    String name,
+    String url, {
+    String sourceType = 'direct_url',
+  }) async {
     try {
       final track = BgmTrack()
         ..name = name.trim().isEmpty ? 'Direct Link' : name
@@ -552,25 +640,36 @@ class BgmService extends ChangeNotifier {
       await db.saveBgmTrack(track);
       await loadSettingsAndPlaylist();
     } catch (e) {
-      LoggerService().log("Add track from URL error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Add track from URL error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       rethrow;
     }
   }
 
-  Future<void> updateTrack(BgmTrack track, {String? name, String? sourcePath}) async {
+  Future<void> updateTrack(
+    BgmTrack track, {
+    String? name,
+    String? sourcePath,
+  }) async {
     try {
       final db = await DatabaseHelper.getInstance();
-      
+
       // Cập nhật thông tin
       if (name != null && name.trim().isNotEmpty) {
         track.name = name.trim();
       }
-      if (sourcePath != null && sourcePath.trim().isNotEmpty && track.sourceType == 'direct_url') {
+      if (sourcePath != null &&
+          sourcePath.trim().isNotEmpty &&
+          track.sourceType == 'direct_url') {
         track.sourcePath = sourcePath.trim();
       }
 
       await db.saveBgmTrack(track);
-      
+
       // Nếu track đang sửa là track hiện tại, cập nhật lại trạng thái
       if (_currentTrack?.id == track.id) {
         _currentTrack = track;
@@ -585,7 +684,12 @@ class BgmService extends ChangeNotifier {
 
       await loadSettingsAndPlaylist();
     } catch (e) {
-      LoggerService().log("Update track error", tag: 'BGM', level: LogLevel.error, error: e.toString());
+      LoggerService().log(
+        "Update track error",
+        tag: 'BGM',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
       rethrow;
     }
   }

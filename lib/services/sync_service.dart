@@ -5,8 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:isar/isar.dart';
 import '../core/database/database_helper.dart';
 import '../core/utils/path_helper.dart';
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../models/progress.dart';
 import 'webdav_service.dart';
 import 'logger_service.dart';
@@ -16,12 +15,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 void print(Object? object) {
   final message = object?.toString() ?? '';
   LogLevel level = LogLevel.info;
-  if (message.toLowerCase().contains('error') || 
-      message.toLowerCase().contains('failed') || 
+  if (message.toLowerCase().contains('error') ||
+      message.toLowerCase().contains('failed') ||
       message.toLowerCase().contains('fatal')) {
     level = LogLevel.error;
-  } else if (message.toLowerCase().contains('warning') || 
-             message.toLowerCase().contains('conflict')) {
+  } else if (message.toLowerCase().contains('warning') ||
+      message.toLowerCase().contains('conflict')) {
     level = LogLevel.warning;
   }
   LoggerService().log(message, tag: 'SYNC', level: level);
@@ -31,11 +30,14 @@ class SyncService {
   static SyncService? _instance;
   final WebDavService _webdav = WebDavService.getInstance();
   bool _isSyncing = false;
-  
-  // Lưu trữ trạng thái đồng bộ của các sách (bookUuid -> status)
-  final ValueNotifier<Map<String, String>> syncStateNotifier = ValueNotifier({});
 
-  final ValueNotifier<List<Map<String, dynamic>>> cloudBooksNotifier = ValueNotifier([]);
+  // Lưu trữ trạng thái đồng bộ của các sách (bookUuid -> status)
+  final ValueNotifier<Map<String, String>> syncStateNotifier = ValueNotifier(
+    {},
+  );
+
+  final ValueNotifier<List<Map<String, dynamic>>> cloudBooksNotifier =
+      ValueNotifier([]);
   final ValueNotifier<Set<String>> cloudBookUuidsNotifier = ValueNotifier({});
 
   SyncService._() {
@@ -53,9 +55,13 @@ class SyncService {
       final cachedJson = await storage.read(key: 'webdav_cached_cloud_books');
       if (cachedJson != null && cachedJson.isNotEmpty) {
         final List<dynamic> list = json.decode(cachedJson);
-        final parsed = list.map((item) => Map<String, dynamic>.from(item)).toList();
+        final parsed = list
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
         cloudBooksNotifier.value = parsed;
-        cloudBookUuidsNotifier.value = parsed.map((item) => item['uuid'] as String).toSet();
+        cloudBookUuidsNotifier.value = parsed
+            .map((item) => item['uuid'] as String)
+            .toSet();
       }
     } catch (e) {
       print('[Sync] Error loading cloud books cache: $e');
@@ -63,7 +69,9 @@ class SyncService {
   }
 
   Future<List<int>?> _downloadBookContentBytes(String bookUuid) async {
-    List<int>? bytes = await _webdav.downloadBytes('/AudireReader/books/$bookUuid.json.gz');
+    List<int>? bytes = await _webdav.downloadBytes(
+      '/AudireReader/books/$bookUuid.json.gz',
+    );
     if (bytes != null && bytes.isNotEmpty) {
       try {
         return gzip.decode(bytes);
@@ -103,21 +111,32 @@ class SyncService {
 
       final hasIndex = await _webdav.fileExists('/AudireReader/sync_data.json');
       if (hasIndex) {
-        final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+        final bytes = await _webdav.downloadBytes(
+          '/AudireReader/sync_data.json',
+        );
         if (bytes != null && bytes.isNotEmpty) {
           final jsonStr = utf8.decode(bytes);
           final cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
           final List<dynamic> cloudBooks = cloudSyncData['books'] ?? [];
           final List<Map<String, dynamic>> parsed = cloudBooks
-              .map((b) => b is Map<String, dynamic> ? Map<String, dynamic>.from(b) : null)
+              .map(
+                (b) => b is Map<String, dynamic>
+                    ? Map<String, dynamic>.from(b)
+                    : null,
+              )
               .whereType<Map<String, dynamic>>()
               .toList();
 
           cloudBooksNotifier.value = parsed;
-          cloudBookUuidsNotifier.value = parsed.map((b) => b['uuid'] as String).toSet();
+          cloudBookUuidsNotifier.value = parsed
+              .map((b) => b['uuid'] as String)
+              .toSet();
 
           // Save to cache
-          await storage.write(key: 'webdav_cached_cloud_books', value: json.encode(parsed));
+          await storage.write(
+            key: 'webdav_cached_cloud_books',
+            value: json.encode(parsed),
+          );
           print('[Sync] Fetched ${parsed.length} cloud books.');
 
           // Tải ngầm ảnh bìa của các sách ảo chưa có ở local
@@ -133,10 +152,12 @@ class SyncService {
     }
   }
 
-  Future<void> _downloadMissingCoversInBackground(List<Map<String, dynamic>> cloudBooks) async {
+  Future<void> _downloadMissingCoversInBackground(
+    List<Map<String, dynamic>> cloudBooks,
+  ) async {
     try {
       final docDir = await PathHelper.getAppDirectory();
-      
+
       for (final cb in cloudBooks) {
         final uuid = cb['uuid'] as String;
         if (cb['hasCover'] == true) {
@@ -146,13 +167,13 @@ class SyncService {
           if (!await localFile.exists()) {
             final remotePath = '/AudireReader/covers/$uuid$ext';
             print('[Sync] Downloading missing cover in background for $uuid');
-            
+
             // Create covers dir if not exists
             final coverDir = Directory(p.join(docDir.path, 'covers'));
             if (!await coverDir.exists()) {
               await coverDir.create(recursive: true);
             }
-            
+
             await _webdav.downloadToLocalFile(remotePath, localPath);
           }
         }
@@ -174,14 +195,14 @@ class SyncService {
       newMap[bookUuid] = status;
     }
     syncStateNotifier.value = newMap;
-    
+
     // Tự động clear trạng thái sau 3 giây nếu success/error
     if (status == 'success' || status == 'error') {
       Future.delayed(const Duration(seconds: 3), () {
         final currentMap = Map<String, String>.from(syncStateNotifier.value);
         if (currentMap[bookUuid] == status) {
-           currentMap.remove(bookUuid);
-           syncStateNotifier.value = currentMap;
+          currentMap.remove(bookUuid);
+          syncStateNotifier.value = currentMap;
         }
       });
     }
@@ -190,7 +211,10 @@ class SyncService {
   /// Thực hiện đồng bộ hóa toàn diện (chỉ đồng bộ tiến trình đọc và chỉ mục sách đám mây)
   Future<SyncResult> sync() async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[Sync] Starting progress-only synchronization...');
@@ -198,7 +222,7 @@ class SyncService {
     try {
       // 1. Chỉ tải danh sách chỉ mục sách mây về (để cập nhật sách ảo trên UI)
       await fetchCloudBooks();
-      
+
       // 2. Đồng bộ tiến trình đọc cho tất cả sách cục bộ thông qua hàm internal
       final db = await DatabaseHelper.getInstance();
       final localBooks = await db.getAllBooks();
@@ -206,7 +230,8 @@ class SyncService {
 
       for (final book in localBooks) {
         final res = await _syncBookProgressInternal(book.uuid);
-        if (res.status == ProgressSyncStatus.updatedLocal) progressChanged = true;
+        if (res.status == ProgressSyncStatus.updatedLocal)
+          progressChanged = true;
       }
 
       _isSyncing = false;
@@ -225,7 +250,10 @@ class SyncService {
   /// 1. Đồng bộ Danh mục Sách và Trạng thái Xóa (sync_data.json) công khai (có check lock)
   Future<SyncResult> syncLibrary() async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[SyncLibrary] Starting library sync...');
@@ -254,7 +282,10 @@ class SyncService {
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Khởi tạo WebDAV Client
@@ -262,15 +293,26 @@ class SyncService {
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server. Check settings.',
+        );
       }
 
       // 2. Tự động di chuyển chỉ mục cũ trên WebDAV nếu có
-      final hasOldSyncFile = await _webdav.fileExists('/NovelReader/sync_data.json');
-      final hasNewSyncFile = await _webdav.fileExists('/AudireReader/sync_data.json');
+      final hasOldSyncFile = await _webdav.fileExists(
+        '/NovelReader/sync_data.json',
+      );
+      final hasNewSyncFile = await _webdav.fileExists(
+        '/AudireReader/sync_data.json',
+      );
       if (hasOldSyncFile && !hasNewSyncFile) {
-        print('[SyncLibrary] Migrating legacy sync_data.json on WebDAV to AudireReader...');
-        final oldBytes = await _webdav.downloadBytes('/NovelReader/sync_data.json');
+        print(
+          '[SyncLibrary] Migrating legacy sync_data.json on WebDAV to AudireReader...',
+        );
+        final oldBytes = await _webdav.downloadBytes(
+          '/NovelReader/sync_data.json',
+        );
         if (oldBytes != null && oldBytes.isNotEmpty) {
           await _webdav.mkdir('/AudireReader');
           await _webdav.uploadBytes('/AudireReader/sync_data.json', oldBytes);
@@ -295,24 +337,30 @@ class SyncService {
 
         // Lấy thông tin metadata của file sync_data.json trên server trước để làm base
         String baseLastSyncTime = '';
-        final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
-        
+        final fileMeta = await _webdav.getFileMetadata(
+          '/AudireReader/sync_data.json',
+        );
+
         Map<String, dynamic> cloudSyncData = {
           'version': 1,
           'lastSyncTime': '',
           'books': [],
-          'deleted': []
+          'deleted': [],
         };
 
         final hasSyncFile = fileMeta != null;
         if (hasSyncFile) {
-          final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          final bytes = await _webdav.downloadBytes(
+            '/AudireReader/sync_data.json',
+          );
           if (bytes != null && bytes.isNotEmpty) {
             try {
               final jsonStr = utf8.decode(bytes);
               cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
               baseLastSyncTime = cloudSyncData['lastSyncTime'] ?? '';
-              print('[SyncLibrary] Loaded cloud index sync data. Base time: $baseLastSyncTime');
+              print(
+                '[SyncLibrary] Loaded cloud index sync data. Base time: $baseLastSyncTime',
+              );
             } catch (e) {
               print('[SyncLibrary] Error decoding sync_data.json: $e');
             }
@@ -321,7 +369,9 @@ class SyncService {
 
         // Tương thích ngược: Nếu file trên mây cũ có chứa 'progress' cũ, ta sẽ migrate chúng sang các file progress riêng lẻ
         if (cloudSyncData.containsKey('progress')) {
-          print('[SyncLibrary] Migrating legacy progress list from sync_data.json to single files...');
+          print(
+            '[SyncLibrary] Migrating legacy progress list from sync_data.json to single files...',
+          );
           final List<dynamic> legacyProgress = cloudSyncData['progress'] ?? [];
           for (final prog in legacyProgress) {
             if (prog is Map<String, dynamic>) {
@@ -329,7 +379,10 @@ class SyncService {
               if (bUuid.isNotEmpty) {
                 // Tạo file progress riêng trên mây cho sách này
                 final jsonBytes = utf8.encode(json.encode(prog));
-                await _webdav.uploadBytes('/AudireReader/progress/$bUuid.json', jsonBytes);
+                await _webdav.uploadBytes(
+                  '/AudireReader/progress/$bUuid.json',
+                  jsonBytes,
+                );
               }
             }
           }
@@ -339,20 +392,23 @@ class SyncService {
 
         // Lấy danh sách sách ban đầu dưới Local
         var localBooks = await db.getAllBooks();
-        final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
-        final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
+        final List<Map<String, dynamic>> cloudBooksList =
+            List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+        final List<dynamic> cloudDeletedList = List<dynamic>.from(
+          cloudSyncData['deleted'] ?? [],
+        );
 
         // Dọn dẹp Tombstone (xóa các UUID đã xóa cũ hơn 30 ngày)
         bool tombstoneCleaned = false;
         final DateTime now = DateTime.now();
         final List<Map<String, dynamic>> updatedDeletedList = [];
-        
+
         // Cấu trúc lại deleted list thành dạng object nếu là danh sách String cũ
         for (final item in cloudDeletedList) {
           if (item is String) {
             updatedDeletedList.add({
               'uuid': item,
-              'deletedAt': now.toIso8601String()
+              'deletedAt': now.toIso8601String(),
             });
             tombstoneCleaned = true;
           } else if (item is Map<String, dynamic>) {
@@ -362,18 +418,24 @@ class SyncService {
               updatedDeletedList.add(item);
             } else {
               tombstoneCleaned = true;
-              print('[SyncLibrary] Cleaned up expired tombstone UUID "${item['uuid']}"');
+              print(
+                '[SyncLibrary] Cleaned up expired tombstone UUID "${item['uuid']}"',
+              );
             }
           }
         }
-        
-        final List<String> activeDeletedUuids = updatedDeletedList.map((e) => e['uuid'] as String).toList();
+
+        final List<String> activeDeletedUuids = updatedDeletedList
+            .map((e) => e['uuid'] as String)
+            .toList();
 
         // 3. XỬ LÝ ĐỒNG BỘ XÓA SÁCH (CLOUD -> LOCAL DELETION)
         for (final deletedUuid in activeDeletedUuids) {
           final hasLocalBook = localBooks.any((b) => b.uuid == deletedUuid);
           if (hasLocalBook) {
-            print('[SyncLibrary] Deleting book UUID "$deletedUuid" locally (deleted on another device).');
+            print(
+              '[SyncLibrary] Deleting book UUID "$deletedUuid" locally (deleted on another device).',
+            );
             await db.deleteBook(deletedUuid);
             localDatabaseChanged = true;
           }
@@ -390,12 +452,17 @@ class SyncService {
           if (activeDeletedUuids.contains(localBook.uuid)) {
             continue;
           }
-          final bool existsOnCloud = cloudBooksList.any((b) =>
-              b['uuid'] == localBook.uuid ||
-              (b['title'] == localBook.title && b['author'] == localBook.author));
+          final bool existsOnCloud = cloudBooksList.any(
+            (b) =>
+                b['uuid'] == localBook.uuid ||
+                (b['title'] == localBook.title &&
+                    b['author'] == localBook.author),
+          );
 
           if (!existsOnCloud) {
-            print('[SyncLibrary] Uploading new local book to cloud: "${localBook.title}"');
+            print(
+              '[SyncLibrary] Uploading new local book to cloud: "${localBook.title}"',
+            );
             _updateBookSyncStatus(localBook.uuid, 'syncing');
             try {
               // A. Upload Ảnh bìa
@@ -404,8 +471,12 @@ class SyncService {
                 final coverFile = File(localBook.coverPath!);
                 if (await coverFile.exists()) {
                   final ext = p.extension(localBook.coverPath!);
-                  final remoteCoverPath = '/AudireReader/covers/${localBook.uuid}$ext';
-                  final uploadCoverOk = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
+                  final remoteCoverPath =
+                      '/AudireReader/covers/${localBook.uuid}$ext';
+                  final uploadCoverOk = await _webdav.uploadLocalFile(
+                    localBook.coverPath!,
+                    remoteCoverPath,
+                  );
                   hasCover = uploadCoverOk;
                 }
               }
@@ -417,20 +488,31 @@ class SyncService {
                 'title': localBook.title,
                 'author': localBook.author,
                 'totalChapters': localBook.totalChapters,
-                'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
-                'dateAdded': localBook.dateAdded.toIso8601String(),
-                'chapters': chapters.map((c) => {
-                  'chapterIndex': c.chapterIndex,
-                  'title': c.title,
-                  'paragraphs': c.paragraphs
-                }).toList()
+                'coverExtension': localBook.coverPath != null
+                    ? p.extension(localBook.coverPath!)
+                    : null,
+                'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
+                'chapters': chapters
+                    .map(
+                      (c) => {
+                        'chapterIndex': c.chapterIndex,
+                        'title': c.title,
+                        'paragraphs': c.paragraphs,
+                      },
+                    )
+                    .toList(),
               };
 
               final jsonBytes = utf8.encode(json.encode(bookContent));
               final compressedBytes = gzip.encode(jsonBytes);
               // ignore: avoid_print
-              print('[DebugSync] Book "${localBook.title}": Raw JSON size: ${(jsonBytes.length / 1024 / 1024).toStringAsFixed(2)} MB, Compressed Gzip size: ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)} MB');
-              final uploadContentOk = await _webdav.uploadBytes('/AudireReader/books/${localBook.uuid}.json.gz', compressedBytes);
+              print(
+                '[DebugSync] Book "${localBook.title}": Raw JSON size: ${(jsonBytes.length / 1024 / 1024).toStringAsFixed(2)} MB, Compressed Gzip size: ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)} MB',
+              );
+              final uploadContentOk = await _webdav.uploadBytes(
+                '/AudireReader/books/${localBook.uuid}.json.gz',
+                compressedBytes,
+              );
 
               if (uploadContentOk) {
                 cloudBooksList.add({
@@ -438,18 +520,24 @@ class SyncService {
                   'title': localBook.title,
                   'author': localBook.author,
                   'totalChapters': localBook.totalChapters,
-                  'dateAdded': localBook.dateAdded.toIso8601String(),
+                  'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
                   'hasCover': hasCover,
-                  'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+                  'coverExtension': localBook.coverPath != null
+                      ? p.extension(localBook.coverPath!)
+                      : null,
                 });
                 cloudDatabaseChanged = true;
-                print('[SyncLibrary] Successfully uploaded book: "${localBook.title}"');
+                print(
+                  '[SyncLibrary] Successfully uploaded book: "${localBook.title}"',
+                );
                 _updateBookSyncStatus(localBook.uuid, 'success');
               } else {
                 _updateBookSyncStatus(localBook.uuid, 'error');
               }
             } catch (e) {
-              print('[SyncLibrary] Error uploading book "${localBook.title}": $e');
+              print(
+                '[SyncLibrary] Error uploading book "${localBook.title}": $e',
+              );
               _updateBookSyncStatus(localBook.uuid, 'error');
             }
           }
@@ -461,19 +549,25 @@ class SyncService {
           if (activeDeletedUuids.contains(cloudBook['uuid'])) {
             continue;
           }
-          final bool existsLocally = localBooks.any((b) =>
-              b.uuid == cloudBook['uuid'] ||
-              (b.title == cloudBook['title'] && b.author == cloudBook['author']));
+          final bool existsLocally = localBooks.any(
+            (b) =>
+                b.uuid == cloudBook['uuid'] ||
+                (b.title == cloudBook['title'] &&
+                    b.author == cloudBook['author']),
+          );
 
           if (!existsLocally) {
-            print('[SyncLibrary] Downloading book from cloud: "${cloudBook['title']}"');
+            print(
+              '[SyncLibrary] Downloading book from cloud: "${cloudBook['title']}"',
+            );
             final bookUuid = cloudBook['uuid'];
             _updateBookSyncStatus(bookUuid, 'syncing');
             try {
               final bytes = await _downloadBookContentBytes(bookUuid);
               if (bytes != null && bytes.isNotEmpty) {
                 final jsonStr = utf8.decode(bytes);
-                final bookContent = json.decode(jsonStr) as Map<String, dynamic>;
+                final bookContent =
+                    json.decode(jsonStr) as Map<String, dynamic>;
 
                 // Tải ảnh bìa
                 String? localCoverPath;
@@ -485,12 +579,18 @@ class SyncService {
                   }
                   final localPath = p.join(coverDir.path, '$bookUuid$ext');
                   final remotePath = '/AudireReader/covers/$bookUuid$ext';
-                  
-                  var downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+
+                  var downloadCoverOk = await _webdav.downloadToLocalFile(
+                    remotePath,
+                    localPath,
+                  );
                   if (!downloadCoverOk) {
                     // Fallback sang NovelReader cũ
                     final oldRemotePath = '/NovelReader/covers/$bookUuid$ext';
-                    downloadCoverOk = await _webdav.downloadToLocalFile(oldRemotePath, localPath);
+                    downloadCoverOk = await _webdav.downloadToLocalFile(
+                      oldRemotePath,
+                      localPath,
+                    );
                     if (downloadCoverOk) {
                       await _webdav.uploadLocalFile(localPath, remotePath);
                     }
@@ -501,37 +601,40 @@ class SyncService {
                 }
 
                 // Lưu Book
-                final newBook = Book()
-                  ..uuid = bookUuid
-                  ..title = cloudBook['title']
-                  ..author = cloudBook['author']
-                  ..coverPath = localCoverPath
-                  ..totalChapters = cloudBook['totalChapters']
-                  ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now();
+                final newBook = Book(
+                  uuid: bookUuid,
+                  title: cloudBook['title'] ?? 'Unknown Book',
+                  author: cloudBook['author'] ?? 'Unknown',
+                  coverPath: localCoverPath,
+                  totalChapters: cloudBook['totalChapters'] ?? 0,
+                  dateAdded: (DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch,
+                  status: 'unread',
+                  tags: [],
+                );
 
                 // Lưu Chapters
                 final List<Chapter> newChapters = [];
                 final parsedChapters = bookContent['chapters'] as List<dynamic>;
                 for (final c in parsedChapters) {
                   final chMap = c as Map<String, dynamic>;
-                  final newCh = Chapter()
-                    ..bookUuid = bookUuid
-                    ..chapterIndex = chMap['chapterIndex']
-                    ..title = chMap['title']
-                    ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+                  final newCh = Chapter(bookUuid: bookUuid, chapterIndex: chMap['chapterIndex'], title: chMap['title'], paragraphs: List<String>.from(chMap['paragraphs'] ?? []));
                   newChapters.add(newCh);
                 }
 
                 await db.saveBook(newBook);
                 await db.saveChapters(newChapters);
                 localDatabaseChanged = true;
-                print('[SyncLibrary] Restored book locally: "${newBook.title}"');
+                print(
+                  '[SyncLibrary] Restored book locally: "${newBook.title}"',
+                );
                 _updateBookSyncStatus(bookUuid, 'success');
               } else {
                 _updateBookSyncStatus(bookUuid, 'error');
               }
             } catch (e) {
-              print('[SyncLibrary] Error downloading book "${cloudBook['title']}": $e');
+              print(
+                '[SyncLibrary] Error downloading book "${cloudBook['title']}": $e',
+              );
               _updateBookSyncStatus(cloudBook['uuid'], 'error');
             }
           }
@@ -540,15 +643,21 @@ class SyncService {
         // 6. GHI LẠI CHỈ MỤC MỚI (Optimistic Locking)
         if (cloudDatabaseChanged || !hasSyncFile) {
           // Kiểm tra xem trong thời gian ta sync, tệp trên server có bị thiết bị khác ghi đè hay chưa
-          final currentFileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+          final currentFileMeta = await _webdav.getFileMetadata(
+            '/AudireReader/sync_data.json',
+          );
           String currentServerTime = '';
-          
+
           if (currentFileMeta != null) {
             // Tải nhanh file chỉ mục để so sánh lastSyncTime chuẩn xác nhất
-            final checkBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+            final checkBytes = await _webdav.downloadBytes(
+              '/AudireReader/sync_data.json',
+            );
             if (checkBytes != null && checkBytes.isNotEmpty) {
               try {
-                final checkJson = json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
+                final checkJson =
+                    json.decode(utf8.decode(checkBytes))
+                        as Map<String, dynamic>;
                 currentServerTime = checkJson['lastSyncTime'] ?? '';
               } catch (_) {}
             }
@@ -556,7 +665,9 @@ class SyncService {
 
           if (currentServerTime != baseLastSyncTime) {
             // Có xung đột ghi đè đồng thời!
-            print('[SyncLibrary] Conflict detected! Server index was updated (Server: $currentServerTime, Local Base: $baseLastSyncTime). Retrying merge...');
+            print(
+              '[SyncLibrary] Conflict detected! Server index was updated (Server: $currentServerTime, Local Base: $baseLastSyncTime). Retrying merge...',
+            );
             lastSyncError = 'Conflict detected. Retrying...';
             // Tiếp tục vòng lặp while để tải dữ liệu mới nhất từ server và merge lại
             continue;
@@ -568,9 +679,14 @@ class SyncService {
           cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
 
           final jsonBytes = utf8.encode(json.encode(cloudSyncData));
-          final uploadOk = await _webdav.uploadBytes('/AudireReader/sync_data.json', jsonBytes);
+          final uploadOk = await _webdav.uploadBytes(
+            '/AudireReader/sync_data.json',
+            jsonBytes,
+          );
           if (uploadOk) {
-            print('[SyncLibrary] Successfully uploaded sync_data.json to cloud.');
+            print(
+              '[SyncLibrary] Successfully uploaded sync_data.json to cloud.',
+            );
             syncSuccess = true;
           } else {
             lastSyncError = 'Failed to upload sync_data.json to cloud.';
@@ -582,7 +698,10 @@ class SyncService {
       }
 
       if (!syncSuccess) {
-        return SyncResult(success: false, message: 'Sync failed: $lastSyncError');
+        return SyncResult(
+          success: false,
+          message: 'Sync failed: $lastSyncError',
+        );
       }
 
       // 7. CẬP NHẬT CẤU HÌNH CỤC BỘ
@@ -649,7 +768,7 @@ class SyncService {
       // 1. Tải tiến trình trên mây về (nếu có)
       Map<String, dynamic>? cloudProg;
       var fileMeta = await _webdav.getFileMetadata(remotePath);
-      
+
       if (fileMeta == null) {
         // Fallback NovelReader
         final oldMeta = await _webdav.getFileMetadata(oldRemotePath);
@@ -657,7 +776,8 @@ class SyncService {
           final bytes = await _webdav.downloadBytes(oldRemotePath);
           if (bytes != null && bytes.isNotEmpty) {
             try {
-              cloudProg = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
+              cloudProg =
+                  json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
               await _webdav.uploadBytes(remotePath, bytes);
             } catch (_) {}
           }
@@ -668,7 +788,9 @@ class SyncService {
           try {
             cloudProg = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
           } catch (e) {
-            print('[SyncProgress] Error decoding progress for book $bookUuid: $e');
+            print(
+              '[SyncProgress] Error decoding progress for book $bookUuid: $e',
+            );
           }
         }
       }
@@ -676,7 +798,7 @@ class SyncService {
       // 2. So sánh và xử lý đồng bộ
       if (cloudProg != null) {
         final cloudDeviceId = cloudProg['deviceId'] as String?;
-        
+
         final localCh = localProg?.currentChapterIndex ?? 0;
         final localPara = localProg?.currentParagraphIndex ?? 0;
 
@@ -686,13 +808,24 @@ class SyncService {
         // Nếu cloud do chính máy này update lần cuối, ta coi như an toàn, auto ghi đè (nếu local mới hơn thì đẩy lên)
         if (cloudDeviceId == deviceId) {
           if (_isCloudProgressNewer(cloudProg, localProg)) {
-             // Dữ liệu trên mây (do chính máy này đẩy lên trước đó hoặc sync nhầm?) mới hơn -> đè local
-             _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
-             return ProgressSyncResult(status: ProgressSyncStatus.updatedLocal, cloudProgress: cloudProg);
+            // Dữ liệu trên mây (do chính máy này đẩy lên trước đó hoặc sync nhầm?) mới hơn -> đè local
+            _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
+            return ProgressSyncResult(
+              status: ProgressSyncStatus.updatedLocal,
+              cloudProgress: cloudProg,
+            );
           } else if (!_isCloudProgressEqual(cloudProg, localProg!)) {
-             // Local mới hơn -> đẩy lên mây
-             await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
-             return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
+            // Local mới hơn -> đẩy lên mây
+            await _uploadLocalToCloud(
+              remotePath,
+              bookUuid,
+              localProg,
+              deviceId,
+              deviceName,
+            );
+            return ProgressSyncResult(
+              status: ProgressSyncStatus.uploadedToCloud,
+            );
           }
           return ProgressSyncResult(status: ProgressSyncStatus.upToDate);
         } else {
@@ -703,15 +836,30 @@ class SyncService {
           if (isCloudNewer && !isLocalNewer) {
             // Máy kia đọc xa hơn và local không xa hơn -> an toàn để đè local
             _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
-            return ProgressSyncResult(status: ProgressSyncStatus.updatedLocal, cloudProgress: cloudProg);
+            return ProgressSyncResult(
+              status: ProgressSyncStatus.updatedLocal,
+              cloudProgress: cloudProg,
+            );
           } else if (isLocalNewer && !isCloudNewer) {
             // Máy này đọc xa hơn máy kia -> an toàn để đè mây
-            await _uploadLocalToCloud(remotePath, bookUuid, localProg!, deviceId, deviceName);
-            return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
-          } else if (isCloudNewer && isLocalNewer || (cloudCh != localCh || cloudPara != localPara)) {
+            await _uploadLocalToCloud(
+              remotePath,
+              bookUuid,
+              localProg!,
+              deviceId,
+              deviceName,
+            );
+            return ProgressSyncResult(
+              status: ProgressSyncStatus.uploadedToCloud,
+            );
+          } else if (isCloudNewer && isLocalNewer ||
+              (cloudCh != localCh || cloudPara != localPara)) {
             // CONFLICT! Ví dụ: Máy A chương 8, Máy B chương 10. Nhưng thời gian lộn xộn, hoặc rẽ nhánh.
             // Báo conflict ra ngoài
-            return ProgressSyncResult(status: ProgressSyncStatus.conflict, cloudProgress: cloudProg);
+            return ProgressSyncResult(
+              status: ProgressSyncStatus.conflict,
+              cloudProgress: cloudProg,
+            );
           } else {
             // Bằng nhau
             return ProgressSyncResult(status: ProgressSyncStatus.upToDate);
@@ -720,7 +868,13 @@ class SyncService {
       } else {
         // Mây chưa có tiến trình -> Đẩy Local lên
         if (localProg != null) {
-          await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
+          await _uploadLocalToCloud(
+            remotePath,
+            bookUuid,
+            localProg,
+            deviceId,
+            deviceName,
+          );
           return ProgressSyncResult(status: ProgressSyncStatus.uploadedToCloud);
         }
       }
@@ -730,7 +884,13 @@ class SyncService {
     return ProgressSyncResult(status: ProgressSyncStatus.error);
   }
 
-  Future<void> _uploadLocalToCloud(String remotePath, String bookUuid, ReadingProgress localProg, String deviceId, String deviceName) async {
+  Future<void> _uploadLocalToCloud(
+    String remotePath,
+    String bookUuid,
+    ReadingProgress localProg,
+    String deviceId,
+    String deviceName,
+  ) async {
     final localJson = {
       'bookUuid': bookUuid,
       'deviceId': deviceId,
@@ -753,21 +913,44 @@ class SyncService {
     );
   }
 
-  Future<void> forceUploadLocalProgress(String bookUuid, ReadingProgress localProg, String deviceId, String deviceName) async {
+  Future<void> forceUploadLocalProgress(
+    String bookUuid,
+    ReadingProgress localProg,
+    String deviceId,
+    String deviceName,
+  ) async {
     final String remotePath = '/AudireReader/progress/$bookUuid.json';
-    await _uploadLocalToCloud(remotePath, bookUuid, localProg, deviceId, deviceName);
+    await _uploadLocalToCloud(
+      remotePath,
+      bookUuid,
+      localProg,
+      deviceId,
+      deviceName,
+    );
   }
 
-  Future<void> forceUpdateLocalFromCloud(String bookUuid, Map<String, dynamic> cloudProg, ReadingProgress? localProg, DatabaseHelper db) async {
+  Future<void> forceUpdateLocalFromCloud(
+    String bookUuid,
+    Map<String, dynamic> cloudProg,
+    ReadingProgress? localProg,
+    DatabaseHelper db,
+  ) async {
     await _updateLocalFromCloud(bookUuid, cloudProg, localProg, db);
   }
 
-  Future<void> _updateLocalFromCloud(String bookUuid, Map<String, dynamic> cloudProg, ReadingProgress? localProg, DatabaseHelper db) async {
-    final DateTime cloudLastRead = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
+  Future<void> _updateLocalFromCloud(
+    String bookUuid,
+    Map<String, dynamic> cloudProg,
+    ReadingProgress? localProg,
+    DatabaseHelper db,
+  ) async {
+    final DateTime cloudLastRead =
+        DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
     final targetProg = localProg ?? (ReadingProgress()..bookUuid = bookUuid);
     targetProg.currentChapterIndex = cloudProg['currentChapterIndex'] ?? 0;
     targetProg.currentParagraphIndex = cloudProg['currentParagraphIndex'] ?? 0;
-    targetProg.currentCharacterOffset = cloudProg['currentCharacterOffset'] ?? 0;
+    targetProg.currentCharacterOffset =
+        cloudProg['currentCharacterOffset'] ?? 0;
     targetProg.lastRead = cloudLastRead;
     await db.saveProgress(targetProg);
 
@@ -781,11 +964,16 @@ class SyncService {
     );
   }
 
-  bool _isLocalProgressNewer(Map<String, dynamic> cloudProg, ReadingProgress? localProg) {
+  bool _isLocalProgressNewer(
+    Map<String, dynamic> cloudProg,
+    ReadingProgress? localProg,
+  ) {
     if (localProg == null) return false;
     final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
     final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
-    final DateTime cloudTime = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final DateTime cloudTime =
+        DateTime.tryParse(cloudProg['lastRead'] ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
 
     final int localCh = localProg.currentChapterIndex;
     final int localPara = localProg.currentParagraphIndex;
@@ -798,15 +986,19 @@ class SyncService {
     return localTime.isAfter(cloudTime);
   }
 
-
   /// Thuật toán so sánh tiến trình đọc thông minh chống lệch giờ hệ thống
   /// Ưu tiên vị trí chương/đoạn lớn hơn trước, nếu bằng nhau mới so timestamp
-  bool _isCloudProgressNewer(Map<String, dynamic> cloudProg, ReadingProgress? localProg) {
+  bool _isCloudProgressNewer(
+    Map<String, dynamic> cloudProg,
+    ReadingProgress? localProg,
+  ) {
     if (localProg == null) return true;
 
     final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
     final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
-    final DateTime cloudTime = DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final DateTime cloudTime =
+        DateTime.tryParse(cloudProg['lastRead'] ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
 
     final int localCh = localProg.currentChapterIndex;
     final int localPara = localProg.currentParagraphIndex;
@@ -825,7 +1017,10 @@ class SyncService {
   }
 
   /// Kiểm tra xem tiến trình mây và local có hoàn toàn giống hệt nhau không
-  bool _isCloudProgressEqual(Map<String, dynamic> cloudProg, ReadingProgress localProg) {
+  bool _isCloudProgressEqual(
+    Map<String, dynamic> cloudProg,
+    ReadingProgress localProg,
+  ) {
     final int cloudCh = cloudProg['currentChapterIndex'] ?? 0;
     final int cloudPara = cloudProg['currentParagraphIndex'] ?? 0;
     final int cloudOffset = cloudProg['currentCharacterOffset'] ?? 0;
@@ -838,10 +1033,15 @@ class SyncService {
   /// Lực đẩy Local lên Cloud (Ghi đè Cloud bằng dữ liệu máy này)
   Future<SyncResult> forcePush({bool progressOnly = true}) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
-    print('[Sync] Force pushing local library to cloud (progressOnly: $progressOnly)...');
+    print(
+      '[Sync] Force pushing local library to cloud (progressOnly: $progressOnly)...',
+    );
 
     try {
       final db = await DatabaseHelper.getInstance();
@@ -855,7 +1055,10 @@ class SyncService {
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Init WebDAV client
@@ -863,7 +1066,10 @@ class SyncService {
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server. Check settings.',
+        );
       }
 
       // 2. Ensure directories exist on WebDAV
@@ -885,12 +1091,21 @@ class SyncService {
           try {
             final localProg = await db.getProgress(localBook.uuid);
             if (localProg != null) {
-              final String remoteProgressPath = '/AudireReader/progress/${localBook.uuid}.json';
-              await _uploadLocalToCloud(remoteProgressPath, localBook.uuid, localProg, deviceId, deviceName);
+              final String remoteProgressPath =
+                  '/AudireReader/progress/${localBook.uuid}.json';
+              await _uploadLocalToCloud(
+                remoteProgressPath,
+                localBook.uuid,
+                localProg,
+                deviceId,
+                deviceName,
+              );
             }
             _updateBookSyncStatus(localBook.uuid, 'success');
           } catch (e) {
-            print('[Sync] Error force pushing progress for "${localBook.title}": $e');
+            print(
+              '[Sync] Error force pushing progress for "${localBook.title}": $e',
+            );
             _updateBookSyncStatus(localBook.uuid, 'error');
           }
         }
@@ -898,9 +1113,13 @@ class SyncService {
         // FULL SYNC FLOW (WITH OPTIMIZATION)
         // A. Read old index to find orphaned cloud books
         List<String> cloudUuidsToDelete = [];
-        final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+        final fileMeta = await _webdav.getFileMetadata(
+          '/AudireReader/sync_data.json',
+        );
         if (fileMeta != null) {
-          final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          final bytes = await _webdav.downloadBytes(
+            '/AudireReader/sync_data.json',
+          );
           if (bytes != null && bytes.isNotEmpty) {
             try {
               final jsonStr = utf8.decode(bytes);
@@ -922,7 +1141,9 @@ class SyncService {
 
         // B. Delete orphaned books on cloud
         for (final deleteUuid in cloudUuidsToDelete) {
-          print('[Sync] Force Push: Deleting orphan book "$deleteUuid" from cloud');
+          print(
+            '[Sync] Force Push: Deleting orphan book "$deleteUuid" from cloud',
+          );
           await _webdav.remove('/AudireReader/books/$deleteUuid.json');
           await _webdav.remove('/AudireReader/books/$deleteUuid.json.gz');
           await _webdav.remove('/AudireReader/progress/$deleteUuid.json');
@@ -939,19 +1160,24 @@ class SyncService {
 
           try {
             // Optimization: Only upload book and cover if they do not exist on cloud
-            final String remoteBookPath = '/AudireReader/books/${localBook.uuid}.json.gz';
+            final String remoteBookPath =
+                '/AudireReader/books/${localBook.uuid}.json.gz';
             final hasRemoteBook = await _webdav.fileExists(remoteBookPath);
 
             bool hasCover = false;
             if (localBook.coverPath != null) {
               final ext = p.extension(localBook.coverPath!);
-              final remoteCoverPath = '/AudireReader/covers/${localBook.uuid}$ext';
+              final remoteCoverPath =
+                  '/AudireReader/covers/${localBook.uuid}$ext';
               final hasRemoteCover = await _webdav.fileExists(remoteCoverPath);
 
               if (!hasRemoteCover) {
                 final coverFile = File(localBook.coverPath!);
                 if (await coverFile.exists()) {
-                  final uploadCoverOk = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
+                  final uploadCoverOk = await _webdav.uploadLocalFile(
+                    localBook.coverPath!,
+                    remoteCoverPath,
+                  );
                   hasCover = uploadCoverOk;
                 }
               } else {
@@ -967,18 +1193,27 @@ class SyncService {
                 'title': localBook.title,
                 'author': localBook.author,
                 'totalChapters': localBook.totalChapters,
-                'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
-                'dateAdded': localBook.dateAdded.toIso8601String(),
-                'chapters': chapters.map((c) => {
-                  'chapterIndex': c.chapterIndex,
-                  'title': c.title,
-                  'paragraphs': c.paragraphs
-                }).toList()
+                'coverExtension': localBook.coverPath != null
+                    ? p.extension(localBook.coverPath!)
+                    : null,
+                'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
+                'chapters': chapters
+                    .map(
+                      (c) => {
+                        'chapterIndex': c.chapterIndex,
+                        'title': c.title,
+                        'paragraphs': c.paragraphs,
+                      },
+                    )
+                    .toList(),
               };
 
               final jsonBytes = utf8.encode(json.encode(bookContent));
               final compressedBytes = gzip.encode(jsonBytes);
-              uploadContentOk = await _webdav.uploadBytes(remoteBookPath, compressedBytes);
+              uploadContentOk = await _webdav.uploadBytes(
+                remoteBookPath,
+                compressedBytes,
+              );
             }
 
             if (uploadContentOk) {
@@ -987,16 +1222,25 @@ class SyncService {
                 'title': localBook.title,
                 'author': localBook.author,
                 'totalChapters': localBook.totalChapters,
-                'dateAdded': localBook.dateAdded.toIso8601String(),
+                'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
                 'hasCover': hasCover,
-                'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+                'coverExtension': localBook.coverPath != null
+                    ? p.extension(localBook.coverPath!)
+                    : null,
               });
 
               // Always upload progress
               final localProg = await db.getProgress(localBook.uuid);
               if (localProg != null) {
-                final String remoteProgressPath = '/AudireReader/progress/${localBook.uuid}.json';
-                await _uploadLocalToCloud(remoteProgressPath, localBook.uuid, localProg, deviceId, deviceName);
+                final String remoteProgressPath =
+                    '/AudireReader/progress/${localBook.uuid}.json';
+                await _uploadLocalToCloud(
+                  remoteProgressPath,
+                  localBook.uuid,
+                  localProg,
+                  deviceId,
+                  deviceName,
+                );
               }
 
               _updateBookSyncStatus(localBook.uuid, 'success');
@@ -1014,7 +1258,7 @@ class SyncService {
           'version': 1,
           'lastSyncTime': DateTime.now().toIso8601String(),
           'books': newCloudBooksList,
-          'deleted': []
+          'deleted': [],
         };
 
         final jsonBytes = utf8.encode(json.encode(newCloudSyncData));
@@ -1026,7 +1270,10 @@ class SyncService {
       await db.saveSettings(settings);
 
       _isSyncing = false;
-      return SyncResult(success: true, message: 'Force push completed successfully.');
+      return SyncResult(
+        success: true,
+        message: 'Force push completed successfully.',
+      );
     } catch (e) {
       _isSyncing = false;
       print('[Sync] Force push fatal error: $e');
@@ -1037,10 +1284,15 @@ class SyncService {
   /// Lực kéo Cloud về Local (Ghi đè Local bằng dữ liệu trên Cloud)
   Future<SyncResult> forcePull({bool progressOnly = true}) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
-    print('[Sync] Force pulling cloud library to local (progressOnly: $progressOnly)...');
+    print(
+      '[Sync] Force pulling cloud library to local (progressOnly: $progressOnly)...',
+    );
 
     try {
       final db = await DatabaseHelper.getInstance();
@@ -1054,7 +1306,10 @@ class SyncService {
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Init WebDAV client
@@ -1062,25 +1317,37 @@ class SyncService {
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server. Check settings.',
+        );
       }
 
       // 2. Download sync_data.json
-      final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+      final fileMeta = await _webdav.getFileMetadata(
+        '/AudireReader/sync_data.json',
+      );
       if (fileMeta == null) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'No sync data found on cloud server to pull.');
+        return SyncResult(
+          success: false,
+          message: 'No sync data found on cloud server to pull.',
+        );
       }
 
       final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
       if (bytes == null || bytes.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Cloud sync index file is empty.');
+        return SyncResult(
+          success: false,
+          message: 'Cloud sync index file is empty.',
+        );
       }
 
       final jsonStr = utf8.decode(bytes);
       final cloudSyncData = json.decode(jsonStr) as Map<String, dynamic>;
-      final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+      final List<Map<String, dynamic>> cloudBooksList =
+          List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
 
       // Get local books
       var localBooks = await db.getAllBooks();
@@ -1092,27 +1359,43 @@ class SyncService {
           print('[Sync] Force Pull Progress: "${localBook.title}"');
           _updateBookSyncStatus(localBook.uuid, 'syncing');
           try {
-            final String remoteProgressPath = '/AudireReader/progress/${localBook.uuid}.json';
-            final progressBytes = await _webdav.downloadBytes(remoteProgressPath);
+            final String remoteProgressPath =
+                '/AudireReader/progress/${localBook.uuid}.json';
+            final progressBytes = await _webdav.downloadBytes(
+              remoteProgressPath,
+            );
             if (progressBytes != null && progressBytes.isNotEmpty) {
-              final progressJson = json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
+              final progressJson =
+                  json.decode(utf8.decode(progressBytes))
+                      as Map<String, dynamic>;
               final localProg = await db.getProgress(localBook.uuid);
-              await _updateLocalFromCloud(localBook.uuid, progressJson, localProg, db);
+              await _updateLocalFromCloud(
+                localBook.uuid,
+                progressJson,
+                localProg,
+                db,
+              );
               localDatabaseChanged = true;
             }
             _updateBookSyncStatus(localBook.uuid, 'success');
           } catch (e) {
-            print('[Sync] Error force pulling progress for "${localBook.title}": $e');
+            print(
+              '[Sync] Error force pulling progress for "${localBook.title}": $e',
+            );
             _updateBookSyncStatus(localBook.uuid, 'error');
           }
         }
       } else {
         // FULL SYNC FLOW (WITH OPTIMIZATION)
         // A. Delete local books not on cloud
-        final List<String> cloudUuids = cloudBooksList.map((b) => b['uuid'] as String).toList();
+        final List<String> cloudUuids = cloudBooksList
+            .map((b) => b['uuid'] as String)
+            .toList();
         for (final localBook in localBooks) {
           if (!cloudUuids.contains(localBook.uuid)) {
-            print('[Sync] Force Pull: Deleting local book "${localBook.title}" (not in cloud)');
+            print(
+              '[Sync] Force Pull: Deleting local book "${localBook.title}" (not in cloud)',
+            );
             await db.deleteBook(localBook.uuid);
             localDatabaseChanged = true;
           }
@@ -1126,7 +1409,9 @@ class SyncService {
         final docDir = await PathHelper.getAppDirectory();
         for (final cloudBook in cloudBooksList) {
           final bookUuid = cloudBook['uuid'];
-          print('[Sync] Force Pull: Restoring/updating book "${cloudBook['title']}"');
+          print(
+            '[Sync] Force Pull: Restoring/updating book "${cloudBook['title']}"',
+          );
           _updateBookSyncStatus(bookUuid, 'syncing');
 
           try {
@@ -1138,7 +1423,8 @@ class SyncService {
               final bookBytes = await _downloadBookContentBytes(bookUuid);
               if (bookBytes != null && bookBytes.isNotEmpty) {
                 final bookJsonStr = utf8.decode(bookBytes);
-                final bookContent = json.decode(bookJsonStr) as Map<String, dynamic>;
+                final bookContent =
+                    json.decode(bookJsonStr) as Map<String, dynamic>;
 
                 // Download cover
                 String? localCoverPath;
@@ -1150,32 +1436,34 @@ class SyncService {
                   }
                   final localPath = p.join(coverDir.path, '$bookUuid$ext');
                   final remotePath = '/AudireReader/covers/$bookUuid$ext';
-                  
-                  final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+
+                  final downloadCoverOk = await _webdav.downloadToLocalFile(
+                    remotePath,
+                    localPath,
+                  );
                   if (downloadCoverOk) {
                     localCoverPath = localPath;
                   }
                 }
 
                 // Save Book
-                final newBook = Book()
-                  ..uuid = bookUuid
-                  ..title = cloudBook['title']
-                  ..author = cloudBook['author']
-                  ..coverPath = localCoverPath
-                  ..totalChapters = cloudBook['totalChapters']
-                  ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now();
+                final newBook = Book(
+                  uuid: bookUuid,
+                  title: cloudBook['title'] ?? 'Unknown Book',
+                  author: cloudBook['author'] ?? 'Unknown',
+                  coverPath: localCoverPath,
+                  totalChapters: cloudBook['totalChapters'] ?? 0,
+                  dateAdded: (DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch,
+                  status: 'unread',
+                  tags: [],
+                );
 
                 // Save Chapters
                 final List<Chapter> newChapters = [];
                 final parsedChapters = bookContent['chapters'] as List<dynamic>;
                 for (final c in parsedChapters) {
                   final chMap = c as Map<String, dynamic>;
-                  final newCh = Chapter()
-                    ..bookUuid = bookUuid
-                    ..chapterIndex = chMap['chapterIndex']
-                    ..title = chMap['title']
-                    ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+                  final newCh = Chapter(bookUuid: bookUuid, chapterIndex: chMap['chapterIndex'], title: chMap['title'], paragraphs: List<String>.from(chMap['paragraphs'] ?? []));
                   newChapters.add(newCh);
                 }
 
@@ -1190,21 +1478,25 @@ class SyncService {
               final bookBytes = await _downloadBookContentBytes(bookUuid);
               if (bookBytes != null && bookBytes.isNotEmpty) {
                 final bookJsonStr = utf8.decode(bookBytes);
-                final bookContent = json.decode(bookJsonStr) as Map<String, dynamic>;
+                final bookContent =
+                    json.decode(bookJsonStr) as Map<String, dynamic>;
 
                 // Save Book (overwrite using existingBook.id)
-                final newBook = Book()
-                  ..id = existingBook.id
-                  ..uuid = bookUuid
-                  ..title = cloudBook['title']
-                  ..author = cloudBook['author']
-                  ..coverPath = existingBook.coverPath
-                  ..totalChapters = cloudBook['totalChapters']
-                  ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now();
+                final newBook = Book(
+                  id: existingBook.id,
+                  uuid: bookUuid,
+                  title: cloudBook['title'] ?? 'Unknown Book',
+                  author: cloudBook['author'] ?? 'Unknown',
+                  coverPath: existingBook.coverPath,
+                  totalChapters: cloudBook['totalChapters'] ?? 0,
+                  dateAdded: (DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch,
+                  status: existingBook.status,
+                  tags: existingBook.tags,
+                );
 
                 // Clear old chapters
                 await db.isar.writeTxn(() async {
-                  await db.isar.chapters.filter().bookUuidEqualTo(bookUuid).deleteAll();
+                  // (handled by rust_db.insertChapters)
                 });
 
                 // Save new Chapters
@@ -1212,11 +1504,7 @@ class SyncService {
                 final parsedChapters = bookContent['chapters'] as List<dynamic>;
                 for (final c in parsedChapters) {
                   final chMap = c as Map<String, dynamic>;
-                  final newCh = Chapter()
-                    ..bookUuid = bookUuid
-                    ..chapterIndex = chMap['chapterIndex']
-                    ..title = chMap['title']
-                    ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+                  final newCh = Chapter(bookUuid: bookUuid, chapterIndex: chMap['chapterIndex'], title: chMap['title'], paragraphs: List<String>.from(chMap['paragraphs'] ?? []));
                   newChapters.add(newCh);
                 }
 
@@ -1228,16 +1516,28 @@ class SyncService {
 
             if (downloadSuccess) {
               // Always download progress
-              final String remoteProgressPath = '/AudireReader/progress/$bookUuid.json';
-              final progressBytes = await _webdav.downloadBytes(remoteProgressPath);
+              final String remoteProgressPath =
+                  '/AudireReader/progress/$bookUuid.json';
+              final progressBytes = await _webdav.downloadBytes(
+                remoteProgressPath,
+              );
               if (progressBytes != null && progressBytes.isNotEmpty) {
                 try {
-                  final progressJson = json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
+                  final progressJson =
+                      json.decode(utf8.decode(progressBytes))
+                          as Map<String, dynamic>;
                   final localProg = await db.getProgress(bookUuid);
-                  await _updateLocalFromCloud(bookUuid, progressJson, localProg, db);
+                  await _updateLocalFromCloud(
+                    bookUuid,
+                    progressJson,
+                    localProg,
+                    db,
+                  );
                   localDatabaseChanged = true;
                 } catch (e) {
-                  print('[Sync] Error loading progress for $bookUuid during force pull: $e');
+                  print(
+                    '[Sync] Error loading progress for $bookUuid during force pull: $e',
+                  );
                 }
               }
               _updateBookSyncStatus(bookUuid, 'success');
@@ -1245,7 +1545,9 @@ class SyncService {
               _updateBookSyncStatus(bookUuid, 'error');
             }
           } catch (e) {
-            print('[Sync] Error force downloading book "${cloudBook['title']}": $e');
+            print(
+              '[Sync] Error force downloading book "${cloudBook['title']}": $e',
+            );
             _updateBookSyncStatus(bookUuid, 'error');
           }
         }
@@ -1269,9 +1571,15 @@ class SyncService {
   }
 
   /// Force push local progress to cloud
-  Future<SyncResult> forcePushBook(String bookUuid, {bool progressOnly = true}) async {
+  Future<SyncResult> forcePushBook(
+    String bookUuid, {
+    bool progressOnly = true,
+  }) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[Sync] Force pushing progress for book $bookUuid to cloud...');
@@ -1288,7 +1596,10 @@ class SyncService {
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Init WebDAV client
@@ -1296,7 +1607,10 @@ class SyncService {
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server. Check settings.',
+        );
       }
 
       // 2. Ensure directories exist on WebDAV
@@ -1317,13 +1631,23 @@ class SyncService {
       // Upload progress
       final localProg = await db.getProgress(bookUuid);
       if (localProg != null) {
-        final String remoteProgressPath = '/AudireReader/progress/$bookUuid.json';
-        await _uploadLocalToCloud(remoteProgressPath, bookUuid, localProg, deviceId, deviceName);
+        final String remoteProgressPath =
+            '/AudireReader/progress/$bookUuid.json';
+        await _uploadLocalToCloud(
+          remoteProgressPath,
+          bookUuid,
+          localProg,
+          deviceId,
+          deviceName,
+        );
         _updateBookSyncStatus(bookUuid, 'success');
       } else {
         _updateBookSyncStatus(bookUuid, 'error');
         _isSyncing = false;
-        return SyncResult(success: false, message: 'No local progress found to push.');
+        return SyncResult(
+          success: false,
+          message: 'No local progress found to push.',
+        );
       }
 
       // Update local settings lastSync
@@ -1331,19 +1655,31 @@ class SyncService {
       await db.saveSettings(settings);
 
       _isSyncing = false;
-      return SyncResult(success: true, message: 'Book progress pushed successfully.');
+      return SyncResult(
+        success: true,
+        message: 'Book progress pushed successfully.',
+      );
     } catch (e) {
       _isSyncing = false;
       _updateBookSyncStatus(bookUuid, 'error');
       print('[Sync] Force push book progress fatal error: $e');
-      return SyncResult(success: false, message: 'Force push book progress failed: $e');
+      return SyncResult(
+        success: false,
+        message: 'Force push book progress failed: $e',
+      );
     }
   }
 
   /// Force pull cloud progress to local
-  Future<SyncResult> forcePullBook(String bookUuid, {bool progressOnly = true}) async {
+  Future<SyncResult> forcePullBook(
+    String bookUuid, {
+    bool progressOnly = true,
+  }) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[Sync] Force pulling progress for book $bookUuid from cloud...');
@@ -1360,7 +1696,10 @@ class SyncService {
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Init WebDAV client
@@ -1368,13 +1707,19 @@ class SyncService {
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server. Check settings.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server. Check settings.',
+        );
       }
 
       final localBook = await db.getBookByUuid(bookUuid);
       if (localBook == null) {
         _isSyncing = false;
-        return SyncResult(success: false, message: 'Book not found locally. Cannot pull progress.');
+        return SyncResult(
+          success: false,
+          message: 'Book not found locally. Cannot pull progress.',
+        );
       }
 
       _updateBookSyncStatus(bookUuid, 'syncing');
@@ -1385,21 +1730,30 @@ class SyncService {
       final progressBytes = await _webdav.downloadBytes(remoteProgressPath);
       if (progressBytes != null && progressBytes.isNotEmpty) {
         try {
-          final progressJson = json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
+          final progressJson =
+              json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
           final localProg = await db.getProgress(bookUuid);
           await _updateLocalFromCloud(bookUuid, progressJson, localProg, db);
           localDatabaseChanged = true;
           _updateBookSyncStatus(bookUuid, 'success');
         } catch (e) {
-          print('[Sync] Error loading progress for $bookUuid during force pull: $e');
+          print(
+            '[Sync] Error loading progress for $bookUuid during force pull: $e',
+          );
           _updateBookSyncStatus(bookUuid, 'error');
           _isSyncing = false;
-          return SyncResult(success: false, message: 'Failed to parse progress data.');
+          return SyncResult(
+            success: false,
+            message: 'Failed to parse progress data.',
+          );
         }
       } else {
         _updateBookSyncStatus(bookUuid, 'error');
         _isSyncing = false;
-        return SyncResult(success: false, message: 'No reading progress found on cloud for this book.');
+        return SyncResult(
+          success: false,
+          message: 'No reading progress found on cloud for this book.',
+        );
       }
 
       // Update local settings lastSync
@@ -1416,7 +1770,10 @@ class SyncService {
       _isSyncing = false;
       _updateBookSyncStatus(bookUuid, 'error');
       print('[Sync] Force pull book progress fatal error: $e');
-      return SyncResult(success: false, message: 'Force pull book progress failed: $e');
+      return SyncResult(
+        success: false,
+        message: 'Force pull book progress failed: $e',
+      );
     }
   }
 
@@ -1434,14 +1791,20 @@ class SyncService {
           settings.webDavUrl.isEmpty ||
           settings.webDavUsername.isEmpty ||
           webDavPassword.isEmpty) {
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // 1. Khởi tạo WebDAV Client
       _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server.',
+        );
       }
 
       // 2. Tải tệp chỉ mục sync_data.json
@@ -1449,12 +1812,16 @@ class SyncService {
         'version': 1,
         'lastSyncTime': '',
         'books': [],
-        'deleted': []
+        'deleted': [],
       };
 
-      final hasSyncFile = await _webdav.fileExists('/AudireReader/sync_data.json');
+      final hasSyncFile = await _webdav.fileExists(
+        '/AudireReader/sync_data.json',
+      );
       if (hasSyncFile) {
-        final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+        final bytes = await _webdav.downloadBytes(
+          '/AudireReader/sync_data.json',
+        );
         if (bytes != null && bytes.isNotEmpty) {
           try {
             final jsonStr = utf8.decode(bytes);
@@ -1465,8 +1832,11 @@ class SyncService {
         }
       }
 
-      final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
-      final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
+      final List<Map<String, dynamic>> cloudBooksList =
+          List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+      final List<dynamic> cloudDeletedList = List<dynamic>.from(
+        cloudSyncData['deleted'] ?? [],
+      );
 
       // 3. Loại bỏ sách khỏi chỉ mục
       bool indexChanged = false;
@@ -1486,7 +1856,7 @@ class SyncService {
       if (!alreadyDeleted) {
         cloudDeletedList.add({
           'uuid': bookUuid,
-          'deletedAt': DateTime.now().toIso8601String()
+          'deletedAt': DateTime.now().toIso8601String(),
         });
         indexChanged = true;
       }
@@ -1526,19 +1896,30 @@ class SyncService {
         await _webdav.remove(progressPath);
       }
 
-      print('[Sync] Successfully cleaned up all cloud resources for deleted book UUID "$bookUuid"');
+      print(
+        '[Sync] Successfully cleaned up all cloud resources for deleted book UUID "$bookUuid"',
+      );
       await fetchCloudBooks();
-      return SyncResult(success: true, message: 'Book successfully deleted from cloud.');
+      return SyncResult(
+        success: true,
+        message: 'Book successfully deleted from cloud.',
+      );
     } catch (e) {
       print('[Sync] Failed to delete book from cloud: $e');
-      return SyncResult(success: false, message: 'Failed to delete book from cloud: $e');
+      return SyncResult(
+        success: false,
+        message: 'Failed to delete book from cloud: $e',
+      );
     }
   }
 
   /// Upload một cuốn sách cục bộ lên đám mây WebDAV và cập nhật chỉ mục
   Future<SyncResult> uploadSingleBook(String bookUuid) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[Sync] Uploading single book UUID "$bookUuid" to cloud...');
@@ -1557,7 +1938,10 @@ class SyncService {
           webDavPassword.isEmpty) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // Khởi tạo WebDAV Client
@@ -1566,7 +1950,10 @@ class SyncService {
       if (!connected) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server.',
+        );
       }
 
       final localBook = await db.getBookByUuid(bookUuid);
@@ -1589,7 +1976,10 @@ class SyncService {
         if (await coverFile.exists()) {
           final ext = p.extension(localBook.coverPath!);
           final remoteCoverPath = '/AudireReader/covers/$bookUuid$ext';
-          hasCover = await _webdav.uploadLocalFile(localBook.coverPath!, remoteCoverPath);
+          hasCover = await _webdav.uploadLocalFile(
+            localBook.coverPath!,
+            remoteCoverPath,
+          );
         }
       }
 
@@ -1600,23 +1990,35 @@ class SyncService {
         'title': localBook.title,
         'author': localBook.author,
         'totalChapters': localBook.totalChapters,
-        'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
-        'dateAdded': localBook.dateAdded.toIso8601String(),
-        'chapters': chapters.map((c) => {
-          'chapterIndex': c.chapterIndex,
-          'title': c.title,
-          'paragraphs': c.paragraphs
-        }).toList()
+        'coverExtension': localBook.coverPath != null
+            ? p.extension(localBook.coverPath!)
+            : null,
+        'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
+        'chapters': chapters
+            .map(
+              (c) => {
+                'chapterIndex': c.chapterIndex,
+                'title': c.title,
+                'paragraphs': c.paragraphs,
+              },
+            )
+            .toList(),
       };
 
       final jsonBytes = utf8.encode(json.encode(bookContent));
       final compressedBytes = gzip.encode(jsonBytes);
-      final uploadContentOk = await _webdav.uploadBytes('/AudireReader/books/$bookUuid.json.gz', compressedBytes);
+      final uploadContentOk = await _webdav.uploadBytes(
+        '/AudireReader/books/$bookUuid.json.gz',
+        compressedBytes,
+      );
 
       if (!uploadContentOk) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Failed to upload book content to WebDAV.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to upload book content to WebDAV.',
+        );
       }
 
       // C. Cập nhật chỉ mục sync_data.json (Retry optimistic lock tối đa 3 lần)
@@ -1626,20 +2028,26 @@ class SyncService {
 
       while (retryCount < 3 && !indexUpdated) {
         retryCount++;
-        print('[Sync] Attempt $retryCount to update library index for upload...');
+        print(
+          '[Sync] Attempt $retryCount to update library index for upload...',
+        );
 
         String baseLastSyncTime = '';
-        final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
-        
+        final fileMeta = await _webdav.getFileMetadata(
+          '/AudireReader/sync_data.json',
+        );
+
         Map<String, dynamic> cloudSyncData = {
           'version': 1,
           'lastSyncTime': '',
           'books': [],
-          'deleted': []
+          'deleted': [],
         };
 
         if (fileMeta != null) {
-          final bytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          final bytes = await _webdav.downloadBytes(
+            '/AudireReader/sync_data.json',
+          );
           if (bytes != null && bytes.isNotEmpty) {
             try {
               final jsonStr = utf8.decode(bytes);
@@ -1649,8 +2057,11 @@ class SyncService {
           }
         }
 
-        final List<Map<String, dynamic>> cloudBooksList = List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
-        final List<dynamic> cloudDeletedList = List<dynamic>.from(cloudSyncData['deleted'] ?? []);
+        final List<Map<String, dynamic>> cloudBooksList =
+            List<Map<String, dynamic>>.from(cloudSyncData['books'] ?? []);
+        final List<dynamic> cloudDeletedList = List<dynamic>.from(
+          cloudSyncData['deleted'] ?? [],
+        );
 
         // Xóa khỏi danh sách đã xóa nếu có
         cloudDeletedList.removeWhere((item) {
@@ -1666,19 +2077,26 @@ class SyncService {
           'title': localBook.title,
           'author': localBook.author,
           'totalChapters': localBook.totalChapters,
-          'dateAdded': localBook.dateAdded.toIso8601String(),
+          'dateAdded': DateTime.fromMillisecondsSinceEpoch(localBook.dateAdded).toIso8601String(),
           'hasCover': hasCover,
-          'coverExtension': localBook.coverPath != null ? p.extension(localBook.coverPath!) : null,
+          'coverExtension': localBook.coverPath != null
+              ? p.extension(localBook.coverPath!)
+              : null,
         });
 
         // Kiểm tra conflict ghi đè đồng thời
-        final currentFileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+        final currentFileMeta = await _webdav.getFileMetadata(
+          '/AudireReader/sync_data.json',
+        );
         String currentServerTime = '';
         if (currentFileMeta != null) {
-          final checkBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+          final checkBytes = await _webdav.downloadBytes(
+            '/AudireReader/sync_data.json',
+          );
           if (checkBytes != null && checkBytes.isNotEmpty) {
             try {
-              final checkJson = json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
+              final checkJson =
+                  json.decode(utf8.decode(checkBytes)) as Map<String, dynamic>;
               currentServerTime = checkJson['lastSyncTime'] ?? '';
             } catch (_) {}
           }
@@ -1695,7 +2113,10 @@ class SyncService {
         cloudSyncData['lastSyncTime'] = DateTime.now().toIso8601String();
 
         final updatedIndexBytes = utf8.encode(json.encode(cloudSyncData));
-        final uploadOk = await _webdav.uploadBytes('/AudireReader/sync_data.json', updatedIndexBytes);
+        final uploadOk = await _webdav.uploadBytes(
+          '/AudireReader/sync_data.json',
+          updatedIndexBytes,
+        );
         if (uploadOk) {
           indexUpdated = true;
         } else {
@@ -1708,18 +2129,31 @@ class SyncService {
         // Đồng thời đẩy cả tiến trình của sách này lên cloud luôn cho đồng bộ
         final localProg = await db.getProgress(bookUuid);
         if (localProg != null) {
-          final String remoteProgressPath = '/AudireReader/progress/$bookUuid.json';
+          final String remoteProgressPath =
+              '/AudireReader/progress/$bookUuid.json';
           final String deviceId = settings.deviceId ?? '';
           final String deviceName = settings.deviceName ?? 'Unknown Device';
-          await _uploadLocalToCloud(remoteProgressPath, bookUuid, localProg, deviceId, deviceName);
+          await _uploadLocalToCloud(
+            remoteProgressPath,
+            bookUuid,
+            localProg,
+            deviceId,
+            deviceName,
+          );
         }
 
         _updateBookSyncStatus(bookUuid, 'success');
         await fetchCloudBooks();
-        return SyncResult(success: true, message: 'Book uploaded to cloud successfully.');
+        return SyncResult(
+          success: true,
+          message: 'Book uploaded to cloud successfully.',
+        );
       } else {
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Failed to update cloud index: $indexError');
+        return SyncResult(
+          success: false,
+          message: 'Failed to update cloud index: $indexError',
+        );
       }
     } catch (e) {
       _isSyncing = false;
@@ -1732,7 +2166,10 @@ class SyncService {
   /// Tải sách ảo từ Cloud về local
   Future<SyncResult> downloadVirtualBook(String bookUuid) async {
     if (_isSyncing) {
-      return SyncResult(success: false, message: 'Sync is already in progress.');
+      return SyncResult(
+        success: false,
+        message: 'Sync is already in progress.',
+      );
     }
     _isSyncing = true;
     print('[Sync] Downloading virtual book UUID "$bookUuid" from cloud...');
@@ -1751,7 +2188,10 @@ class SyncService {
           webDavPassword.isEmpty) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'WebDAV sync is not configured or disabled.');
+        return SyncResult(
+          success: false,
+          message: 'WebDAV sync is not configured or disabled.',
+        );
       }
 
       // Khởi tạo WebDAV Client
@@ -1760,35 +2200,54 @@ class SyncService {
       if (!connected) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Failed to connect to WebDAV server.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to connect to WebDAV server.',
+        );
       }
 
       // Tải chỉ mục sync_data.json để lấy thông tin sách
-      final fileMeta = await _webdav.getFileMetadata('/AudireReader/sync_data.json');
+      final fileMeta = await _webdav.getFileMetadata(
+        '/AudireReader/sync_data.json',
+      );
       if (fileMeta == null) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Cloud sync index not found.');
+        return SyncResult(
+          success: false,
+          message: 'Cloud sync index not found.',
+        );
       }
 
-      final indexBytes = await _webdav.downloadBytes('/AudireReader/sync_data.json');
+      final indexBytes = await _webdav.downloadBytes(
+        '/AudireReader/sync_data.json',
+      );
       if (indexBytes == null || indexBytes.isEmpty) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Cloud sync index is empty.');
+        return SyncResult(
+          success: false,
+          message: 'Cloud sync index is empty.',
+        );
       }
 
-      final indexJson = json.decode(utf8.decode(indexBytes)) as Map<String, dynamic>;
+      final indexJson =
+          json.decode(utf8.decode(indexBytes)) as Map<String, dynamic>;
       final List<dynamic> cloudBooks = indexJson['books'] ?? [];
-      final cloudBook = cloudBooks.firstWhere(
-        (b) => b is Map<String, dynamic> && b['uuid'] == bookUuid,
-        orElse: () => null,
-      ) as Map<String, dynamic>?;
+      final cloudBook =
+          cloudBooks.firstWhere(
+                (b) => b is Map<String, dynamic> && b['uuid'] == bookUuid,
+                orElse: () => null,
+              )
+              as Map<String, dynamic>?;
 
       if (cloudBook == null) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Book metadata not found on cloud.');
+        return SyncResult(
+          success: false,
+          message: 'Book metadata not found on cloud.',
+        );
       }
 
       // Tải file nội dung sách
@@ -1796,7 +2255,10 @@ class SyncService {
       if (bytes == null || bytes.isEmpty) {
         _isSyncing = false;
         _updateBookSyncStatus(bookUuid, 'error');
-        return SyncResult(success: false, message: 'Failed to download book content from cloud.');
+        return SyncResult(
+          success: false,
+          message: 'Failed to download book content from cloud.',
+        );
       }
 
       final docDir = await PathHelper.getAppDirectory();
@@ -1813,32 +2275,33 @@ class SyncService {
         }
         final localPath = p.join(coverDir.path, '$bookUuid$ext');
         final remotePath = '/AudireReader/covers/$bookUuid$ext';
-        final downloadCoverOk = await _webdav.downloadToLocalFile(remotePath, localPath);
+        final downloadCoverOk = await _webdav.downloadToLocalFile(
+          remotePath,
+          localPath,
+        );
         if (downloadCoverOk) {
           localCoverPath = localPath;
         }
       }
 
       // Lưu Book
-      final newBook = Book()
-        ..uuid = bookUuid
-        ..title = cloudBook['title'] ?? 'Unknown'
-        ..author = cloudBook['author'] ?? 'Unknown'
-        ..coverPath = localCoverPath
-        ..totalChapters = cloudBook['totalChapters'] ?? 0
-        ..dateAdded = DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()
-        ..status = 'unread';
+      final newBook = Book(
+        uuid: bookUuid,
+        title: cloudBook['title'] ?? 'Unknown',
+        author: cloudBook['author'] ?? 'Unknown',
+        coverPath: localCoverPath,
+        totalChapters: cloudBook['totalChapters'] ?? 0,
+        dateAdded: (DateTime.tryParse(cloudBook['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch,
+        status: 'unread',
+        tags: [],
+      );
 
       // Lưu Chapters
       final List<Chapter> newChapters = [];
       final parsedChapters = bookContent['chapters'] as List<dynamic>;
       for (final c in parsedChapters) {
         final chMap = c as Map<String, dynamic>;
-        final newCh = Chapter()
-          ..bookUuid = bookUuid
-          ..chapterIndex = chMap['chapterIndex']
-          ..title = chMap['title']
-          ..paragraphs = List<String>.from(chMap['paragraphs'] ?? []);
+        final newCh = Chapter(bookUuid: bookUuid, chapterIndex: chMap['chapterIndex'], title: chMap['title'], paragraphs: List<String>.from(chMap['paragraphs'] ?? []));
         newChapters.add(newCh);
       }
 
@@ -1850,7 +2313,8 @@ class SyncService {
       final progressBytes = await _webdav.downloadBytes(remoteProgressPath);
       if (progressBytes != null && progressBytes.isNotEmpty) {
         try {
-          final progressJson = json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
+          final progressJson =
+              json.decode(utf8.decode(progressBytes)) as Map<String, dynamic>;
           final localProg = await db.getProgress(bookUuid);
           await _updateLocalFromCloud(bookUuid, progressJson, localProg, db);
         } catch (_) {}
@@ -1858,7 +2322,11 @@ class SyncService {
 
       _isSyncing = false;
       _updateBookSyncStatus(bookUuid, 'success');
-      return SyncResult(success: true, message: 'Book downloaded successfully.', localChanged: true);
+      return SyncResult(
+        success: true,
+        message: 'Book downloaded successfully.',
+        localChanged: true,
+      );
     } catch (e) {
       _isSyncing = false;
       _updateBookSyncStatus(bookUuid, 'error');
@@ -1881,7 +2349,8 @@ class SyncService {
       if (!settings.webDavEnabled) return;
 
       final deviceId = deviceIdOverride ?? settings.deviceId ?? '';
-      final deviceName = deviceNameOverride ?? settings.deviceName ?? 'Unknown Device';
+      final deviceName =
+          deviceNameOverride ?? settings.deviceName ?? 'Unknown Device';
 
       // Lấy tên sách
       String bookTitle = 'Unknown Book';

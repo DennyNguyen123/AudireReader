@@ -13,7 +13,8 @@ class DeveloperConsoleScreen extends StatefulWidget {
 class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedFilter = 'ALL'; // 'ALL', 'INFO', 'WARNING', 'ERROR', 'TTS', 'SYNC', 'WEBDAV'
+  String _selectedFilter =
+      'ALL'; // 'ALL', 'INFO', 'WARNING', 'ERROR', 'TTS', 'SYNC', 'WEBDAV'
 
   @override
   void dispose() {
@@ -82,17 +83,26 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.copy_all_rounded),
-            tooltip: AppLocalizations.of(context)?.copyAllLogs ?? 'Copy All Logs',
+            tooltip:
+                AppLocalizations.of(context)?.copyAllLogs ?? 'Copy All Logs',
             onPressed: () {
-              final allLogs = LoggerService().logs.map((log) {
-                final time = log.timestamp.toIso8601String().split('T')[1].substring(0, 8);
-                return '[$time][${log.tag}][${log.levelName}] ${log.message}${log.error != null ? ' (Error: ${log.error})' : ''}';
-              }).join('\n');
-              
+              final allLogs = LoggerService().logs
+                  .map((log) {
+                    final time = log.timestamp
+                        .toIso8601String()
+                        .split('T')[1]
+                        .substring(0, 8);
+                    return '[$time][${log.tag}][${log.levelName}] ${log.message}${log.error != null ? ' (Error: ${log.error})' : ''}';
+                  })
+                  .join('\n');
+
               Clipboard.setData(ClipboardData(text: allLogs));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(AppLocalizations.of(context)?.allLogsCopied ?? 'All logs copied to clipboard.'),
+                  content: Text(
+                    AppLocalizations.of(context)?.allLogsCopied ??
+                        'All logs copied to clipboard.',
+                  ),
                   backgroundColor: theme.colorScheme.primary,
                 ),
               );
@@ -105,7 +115,10 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
               LoggerService().clear();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(AppLocalizations.of(context)?.consoleLogsCleared ?? 'Console logs cleared.'),
+                  content: Text(
+                    AppLocalizations.of(context)?.consoleLogsCleared ??
+                        'Console logs cleared.',
+                  ),
                   backgroundColor: theme.colorScheme.primary,
                 ),
               );
@@ -117,7 +130,10 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
         children: [
           // Search & Filter Panel
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -132,7 +148,9 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     controller: _searchController,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)?.searchLogsHint ?? 'Search logs...',
+                      hintText:
+                          AppLocalizations.of(context)?.searchLogsHint ??
+                          'Search logs...',
                       prefixIcon: const Icon(Icons.search_rounded, size: 18),
                       filled: true,
                       fillColor: isDark ? Colors.black26 : Colors.grey[100],
@@ -164,46 +182,61 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: ['ALL', 'INFO', 'WARNING', 'ERROR', 'TTS', 'SYNC', 'WEBDAV'].map((filter) {
-                        final isSelected = _selectedFilter == filter;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6.0),
-                          child: ChoiceChip(
-                            label: Text(
-                              filter,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? theme.colorScheme.onPrimary : (isDark ? Colors.white70 : Colors.black87),
+                      children:
+                          [
+                            'ALL',
+                            'INFO',
+                            'WARNING',
+                            'ERROR',
+                            'TTS',
+                            'SYNC',
+                            'WEBDAV',
+                          ].map((filter) {
+                            final isSelected = _selectedFilter == filter;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6.0),
+                              child: ChoiceChip(
+                                label: Text(
+                                  filter,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected
+                                        ? theme.colorScheme.onPrimary
+                                        : (isDark
+                                              ? Colors.white70
+                                              : Colors.black87),
+                                  ),
+                                ),
+                                selected: isSelected,
+                                selectedColor: theme.colorScheme.primary,
+                                backgroundColor: isDark
+                                    ? Colors.white10
+                                    : Colors.black.withValues(alpha: 0.05),
+                                onSelected: (val) {
+                                  if (val) {
+                                    setState(() {
+                                      _selectedFilter = filter;
+                                    });
+                                  }
+                                },
                               ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: theme.colorScheme.primary,
-                            backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                            onSelected: (val) {
-                              if (val) {
-                                setState(() {
-                                  _selectedFilter = filter;
-                                });
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
+                            );
+                          }).toList(),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          
+
           // Log List view
           Expanded(
             child: ListenableBuilder(
               listenable: LoggerService(),
               builder: (context, _) {
                 final allLogs = LoggerService().logs;
-                
+
                 // Filter logs based on search and level/tag filter
                 final filteredLogs = allLogs.where((log) {
                   // 1. Search Query filter
@@ -211,19 +244,30 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     final msg = log.message.toLowerCase();
                     final err = log.error?.toLowerCase() ?? '';
                     final tag = log.tag.toLowerCase();
-                    if (!msg.contains(_searchQuery) && !err.contains(_searchQuery) && !tag.contains(_searchQuery)) {
+                    if (!msg.contains(_searchQuery) &&
+                        !err.contains(_searchQuery) &&
+                        !tag.contains(_searchQuery)) {
                       return false;
                     }
                   }
 
                   // 2. Select Filter type
                   if (_selectedFilter == 'ALL') return true;
-                  if (_selectedFilter == 'INFO') return log.level == LogLevel.info;
-                  if (_selectedFilter == 'WARNING') return log.level == LogLevel.warning;
-                  if (_selectedFilter == 'ERROR') return log.level == LogLevel.error;
-                  if (_selectedFilter == 'TTS') return log.level == LogLevel.tts || log.tag.toUpperCase() == 'TTS';
-                  if (_selectedFilter == 'SYNC') return log.level == LogLevel.sync || log.tag.toUpperCase() == 'SYNC';
-                  if (_selectedFilter == 'WEBDAV') return log.level == LogLevel.webdav || log.tag.toUpperCase() == 'WEBDAV';
+                  if (_selectedFilter == 'INFO')
+                    return log.level == LogLevel.info;
+                  if (_selectedFilter == 'WARNING')
+                    return log.level == LogLevel.warning;
+                  if (_selectedFilter == 'ERROR')
+                    return log.level == LogLevel.error;
+                  if (_selectedFilter == 'TTS')
+                    return log.level == LogLevel.tts ||
+                        log.tag.toUpperCase() == 'TTS';
+                  if (_selectedFilter == 'SYNC')
+                    return log.level == LogLevel.sync ||
+                        log.tag.toUpperCase() == 'SYNC';
+                  if (_selectedFilter == 'WEBDAV')
+                    return log.level == LogLevel.webdav ||
+                        log.tag.toUpperCase() == 'WEBDAV';
 
                   return true;
                 }).toList();
@@ -233,11 +277,19 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.speaker_notes_off_rounded, size: 48, color: Colors.grey.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.speaker_notes_off_rounded,
+                          size: 48,
+                          color: Colors.grey.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(height: 12),
                         Text(
-                          AppLocalizations.of(context)?.noMatchingLogs ?? 'No matching logs found',
-                          style: TextStyle(color: Colors.grey.withValues(alpha: 0.8), fontSize: 13),
+                          AppLocalizations.of(context)?.noMatchingLogs ??
+                              'No matching logs found',
+                          style: TextStyle(
+                            color: Colors.grey.withValues(alpha: 0.8),
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -248,11 +300,18 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                 final reversedLogs = filteredLogs.reversed.toList();
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                   itemCount: reversedLogs.length,
                   itemBuilder: (context, index) {
                     final log = reversedLogs[index];
-                    final time = log.timestamp.toLocal().toString().split(' ')[1].substring(0, 8);
+                    final time = log.timestamp
+                        .toLocal()
+                        .toString()
+                        .split(' ')[1]
+                        .substring(0, 8);
                     return Card(
                       color: theme.cardColor.withValues(alpha: 0.5),
                       margin: const EdgeInsets.only(bottom: 8),
@@ -274,14 +333,19 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                                   style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 11,
-                                    color: isDark ? Colors.white30 : Colors.black38,
+                                    color: isDark
+                                        ? Colors.white30
+                                        : Colors.black38,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 // Tag
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _getTagColor(log.tag),
                                     borderRadius: BorderRadius.circular(6),
@@ -298,9 +362,14 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                                 const Spacer(),
                                 // Level
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _getLevelColor(log.level).withValues(alpha: 0.1),
+                                    color: _getLevelColor(
+                                      log.level,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -320,7 +389,9 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                               log.message,
                               style: TextStyle(
                                 fontSize: 12.5,
-                                color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87,
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.87)
+                                    : Colors.black87,
                                 height: 1.4,
                               ),
                             ),
@@ -330,7 +401,9 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent.withValues(alpha: 0.08),
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.08,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: SelectableText(

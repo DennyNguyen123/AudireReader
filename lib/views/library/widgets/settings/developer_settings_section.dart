@@ -47,10 +47,15 @@ class DeveloperSettingsSection extends StatelessWidget {
             const Divider(height: 32, thickness: 1),
             Row(
               children: [
-                Icon(Icons.developer_mode_rounded, color: theme.colorScheme.primary, size: 28),
+                Icon(
+                  Icons.developer_mode_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 28,
+                ),
                 const SizedBox(width: 12),
                 Text(
-                  AppLocalizations.of(context)?.developerSettings ?? 'Developer Settings',
+                  AppLocalizations.of(context)?.developerSettings ??
+                      'Developer Settings',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -67,14 +72,17 @@ class DeveloperSettingsSection extends StatelessWidget {
                     onPressed: onOpenDebugConsole,
                     icon: const Icon(Icons.terminal_rounded),
                     label: Text(
-                      AppLocalizations.of(context)?.openDebugConsole ?? 'Open Debug Console',
+                      AppLocalizations.of(context)?.openDebugConsole ??
+                          'Open Debug Console',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -88,14 +96,20 @@ class DeveloperSettingsSection extends StatelessWidget {
                     onPressed: onShowDatabaseInspector,
                     icon: const Icon(Icons.storage_rounded),
                     label: Text(
-                      AppLocalizations.of(context)?.databaseInspector ?? 'Database Inspector',
+                      AppLocalizations.of(context)?.databaseInspector ??
+                          'Database Inspector',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -109,14 +123,20 @@ class DeveloperSettingsSection extends StatelessWidget {
                     onPressed: onClearCacheAndResetSync,
                     icon: const Icon(Icons.cleaning_services_rounded),
                     label: Text(
-                      AppLocalizations.of(context)?.clearCache ?? 'Clear Cache & Reset Sync',
+                      AppLocalizations.of(context)?.clearCache ??
+                          'Clear Cache & Reset Sync',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -130,14 +150,20 @@ class DeveloperSettingsSection extends StatelessWidget {
                     onPressed: onForceSyncNow,
                     icon: const Icon(Icons.sync_problem_rounded),
                     label: Text(
-                      AppLocalizations.of(context)?.forceSyncNow ?? 'Force Sync Now',
+                      AppLocalizations.of(context)?.forceSyncNow ??
+                          'Force Sync Now',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),

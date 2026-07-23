@@ -13,10 +13,22 @@ import 'core/database/database_helper.dart';
 import 'views/library/library_screen.dart';
 import 'services/tts_service.dart';
 import 'services/logger_service.dart';
+import 'package:audire_reader/src/rust/frb_generated.dart';
+import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
+import 'core/utils/path_helper.dart';
 
 void main() async {
   // Đảm bảo bindings được khởi tạo hoàn chỉnh trước khi chạy các service chạy nền
   WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init();
+
+  // Khởi tạo Database SQLite từ Rust
+  final appDir = await PathHelper.getAppDirectory();
+  try {
+    rust_db.initDatabase(dbPath: appDir.path);
+  } catch (e) {
+    print('Error initializing Rust SQLite DB: $e');
+  }
 
   // Khởi tạo Window Manager cho Desktop để quản lý cửa sổ (như ẩn/hiện/thu nhỏ cho Boss Key)
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {

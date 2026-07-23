@@ -35,10 +35,15 @@ class GeneralSettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.settings_suggest_rounded, color: theme.colorScheme.primary, size: 28),
+              Icon(
+                Icons.settings_suggest_rounded,
+                color: theme.colorScheme.primary,
+                size: 28,
+              ),
               const SizedBox(width: 12),
               Text(
-                AppLocalizations.of(context)?.generalPreferences ?? 'General Preferences',
+                AppLocalizations.of(context)?.generalPreferences ??
+                    'General Preferences',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -51,11 +56,13 @@ class GeneralSettingsSection extends StatelessWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              AppLocalizations.of(context)?.openLastReadOnLaunch ?? 'Auto-Open Last Read',
+              AppLocalizations.of(context)?.openLastReadOnLaunch ??
+                  'Auto-Open Last Read',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             subtitle: Text(
-              AppLocalizations.of(context)?.openLastReadDesc ?? 'Automatically resume reading the most recently read book on launch.',
+              AppLocalizations.of(context)?.openLastReadDesc ??
+                  'Automatically resume reading the most recently read book on launch.',
               style: const TextStyle(fontSize: 11),
             ),
             value: openLastReadOnLaunch,
@@ -66,11 +73,13 @@ class GeneralSettingsSection extends StatelessWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              AppLocalizations.of(context)?.autoCheckUpdate ?? 'Auto Check for Updates',
+              AppLocalizations.of(context)?.autoCheckUpdate ??
+                  'Auto Check for Updates',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             subtitle: Text(
-              AppLocalizations.of(context)?.autoCheckUpdateDesc ?? 'Automatically check for new versions from GitHub when the app starts.',
+              AppLocalizations.of(context)?.autoCheckUpdateDesc ??
+                  'Automatically check for new versions from GitHub when the app starts.',
               style: const TextStyle(fontSize: 11),
             ),
             value: autoCheckUpdate,
@@ -93,17 +102,26 @@ class GeneralSettingsSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             items: [
               DropdownMenuItem<String>(
                 value: 'en',
-                child: Text(AppLocalizations.of(context)?.english ?? 'English', style: const TextStyle(fontSize: 13)),
+                child: Text(
+                  AppLocalizations.of(context)?.english ?? 'English',
+                  style: const TextStyle(fontSize: 13),
+                ),
               ),
               DropdownMenuItem<String>(
                 value: 'vi',
-                child: Text(AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese', style: const TextStyle(fontSize: 13)),
+                child: Text(
+                  AppLocalizations.of(context)?.vietnamese ?? 'Vietnamese',
+                  style: const TextStyle(fontSize: 13),
+                ),
               ),
             ],
             onChanged: onLocaleChanged,
@@ -120,13 +138,19 @@ class GeneralSettingsSection extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
                           ),
                         )
                       : const Icon(Icons.system_update_alt_rounded),
                   label: Text(
-                    AppLocalizations.of(context)?.checkUpdates ?? 'Check for Updates',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    AppLocalizations.of(context)?.checkUpdates ??
+                        'Check for Updates',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,

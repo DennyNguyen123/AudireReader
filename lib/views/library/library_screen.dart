@@ -10,7 +10,7 @@ import 'package:path/path.dart' as path;
 import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
 import '../../core/utils/path_helper.dart';
-import '../../models/book.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../models/progress.dart';
 import '../../services/epub_parser.dart';
 import '../../services/txt_parser.dart';
@@ -30,7 +30,6 @@ import 'widgets/mini_player.dart';
 import 'widgets/edit_book_dialog.dart';
 import 'global_notes_screen.dart';
 import 'widgets/tts_settings_sheet.dart';
-
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -73,7 +72,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     _loadAppVersion();
     _loadViewMode();
     _loadSearchHistory();
-    
+
     _searchFocusNode.addListener(() {
       if (mounted) {
         setState(() {
@@ -81,7 +80,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         });
       }
     });
-    
+
     TtsService.getInstance().then((instance) {
       if (mounted) {
         setState(() {
@@ -91,7 +90,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
 
     // Đăng ký lắng nghe danh sách sách từ Cloud
-    SyncService.getInstance().cloudBooksNotifier.addListener(_onCloudBooksChanged);
+    SyncService.getInstance().cloudBooksNotifier.addListener(
+      _onCloudBooksChanged,
+    );
 
     _loadBooks().then((_) {
       _triggerAutoSync();
@@ -113,7 +114,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
-    SyncService.getInstance().cloudBooksNotifier.removeListener(_onCloudBooksChanged);
+    SyncService.getInstance().cloudBooksNotifier.removeListener(
+      _onCloudBooksChanged,
+    );
     super.dispose();
   }
 
@@ -140,7 +143,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     });
     const storage = FlutterSecureStorage();
-    await storage.write(key: 'search_history', value: _searchHistory.join('|||'));
+    await storage.write(
+      key: 'search_history',
+      value: _searchHistory.join('|||'),
+    );
   }
 
   Future<void> _removeSearchHistory(String query) async {
@@ -148,7 +154,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       _searchHistory.remove(query);
     });
     const storage = FlutterSecureStorage();
-    await storage.write(key: 'search_history', value: _searchHistory.join('|||'));
+    await storage.write(
+      key: 'search_history',
+      value: _searchHistory.join('|||'),
+    );
   }
 
   Future<void> _loadViewMode() async {
@@ -166,7 +175,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       _isGridView = !_isGridView;
     });
     const storage = FlutterSecureStorage();
-    await storage.write(key: 'library_view_mode', value: _isGridView ? 'grid' : 'list');
+    await storage.write(
+      key: 'library_view_mode',
+      value: _isGridView ? 'grid' : 'list',
+    );
   }
 
   Future<void> _loadAppVersion() async {
@@ -188,7 +200,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (mounted) {
       setState(() {
         _lastSyncTime = settings.webDavLastSync;
-        _webDavEnabled = settings.webDavEnabled &&
+        _webDavEnabled =
+            settings.webDavEnabled &&
             settings.webDavUrl.trim().isNotEmpty &&
             settings.webDavUsername.trim().isNotEmpty &&
             password.trim().isNotEmpty;
@@ -215,18 +228,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   String _formatLastSyncTime() {
-    if (_lastSyncTime == null) return AppLocalizations.of(context)?.neverSynced ?? 'Never synced';
+    if (_lastSyncTime == null)
+      return AppLocalizations.of(context)?.neverSynced ?? 'Never synced';
     final now = DateTime.now();
     final difference = now.difference(_lastSyncTime!);
-    
+
     if (difference.inMinutes < 1) {
       return AppLocalizations.of(context)?.justNow ?? 'Just now';
     } else if (difference.inMinutes < 60) {
-      return AppLocalizations.of(context)?.minutesAgo(difference.inMinutes) ?? '${difference.inMinutes}m ago';
+      return AppLocalizations.of(context)?.minutesAgo(difference.inMinutes) ??
+          '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
       final hh = _lastSyncTime!.hour.toString().padLeft(2, '0');
       final mm = _lastSyncTime!.minute.toString().padLeft(2, '0');
-      return AppLocalizations.of(context)?.todayAt('$hh:$mm') ?? 'Today at $hh:$mm';
+      return AppLocalizations.of(context)?.todayAt('$hh:$mm') ??
+          'Today at $hh:$mm';
     } else {
       final yyyy = _lastSyncTime!.year;
       final mm = _lastSyncTime!.month.toString().padLeft(2, '0');
@@ -239,35 +255,42 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _startManualSync() async {
     if (_isSyncing) return;
-    
+
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     if (!settings.webDavEnabled) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
       }
       return;
     }
-    
+
     setState(() {
       _isSyncing = true;
       _syncFailed = false;
     });
-    
+
     try {
       final result = await SyncService.getInstance().sync();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success 
-                ? (AppLocalizations.of(context)?.syncCompleted ?? 'Sync completed successfully!') 
-                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Sync failed: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (AppLocalizations.of(context)?.syncCompleted ??
+                        'Sync completed successfully!')
+                  : (AppLocalizations.of(context)?.syncFailed(result.message) ??
+                        'Sync failed: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -282,8 +305,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'), 
-            backgroundColor: Colors.redAccent
+            content: Text(
+              AppLocalizations.of(context)?.syncError(e.toString()) ??
+                  'Sync error: $e',
+            ),
+            backgroundColor: Colors.redAccent,
           ),
         );
         setState(() {
@@ -310,7 +336,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
@@ -327,17 +356,31 @@ class _LibraryScreenState extends State<LibraryScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePushConfirmTitle ?? 'Confirm Force Push'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              AppLocalizations.of(context)?.forcePushConfirmTitle ??
+                  'Confirm Force Push',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)?.forcePushConfirmDesc ?? 'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?'),
+                Text(
+                  AppLocalizations.of(context)?.forcePushConfirmDesc ??
+                      'This action will overwrite all data on the cloud server with the data from this device. Are you sure you want to continue?',
+                ),
                 const SizedBox(height: 16),
                 CheckboxListTile(
-                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  title: Text(
+                    AppLocalizations.of(context)?.onlySyncProgress ??
+                        'Chỉ ghi đè tiến trình đọc',
+                  ),
+                  subtitle: Text(
+                    AppLocalizations.of(context)?.onlySyncProgressDesc ??
+                        'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách',
+                  ),
                   value: progressOnly,
                   contentPadding: EdgeInsets.zero,
                   activeColor: Theme.of(context).colorScheme.primary,
@@ -361,7 +404,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ],
           );
-        }
+        },
       ),
     );
 
@@ -373,13 +416,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
 
     try {
-      final result = await SyncService.getInstance().forcePush(progressOnly: progressOnly);
+      final result = await SyncService.getInstance().forcePush(
+        progressOnly: progressOnly,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (AppLocalizations.of(context)?.forcePushSuccess ?? 'Force push completed successfully!')
-                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Force push failed: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (AppLocalizations.of(context)?.forcePushSuccess ??
+                        'Force push completed successfully!')
+                  : (AppLocalizations.of(context)?.syncFailed(result.message) ??
+                        'Force push failed: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -391,7 +440,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'),
+            content: Text(
+              AppLocalizations.of(context)?.syncError(e.toString()) ??
+                  'Sync error: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -419,7 +471,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
@@ -436,17 +491,31 @@ class _LibraryScreenState extends State<LibraryScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)?.forcePullConfirmTitle ?? 'Confirm Force Pull'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              AppLocalizations.of(context)?.forcePullConfirmTitle ??
+                  'Confirm Force Pull',
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.of(context)?.forcePullConfirmDesc ?? 'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?'),
+                Text(
+                  AppLocalizations.of(context)?.forcePullConfirmDesc ??
+                      'This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?',
+                ),
                 const SizedBox(height: 16),
                 CheckboxListTile(
-                  title: Text(AppLocalizations.of(context)?.onlySyncProgress ?? 'Chỉ ghi đè tiến trình đọc'),
-                  subtitle: Text(AppLocalizations.of(context)?.onlySyncProgressDesc ?? 'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách'),
+                  title: Text(
+                    AppLocalizations.of(context)?.onlySyncProgress ??
+                        'Chỉ ghi đè tiến trình đọc',
+                  ),
+                  subtitle: Text(
+                    AppLocalizations.of(context)?.onlySyncProgressDesc ??
+                        'Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách',
+                  ),
                   value: progressOnly,
                   contentPadding: EdgeInsets.zero,
                   activeColor: Theme.of(context).colorScheme.primary,
@@ -470,7 +539,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ],
           );
-        }
+        },
       ),
     );
 
@@ -482,13 +551,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
 
     try {
-      final result = await SyncService.getInstance().forcePull(progressOnly: progressOnly);
+      final result = await SyncService.getInstance().forcePull(
+        progressOnly: progressOnly,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (AppLocalizations.of(context)?.forcePullSuccess ?? 'Force pull completed successfully!')
-                : (AppLocalizations.of(context)?.syncFailed(result.message) ?? 'Force pull failed: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (AppLocalizations.of(context)?.forcePullSuccess ??
+                        'Force pull completed successfully!')
+                  : (AppLocalizations.of(context)?.syncFailed(result.message) ??
+                        'Force pull failed: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -503,7 +578,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.syncError(e.toString()) ?? 'Sync error: $e'),
+            content: Text(
+              AppLocalizations.of(context)?.syncError(e.toString()) ??
+                  'Sync error: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -524,8 +602,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void _showLibrarySyncBottomSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lastSyncText = _lastSyncTime == null
-        ? (AppLocalizations.of(context)?.lastSyncedNever ?? 'Đồng bộ lần cuối: Chưa bao giờ')
-        : (AppLocalizations.of(context)?.lastSyncedAt(_formatLastSyncTime()) ?? 'Đồng bộ lần cuối: ${_formatLastSyncTime()}');
+        ? (AppLocalizations.of(context)?.lastSyncedNever ??
+              'Đồng bộ lần cuối: Chưa bao giờ')
+        : (AppLocalizations.of(context)?.lastSyncedAt(_formatLastSyncTime()) ??
+              'Đồng bộ lần cuối: ${_formatLastSyncTime()}');
 
     showModalBottomSheet(
       context: context,
@@ -536,7 +616,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
             child: SingleChildScrollView(
@@ -545,21 +627,37 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ thư viện',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    AppLocalizations.of(context)?.syncProgress ??
+                        'Đồng bộ thư viện',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     lastSyncText,
-                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white54 : Colors.black54),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
                   ListTile(
-                    leading: Icon(Icons.sync_rounded, color: Theme.of(context).colorScheme.primary),
-                    title: Text(AppLocalizations.of(context)?.autoSyncTitle ?? 'Đồng bộ tự động (Sync Now)'),
-                    subtitle: Text(AppLocalizations.of(context)?.autoSyncDesc ?? 'Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.'),
+                    leading: Icon(
+                      Icons.sync_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)?.autoSyncTitle ??
+                          'Đồng bộ tự động (Sync Now)',
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)?.autoSyncDesc ??
+                          'Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _startManualSync();
@@ -567,9 +665,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                   const Divider(),
                   ListTile(
-                    leading: Icon(Icons.cloud_upload_rounded, color: Theme.of(context).colorScheme.primary),
-                    title: Text(AppLocalizations.of(context)?.forcePush ?? 'Đẩy thư viện lên Cloud (Force Push)'),
-                    subtitle: Text(AppLocalizations.of(context)?.forcePushDesc ?? 'Đẩy đè tất cả tệp sách cục bộ và tiến trình hiện tại lên WebDAV Cloud.'),
+                    leading: Icon(
+                      Icons.cloud_upload_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)?.forcePush ??
+                          'Đẩy thư viện lên Cloud (Force Push)',
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)?.forcePushDesc ??
+                          'Đẩy đè tất cả tệp sách cục bộ và tiến trình hiện tại lên WebDAV Cloud.',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _startForcePush();
@@ -577,9 +684,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                   const Divider(),
                   ListTile(
-                    leading: Icon(Icons.cloud_download_rounded, color: Theme.of(context).colorScheme.primary),
-                    title: Text(AppLocalizations.of(context)?.forcePull ?? 'Tải thư viện từ Cloud (Force Pull)'),
-                    subtitle: Text(AppLocalizations.of(context)?.forcePullDesc ?? 'Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.'),
+                    leading: Icon(
+                      Icons.cloud_download_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)?.forcePull ??
+                          'Tải thư viện từ Cloud (Force Pull)',
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)?.forcePullDesc ??
+                          'Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _startForcePull();
@@ -587,14 +703,27 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                   const Divider(),
                   ListTile(
-                    leading: Icon(Icons.history_rounded, color: Theme.of(context).colorScheme.primary),
-                    title: Text(Localizations.localeOf(context).languageCode == 'vi' ? 'Lịch sử đồng bộ' : 'Sync History'),
-                    subtitle: Text(Localizations.localeOf(context).languageCode == 'vi' ? 'Xem 50 thay đổi tiến trình đọc gần nhất trên đám mây.' : 'View the last 50 progress changes on the cloud.'),
+                    leading: Icon(
+                      Icons.history_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      Localizations.localeOf(context).languageCode == 'vi'
+                          ? 'Lịch sử đồng bộ'
+                          : 'Sync History',
+                    ),
+                    subtitle: Text(
+                      Localizations.localeOf(context).languageCode == 'vi'
+                          ? 'Xem 50 thay đổi tiến trình đọc gần nhất trên đám mây.'
+                          : 'View the last 50 progress changes on the cloud.',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SyncHistoryScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SyncHistoryScreen(),
+                        ),
                       );
                     },
                   ),
@@ -618,7 +747,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
@@ -632,14 +764,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
 
     try {
-      final result = await SyncService.getInstance().forcePushBook(book.uuid, progressOnly: true);
+      final result = await SyncService.getInstance().forcePushBook(
+        book.uuid,
+        progressOnly: true,
+      );
       if (mounted) {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (isVi ? 'Đã đẩy tiến trình đọc "${book.title}" lên cloud.' : 'Successfully pushed progress for "${book.title}" to cloud.')
-                : (isVi ? 'Đẩy tiến trình thất bại: ${result.message}' : 'Failed to push progress: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (isVi
+                        ? 'Đã đẩy tiến trình đọc "${book.title}" lên cloud.'
+                        : 'Successfully pushed progress for "${book.title}" to cloud.')
+                  : (isVi
+                        ? 'Đẩy tiến trình thất bại: ${result.message}'
+                        : 'Failed to push progress: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -652,7 +793,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isVi ? 'Đẩy tiến trình thất bại: $e' : 'Failed to push progress: $e'),
+            content: Text(
+              isVi
+                  ? 'Đẩy tiến trình thất bại: $e'
+                  : 'Failed to push progress: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -680,7 +825,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
@@ -694,14 +842,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
 
     try {
-      final result = await SyncService.getInstance().forcePullBook(book.uuid, progressOnly: true);
+      final result = await SyncService.getInstance().forcePullBook(
+        book.uuid,
+        progressOnly: true,
+      );
       if (mounted) {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (isVi ? 'Đã tải tiến trình đọc "${book.title}" về máy.' : 'Successfully pulled progress for "${book.title}" to local.')
-                : (isVi ? 'Tải tiến trình thất bại: ${result.message}' : 'Failed to pull progress: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (isVi
+                        ? 'Đã tải tiến trình đọc "${book.title}" về máy.'
+                        : 'Successfully pulled progress for "${book.title}" to local.')
+                  : (isVi
+                        ? 'Tải tiến trình thất bại: ${result.message}'
+                        : 'Failed to pull progress: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -717,7 +874,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isVi ? 'Tải tiến trình thất bại: $e' : 'Failed to pull progress: $e'),
+            content: Text(
+              isVi
+                  ? 'Tải tiến trình thất bại: $e'
+                  : 'Failed to pull progress: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -745,7 +906,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.pleaseConfigureWebdav ?? 'Please enable and configure WebDAV in Settings first.'),
+            content: Text(
+              AppLocalizations.of(context)?.pleaseConfigureWebdav ??
+                  'Please enable and configure WebDAV in Settings first.',
+            ),
             backgroundColor: Colors.amber,
           ),
         );
@@ -761,20 +925,30 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.uploadingBook ?? 'Uploading book...'),
+          content: Text(
+            AppLocalizations.of(context)?.uploadingBook ?? 'Uploading book...',
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
     }
 
     try {
-      final result = await SyncService.getInstance().uploadSingleBook(book.uuid);
+      final result = await SyncService.getInstance().uploadSingleBook(
+        book.uuid,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (AppLocalizations.of(context)?.uploadSuccess(book.title) ?? 'Successfully uploaded "${book.title}" to Cloud!')
-                : (AppLocalizations.of(context)?.uploadFailed(result.message) ?? 'Failed to upload book: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (AppLocalizations.of(context)?.uploadSuccess(book.title) ??
+                        'Successfully uploaded "${book.title}" to Cloud!')
+                  : (AppLocalizations.of(
+                          context,
+                        )?.uploadFailed(result.message) ??
+                        'Failed to upload book: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -789,7 +963,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.uploadFailed(e.toString()) ?? 'Failed to upload book: $e'),
+            content: Text(
+              AppLocalizations.of(context)?.uploadFailed(e.toString()) ??
+                  'Failed to upload book: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -819,20 +996,33 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)?.downloadingBook ?? 'Downloading book...'),
+          content: Text(
+            AppLocalizations.of(context)?.downloadingBook ??
+                'Downloading book...',
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
     }
 
     try {
-      final result = await SyncService.getInstance().downloadVirtualBook(book.uuid);
+      final result = await SyncService.getInstance().downloadVirtualBook(
+        book.uuid,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result.success
-                ? (AppLocalizations.of(context)?.downloadSuccess(book.title) ?? 'Successfully downloaded "${book.title}" to local!')
-                : (AppLocalizations.of(context)?.downloadFailed(result.message) ?? 'Failed to download book: ${result.message}')),
+            content: Text(
+              result.success
+                  ? (AppLocalizations.of(
+                          context,
+                        )?.downloadSuccess(book.title) ??
+                        'Successfully downloaded "${book.title}" to local!')
+                  : (AppLocalizations.of(
+                          context,
+                        )?.downloadFailed(result.message) ??
+                        'Failed to download book: ${result.message}'),
+            ),
             backgroundColor: result.success ? Colors.green : Colors.redAccent,
           ),
         );
@@ -847,7 +1037,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)?.downloadFailed(e.toString()) ?? 'Failed to download book: $e'),
+            content: Text(
+              AppLocalizations.of(context)?.downloadFailed(e.toString()) ??
+                  'Failed to download book: $e',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -871,8 +1064,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppLocalizations.of(context)?.downloadConfirmTitle ?? 'Download Book'),
-        content: Text(AppLocalizations.of(context)?.downloadConfirmDesc(book.title) ?? 'Do you want to download "${book.title}" from Cloud to this device?'),
+        title: Text(
+          AppLocalizations.of(context)?.downloadConfirmTitle ?? 'Download Book',
+        ),
+        content: Text(
+          AppLocalizations.of(context)?.downloadConfirmDesc(book.title) ??
+              'Do you want to download "${book.title}" from Cloud to this device?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -880,8 +1078,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
-            child: Text(AppLocalizations.of(context)?.downloadBook ?? 'Download'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            child: Text(
+              AppLocalizations.of(context)?.downloadBook ?? 'Download',
+            ),
           ),
         ],
       ),
@@ -903,14 +1105,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _checkAutoOpenLastRead() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     if (settings.openLastReadOnLaunch) {
       // Tìm tiến trình đọc gần đây nhất
       final progressList = await db.isar.readingProgress
           .where()
           .sortByLastReadDesc()
           .findAll();
-          
+
       if (progressList.isNotEmpty) {
         final lastProgress = progressList.first;
         final book = await db.getBookByUuid(lastProgress.bookUuid);
@@ -925,7 +1127,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     const storage = FlutterSecureStorage();
     final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
     if (autoSyncStr != 'true') {
-      LoggerService().log('[AutoSync] Disabled by user configuration.', tag: 'SYNC', level: LogLevel.info);
+      LoggerService().log(
+        '[AutoSync] Disabled by user configuration.',
+        tag: 'SYNC',
+        level: LogLevel.info,
+      );
       return;
     }
 
@@ -935,38 +1141,45 @@ class _LibraryScreenState extends State<LibraryScreen> {
       setState(() {
         _isSyncing = true;
       });
-      SyncService.getInstance().sync().then((result) {
-        if (result.success && result.localChanged) {
-          _loadBooks();
-        }
-        _loadSyncStatus();
-        if (mounted) {
-          setState(() {
-            _isSyncing = false;
+      SyncService.getInstance()
+          .sync()
+          .then((result) {
+            if (result.success && result.localChanged) {
+              _loadBooks();
+            }
+            _loadSyncStatus();
+            if (mounted) {
+              setState(() {
+                _isSyncing = false;
+              });
+            }
+          })
+          .catchError((e) {
+            _loadSyncStatus();
+            if (mounted) {
+              setState(() {
+                _isSyncing = false;
+              });
+            }
           });
-        }
-      }).catchError((e) {
-        _loadSyncStatus();
-        if (mounted) {
-          setState(() {
-            _isSyncing = false;
-          });
-        }
-      });
     }
   }
 
   Future<void> _loadBooks() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     // Lấy sách local
     final List<Book> books = await db.getBooks(
-      tag: (_selectedTag == 'All' || _selectedTag == null) ? null : _selectedTag,
-      status: (_selectedStatus == 'All' || _selectedStatus == null) ? null : _selectedStatus,
+      tag: (_selectedTag == 'All' || _selectedTag == null)
+          ? null
+          : _selectedTag,
+      status: (_selectedStatus == 'All' || _selectedStatus == null)
+          ? null
+          : _selectedStatus,
       sortBy: settings.sortBy,
     );
-    
+
     final tags = await db.getAllBookTags();
 
     // Lấy sách ảo trên Cloud (nếu WebDAV được bật)
@@ -975,8 +1188,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final docDir = await PathHelper.getAppDirectory();
       final allLocalBooks = await db.getAllBooks();
       final allLocalUuids = allLocalBooks.map((b) => b.uuid).toSet();
-      
-      final cloudBooksMetadata = SyncService.getInstance().cloudBooksNotifier.value;
+
+      final cloudBooksMetadata =
+          SyncService.getInstance().cloudBooksNotifier.value;
       for (final cb in cloudBooksMetadata) {
         final String cuuid = cb['uuid'] ?? '';
         if (cuuid.isNotEmpty && !allLocalUuids.contains(cuuid)) {
@@ -985,17 +1199,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
           if (_selectedStatus != 'All' && _selectedStatus != 'unread') continue;
 
           final String? coverPath = cb['hasCover'] == true
-              ? path.join(docDir.path, 'covers', '$cuuid${cb['coverExtension'] ?? '.png'}')
+              ? path.join(
+                  docDir.path,
+                  'covers',
+                  '$cuuid${cb['coverExtension'] ?? '.png'}',
+                )
               : null;
 
-          final virtualBook = Book()
-            ..uuid = cuuid
-            ..title = cb['title'] ?? 'Unknown'
-            ..author = cb['author'] ?? 'Unknown'
-            ..coverPath = coverPath
-            ..totalChapters = cb['totalChapters'] ?? 0
-            ..dateAdded = DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()
-            ..status = 'unread';
+          final virtualBook = Book(uuid: cuuid, title: cb['title'] ?? 'Unknown', author: cb['author'] ?? 'Unknown', coverPath: coverPath, totalChapters: cb['totalChapters'] ?? 0, dateAdded: (DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch, status: 'unread', tags: []);
           cloudBooks.add(virtualBook);
         }
       }
@@ -1012,7 +1223,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     // Sắp xếp lại allBooks theo settings.sortBy
     if (settings.sortBy == 'title') {
-      allBooks.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      allBooks.sort(
+        (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+      );
     } else if (settings.sortBy == 'dateAdded') {
       allBooks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
     } else {
@@ -1020,7 +1233,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final Map<String, DateTime> lastReadMap = {};
       for (final book in allBooks) {
         final progress = await db.getProgress(book.uuid);
-        lastReadMap[book.uuid] = progress?.lastRead ?? book.dateAdded;
+        lastReadMap[book.uuid] = progress?.lastRead ?? DateTime.fromMillisecondsSinceEpoch(book.dateAdded);
       }
       allBooks.sort((a, b) {
         final timeA = lastReadMap[a.uuid]!;
@@ -1028,12 +1241,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
         return timeB.compareTo(timeA);
       });
     }
-    
+
     final Map<String, double> pMap = {};
     for (final book in allBooks) {
       final progress = await db.getProgress(book.uuid);
       if (progress != null && book.totalChapters > 0) {
-        final percent = (progress.currentChapterIndex / book.totalChapters) * 100;
+        final percent =
+            (progress.currentChapterIndex / book.totalChapters) * 100;
         pMap[book.uuid] = percent.clamp(0.0, 100.0);
       } else {
         pMap[book.uuid] = 0.0;
@@ -1041,7 +1255,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
 
     final localBookUuids = books.map((b) => b.uuid).toSet();
-    
+
     if (mounted) {
       setState(() {
         _books = allBooks;
@@ -1052,8 +1266,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       });
     }
   }
-
-
 
   void _showSortMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1077,18 +1289,47 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: Icon(Icons.access_time_rounded, color: _sortBy == 'lastRead' ? Colors.amber[700] : null),
-              title: Text(AppLocalizations.of(context)?.sortByLastRead ?? 'Sort by Last Read', style: TextStyle(color: _sortBy == 'lastRead' ? Colors.amber[700] : null, fontWeight: _sortBy == 'lastRead' ? FontWeight.bold : null)),
+              leading: Icon(
+                Icons.access_time_rounded,
+                color: _sortBy == 'lastRead' ? Colors.amber[700] : null,
+              ),
+              title: Text(
+                AppLocalizations.of(context)?.sortByLastRead ??
+                    'Sort by Last Read',
+                style: TextStyle(
+                  color: _sortBy == 'lastRead' ? Colors.amber[700] : null,
+                  fontWeight: _sortBy == 'lastRead' ? FontWeight.bold : null,
+                ),
+              ),
               onTap: () => _updateSortBy('lastRead'),
             ),
             ListTile(
-              leading: Icon(Icons.sort_by_alpha_rounded, color: _sortBy == 'title' ? Colors.amber[700] : null),
-              title: Text(AppLocalizations.of(context)?.sortByTitle ?? 'Sort by Title', style: TextStyle(color: _sortBy == 'title' ? Colors.amber[700] : null, fontWeight: _sortBy == 'title' ? FontWeight.bold : null)),
+              leading: Icon(
+                Icons.sort_by_alpha_rounded,
+                color: _sortBy == 'title' ? Colors.amber[700] : null,
+              ),
+              title: Text(
+                AppLocalizations.of(context)?.sortByTitle ?? 'Sort by Title',
+                style: TextStyle(
+                  color: _sortBy == 'title' ? Colors.amber[700] : null,
+                  fontWeight: _sortBy == 'title' ? FontWeight.bold : null,
+                ),
+              ),
               onTap: () => _updateSortBy('title'),
             ),
             ListTile(
-              leading: Icon(Icons.calendar_today_rounded, color: _sortBy == 'dateAdded' ? Colors.amber[700] : null),
-              title: Text(AppLocalizations.of(context)?.sortByDateAdded ?? 'Sort by Date Added', style: TextStyle(color: _sortBy == 'dateAdded' ? Colors.amber[700] : null, fontWeight: _sortBy == 'dateAdded' ? FontWeight.bold : null)),
+              leading: Icon(
+                Icons.calendar_today_rounded,
+                color: _sortBy == 'dateAdded' ? Colors.amber[700] : null,
+              ),
+              title: Text(
+                AppLocalizations.of(context)?.sortByDateAdded ??
+                    'Sort by Date Added',
+                style: TextStyle(
+                  color: _sortBy == 'dateAdded' ? Colors.amber[700] : null,
+                  fontWeight: _sortBy == 'dateAdded' ? FontWeight.bold : null,
+                ),
+              ),
               onTap: () => _updateSortBy('dateAdded'),
             ),
           ],
@@ -1123,13 +1364,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final docDir = await PathHelper.getAppDirectory();
 
       // Chạy parser trong background isolate để tránh đơ giao diện
-      final parsedData = await compute(
-        _parseBookIsolate,
-        {
-          'filePath': filePath,
-          'docDirPath': docDir.path,
-        },
-      );
+      final parsedData = await compute(_parseBookIsolate, {
+        'filePath': filePath,
+        'docDirPath': docDir.path,
+      });
 
       final db = await DatabaseHelper.getInstance();
       await db.saveBook(parsedData.book);
@@ -1140,13 +1378,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.successfullyImported(parsedData.book.title) ?? 'Successfully imported "${parsedData.book.title}"!')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                    context,
+                  )?.successfullyImported(parsedData.book.title) ??
+                  'Successfully imported "${parsedData.book.title}"!',
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.failedToImport(e.toString()) ?? 'Failed to import book: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)?.failedToImport(e.toString()) ??
+                  'Failed to import book: $e',
+            ),
+          ),
         );
       }
     } finally {
@@ -1159,7 +1409,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   // Hàm chạy riêng trong isolate
-  static Future<ParsedBookData> _parseBookIsolate(Map<String, String> args) async {
+  static Future<ParsedBookData> _parseBookIsolate(
+    Map<String, String> args,
+  ) async {
     final filePath = args['filePath']!;
     final docDirPath = args['docDirPath']!;
     final extension = path.extension(filePath).toLowerCase();
@@ -1180,31 +1432,39 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _deleteBook(Book book, {bool deleteFromCloud = false}) async {
     final db = await DatabaseHelper.getInstance();
     await db.deleteBook(book.uuid);
-    print('[DebugWebDAV] Deleted local book: "${book.title}", UUID: "${book.uuid}", deleteFromCloud: $deleteFromCloud');
+    print(
+      '[DebugWebDAV] Deleted local book: "${book.title}", UUID: "${book.uuid}", deleteFromCloud: $deleteFromCloud',
+    );
     await _loadBooks();
 
     if (deleteFromCloud) {
       SyncService.getInstance().deleteBookFromCloud(book.uuid).then((result) {
-        LoggerService().log('[Sync] Cloud deletion result for "${book.title}": ${result.message}', tag: 'SYNC', level: LogLevel.info);
+        LoggerService().log(
+          '[Sync] Cloud deletion result for "${book.title}": ${result.message}',
+          tag: 'SYNC',
+          level: LogLevel.info,
+        );
         SyncService.getInstance().fetchCloudBooks();
       });
     }
 
     if (mounted) {
       final msg = deleteFromCloud
-          ? (AppLocalizations.of(context)?.deletedFromBoth ?? 'Deleted from both Local & Cloud')
-          : (AppLocalizations.of(context)?.deletedFromLocal ?? 'Deleted from Local');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$msg: "${book.title}"')),
-      );
+          ? (AppLocalizations.of(context)?.deletedFromBoth ??
+                'Deleted from both Local & Cloud')
+          : (AppLocalizations.of(context)?.deletedFromLocal ??
+                'Deleted from Local');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$msg: "${book.title}"')));
     }
   }
 
   Future<void> _openBook(Book book) async {
     final db = await DatabaseHelper.getInstance();
-    
+
     if (book.status == 'unread') {
-      book.status = 'reading';
+      book = book.copyWith(status: 'reading');
       await db.saveBook(book);
     }
 
@@ -1212,7 +1472,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final progress = await db.getProgress(book.uuid);
 
     final ttsService = await TtsService.getInstance();
-    
+
     int startChapter = progress?.currentChapterIndex ?? 0;
     int startParagraph = progress?.currentParagraphIndex ?? 0;
 
@@ -1220,7 +1480,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (startChapter >= chapters.length) {
       startChapter = 0;
       startParagraph = 0;
-    } else if (chapters.isNotEmpty && startParagraph >= chapters[startChapter].paragraphs.length) {
+    } else if (chapters.isNotEmpty &&
+        startParagraph >= chapters[startChapter].paragraphs.length) {
       startParagraph = 0;
     }
 
@@ -1234,9 +1495,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ReaderScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const ReaderScreen()),
       ).then((_) {
         // Tải lại sách để cập nhật tiến độ đọc
         _loadBooks();
@@ -1250,9 +1509,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SyncSettingsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SyncSettingsScreen()),
     ).then((_) {
       _loadBooks();
       _loadSyncStatus();
@@ -1260,13 +1517,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     });
   }
 
-
-
   Future<Map<ShortcutActivator, VoidCallback>> _buildLibraryShortcuts() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     return {
-      ShortcutHelper.parse(settings.hotkeyOpenSetting): _handleOpenSettingShortcut,
+      ShortcutHelper.parse(settings.hotkeyOpenSetting):
+          _handleOpenSettingShortcut,
     };
   }
 
@@ -1279,7 +1535,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final filteredBooks = _books.where((book) {
       final searchLower = _searchQuery.toLowerCase();
       return book.title.toLowerCase().contains(searchLower) ||
-             book.author.toLowerCase().contains(searchLower);
+          book.author.toLowerCase().contains(searchLower);
     }).toList();
 
     final scaffoldContent = Scaffold(
@@ -1327,14 +1583,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       backgroundColor: _getSyncBadgeColor(),
                       child: const Icon(Icons.sync_rounded),
                     ),
-              onPressed: _isSyncing ? null : () => _showLibrarySyncBottomSheet(context),
+              onPressed: _isSyncing
+                  ? null
+                  : () => _showLibrarySyncBottomSheet(context),
             ),
           IconButton(
             icon: const Icon(Icons.bookmarks_rounded),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const GlobalNotesScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const GlobalNotesScreen(),
+                ),
               ).then((_) {
                 _loadBooks();
               });
@@ -1371,7 +1631,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
         children: [
           Column(
             children: [
-              if (_books.isNotEmpty || _selectedTag != 'All' || _selectedStatus != 'All' || _webDavEnabled)
+              if (_books.isNotEmpty ||
+                  _selectedTag != 'All' ||
+                  _selectedStatus != 'All' ||
+                  _webDavEnabled)
                 Column(
                   children: [
                     Padding(
@@ -1381,25 +1644,49 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           TextField(
                             controller: _searchController,
                             focusNode: _searchFocusNode,
-                            style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
+                            ),
                             decoration: InputDecoration(
-                              hintText: AppLocalizations.of(context)?.searchBookHint ?? 'Search book on shelf...',
-                              hintStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
-                              prefixIcon: Icon(Icons.search_rounded, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4)),
-                              suffixIcon: _searchQuery.isNotEmpty ? IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() { _searchQuery = ''; });
-                                },
-                              ) : null,
+                              hintText:
+                                  AppLocalizations.of(
+                                    context,
+                                  )?.searchBookHint ??
+                                  'Search book on shelf...',
+                              hintStyle: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                              ),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 20),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                        });
+                                      },
+                                    )
+                                  : null,
                               filled: true,
                               fillColor: Theme.of(context).cardColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                             onChanged: (val) {
                               setState(() {
@@ -1426,21 +1713,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
-                                children: _searchHistory.map((query) => ListTile(
-                                  dense: true,
-                                  leading: const Icon(Icons.history, size: 20),
-                                  title: Text(query),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.close, size: 16),
-                                    onPressed: () => _removeSearchHistory(query),
-                                  ),
-                                  onTap: () {
-                                    _searchController.text = query;
-                                    setState(() { _searchQuery = query; });
-                                    _addToSearchHistory(query);
-                                    _searchFocusNode.unfocus();
-                                  },
-                                )).toList(),
+                                children: _searchHistory
+                                    .map(
+                                      (query) => ListTile(
+                                        dense: true,
+                                        leading: const Icon(
+                                          Icons.history,
+                                          size: 20,
+                                        ),
+                                        title: Text(query),
+                                        trailing: IconButton(
+                                          icon: const Icon(
+                                            Icons.close,
+                                            size: 16,
+                                          ),
+                                          onPressed: () =>
+                                              _removeSearchHistory(query),
+                                        ),
+                                        onTap: () {
+                                          _searchController.text = query;
+                                          setState(() {
+                                            _searchQuery = query;
+                                          });
+                                          _addToSearchHistory(query);
+                                          _searchFocusNode.unfocus();
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                         ],
@@ -1451,44 +1751,66 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         Expanded(
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
                             child: Row(
                               children: [
-                                _buildFilterChip(AppLocalizations.of(context)?.all ?? 'All', _selectedStatus == 'All', (selected) {
-                                  if (selected) {
-                                    setState(() {
-                                      _selectedStatus = 'All';
-                                    });
-                                    _loadBooks();
-                                  }
-                                }),
+                                _buildFilterChip(
+                                  AppLocalizations.of(context)?.all ?? 'All',
+                                  _selectedStatus == 'All',
+                                  (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedStatus = 'All';
+                                      });
+                                      _loadBooks();
+                                    }
+                                  },
+                                ),
                                 const SizedBox(width: 8),
-                                _buildFilterChip(AppLocalizations.of(context)?.unread ?? 'Unread', _selectedStatus == 'unread', (selected) {
-                                  if (selected) {
-                                    setState(() {
-                                      _selectedStatus = 'unread';
-                                    });
-                                    _loadBooks();
-                                  }
-                                }),
+                                _buildFilterChip(
+                                  AppLocalizations.of(context)?.unread ??
+                                      'Unread',
+                                  _selectedStatus == 'unread',
+                                  (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedStatus = 'unread';
+                                      });
+                                      _loadBooks();
+                                    }
+                                  },
+                                ),
                                 const SizedBox(width: 8),
-                                _buildFilterChip(AppLocalizations.of(context)?.reading ?? 'Reading', _selectedStatus == 'reading', (selected) {
-                                  if (selected) {
-                                    setState(() {
-                                      _selectedStatus = 'reading';
-                                    });
-                                    _loadBooks();
-                                  }
-                                }),
+                                _buildFilterChip(
+                                  AppLocalizations.of(context)?.reading ??
+                                      'Reading',
+                                  _selectedStatus == 'reading',
+                                  (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedStatus = 'reading';
+                                      });
+                                      _loadBooks();
+                                    }
+                                  },
+                                ),
                                 const SizedBox(width: 8),
-                                _buildFilterChip(AppLocalizations.of(context)?.completed ?? 'Completed', _selectedStatus == 'completed', (selected) {
-                                  if (selected) {
-                                    setState(() {
-                                      _selectedStatus = 'completed';
-                                    });
-                                    _loadBooks();
-                                  }
-                                }),
+                                _buildFilterChip(
+                                  AppLocalizations.of(context)?.completed ??
+                                      'Completed',
+                                  _selectedStatus == 'completed',
+                                  (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedStatus = 'completed';
+                                      });
+                                      _loadBooks();
+                                    }
+                                  },
+                                ),
                               ],
                             ),
                           ),
@@ -1498,12 +1820,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           child: Tooltip(
                             message: _isGridView ? 'List View' : 'Grid View',
                             child: IconButton(
-                              icon: Icon(_isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded, size: 20),
+                              icon: Icon(
+                                _isGridView
+                                    ? Icons.view_list_rounded
+                                    : Icons.grid_view_rounded,
+                                size: 20,
+                              ),
                               onPressed: _toggleViewMode,
                               style: IconButton.styleFrom(
-                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                foregroundColor: isDark ? Colors.white70 : Colors.black87,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                backgroundColor: isDark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                                foregroundColor: isDark
+                                    ? Colors.white70
+                                    : Colors.black87,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 padding: const EdgeInsets.all(8),
                               ),
                             ),
@@ -1512,14 +1845,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         Padding(
                           padding: const EdgeInsets.only(right: 16),
                           child: Tooltip(
-                            message: AppLocalizations.of(context)?.sortOptions ?? 'Sort options',
+                            message:
+                                AppLocalizations.of(context)?.sortOptions ??
+                                'Sort options',
                             child: IconButton(
                               icon: const Icon(Icons.sort_rounded, size: 20),
                               onPressed: _showSortMenu,
                               style: IconButton.styleFrom(
-                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                foregroundColor: isDark ? Colors.white70 : Colors.black87,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                backgroundColor: isDark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                                foregroundColor: isDark
+                                    ? Colors.white70
+                                    : Colors.black87,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 padding: const EdgeInsets.all(8),
                               ),
                             ),
@@ -1536,7 +1877,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           child: Row(
                             children: [
                               _buildFilterChip(
-                                AppLocalizations.of(context)?.localSource ?? 'Local',
+                                AppLocalizations.of(context)?.localSource ??
+                                    'Local',
                                 _selectedSource == 'Local',
                                 (selected) {
                                   if (selected) {
@@ -1549,7 +1891,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               ),
                               const SizedBox(width: 8),
                               _buildFilterChip(
-                                AppLocalizations.of(context)?.cloudSource ?? 'Cloud',
+                                AppLocalizations.of(context)?.cloudSource ??
+                                    'Cloud',
                                 _selectedSource == 'Cloud',
                                 (selected) {
                                   if (selected) {
@@ -1587,11 +1930,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             return Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: ChoiceChip(
-                                label: Text(tag, style: TextStyle(color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 12)),
+                                label: Text(
+                                  tag,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? Colors.white70
+                                              : Colors.black87),
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 selected: isSelected,
                                 selectedColor: accentColor,
-                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                backgroundColor: isDark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                                 showCheckmark: false,
                                 onSelected: (selected) {
                                   if (selected) {
@@ -1621,7 +1978,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              AppLocalizations.of(context)?.emptyShelf ?? 'Your shelf is empty',
+                              AppLocalizations.of(context)?.emptyShelf ??
+                                  'Your shelf is empty',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -1630,7 +1988,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              AppLocalizations.of(context)?.importBookHint ?? 'Tap the "+" button to import a book (.epub, .txt, .pdf, .docx)',
+                              AppLocalizations.of(context)?.importBookHint ??
+                                  'Tap the "+" button to import a book (.epub, .txt, .pdf, .docx)',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark ? Colors.white38 : Colors.black38,
@@ -1640,36 +1999,40 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         ),
                       )
                     : filteredBooks.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off_rounded,
-                                  size: 80,
-                                  color: isDark ? Colors.white30 : Colors.black26,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  AppLocalizations.of(context)?.noBooksMatch ?? 'No books match your search',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white54 : Colors.black54,
-                                  ),
-                                ),
-                              ],
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 80,
+                              color: isDark ? Colors.white30 : Colors.black26,
                             ),
-                          )
-                        : AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            transitionBuilder: (child, animation) {
-                              return FadeTransition(opacity: animation, child: child);
-                            },
-                            child: _isGridView 
-                                ? _buildGridView(filteredBooks, isDark)
-                                : _buildListView(filteredBooks, isDark),
-                          ),
+                            const SizedBox(height: 16),
+                            Text(
+                              AppLocalizations.of(context)?.noBooksMatch ??
+                                  'No books match your search',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                        child: _isGridView
+                            ? _buildGridView(filteredBooks, isDark)
+                            : _buildListView(filteredBooks, isDark),
+                      ),
               ),
             ],
           ),
@@ -1685,7 +2048,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      AppLocalizations.of(context)?.parsingBookContent ?? 'Parsing book content...',
+                      AppLocalizations.of(context)?.parsingBookContent ??
+                          'Parsing book content...',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -1699,10 +2063,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: SafeArea(
-              bottom: true,
-              child: MiniPlayer(),
-            ),
+            child: SafeArea(bottom: true, child: MiniPlayer()),
           ),
           StreamBuilder<MediaItem?>(
             stream: _ttsService?.audioHandler.mediaItem,
@@ -1713,11 +2074,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 builder: (context, playbackStateSnapshot) {
                   final playbackState = playbackStateSnapshot.data;
                   final hasActiveBook = _ttsService?.activeBook != null;
-                  final isIdle = playbackState?.processingState == AudioProcessingState.idle;
-                  
-                  final bool showMiniPlayer = _ttsService != null && 
-                      mediaItem != null && 
-                      hasActiveBook && 
+                  final isIdle =
+                      playbackState?.processingState ==
+                      AudioProcessingState.idle;
+
+                  final bool showMiniPlayer =
+                      _ttsService != null &&
+                      mediaItem != null &&
+                      hasActiveBook &&
                       !isIdle;
 
                   final double fabBottom = showMiniPlayer ? 96.0 : 16.0;
@@ -1733,7 +2097,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       foregroundColor: Colors.white,
                       icon: const Icon(Icons.add_rounded),
                       label: Text(
-                        AppLocalizations.of(context)?.importBook ?? 'Import Book',
+                        AppLocalizations.of(context)?.importBook ??
+                            'Import Book',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -1756,10 +2121,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
         return CallbackShortcuts(
           bindings: bindings,
-          child: Focus(
-            autofocus: true,
-            child: scaffoldContent,
-          ),
+          child: Focus(autofocus: true, child: scaffoldContent),
         );
       },
     );
@@ -1770,7 +2132,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
     final accentColor = Theme.of(context).colorScheme.primary;
     final isVirtual = !_localBookUuids.contains(book.uuid);
-    
+
     Color statusColor = Colors.grey;
     if (bookStatus == 'reading') statusColor = accentColor;
     if (bookStatus == 'completed') statusColor = Colors.green;
@@ -1798,16 +2160,23 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: [
                 Builder(
                   builder: (context) {
-                    final hasPath = book.coverPath != null && book.coverPath!.isNotEmpty;
-                    final fileExists = hasPath ? File(book.coverPath!).existsSync() : false;
-                    print('[LibraryScreen] Card "${book.title}" -> hasPath: $hasPath, exists: $fileExists, path: ${book.coverPath}');
-                    
+                    final hasPath =
+                        book.coverPath != null && book.coverPath!.isNotEmpty;
+                    final fileExists = hasPath
+                        ? File(book.coverPath!).existsSync()
+                        : false;
+                    print(
+                      '[LibraryScreen] Card "${book.title}" -> hasPath: $hasPath, exists: $fileExists, path: ${book.coverPath}',
+                    );
+
                     if (hasPath && fileExists) {
                       return Image.file(
                         File(book.coverPath!),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          print('[LibraryScreen] Error loading image for "${book.title}": $error');
+                          print(
+                            '[LibraryScreen] Error loading image for "${book.title}": $error',
+                          );
                           return Container(
                             color: isDark ? Colors.grey[850] : Colors.grey[300],
                             child: Icon(
@@ -1834,7 +2203,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   top: 6,
                   left: 6,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor,
                       borderRadius: BorderRadius.circular(8),
@@ -1859,24 +2231,36 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         right: 6,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
                           child: const SizedBox(
-                            width: 12, height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       );
                     }
-                    
+
                     return ValueListenableBuilder<Set<String>>(
-                      valueListenable: SyncService.getInstance().cloudBookUuidsNotifier,
+                      valueListenable:
+                          SyncService.getInstance().cloudBookUuidsNotifier,
                       builder: (context, cloudBookUuids, child) {
                         if (!_webDavEnabled) return const SizedBox.shrink();
-                        
-                        final bool isSynced = cloudBookUuids.contains(book.uuid);
+
+                        final bool isSynced = cloudBookUuids.contains(
+                          book.uuid,
+                        );
                         final IconData icon;
                         final Color color;
-                        
+
                         if (isVirtual) {
                           icon = Icons.cloud_download_rounded;
                           color = Colors.blueAccent;
@@ -1887,13 +2271,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           icon = Icons.cloud_upload_rounded;
                           color = Colors.orangeAccent;
                         }
-                        
+
                         return Positioned(
                           bottom: 6,
                           right: 6,
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
                             child: Icon(icon, size: 12, color: color),
                           ),
                         );
@@ -1939,19 +2326,25 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       }
                     },
                     itemBuilder: (context) {
-                      final cloudBookUuids = SyncService.getInstance().cloudBookUuidsNotifier.value;
+                      final cloudBookUuids = SyncService.getInstance()
+                          .cloudBookUuidsNotifier
+                          .value;
                       final isSynced = cloudBookUuids.contains(book.uuid);
-                      
+
                       if (isVirtual) {
                         return [
                           PopupMenuItem(
                             value: 'download_book',
                             child: Row(
                               children: [
-                                const Icon(Icons.cloud_download_rounded, size: 18),
+                                const Icon(
+                                  Icons.cloud_download_rounded,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
+                                  AppLocalizations.of(context)?.downloadBook ??
+                                      'Download Book',
                                   style: const TextStyle(fontSize: 13),
                                 ),
                               ],
@@ -1961,11 +2354,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             value: 'delete',
                             child: Row(
                               children: [
-                                const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                                  AppLocalizations.of(context)?.deleteBook ??
+                                      'Delete Book',
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1991,11 +2392,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           value: 'delete',
                           child: Row(
                             children: [
-                              const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                              const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.red,
+                                size: 18,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                                style: const TextStyle(color: Colors.red, fontSize: 13),
+                                AppLocalizations.of(context)?.deleteBook ??
+                                    'Delete Book',
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
@@ -2006,10 +2415,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               value: 'force_push',
                               child: Row(
                                 children: [
-                                  const Icon(Icons.cloud_upload_rounded, size: 18),
+                                  const Icon(
+                                    Icons.cloud_upload_rounded,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    Localizations.localeOf(context).languageCode == 'vi'
+                                    Localizations.localeOf(
+                                              context,
+                                            ).languageCode ==
+                                            'vi'
                                         ? 'Đẩy tiến trình'
                                         : 'Push Progress',
                                     style: const TextStyle(fontSize: 13),
@@ -2021,10 +2436,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               value: 'force_pull',
                               child: Row(
                                 children: [
-                                  const Icon(Icons.cloud_download_rounded, size: 18),
+                                  const Icon(
+                                    Icons.cloud_download_rounded,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    Localizations.localeOf(context).languageCode == 'vi'
+                                    Localizations.localeOf(
+                                              context,
+                                            ).languageCode ==
+                                            'vi'
                                         ? 'Tải tiến trình'
                                         : 'Pull Progress',
                                     style: const TextStyle(fontSize: 13),
@@ -2037,10 +2458,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               value: 'upload_book',
                               child: Row(
                                 children: [
-                                  const Icon(Icons.cloud_upload_rounded, size: 18),
+                                  const Icon(
+                                    Icons.cloud_upload_rounded,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    AppLocalizations.of(context)?.uploadBook ?? 'Upload Book',
+                                    AppLocalizations.of(context)?.uploadBook ??
+                                        'Upload Book',
                                     style: const TextStyle(fontSize: 13),
                                   ),
                                 ],
@@ -2098,14 +2523,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppLocalizations.of(context)?.chaptersCount(book.totalChapters) ?? '${book.totalChapters} Chapters',
+                      AppLocalizations.of(
+                            context,
+                          )?.chaptersCount(book.totalChapters) ??
+                          '${book.totalChapters} Chapters',
                       style: TextStyle(
                         fontSize: 9,
                         color: isDark ? Colors.white54 : Colors.black54,
                       ),
                     ),
                     Text(
-                      AppLocalizations.of(context)?.readPercent(progressPercent.toStringAsFixed(0)) ?? '${progressPercent.toStringAsFixed(0)}% Read',
+                      AppLocalizations.of(
+                            context,
+                          )?.readPercent(progressPercent.toStringAsFixed(0)) ??
+                          '${progressPercent.toStringAsFixed(0)}% Read',
                       style: TextStyle(
                         fontSize: 9,
                         color: accentColor,
@@ -2138,8 +2569,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(AppLocalizations.of(context)?.deleteBookTitle ?? 'Delete Book'),
-          content: Text(AppLocalizations.of(context)?.deleteBookOptionsContent(book.title) ?? 'How do you want to delete this book?'),
+          title: Text(
+            AppLocalizations.of(context)?.deleteBookTitle ?? 'Delete Book',
+          ),
+          content: Text(
+            AppLocalizations.of(
+                  context,
+                )?.deleteBookOptionsContent(book.title) ??
+                'How do you want to delete this book?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2150,7 +2588,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 Navigator.pop(context);
                 _deleteBook(book, deleteFromCloud: false);
               },
-              child: Text(AppLocalizations.of(context)?.deleteLocalOnly ?? 'Local Only'),
+              child: Text(
+                AppLocalizations.of(context)?.deleteLocalOnly ?? 'Local Only',
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -2158,7 +2598,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 _deleteBook(book, deleteFromCloud: true);
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text(AppLocalizations.of(context)?.deleteBothLocalAndCloud ?? 'Both Local & Cloud'),
+              child: Text(
+                AppLocalizations.of(context)?.deleteBothLocalAndCloud ??
+                    'Both Local & Cloud',
+              ),
             ),
           ],
         ),
@@ -2167,8 +2610,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(AppLocalizations.of(context)?.confirmDelete ?? 'Confirm Delete'),
-          content: Text(AppLocalizations.of(context)?.confirmDeleteBook(book.title) ?? 'Are you sure you want to delete "${book.title}"? This will erase all chapter caches and reading progress.'),
+          title: Text(
+            AppLocalizations.of(context)?.confirmDelete ?? 'Confirm Delete',
+          ),
+          content: Text(
+            AppLocalizations.of(context)?.confirmDeleteBook(book.title) ??
+                'Are you sure you want to delete "${book.title}"? This will erase all chapter caches and reading progress.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2188,13 +2636,24 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-
-
-  Widget _buildFilterChip(String label, bool isSelected, ValueChanged<bool> onSelected) {
+  Widget _buildFilterChip(
+    String label,
+    bool isSelected,
+    ValueChanged<bool> onSelected,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = Theme.of(context).colorScheme.primary;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 12, fontWeight: FontWeight.w600)),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected
+              ? Colors.white
+              : (isDark ? Colors.white70 : Colors.black87),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       selected: isSelected,
       selectedColor: accentColor,
       backgroundColor: isDark ? Colors.white10 : Colors.black12,
@@ -2238,7 +2697,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                AppLocalizations.of(context)?.version(_appVersion.isEmpty ? '1.1.12' : _appVersion) ?? 'Version ${_appVersion.isEmpty ? '1.1.12' : _appVersion}',
+                AppLocalizations.of(
+                      context,
+                    )?.version(_appVersion.isEmpty ? '1.1.12' : _appVersion) ??
+                    'Version ${_appVersion.isEmpty ? '1.1.12' : _appVersion}',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.white54 : Colors.black54,
@@ -2254,7 +2716,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () async {
-                  final Uri url = Uri.parse('https://github.com/DennyNguyen123/AudireReader');
+                  final Uri url = Uri.parse(
+                    'https://github.com/DennyNguyen123/AudireReader',
+                  );
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   }
@@ -2312,10 +2776,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
         ),
         Text(
           value,
@@ -2334,7 +2795,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
         final int crossAxisCount = (width / 160).floor().clamp(2, 8);
-        
+
         return GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -2369,9 +2830,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final progressPercent = _progressMap[book.uuid] ?? 0.0;
     final bookStatus = book.status.trim().isEmpty ? 'unread' : book.status;
     final isVirtual = !_localBookUuids.contains(book.uuid);
-    
+
     Color statusColor = Colors.grey;
-    if (bookStatus == 'reading') statusColor = Theme.of(context).colorScheme.primary;
+    if (bookStatus == 'reading')
+      statusColor = Theme.of(context).colorScheme.primary;
     if (bookStatus == 'completed') statusColor = Colors.green;
 
     final listItem = Container(
@@ -2410,30 +2872,40 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     children: [
                       Builder(
                         builder: (context) {
-                          final hasPath = book.coverPath != null && book.coverPath!.isNotEmpty;
-                          final fileExists = hasPath ? File(book.coverPath!).existsSync() : false;
+                          final hasPath =
+                              book.coverPath != null &&
+                              book.coverPath!.isNotEmpty;
+                          final fileExists = hasPath
+                              ? File(book.coverPath!).existsSync()
+                              : false;
                           if (hasPath && fileExists) {
                             return Image.file(
                               File(book.coverPath!),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: isDark ? Colors.grey[850] : Colors.grey[300],
+                                  color: isDark
+                                      ? Colors.grey[850]
+                                      : Colors.grey[300],
                                   child: Icon(
                                     Icons.book_rounded,
                                     size: 24,
-                                    color: isDark ? Colors.white30 : Colors.black38,
+                                    color: isDark
+                                        ? Colors.white30
+                                        : Colors.black38,
                                   ),
                                 );
                               },
                             );
                           } else {
                             return Container(
-                              color: isDark ? Colors.grey[850] : Colors.grey[300],
+                              color: isDark
+                                  ? Colors.grey[850]
+                                  : Colors.grey[300],
                               child: Icon(
-                                  Icons.book_rounded,
-                                  size: 24,
-                                  color: isDark ? Colors.white30 : Colors.black38,
+                                Icons.book_rounded,
+                                size: 24,
+                                color: isDark ? Colors.white30 : Colors.black38,
                               ),
                             );
                           }
@@ -2443,7 +2915,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         top: 4,
                         left: 4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor,
                             borderRadius: BorderRadius.circular(6),
@@ -2459,7 +2934,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         ),
                       ),
                       ValueListenableBuilder<Map<String, String>>(
-                        valueListenable: SyncService.getInstance().syncStateNotifier,
+                        valueListenable:
+                            SyncService.getInstance().syncStateNotifier,
                         builder: (context, syncState, child) {
                           final status = syncState[book.uuid];
                           if (status == 'syncing') {
@@ -2468,24 +2944,37 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               right: 4,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
                                 child: const SizedBox(
-                                  width: 10, height: 10,
-                                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                                  width: 10,
+                                  height: 10,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
                           }
-                          
+
                           return ValueListenableBuilder<Set<String>>(
-                            valueListenable: SyncService.getInstance().cloudBookUuidsNotifier,
+                            valueListenable: SyncService.getInstance()
+                                .cloudBookUuidsNotifier,
                             builder: (context, cloudBookUuids, child) {
-                              if (!_webDavEnabled) return const SizedBox.shrink();
-                              
-                              final bool isSynced = cloudBookUuids.contains(book.uuid);
+                              if (!_webDavEnabled)
+                                return const SizedBox.shrink();
+
+                              final bool isSynced = cloudBookUuids.contains(
+                                book.uuid,
+                              );
                               final IconData icon;
                               final Color color;
-                              
+
                               if (isVirtual) {
                                 icon = Icons.cloud_download_rounded;
                                 color = Colors.blueAccent;
@@ -2496,13 +2985,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 icon = Icons.cloud_upload_rounded;
                                 color = Colors.orangeAccent;
                               }
-                              
+
                               return Positioned(
                                 bottom: 4,
                                 right: 4,
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
                                   child: Icon(icon, size: 10, color: color),
                                 ),
                               );
@@ -2544,7 +3036,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     Row(
                       children: [
                         Text(
-                          AppLocalizations.of(context)?.chaptersCount(book.totalChapters) ?? '${book.totalChapters} Chapters',
+                          AppLocalizations.of(
+                                context,
+                              )?.chaptersCount(book.totalChapters) ??
+                              '${book.totalChapters} Chapters',
                           style: TextStyle(
                             fontSize: 10,
                             color: isDark ? Colors.white54 : Colors.black54,
@@ -2552,7 +3047,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          AppLocalizations.of(context)?.readPercent(progressPercent.toStringAsFixed(0)) ?? '${progressPercent.toStringAsFixed(0)}% Read',
+                          AppLocalizations.of(context)?.readPercent(
+                                progressPercent.toStringAsFixed(0),
+                              ) ??
+                              '${progressPercent.toStringAsFixed(0)}% Read',
                           style: TextStyle(
                             fontSize: 10,
                             color: Theme.of(context).colorScheme.primary,
@@ -2566,8 +3064,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: progressPercent / 100,
-                        backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                        backgroundColor: isDark
+                            ? Colors.white10
+                            : Colors.black12,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
                         minHeight: 4,
                       ),
                     ),
@@ -2603,9 +3105,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   }
                 },
                 itemBuilder: (context) {
-                  final cloudBookUuids = SyncService.getInstance().cloudBookUuidsNotifier.value;
+                  final cloudBookUuids =
+                      SyncService.getInstance().cloudBookUuidsNotifier.value;
                   final isSynced = cloudBookUuids.contains(book.uuid);
-                  
+
                   if (isVirtual) {
                     return [
                       PopupMenuItem(
@@ -2615,7 +3118,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             const Icon(Icons.cloud_download_rounded, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              AppLocalizations.of(context)?.downloadBook ?? 'Download Book',
+                              AppLocalizations.of(context)?.downloadBook ??
+                                  'Download Book',
                               style: const TextStyle(fontSize: 13),
                             ),
                           ],
@@ -2625,11 +3129,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                            const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.red,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Text(
-                              AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                              AppLocalizations.of(context)?.deleteBook ??
+                                  'Delete Book',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -2655,11 +3167,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                          const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.red,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Text(
-                            AppLocalizations.of(context)?.deleteBook ?? 'Delete Book',
-                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            AppLocalizations.of(context)?.deleteBook ??
+                                'Delete Book',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -2673,7 +3193,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               const Icon(Icons.cloud_upload_rounded, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                Localizations.localeOf(context).languageCode == 'vi'
+                                Localizations.localeOf(context).languageCode ==
+                                        'vi'
                                     ? 'Đẩy tiến trình'
                                     : 'Push Progress',
                                 style: const TextStyle(fontSize: 13),
@@ -2685,10 +3206,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           value: 'force_pull',
                           child: Row(
                             children: [
-                              const Icon(Icons.cloud_download_rounded, size: 18),
+                              const Icon(
+                                Icons.cloud_download_rounded,
+                                size: 18,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                Localizations.localeOf(context).languageCode == 'vi'
+                                Localizations.localeOf(context).languageCode ==
+                                        'vi'
                                     ? 'Tải tiến trình'
                                     : 'Pull Progress',
                                 style: const TextStyle(fontSize: 13),
@@ -2704,7 +3229,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               const Icon(Icons.cloud_upload_rounded, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                AppLocalizations.of(context)?.uploadBook ?? 'Upload Book',
+                                AppLocalizations.of(context)?.uploadBook ??
+                                    'Upload Book',
                                 style: const TextStyle(fontSize: 13),
                               ),
                             ],

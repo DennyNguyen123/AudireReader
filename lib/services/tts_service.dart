@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
-import '../models/book.dart';
-import '../models/chapter.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../models/progress.dart';
 import '../models/settings.dart';
 import '../models/pronunciation_rule.dart';
 import 'audio_handler.dart';
 import 'supertonic_service.dart';
 import 'edge_tts_service.dart';
+import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import '../core/database/database_helper.dart';
 import 'sync_service.dart';
 import 'logger_service.dart';
@@ -18,8 +18,8 @@ import 'logger_service.dart';
 void print(Object? object) {
   final message = object?.toString() ?? '';
   LogLevel level = LogLevel.info;
-  if (message.toLowerCase().contains('error') || 
-      message.toLowerCase().contains('failed') || 
+  if (message.toLowerCase().contains('error') ||
+      message.toLowerCase().contains('failed') ||
       message.toLowerCase().contains('fatal')) {
     level = LogLevel.error;
   } else if (message.toLowerCase().contains('warning')) {
@@ -125,7 +125,7 @@ class TtsService extends ChangeNotifier {
       final settings = await db.getSettings();
       _speechRate = settings.speechRate;
       await audioHandler.setSpeed(settings.speechRate);
-      
+
       final provider = settings.ttsProvider;
       if (provider == 'supertonic') {
         final supertonic = SupertonicService.getInstance();
@@ -134,7 +134,7 @@ class TtsService extends ChangeNotifier {
           unawaited(supertonic.initializeEngine(voiceStyle: voiceName));
         }
       } else if (provider == 'system' &&
-          settings.selectedVoiceName != null && 
+          settings.selectedVoiceName != null &&
           settings.selectedVoiceLocale != null) {
         final voices = await audioHandler.getVoices();
         dynamic savedVoice;
@@ -147,7 +147,9 @@ class TtsService extends ChangeNotifier {
         }
         if (savedVoice != null) {
           final voiceMap = Map<String, String>.from(
-            (savedVoice as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+            (savedVoice as Map).map(
+              (k, val) => MapEntry(k.toString(), val.toString()),
+            ),
           );
           await audioHandler.setVoice(voiceMap);
         }
@@ -178,14 +180,22 @@ class TtsService extends ChangeNotifier {
       if (rule.target.isEmpty) continue;
       if (rule.isRegex) {
         try {
-          final regex = RegExp(rule.target, caseSensitive: false, unicode: true);
+          final regex = RegExp(
+            rule.target,
+            caseSensitive: false,
+            unicode: true,
+          );
           result = result.replaceAll(regex, rule.replacement);
         } catch (e) {
           print("Invalid regex rule target '${rule.target}': $e");
         }
       } else {
         try {
-          final regex = RegExp(RegExp.escape(rule.target), caseSensitive: false, unicode: true);
+          final regex = RegExp(
+            RegExp.escape(rule.target),
+            caseSensitive: false,
+            unicode: true,
+          );
           result = result.replaceAll(regex, rule.replacement);
         } catch (e) {
           result = result.replaceAll(rule.target, rule.replacement);
@@ -226,8 +236,17 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadBook(Book book, List<Chapter> chapters, {int startChapter = 0, int startParagraph = 0}) async {
-    LoggerService().log('Loading book "${book.title}" at Chapter $startChapter, Paragraph $startParagraph', tag: 'TTS', level: LogLevel.tts);
+  Future<void> loadBook(
+    Book book,
+    List<Chapter> chapters, {
+    int startChapter = 0,
+    int startParagraph = 0,
+  }) async {
+    LoggerService().log(
+      'Loading book "${book.title}" at Chapter $startChapter, Paragraph $startParagraph',
+      tag: 'TTS',
+      level: LogLevel.tts,
+    );
     _activeBook = book;
     _chapters = chapters;
     _currentChapterIndex = startChapter;
@@ -241,9 +260,10 @@ class TtsService extends ChangeNotifier {
   Future<void> _saveProgressLocally() async {
     if (_activeBook == null) return;
     final db = await DatabaseHelper.getInstance();
-    final progress = await db.getProgress(_activeBook!.uuid) ??
+    final progress =
+        await db.getProgress(_activeBook!.uuid) ??
         (ReadingProgress()..bookUuid = _activeBook!.uuid);
-    
+
     progress.currentChapterIndex = _currentChapterIndex;
     progress.currentParagraphIndex = _currentParagraphIndex;
     progress.currentCharacterOffset = 0;
@@ -251,12 +271,16 @@ class TtsService extends ChangeNotifier {
     await db.saveProgress(progress);
 
     final isLastChapter = _currentChapterIndex >= _chapters.length - 1;
-    final isLastParagraph = _chapters.isEmpty || 
-        _currentParagraphIndex >= _chapters[_currentChapterIndex].paragraphs.length - 1;
-    final newStatus = (isLastChapter && isLastParagraph) ? 'completed' : 'reading';
+    final isLastParagraph =
+        _chapters.isEmpty ||
+        _currentParagraphIndex >=
+            _chapters[_currentChapterIndex].paragraphs.length - 1;
+    final newStatus = (isLastChapter && isLastParagraph)
+        ? 'completed'
+        : 'reading';
 
     if (_activeBook!.status != newStatus) {
-      _activeBook!.status = newStatus;
+      _activeBook = _activeBook!.copyWith(status: newStatus);
       await db.saveBook(_activeBook!);
     }
   }
@@ -304,7 +328,11 @@ class TtsService extends ChangeNotifier {
     if (chapter.paragraphs.isEmpty) return;
 
     final text = chapter.paragraphs[_currentParagraphIndex];
-    LoggerService().log('TTS speaking Chapter $_currentChapterIndex, Paragraph $_currentParagraphIndex: "${text.substring(0, text.length > 30 ? 30 : text.length)}..."', tag: 'TTS', level: LogLevel.tts);
+    LoggerService().log(
+      'TTS speaking Chapter $_currentChapterIndex, Paragraph $_currentParagraphIndex: "${text.substring(0, text.length > 30 ? 30 : text.length)}..."',
+      tag: 'TTS',
+      level: LogLevel.tts,
+    );
 
     final charPerSec = getCharsPerSecond();
     final chapterDuration = getChapterDuration();
@@ -321,7 +349,6 @@ class TtsService extends ChangeNotifier {
       startPos,
       charPerSec,
     );
-
 
     await audioHandler.updateMetadata(
       bookTitle: _activeBook!.title,
@@ -356,9 +383,14 @@ class TtsService extends ChangeNotifier {
       await pauseSpeaking();
     } else {
       final state = audioHandler.playbackState.value;
-      if (state.processingState == AudioProcessingState.ready && _activeBook != null) {
+      if (state.processingState == AudioProcessingState.ready &&
+          _activeBook != null) {
         // Resume từ chỗ đang dừng
-        LoggerService().log('TTS resuming from pause', tag: 'TTS', level: LogLevel.tts);
+        LoggerService().log(
+          'TTS resuming from pause',
+          tag: 'TTS',
+          level: LogLevel.tts,
+        );
         await audioHandler.play();
         notifyListeners();
       } else {
@@ -390,7 +422,9 @@ class TtsService extends ChangeNotifier {
       // Về cuối chương trước
       _currentChapterIndex--;
       final prevChapter = _chapters[_currentChapterIndex];
-      _currentParagraphIndex = prevChapter.paragraphs.isNotEmpty ? prevChapter.paragraphs.length - 1 : 0;
+      _currentParagraphIndex = prevChapter.paragraphs.isNotEmpty
+          ? prevChapter.paragraphs.length - 1
+          : 0;
       await _onStateChanged();
     }
   }
@@ -467,7 +501,8 @@ class TtsService extends ChangeNotifier {
   void _onParagraphFinished() {
     if (_activeBook == null || _chapters.isEmpty) return;
     final chapter = _chapters[_currentChapterIndex];
-    if (_currentParagraphIndex >= chapter.paragraphs.length - 1 && _stopAtEndOfChapter) {
+    if (_currentParagraphIndex >= chapter.paragraphs.length - 1 &&
+        _stopAtEndOfChapter) {
       _stopAtEndOfChapter = false;
       pauseSpeaking();
       // Nhảy sang đầu chương tiếp theo nhưng không phát
@@ -513,14 +548,15 @@ class TtsService extends ChangeNotifier {
   }) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    
+
     if (fontSize != null) settings.fontSize = fontSize;
     if (speechRate != null) {
       _speechRate = speechRate;
       settings.speechRate = speechRate;
       await audioHandler.setSpeed(speechRate);
     }
-    if (openAiTtsEndpoint != null) settings.openAiTtsEndpoint = openAiTtsEndpoint;
+    if (openAiTtsEndpoint != null)
+      settings.openAiTtsEndpoint = openAiTtsEndpoint;
     if (openAiTtsApiKey != null) settings.openAiTtsApiKey = openAiTtsApiKey;
     if (openAiTtsModel != null) settings.openAiTtsModel = openAiTtsModel;
     if (voice != null) {
@@ -530,7 +566,11 @@ class TtsService extends ChangeNotifier {
         await audioHandler.setVoice(voice);
       } else if (settings.ttsProvider == 'supertonic') {
         final voiceName = voice['name'] ?? 'M1';
-        unawaited(SupertonicService.getInstance().initializeEngine(voiceStyle: voiceName));
+        unawaited(
+          SupertonicService.getInstance().initializeEngine(
+            voiceStyle: voiceName,
+          ),
+        );
       }
     }
     if (fontFamily != null) {
@@ -544,7 +584,9 @@ class TtsService extends ChangeNotifier {
       if (ttsProvider == 'supertonic') {
         settings.selectedVoiceName = 'M1';
         settings.selectedVoiceLocale = 'offline';
-        unawaited(SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'));
+        unawaited(
+          SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'),
+        );
       } else if (ttsProvider == 'openai') {
         settings.selectedVoiceName = 'alloy';
         settings.selectedVoiceLocale = 'en';
@@ -553,22 +595,27 @@ class TtsService extends ChangeNotifier {
         settings.selectedVoiceLocale = null;
       }
     }
-    
+
     if (lineHeight != null) settings.lineHeight = lineHeight;
     if (paragraphSpacing != null) settings.paragraphSpacing = paragraphSpacing;
     if (textAlignment != null) settings.textAlignment = textAlignment;
     if (sideMargin != null) settings.sideMargin = sideMargin;
-    if (customBackgroundColor != null) settings.customBackgroundColor = customBackgroundColor;
+    if (customBackgroundColor != null)
+      settings.customBackgroundColor = customBackgroundColor;
     if (customTextColor != null) settings.customTextColor = customTextColor;
     if (primaryColorHex != null) settings.primaryColorHex = primaryColorHex;
-    
-    if (showAssistiveButton != null) settings.showAssistiveButton = showAssistiveButton;
+
+    if (showAssistiveButton != null)
+      settings.showAssistiveButton = showAssistiveButton;
     if (assistiveButtonX != null) settings.assistiveButtonX = assistiveButtonX;
     if (assistiveButtonY != null) settings.assistiveButtonY = assistiveButtonY;
-    if (assistiveSingleTapAction != null) settings.assistiveSingleTapAction = assistiveSingleTapAction;
-    if (assistiveDoubleTapAction != null) settings.assistiveDoubleTapAction = assistiveDoubleTapAction;
-    if (assistiveLongPressAction != null) settings.assistiveLongPressAction = assistiveLongPressAction;
-    
+    if (assistiveSingleTapAction != null)
+      settings.assistiveSingleTapAction = assistiveSingleTapAction;
+    if (assistiveDoubleTapAction != null)
+      settings.assistiveDoubleTapAction = assistiveDoubleTapAction;
+    if (assistiveLongPressAction != null)
+      settings.assistiveLongPressAction = assistiveLongPressAction;
+
     await db.saveSettings(settings);
     notifyListeners();
   }
@@ -600,16 +647,22 @@ class TtsService extends ChangeNotifier {
         {'name': 'shimmer', 'locale': 'en', 'gender': 'Female'},
       ];
     }
-    final normalizedProvider = (provider == 'microsoft_edge') ? 'microsoft_edge' : 'system';
+    final normalizedProvider = (provider == 'microsoft_edge')
+        ? 'microsoft_edge'
+        : 'system';
     if (normalizedProvider == 'microsoft_edge') {
       try {
-        final rawVoices = await EdgeTtsService.listVoices();
+        final rawVoices = await rust_tts.getEdgeVoices();
         // Chuẩn hóa danh sách giọng đọc từ Edge sang cấu trúc tương thích với FlutterTts
-        return rawVoices.map((v) => {
-          'name': v['ShortName'] ?? v['Name'] ?? '',
-          'locale': v['Locale'] ?? '',
-          'gender': v['Gender'] ?? '',
-        }).toList();
+        return rawVoices
+            .map(
+              (v) => {
+                'name': v.shortName,
+                'locale': v.locale,
+                'gender': v.gender,
+              },
+            )
+            .toList();
       } catch (e) {
         print("Error fetching edge voices: $e");
         return [];
@@ -666,7 +719,7 @@ class TtsService extends ChangeNotifier {
     if (_activeBook == null || _chapters.isEmpty) return 0.0;
     double totalBytes = 0;
     for (final chapter in _chapters) {
-      totalBytes += chapter.paragraphsBytes.length;
+      totalBytes += chapter.paragraphs.fold(0, (sum, text) => sum + text.length);
     }
     final charPerSec = getCharsPerSecond();
     return charPerSec > 0 ? (totalBytes * 2.5) / charPerSec : 0.0;
@@ -676,7 +729,7 @@ class TtsService extends ChangeNotifier {
     if (_activeBook == null || _chapters.isEmpty) return 0.0;
     double posBytes = 0;
     for (int i = 0; i < _currentChapterIndex && i < _chapters.length; i++) {
-      posBytes += _chapters[i].paragraphsBytes.length;
+      posBytes += _chapters[i].paragraphs.fold(0, (sum, text) => sum + text.length);
     }
     final charPerSec = getCharsPerSecond();
     double pos = charPerSec > 0 ? (posBytes * 2.5) / charPerSec : 0.0;
@@ -684,14 +737,13 @@ class TtsService extends ChangeNotifier {
     return pos;
   }
 
-
   String formatDuration(double seconds) {
     if (seconds.isNaN || seconds.isInfinite || seconds < 0) return "00:00";
     final duration = Duration(seconds: seconds.round());
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final secs = duration.inSeconds.remainder(60);
-    
+
     if (hours > 0) {
       return "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}";
     } else {
@@ -699,6 +751,8 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  String get chapterProgressTimeStr => "${formatDuration(getChapterPosition())} / ${formatDuration(getChapterDuration())}";
-  String get bookProgressTimeStr => "${formatDuration(getBookPosition())} / ${formatDuration(getBookDuration())}";
+  String get chapterProgressTimeStr =>
+      "${formatDuration(getChapterPosition())} / ${formatDuration(getChapterDuration())}";
+  String get bookProgressTimeStr =>
+      "${formatDuration(getBookPosition())} / ${formatDuration(getBookDuration())}";
 }

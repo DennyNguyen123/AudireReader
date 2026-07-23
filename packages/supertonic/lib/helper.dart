@@ -13,11 +13,42 @@ final logger = Logger(
 );
 
 // Available languages for multilingual TTS
-const List<String> availableLangs = ['en', 'ko', 'ja', 'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hi', 'hr', 'hu', 'id', 'it', 'lt', 'lv', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr', 'uk', 'vi', 'na'];
+const List<String> availableLangs = [
+  'en',
+  'ko',
+  'ja',
+  'ar',
+  'bg',
+  'cs',
+  'da',
+  'de',
+  'el',
+  'es',
+  'et',
+  'fi',
+  'fr',
+  'hi',
+  'hr',
+  'hu',
+  'id',
+  'it',
+  'lt',
+  'lv',
+  'nl',
+  'pl',
+  'pt',
+  'ro',
+  'ru',
+  'sk',
+  'sl',
+  'sv',
+  'tr',
+  'uk',
+  'vi',
+  'na'
+];
 
 bool isValidLang(String lang) => availableLangs.contains(lang);
-
-
 
 String preprocessText(String text, String lang) {
   // Apply NFKD-like decomposition (especially for Hangul syllables → Jamo and accented characters like Vietnamese)

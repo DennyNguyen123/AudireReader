@@ -75,7 +75,8 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
       final list = await ttsService.getVoicesForProvider(settings.ttsProvider);
 
       Map<String, String>? initialVoice;
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
+      if (settings.selectedVoiceName != null &&
+          settings.selectedVoiceLocale != null) {
         dynamic matched;
         for (final v in list) {
           if (v['name']?.toString() == settings.selectedVoiceName &&
@@ -86,13 +87,15 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
         }
         if (matched != null) {
           initialVoice = Map<String, String>.from(
-            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+            (matched as Map).map(
+              (k, val) => MapEntry(k.toString(), val.toString()),
+            ),
           );
         } else if (settings.ttsProvider == 'openai') {
           initialVoice = {
             'name': settings.selectedVoiceName!,
             'locale': settings.selectedVoiceLocale!,
-            'gender': 'Neutral'
+            'gender': 'Neutral',
           };
         }
       } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
@@ -105,7 +108,9 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
         }
         matched ??= list.first;
         initialVoice = Map<String, String>.from(
-          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+          (matched as Map).map(
+            (k, val) => MapEntry(k.toString(), val.toString()),
+          ),
         );
         ttsService.updateSettings(voice: initialVoice);
       }
@@ -195,9 +200,7 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
               child: _isLoading
                   ? const SizedBox(
                       height: 200,
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: Center(child: CircularProgressIndicator()),
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(20.0),
@@ -228,7 +231,9 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
                         onSpeechRateSliderChanged: (val) {
                           setState(() {
                             _speechRate = val;
-                            _speedController.text = (val * 2).toStringAsFixed(3);
+                            _speedController.text = (val * 2).toStringAsFixed(
+                              3,
+                            );
                           });
                           _saveReadingPreference(speechRate: val);
                         },
@@ -298,7 +303,8 @@ class _TtsSettingsSheetState extends State<TtsSettingsSheet> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PronunciationDictionaryScreen(),
+                              builder: (context) =>
+                                  const PronunciationDictionaryScreen(),
                             ),
                           );
                         },

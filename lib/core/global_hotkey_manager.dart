@@ -29,7 +29,7 @@ class GlobalHotkeyManager {
     final bossAction = settings.bossKeyAction;
 
     final HotKey? hotKey = ShortcutHelper.parseToGlobalHotKey(bossHotKeyStr);
-    
+
     if (hotKey != null) {
       await hotKeyManager.register(
         hotKey,
@@ -37,7 +37,7 @@ class GlobalHotkeyManager {
           // Xử lý logic Boss Key Toàn Cục
           final isVisible = await windowManager.isVisible();
           final isMinimized = await windowManager.isMinimized();
-          
+
           if (isVisible && !isMinimized) {
             // Đang hiện trên màn hình -> Ẩn hoặc Thu nhỏ
             if (bossAction == 'hide') {

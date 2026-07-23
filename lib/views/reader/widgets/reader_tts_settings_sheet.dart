@@ -8,14 +8,10 @@ import '../../library/pronunciation_dictionary_screen.dart';
 import '../../../core/database/database_helper.dart';
 import 'tts_download_manager_sheet.dart';
 
-
 class ReaderTtsSettingsSheet extends StatefulWidget {
   final TtsService ttsService;
 
-  const ReaderTtsSettingsSheet({
-    super.key,
-    required this.ttsService,
-  });
+  const ReaderTtsSettingsSheet({super.key, required this.ttsService});
 
   @override
   State<ReaderTtsSettingsSheet> createState() => _ReaderTtsSettingsSheetState();
@@ -75,15 +71,18 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
 
   Future<void> _loadVoices(AppSettings settings) async {
     try {
-      final list = await widget.ttsService.getVoicesForProvider(settings.ttsProvider);
+      final list = await widget.ttsService.getVoicesForProvider(
+        settings.ttsProvider,
+      );
 
       _ttsProvider = settings.ttsProvider;
       _openAiTtsEndpoint = settings.openAiTtsEndpoint;
       _openAiTtsApiKey = settings.openAiTtsApiKey;
       _openAiTtsModel = settings.openAiTtsModel;
-        
+
       Map<String, String>? initialVoice;
-      if (settings.selectedVoiceName != null && settings.selectedVoiceLocale != null) {
+      if (settings.selectedVoiceName != null &&
+          settings.selectedVoiceLocale != null) {
         dynamic matched;
         for (final v in list) {
           if (v['name']?.toString() == settings.selectedVoiceName &&
@@ -94,13 +93,15 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
         }
         if (matched != null) {
           initialVoice = Map<String, String>.from(
-            (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+            (matched as Map).map(
+              (k, val) => MapEntry(k.toString(), val.toString()),
+            ),
           );
         } else if (settings.ttsProvider == 'openai') {
           initialVoice = {
             'name': settings.selectedVoiceName!,
             'locale': settings.selectedVoiceLocale!,
-            'gender': 'Neutral'
+            'gender': 'Neutral',
           };
         }
       } else if (settings.ttsProvider == 'microsoft_edge' && list.isNotEmpty) {
@@ -113,7 +114,9 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
         }
         matched ??= list.first;
         initialVoice = Map<String, String>.from(
-          (matched as Map).map((k, val) => MapEntry(k.toString(), val.toString())),
+          (matched as Map).map(
+            (k, val) => MapEntry(k.toString(), val.toString()),
+          ),
         );
         widget.ttsService.updateSettings(voice: initialVoice);
       }
@@ -159,7 +162,9 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)?.sleepTimer ?? 'Sleep Timer'),
+          title: Text(
+            AppLocalizations.of(context)?.sleepTimer ?? 'Sleep Timer',
+          ),
           content: TextField(
             controller: textController,
             keyboardType: TextInputType.number,
@@ -195,7 +200,9 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final sheetBg = theme.scaffoldBackgroundColor;
-    final labelColor = theme.textTheme.bodyLarge?.color ?? (isDark ? Colors.white70 : Colors.black87);
+    final labelColor =
+        theme.textTheme.bodyLarge?.color ??
+        (isDark ? Colors.white70 : Colors.black87);
     final accentColor = theme.colorScheme.primary;
 
     return ClipRRect(
@@ -215,12 +222,19 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
-                color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.06),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.06),
                 width: 1.5,
               ),
             ),
           ),
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
           child: ListenableBuilder(
             listenable: widget.ttsService,
             builder: (context, _) {
@@ -246,10 +260,15 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.volume_up_rounded, size: 20, color: accentColor),
+                            Icon(
+                              Icons.volume_up_rounded,
+                              size: 20,
+                              color: accentColor,
+                            ),
                             const SizedBox(width: 8),
                             Text(
-                              AppLocalizations.of(context)?.textToSpeechTts ?? 'TEXT-TO-SPEECH (TTS)',
+                              AppLocalizations.of(context)?.textToSpeechTts ??
+                                  'TEXT-TO-SPEECH (TTS)',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -272,11 +291,15 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                     Text(
                       widget.ttsService.isSleepTimerActive
                           ? AppLocalizations.of(context)!.sleepTimerRemaining(
-                              '${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}')
+                              '${(widget.ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(widget.ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
+                            )
                           : widget.ttsService.stopAtEndOfChapter
-                              ? AppLocalizations.of(context)!.sleepTimerStopAtEnd
-                              : AppLocalizations.of(context)!.sleepTimer,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: labelColor),
+                          ? AppLocalizations.of(context)!.sleepTimerStopAtEnd
+                          : AppLocalizations.of(context)!.sleepTimer,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: labelColor,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     SingleChildScrollView(
@@ -284,28 +307,47 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                       child: Row(
                         children: [
                           ChoiceChip(
-                            label: Text(AppLocalizations.of(context)!.off, style: const TextStyle(fontSize: 12)),
-                            selected: !widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter,
+                            label: Text(
+                              AppLocalizations.of(context)!.off,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            selected:
+                                !widget.ttsService.isSleepTimerActive &&
+                                !widget.ttsService.stopAtEndOfChapter,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(
-                              color: (!widget.ttsService.isSleepTimerActive && !widget.ttsService.stopAtEndOfChapter)
+                              color:
+                                  (!widget.ttsService.isSleepTimerActive &&
+                                      !widget.ttsService.stopAtEndOfChapter)
                                   ? Colors.white
                                   : labelColor,
                             ),
                             onSelected: (val) {
                               if (val) {
                                 widget.ttsService.cancelSleepTimer();
-                                widget.ttsService.enableStopAtEndOfChapter(false);
+                                widget.ttsService.enableStopAtEndOfChapter(
+                                  false,
+                                );
                               }
                             },
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
-                            label: const Text('15m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15,
+                            label: const Text(
+                              '15m',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            selected:
+                                widget.ttsService.isSleepTimerActive &&
+                                widget.ttsService.sleepTimerDuration! ~/ 60 ==
+                                    15,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 15)
+                              color:
+                                  (widget.ttsService.isSleepTimerActive &&
+                                      widget.ttsService.sleepTimerDuration! ~/
+                                              60 ==
+                                          15)
                                   ? Colors.white
                                   : labelColor,
                             ),
@@ -317,11 +359,21 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
-                            label: const Text('30m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30,
+                            label: const Text(
+                              '30m',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            selected:
+                                widget.ttsService.isSleepTimerActive &&
+                                widget.ttsService.sleepTimerDuration! ~/ 60 ==
+                                    30,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 30)
+                              color:
+                                  (widget.ttsService.isSleepTimerActive &&
+                                      widget.ttsService.sleepTimerDuration! ~/
+                                              60 ==
+                                          30)
                                   ? Colors.white
                                   : labelColor,
                             ),
@@ -333,11 +385,21 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
-                            label: const Text('45m', style: TextStyle(fontSize: 12)),
-                            selected: widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45,
+                            label: const Text(
+                              '45m',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            selected:
+                                widget.ttsService.isSleepTimerActive &&
+                                widget.ttsService.sleepTimerDuration! ~/ 60 ==
+                                    45,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(
-                              color: (widget.ttsService.isSleepTimerActive && widget.ttsService.sleepTimerDuration! ~/ 60 == 45)
+                              color:
+                                  (widget.ttsService.isSleepTimerActive &&
+                                      widget.ttsService.sleepTimerDuration! ~/
+                                              60 ==
+                                          45)
                                   ? Colors.white
                                   : labelColor,
                             ),
@@ -349,21 +411,31 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
-                            label: Text(AppLocalizations.of(context)!.endChapter, style: const TextStyle(fontSize: 12)),
+                            label: Text(
+                              AppLocalizations.of(context)!.endChapter,
+                              style: const TextStyle(fontSize: 12),
+                            ),
                             selected: widget.ttsService.stopAtEndOfChapter,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(
-                              color: widget.ttsService.stopAtEndOfChapter ? Colors.white : labelColor,
+                              color: widget.ttsService.stopAtEndOfChapter
+                                  ? Colors.white
+                                  : labelColor,
                             ),
                             onSelected: (val) {
                               if (val) {
-                                widget.ttsService.enableStopAtEndOfChapter(true);
+                                widget.ttsService.enableStopAtEndOfChapter(
+                                  true,
+                                );
                               }
                             },
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
-                            label: const Text('Custom', style: TextStyle(fontSize: 12)),
+                            label: const Text(
+                              'Custom',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             selected: false,
                             selectedColor: accentColor,
                             labelStyle: TextStyle(color: labelColor),
@@ -375,16 +447,17 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Divider(color: isDark ? Colors.white10 : Colors.black12, thickness: 1),
+                    Divider(
+                      color: isDark ? Colors.white10 : Colors.black12,
+                      thickness: 1,
+                    ),
                     const SizedBox(height: 12),
 
                     // --- TTS SECTION ---
                     _isLoading
                         ? const SizedBox(
                             height: 150,
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
+                            child: Center(child: CircularProgressIndicator()),
                           )
                         : TtsSettingsSection(
                             speechRate: _speechRate,
@@ -413,7 +486,8 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                             onSpeechRateSliderChanged: (val) {
                               setState(() {
                                 _speechRate = val;
-                                _speedController.text = (val * 2).toStringAsFixed(3);
+                                _speedController.text = (val * 2)
+                                    .toStringAsFixed(3);
                               });
                               _saveReadingPreference(speechRate: val);
                             },
@@ -483,7 +557,8 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const PronunciationDictionaryScreen(),
+                                  builder: (context) =>
+                                      const PronunciationDictionaryScreen(),
                                 ),
                               );
                             },
@@ -492,10 +567,17 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.download_for_offline_rounded),
-                        label: Text(AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Quản lý TTS Offline' : 'Manage Offline TTS'),
+                        label: Text(
+                          AppLocalizations.of(context)?.vietnamese ==
+                                  'Tiếng Việt'
+                              ? 'Quản lý TTS Offline'
+                              : 'Manage Offline TTS',
+                        ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () {
                           final book = widget.ttsService.activeBook;
@@ -517,7 +599,6 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                         },
                       ),
                     ],
-
                   ],
                 ),
               );

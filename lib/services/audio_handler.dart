@@ -12,6 +12,7 @@ import '../core/database/database_helper.dart';
 import 'edge_tts_service.dart';
 import 'supertonic_service.dart';
 import 'openai_tts_service.dart';
+import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import 'bgm_service.dart';
 
 enum TtsEngineType { system, edge, supertonic, openai }
@@ -276,66 +277,49 @@ try {
         completer.completeError(err);
       });
     } else if (provider == 'openai') {
-      _synthesizeOpenAiToAudio(text, voice, rate).then((filePath) {
-        final cached = CachedAudio(filePath: filePath, metadata: []);
-        _addToCache(cacheKey, cached);
-        _pendingPrefetches.remove(cacheKey);
-        completer.complete(cached);
-      }).catchError((err) {
-        _pendingPrefetches.remove(cacheKey);
-        completer.completeError(err);
-      });
-    } else {
-      // Edge TTS
-      StreamSubscription? subscription;
-      try {
-        final audioBytes = <int>[];
-        final metadata = <EdgeMetadataChunk>[];
-        
-        final stream = EdgeTtsService.synthesize(
-          text: text,
-          voice: voice,
-        );
-
-        subscription = stream.listen(
-          (chunk) {
-            if (chunk is EdgeAudioChunk) {
-              audioBytes.addAll(chunk.data);
-            } else if (chunk is EdgeMetadataChunk) {
-              metadata.add(chunk);
-            }
-          },
-          onError: (err) {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      final apiKey = settings.openAiTtsApiKey ?? '';
+      rust_tts.synthesizeOpenaiTts(text: text, voice: voice, apiKey: apiKey, speed: rate)
+          .then((audioBytes) async {
+            if (audioBytes.isEmpty) throw Exception("Empty audio bytes");
+            final tempDir = await PathHelper.getAppCacheDirectory();
+            final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+            await file.writeAsBytes(audioBytes, flush: true);
+            final cached = CachedAudio(filePath: file.path, metadata: []);
+            _addToCache(cacheKey, cached);
             _pendingPrefetches.remove(cacheKey);
-            _activePrefetches.remove(cacheKey);
-            if (!completer.isCompleted) completer.completeError(err);
-          },
-          onDone: () async {
-            _activePrefetches.remove(cacheKey);
-            try {
-              if (audioBytes.isEmpty) {
-                throw Exception("Empty audio bytes");
-              }
-              final tempDir = await PathHelper.getAppCacheDirectory();
-              final file = File('${tempDir.path}/tts_$cacheKey.mp3');
-              await file.writeAsBytes(audioBytes, flush: true);
-              
-              final cached = CachedAudio(filePath: file.path, metadata: metadata);
-              _addToCache(cacheKey, cached);
-              _pendingPrefetches.remove(cacheKey);
-              if (!completer.isCompleted) completer.complete(cached);
-            } catch (e) {
-              _pendingPrefetches.remove(cacheKey);
-              if (!completer.isCompleted) completer.completeError(e);
-            }
-          },
-          cancelOnError: true,
-        );
-        _activePrefetches[cacheKey] = subscription;
+            completer.complete(cached);
+          })
+          .catchError((err) {
+            _pendingPrefetches.remove(cacheKey);
+            completer.completeError(err);
+          });
+    } else {
+      // Edge TTS from Rust
+      try {
+        rust_tts.synthesizeEdgeTts(text: text, voiceId: voice, rate: rate).then((audioBytes) async {
+          if (audioBytes.isEmpty) {
+            throw Exception("Empty audio bytes");
+          }
+          final tempDir = await PathHelper.getAppCacheDirectory();
+          final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+          await file.writeAsBytes(audioBytes, flush: true);
+
+          final cached = CachedAudio(
+            filePath: file.path,
+            metadata: [],
+          );
+          _addToCache(cacheKey, cached);
+          _pendingPrefetches.remove(cacheKey);
+          if (!completer.isCompleted) completer.complete(cached);
+        }).catchError((err) {
+          _pendingPrefetches.remove(cacheKey);
+          if (!completer.isCompleted) completer.completeError(err);
+        });
       } catch (e) {
         _pendingPrefetches.remove(cacheKey);
-        _activePrefetches.remove(cacheKey);
-        completer.completeError(e);
+        if (!completer.isCompleted) completer.completeError(e);
       }
     }
     

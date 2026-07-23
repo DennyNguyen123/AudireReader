@@ -11,7 +11,9 @@ class UpdateService {
   static const String repo = 'AudireReader';
   static final ShorebirdUpdater _updater = ShorebirdUpdater();
 
-  static Future<void> checkAndDownloadShorebirdPatch(BuildContext context) async {
+  static Future<void> checkAndDownloadShorebirdPatch(
+    BuildContext context,
+  ) async {
     try {
       if (!_updater.isAvailable) {
         return;
@@ -29,7 +31,10 @@ class UpdateService {
     }
   }
 
-  static Future<void> checkForUpdate(BuildContext context, {bool showNoUpdateMessage = false}) async {
+  static Future<void> checkForUpdate(
+    BuildContext context, {
+    bool showNoUpdateMessage = false,
+  }) async {
     bool hasCheckedShorebird = false;
     try {
       final response = await http.get(
@@ -40,14 +45,14 @@ class UpdateService {
         final data = json.decode(response.body);
         final String latestVersionTag = data['tag_name'];
         final String latestVersion = latestVersionTag.replaceAll('v', '');
-        
+
         final PackageInfo packageInfo = await PackageInfo.fromPlatform();
         final String currentVersion = packageInfo.version;
 
         if (isNewerVersion(currentVersion, latestVersion)) {
           final String body = data['body'] ?? 'No release notes available.';
           final String downloadUrl = getDownloadUrl(data['assets'] ?? []);
-          
+
           if (context.mounted) {
             _showUpdateDialog(context, latestVersion, body, downloadUrl);
           }
@@ -87,8 +92,16 @@ class UpdateService {
 
   @visibleForTesting
   static bool isNewerVersion(String currentVersion, String latestVersion) {
-    List<int> currentParts = currentVersion.split('+')[0].split('.').map(int.parse).toList();
-    List<int> latestParts = latestVersion.split('+')[0].split('.').map(int.parse).toList();
+    List<int> currentParts = currentVersion
+        .split('+')[0]
+        .split('.')
+        .map(int.parse)
+        .toList();
+    List<int> latestParts = latestVersion
+        .split('+')[0]
+        .split('.')
+        .map(int.parse)
+        .toList();
 
     for (int i = 0; i < currentParts.length && i < latestParts.length; i++) {
       if (latestParts[i] > currentParts[i]) {
@@ -103,7 +116,7 @@ class UpdateService {
   @visibleForTesting
   static String getDownloadUrl(List<dynamic> assets) {
     String fallbackUrl = 'https://github.com/$owner/$repo/releases/latest';
-    
+
     // Ưu tiên cho Windows: Tìm file cài đặt .exe trước, sau đó mới tìm file nén .zip
     if (Platform.isWindows) {
       for (var asset in assets) {
@@ -132,7 +145,12 @@ class UpdateService {
     return fallbackUrl;
   }
 
-  static void _showUpdateDialog(BuildContext context, String version, String releaseNotes, String downloadUrl) {
+  static void _showUpdateDialog(
+    BuildContext context,
+    String version,
+    String releaseNotes,
+    String downloadUrl,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -146,7 +164,10 @@ class UpdateService {
               children: [
                 const Text('A new version is available! Release notes:'),
                 const SizedBox(height: 8),
-                Text(releaseNotes, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                Text(
+                  releaseNotes,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
               ],
             ),
           ),

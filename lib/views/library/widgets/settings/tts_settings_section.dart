@@ -65,7 +65,11 @@ class TtsSettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.volume_up_rounded, color: theme.colorScheme.primary, size: 28),
+              Icon(
+                Icons.volume_up_rounded,
+                color: theme.colorScheme.primary,
+                size: 28,
+              ),
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.ttsSettings ?? 'TTS Settings',
@@ -86,7 +90,10 @@ class TtsSettingsSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(context)?.readingSpeed ?? 'Reading Speed',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Expanded(
                 child: Slider(
@@ -103,9 +110,14 @@ class TtsSettingsSection extends StatelessWidget {
                 height: 38,
                 child: TextField(
                   controller: speedController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                     suffixText: 'x',
@@ -143,21 +155,26 @@ class TtsSettingsSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             items: [
               DropdownMenuItem<String>(
                 value: 'system',
                 child: Text(
-                  AppLocalizations.of(context)?.systemTtsOffline ?? 'System TTS (Offline)',
+                  AppLocalizations.of(context)?.systemTtsOffline ??
+                      'System TTS (Offline)',
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
               DropdownMenuItem<String>(
                 value: 'microsoft_edge',
                 child: Text(
-                  AppLocalizations.of(context)?.edgeTtsOnline ?? 'Microsoft Edge TTS (Online)',
+                  AppLocalizations.of(context)?.edgeTtsOnline ??
+                      'Microsoft Edge TTS (Online)',
                   style: const TextStyle(fontSize: 13),
                 ),
               ),
@@ -194,12 +211,16 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 hintText: 'https://api.openai.com/v1',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.restore_rounded),
                   tooltip: 'Reset to default',
-                  onPressed: () => onOpenAiEndpointChanged('https://api.openai.com/v1'),
+                  onPressed: () =>
+                      onOpenAiEndpointChanged('https://api.openai.com/v1'),
                 ),
               ),
               onChanged: onOpenAiEndpointChanged,
@@ -220,7 +241,10 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 hintText: 'sk-...',
               ),
               onChanged: onOpenAiApiKeyChanged,
@@ -240,7 +264,10 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 hintText: 'tts-1',
               ),
               onChanged: onOpenAiModelChanged,
@@ -260,12 +287,20 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 hintText: 'alloy',
-                helperText: 'Type your custom voice if not using official OpenAI voices.',
+                helperText:
+                    'Type your custom voice if not using official OpenAI voices.',
               ),
               onChanged: (val) {
-                onVoiceSelected({'name': val, 'locale': 'en', 'gender': 'Neutral'});
+                onVoiceSelected({
+                  'name': val,
+                  'locale': 'en',
+                  'gender': 'Neutral',
+                });
               },
             ),
           ],
@@ -279,34 +314,50 @@ class TtsSettingsSection extends StatelessWidget {
                   future: supertonic.checkModelExists(),
                   builder: (context, snapshot) {
                     final modelExists = snapshot.data ?? false;
-                    
+
                     if (supertonic.isDownloading) {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               supertonic.downloadStatus,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             LinearProgressIndicator(
                               value: supertonic.downloadProgress,
-                              backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                              backgroundColor: isDark
+                                  ? Colors.white10
+                                  : Colors.black12,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colorScheme.primary,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
                                 '${(supertonic.downloadProgress * 100).toStringAsFixed(1)}%',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -326,18 +377,28 @@ class TtsSettingsSection extends StatelessWidget {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 20),
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.orangeAccent,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Offline AI Model Required',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             const Text(
                               'To use Supertonic Offline AI voices, you need to download the voice model files (~96MB) to your device.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             ElevatedButton.icon(
@@ -348,13 +409,21 @@ class TtsSettingsSection extends StatelessWidget {
                                   }
                                 });
                               },
-                              icon: const Icon(Icons.download_rounded, size: 18),
+                              icon: const Icon(
+                                Icons.download_rounded,
+                                size: 18,
+                              ),
                               label: const Text('Download Voice Model (96MB)'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: theme.colorScheme.primary,
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
                               ),
                             ),
                           ],
@@ -367,11 +436,17 @@ class TtsSettingsSection extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.green,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Column(
@@ -379,24 +454,37 @@ class TtsSettingsSection extends StatelessWidget {
                               children: [
                                 Text(
                                   'Offline Voice Model Ready',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
                                 ),
                                 Text(
                                   'Supertonic Offline AI is fully operational.',
-                                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                              size: 20,
+                            ),
                             tooltip: 'Delete Model File',
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('Delete Model Files?'),
-                                  content: const Text('Are you sure you want to delete the offline AI model files to free up space? You will need to redownload them to use this feature again.'),
+                                  content: const Text(
+                                    'Are you sure you want to delete the offline AI model files to free up space? You will need to redownload them to use this feature again.',
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
@@ -407,7 +495,12 @@ class TtsSettingsSection extends StatelessWidget {
                                         Navigator.pop(context);
                                         supertonic.deleteModelFiles();
                                       },
-                                      child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -441,14 +534,18 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
               dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               items: [
                 DropdownMenuItem<String>(
                   value: 'all',
                   child: Text(
-                    AppLocalizations.of(context)?.allLanguages ?? 'All Languages',
+                    AppLocalizations.of(context)?.allLanguages ??
+                        'All Languages',
                     style: const TextStyle(fontSize: 13),
                   ),
                 ),
@@ -469,7 +566,8 @@ class TtsSettingsSection extends StatelessWidget {
                 DropdownMenuItem<String>(
                   value: 'others',
                   child: Text(
-                    AppLocalizations.of(context)?.otherLanguages ?? 'Others (Japanese, French...)',
+                    AppLocalizations.of(context)?.otherLanguages ??
+                        'Others (Japanese, French...)',
                     style: const TextStyle(fontSize: 13),
                   ),
                 ),
@@ -494,13 +592,27 @@ class TtsSettingsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                hintText: AppLocalizations.of(context)?.searchVoiceHint ?? 'Type to search voice name...',
-                hintStyle: TextStyle(color: Colors.grey.withValues(alpha: 0.7), fontSize: 13),
-                prefixIcon: Icon(Icons.search_rounded, color: Colors.grey.withValues(alpha: 0.8)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                hintText:
+                    AppLocalizations.of(context)?.searchVoiceHint ??
+                    'Type to search voice name...',
+                hintStyle: TextStyle(
+                  color: Colors.grey.withValues(alpha: 0.7),
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Colors.grey.withValues(alpha: 0.8),
+                ),
                 suffixIcon: voiceSearchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear_rounded, color: Colors.grey.withValues(alpha: 0.8)),
+                        icon: Icon(
+                          Icons.clear_rounded,
+                          color: Colors.grey.withValues(alpha: 0.8),
+                        ),
                         onPressed: onClearVoiceSearch,
                       )
                     : null,
@@ -527,21 +639,26 @@ class TtsSettingsSection extends StatelessWidget {
                   } else if (selectedLanguageFilter == 'en') {
                     matchesLang = lang.startsWith('en');
                   } else if (selectedLanguageFilter == 'others') {
-                    matchesLang = !lang.startsWith('vi') && !lang.startsWith('en');
+                    matchesLang =
+                        !lang.startsWith('vi') && !lang.startsWith('en');
                   }
 
                   if (!matchesLang) return false;
 
                   // Lọc theo ô tìm kiếm
                   if (voiceSearchQuery.isNotEmpty) {
-                    return name.contains(voiceSearchQuery) || lang.contains(voiceSearchQuery);
+                    return name.contains(voiceSearchQuery) ||
+                        lang.contains(voiceSearchQuery);
                   }
 
                   return true;
                 }).toList();
 
                 return DropdownButtonFormField<String>(
-                  initialValue: filteredDisplayVoices.any((v) => v['name']?.toString() == selectedVoice?['name'])
+                  initialValue:
+                      filteredDisplayVoices.any(
+                        (v) => v['name']?.toString() == selectedVoice?['name'],
+                      )
                       ? (selectedVoice?['name'])
                       : null,
                   decoration: InputDecoration(
@@ -551,9 +668,14 @@ class TtsSettingsSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
-                  dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  dropdownColor: isDark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.white,
                   items: () {
                     final Set<String> seenNames = {};
                     final List<DropdownMenuItem<String>> menuItems = [];
@@ -562,14 +684,16 @@ class TtsSettingsSection extends StatelessWidget {
                       final locale = v['locale']?.toString() ?? '';
                       if (!seenNames.contains(name)) {
                         seenNames.add(name);
-                        menuItems.add(DropdownMenuItem<String>(
-                          value: name,
-                          child: Text(
-                            '$name ($locale)',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
+                        menuItems.add(
+                          DropdownMenuItem<String>(
+                            value: name,
+                            child: Text(
+                              '$name ($locale)',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
-                        ));
+                        );
                       }
                     }
                     return menuItems;
@@ -585,7 +709,9 @@ class TtsSettingsSection extends StatelessWidget {
                       }
                       if (selectedMap != null) {
                         final voiceMap = Map<String, String>.from(
-                          (selectedMap as Map).map((k, v) => MapEntry(k.toString(), v.toString())),
+                          (selectedMap as Map).map(
+                            (k, v) => MapEntry(k.toString(), v.toString()),
+                          ),
                         );
                         onVoiceSelected(voiceMap);
                       }
@@ -605,8 +731,12 @@ class TtsSettingsSection extends StatelessWidget {
                   onPressed: onManagePronunciation,
                   icon: const Icon(Icons.record_voice_over_rounded),
                   label: Text(
-                    AppLocalizations.of(context)?.managePronunciation ?? 'Manage Pronunciation Rules',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    AppLocalizations.of(context)?.managePronunciation ??
+                        'Manage Pronunciation Rules',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
