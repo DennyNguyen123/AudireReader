@@ -47,9 +47,16 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   Timer? _windowsTimer; // Timer giả lập hoàn thành trên Windows
 
   // Vị trí hiện tại được đồng bộ từ UI
+  String _currentBookUuid = "";
   String _currentBookTitle = "";
   String _currentChapterTitle = "";
+  int _currentChapterIndex = 0;
   int _currentParagraphIndex = 0;
+
+  void setActiveContext({required String bookUuid, required int chapterIndex}) {
+    _currentBookUuid = bookUuid;
+    _currentChapterIndex = chapterIndex;
+  }
 
   // Vị trí thực tế của đoạn âm thanh đang phát dở
   String _playingBookTitle = "";
@@ -607,6 +614,60 @@ try {
     _systemTtsCharacterOffset = 0;
     _systemTtsResumeOffset = 0;
     
+    // Kiểm tra xem có file TTS Offline cục bộ cho đoạn văn này không
+    if (_currentBookUuid.isNotEmpty) {
+      try {
+        final appDir = await PathHelper.getAppDirectory();
+        final offlineAudioFile = File('${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.wav');
+        final offlineMetaFile = File('${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.json');
+
+        if (offlineAudioFile.existsSync() && offlineAudioFile.lengthSync() > 0) {
+          debugPrint('[AudioHandler] Playing from OFFLINE TTS file: ${offlineAudioFile.path}');
+          _activeEngine = TtsEngineType.edge;
+          _edgeMetadata.clear();
+
+          if (offlineMetaFile.existsSync()) {
+            try {
+              final jsonStr = await offlineMetaFile.readAsString();
+              final List<dynamic> jsonList = jsonDecode(jsonStr);
+              for (final item in jsonList) {
+                _edgeMetadata.add(EdgeMetadataChunk(
+                  type: item['type']?.toString() ?? 'word',
+                  offset: (item['offset'] as num?)?.toInt() ?? 0,
+                  duration: (item['duration'] as num?)?.toInt() ?? 0,
+                  text: item['text']?.toString() ?? '',
+                ));
+              }
+            } catch (e) {
+              debugPrint("Failed to parse offline metadata JSON: $e");
+            }
+          }
+
+          playbackState.add(playbackState.value.copyWith(
+            controls: [
+              MediaControl.skipToPrevious,
+              MediaControl.pause,
+              MediaControl.skipToNext,
+            ],
+            systemActions: const {
+              MediaAction.seek,
+            },
+            androidCompactActionIndices: const [0, 1, 2],
+            playing: true,
+            processingState: AudioProcessingState.ready,
+          ));
+
+          _isSpeaking = true;
+          await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(offlineAudioFile.path)));
+          _edgePlayer.play();
+          await _edgePlayer.setSpeed(_speechRate * 2.0);
+          return;
+        }
+      } catch (e) {
+        debugPrint('[AudioHandler] Failed to load offline TTS file, falling back to online: $e');
+      }
+    }
+
     // 2. Đọc cấu hình nhà cung cấp từ cơ sở dữ liệu Isar
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();

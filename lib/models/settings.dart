@@ -18,6 +18,9 @@ class AppSettings {
   String openAiTtsApiKey = '';
   String openAiTtsModel = 'tts-1';
 
+  // --- Offline TTS Download Settings ---
+  int ttsDownloadConcurrency = 3;
+
 
   String fontFamily = 'System'; // 'System', 'Serif', 'Sans-Serif', 'Monospace', 'Lora', 'Merriweather', 'Inter', 'Nunito'
   String themeMode = 'System';  // 'System', 'Light', 'Dark', 'Sepia', 'Custom'

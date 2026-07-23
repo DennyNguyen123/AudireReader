@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../models/bookmark.dart';
 import '../../../models/highlight.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/offline_tts_service.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../l10n/app_localizations.dart';
+import 'tts_download_manager_sheet.dart';
 
 class ChapterListSheet extends StatefulWidget {
   final TtsService ttsService;
@@ -38,12 +40,16 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
   String _chapterSearchQuery = '';
   late List<Bookmark> _localBookmarks;
   late List<Highlight> _localHighlights;
+  final OfflineTtsService _offlineService = OfflineTtsService.getInstance();
+  Set<int> _downloadedChapterIndices = {};
 
   @override
   void initState() {
     super.initState();
     _localBookmarks = List.from(widget.bookmarks);
     _localHighlights = List.from(widget.highlights);
+    _loadDownloadedStatus();
+    _offlineService.addListener(_loadDownloadedStatus);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.scrollController != null && widget.scrollController!.hasClients) {
@@ -55,6 +61,50 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
         }
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _offlineService.removeListener(_loadDownloadedStatus);
+    super.dispose();
+  }
+
+  Future<void> _loadDownloadedStatus() async {
+    final book = widget.ttsService.activeBook;
+    if (book == null) return;
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+
+    final downloaded = <int>{};
+    for (final ch in widget.ttsService.chapters) {
+      final isDownloaded = await _offlineService.isChapterDownloaded(book.uuid, ch.chapterIndex, settings);
+      if (isDownloaded) {
+        downloaded.add(ch.chapterIndex);
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _downloadedChapterIndices = downloaded;
+      });
+    }
+  }
+
+  void _openDownloadManager() {
+    final book = widget.ttsService.activeBook;
+    if (book == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TtsDownloadManagerSheet(
+        book: book,
+        chapters: widget.ttsService.chapters,
+        isDark: widget.isDark,
+        textColor: widget.textColor,
+        sheetBg: widget.sheetBg,
+      ),
+    );
   }
 
   @override
@@ -135,25 +185,41 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(12.0),
-                            child: TextField(
-                              style: TextStyle(color: widget.textColor),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)?.searchChaptersHint ?? 'Search chapters...',
-                                hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
-                                prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
-                                filled: true,
-                                fillColor: widget.isDark ? Colors.white10 : Colors.black12,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    style: TextStyle(color: widget.textColor),
+                                    decoration: InputDecoration(
+                                      hintText: AppLocalizations.of(context)?.searchChaptersHint ?? 'Search chapters...',
+                                      hintStyle: TextStyle(color: widget.textColor.withValues(alpha: 0.5)),
+                                      prefixIcon: Icon(Icons.search_rounded, color: widget.textColor.withValues(alpha: 0.5)),
+                                      filled: true,
+                                      fillColor: widget.isDark ? Colors.white10 : Colors.black12,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    ),
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _chapterSearchQuery = val;
+                                      });
+                                    },
+                                  ),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              onChanged: (val) {
-                                setState(() {
-                                  _chapterSearchQuery = val;
-                                });
-                              },
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(Icons.download_for_offline_rounded, color: primaryColor),
+                                  tooltip: 'Quản lý TTS Offline',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: primaryColor.withValues(alpha: 0.15),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  onPressed: _openDownloadManager,
+                                ),
+                              ],
                             ),
                           ),
                           Expanded(
@@ -172,18 +238,30 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                       final originalIndex = entry.key;
                                       final chapter = entry.value;
                                       final isCurrent = originalIndex == currentChapterIdx;
+                                      final isDownloaded = _downloadedChapterIndices.contains(originalIndex);
 
                                       return ListTile(
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                                        title: Text(
-                                          chapter.title,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                                            color: isCurrent 
-                                                ? primaryColor
-                                                : widget.textColor,
-                                          ),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                chapter.title,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                                                  color: isCurrent 
+                                                      ? primaryColor
+                                                      : widget.textColor,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isDownloaded)
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 6),
+                                                child: Icon(Icons.check_circle_rounded, color: Colors.green.withValues(alpha: 0.8), size: 16),
+                                              ),
+                                          ],
                                         ),
                                         trailing: isCurrent 
                                             ? Icon(

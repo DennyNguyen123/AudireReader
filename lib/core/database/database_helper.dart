@@ -10,6 +10,7 @@ import '../../models/pronunciation_rule.dart';
 import '../../models/bookmark.dart';
 import '../../models/highlight.dart';
 import '../../models/bgm_track.dart';
+import '../../models/offline_tts_record.dart';
 import '../utils/device_helper.dart';
 
 class DatabaseHelper {
@@ -62,6 +63,7 @@ class DatabaseHelper {
         BookmarkSchema,
         HighlightSchema,
         BgmTrackSchema,
+        OfflineTtsRecordSchema,
       ],
       directory: path,
     );
@@ -169,19 +171,29 @@ class DatabaseHelper {
   Future<void> deleteBook(String uuid) async {
     final book = await getBookByUuid(uuid);
     if (book != null) {
-      // 1. Xóa file ảnh bìa vật lý ở local nếu có
+      // 1. Xóa ảnh bìa của sách nếu có
       if (book.coverPath != null && book.coverPath!.isNotEmpty) {
         try {
           final file = File(book.coverPath!);
           if (await file.exists()) {
             await file.delete();
-            // ignore: avoid_print
-            print('[DatabaseHelper] Deleted physical cover file: ${book.coverPath}');
           }
         } catch (e) {
           // ignore: avoid_print
           print('[DatabaseHelper] Error deleting physical cover file: $e');
         }
+      }
+
+      // Xóa các file TTS offline của sách
+      try {
+        final appDir = await PathHelper.getAppDirectory();
+        final ttsDir = Directory(p.join(appDir.path, 'tts_offline', uuid));
+        if (await ttsDir.exists()) {
+          await ttsDir.delete(recursive: true);
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('[DatabaseHelper] Error deleting offline TTS directory: $e');
       }
 
       // 2. Xóa các bản ghi liên quan trong DB
@@ -194,6 +206,8 @@ class DatabaseHelper {
         await isar.bookmarks.filter().bookUuidEqualTo(uuid).deleteAll();
         // Delete highlights
         await isar.highlights.filter().bookUuidEqualTo(uuid).deleteAll();
+        // Delete offline TTS records
+        await isar.offlineTtsRecords.filter().bookUuidEqualTo(uuid).deleteAll();
         // Delete book
         await isar.books.delete(book.id);
       });
@@ -248,13 +262,22 @@ class DatabaseHelper {
   Future<AppSettings> getSettings() async {
     final settings = await isar.appSettings.get(1);
     if (settings != null) {
+      bool needSave = false;
       if (settings.deviceId == null || settings.deviceName == null) {
         settings.deviceId ??= DeviceHelper.generateDeviceId();
         settings.deviceName ??= DeviceHelper.getDefaultDeviceName();
+        needSave = true;
+      }
+      if (settings.ttsDownloadConcurrency < 1 || settings.ttsDownloadConcurrency > 10) {
+        settings.ttsDownloadConcurrency = 3;
+        needSave = true;
+      }
+      if (needSave) {
         await saveSettings(settings);
       }
       return settings;
-    } else {
+    }
+ else {
       final newSettings = AppSettings();
       newSettings.deviceId = DeviceHelper.generateDeviceId();
       newSettings.deviceName = DeviceHelper.getDefaultDeviceName();
@@ -394,4 +417,38 @@ class DatabaseHelper {
       await isar.bgmTracks.delete(id);
     });
   }
+
+  // --- Offline TTS Record Operations ---
+  Future<void> saveOfflineTtsRecord(OfflineTtsRecord record) async {
+    await isar.writeTxn(() async {
+      await isar.offlineTtsRecords.put(record);
+    });
+  }
+
+  Future<OfflineTtsRecord?> getOfflineTtsRecord(String bookUuid, int chapterIndex) async {
+    final key = '${bookUuid}_$chapterIndex';
+    return await isar.offlineTtsRecords.filter().bookChapterKeyEqualTo(key).findFirst();
+  }
+
+  Future<List<OfflineTtsRecord>> getOfflineTtsRecordsForBook(String bookUuid) async {
+    return await isar.offlineTtsRecords
+        .filter()
+        .bookUuidEqualTo(bookUuid)
+        .sortByChapterIndex()
+        .findAll();
+  }
+
+  Future<void> deleteOfflineTtsRecord(String bookUuid, int chapterIndex) async {
+    final key = '${bookUuid}_$chapterIndex';
+    await isar.writeTxn(() async {
+      await isar.offlineTtsRecords.filter().bookChapterKeyEqualTo(key).deleteAll();
+    });
+  }
+
+  Future<void> deleteOfflineTtsRecordsForBook(String bookUuid) async {
+    await isar.writeTxn(() async {
+      await isar.offlineTtsRecords.filter().bookUuidEqualTo(bookUuid).deleteAll();
+    });
+  }
 }
+

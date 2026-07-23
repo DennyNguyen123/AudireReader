@@ -310,12 +310,18 @@ class TtsService extends ChangeNotifier {
     final chapterDuration = getChapterDuration();
     final startPos = getParagraphStartPos(_currentParagraphIndex);
 
+    audioHandler.setActiveContext(
+      bookUuid: _activeBook!.uuid,
+      chapterIndex: _currentChapterIndex,
+    );
+
     audioHandler.setChapterData(
       chapter.paragraphs,
       chapterDuration,
       startPos,
       charPerSec,
     );
+
 
     await audioHandler.updateMetadata(
       bookTitle: _activeBook!.title,
@@ -658,27 +664,26 @@ class TtsService extends ChangeNotifier {
 
   double getBookDuration() {
     if (_activeBook == null || _chapters.isEmpty) return 0.0;
-    double total = 0.0;
+    double totalBytes = 0;
     for (final chapter in _chapters) {
-      for (final p in chapter.paragraphs) {
-        total += estimateParagraphDuration(p);
-      }
+      totalBytes += chapter.paragraphsBytes.length;
     }
-    return total;
+    final charPerSec = getCharsPerSecond();
+    return charPerSec > 0 ? (totalBytes * 2.5) / charPerSec : 0.0;
   }
 
   double getBookPosition() {
     if (_activeBook == null || _chapters.isEmpty) return 0.0;
-    double pos = 0.0;
-    for (int i = 0; i < _currentChapterIndex; i++) {
-      final ch = _chapters[i];
-      for (final p in ch.paragraphs) {
-        pos += estimateParagraphDuration(p);
-      }
+    double posBytes = 0;
+    for (int i = 0; i < _currentChapterIndex && i < _chapters.length; i++) {
+      posBytes += _chapters[i].paragraphsBytes.length;
     }
+    final charPerSec = getCharsPerSecond();
+    double pos = charPerSec > 0 ? (posBytes * 2.5) / charPerSec : 0.0;
     pos += getChapterPosition();
     return pos;
   }
+
 
   String formatDuration(double seconds) {
     if (seconds.isNaN || seconds.isInfinite || seconds < 0) return "00:00";

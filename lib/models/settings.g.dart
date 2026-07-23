@@ -277,28 +277,33 @@ const AppSettingsSchema = CollectionSchema(
       name: r'themeMode',
       type: IsarType.string,
     ),
-    r'ttsProvider': PropertySchema(
+    r'ttsDownloadConcurrency': PropertySchema(
       id: 52,
+      name: r'ttsDownloadConcurrency',
+      type: IsarType.long,
+    ),
+    r'ttsProvider': PropertySchema(
+      id: 53,
       name: r'ttsProvider',
       type: IsarType.string,
     ),
     r'webDavEnabled': PropertySchema(
-      id: 53,
+      id: 54,
       name: r'webDavEnabled',
       type: IsarType.bool,
     ),
     r'webDavLastSync': PropertySchema(
-      id: 54,
+      id: 55,
       name: r'webDavLastSync',
       type: IsarType.dateTime,
     ),
     r'webDavUrl': PropertySchema(
-      id: 55,
+      id: 56,
       name: r'webDavUrl',
       type: IsarType.string,
     ),
     r'webDavUsername': PropertySchema(
-      id: 56,
+      id: 57,
       name: r'webDavUsername',
       type: IsarType.string,
     )
@@ -493,11 +498,12 @@ void _appSettingsSerialize(
   writer.writeDouble(offsets[49], object.speechRate);
   writer.writeString(offsets[50], object.textAlignment);
   writer.writeString(offsets[51], object.themeMode);
-  writer.writeString(offsets[52], object.ttsProvider);
-  writer.writeBool(offsets[53], object.webDavEnabled);
-  writer.writeDateTime(offsets[54], object.webDavLastSync);
-  writer.writeString(offsets[55], object.webDavUrl);
-  writer.writeString(offsets[56], object.webDavUsername);
+  writer.writeLong(offsets[52], object.ttsDownloadConcurrency);
+  writer.writeString(offsets[53], object.ttsProvider);
+  writer.writeBool(offsets[54], object.webDavEnabled);
+  writer.writeDateTime(offsets[55], object.webDavLastSync);
+  writer.writeString(offsets[56], object.webDavUrl);
+  writer.writeString(offsets[57], object.webDavUsername);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -560,11 +566,12 @@ AppSettings _appSettingsDeserialize(
   object.speechRate = reader.readDouble(offsets[49]);
   object.textAlignment = reader.readString(offsets[50]);
   object.themeMode = reader.readString(offsets[51]);
-  object.ttsProvider = reader.readString(offsets[52]);
-  object.webDavEnabled = reader.readBool(offsets[53]);
-  object.webDavLastSync = reader.readDateTimeOrNull(offsets[54]);
-  object.webDavUrl = reader.readString(offsets[55]);
-  object.webDavUsername = reader.readString(offsets[56]);
+  object.ttsDownloadConcurrency = reader.readLong(offsets[52]);
+  object.ttsProvider = reader.readString(offsets[53]);
+  object.webDavEnabled = reader.readBool(offsets[54]);
+  object.webDavLastSync = reader.readDateTimeOrNull(offsets[55]);
+  object.webDavUrl = reader.readString(offsets[56]);
+  object.webDavUsername = reader.readString(offsets[57]);
   return object;
 }
 
@@ -680,14 +687,16 @@ P _appSettingsDeserializeProp<P>(
     case 51:
       return (reader.readString(offset)) as P;
     case 52:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 53:
-      return (reader.readBool(offset)) as P;
-    case 54:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 55:
       return (reader.readString(offset)) as P;
+    case 54:
+      return (reader.readBool(offset)) as P;
+    case 55:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 56:
+      return (reader.readString(offset)) as P;
+    case 57:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -6663,6 +6672,62 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsDownloadConcurrencyEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ttsDownloadConcurrency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsDownloadConcurrencyGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ttsDownloadConcurrency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsDownloadConcurrencyLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ttsDownloadConcurrency',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      ttsDownloadConcurrencyBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ttsDownloadConcurrency',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       ttsProviderEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -7854,6 +7919,20 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByTtsDownloadConcurrency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsDownloadConcurrency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByTtsDownloadConcurrencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsDownloadConcurrency', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByTtsProvider() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'ttsProvider', Sort.asc);
@@ -8623,6 +8702,20 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByTtsDownloadConcurrency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsDownloadConcurrency', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByTtsDownloadConcurrencyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ttsDownloadConcurrency', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByTtsProvider() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'ttsProvider', Sort.asc);
@@ -9075,6 +9168,13 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByTtsDownloadConcurrency() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ttsDownloadConcurrency');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByTtsProvider(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -9458,6 +9558,13 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, String, QQueryOperations> themeModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'themeMode');
+    });
+  }
+
+  QueryBuilder<AppSettings, int, QQueryOperations>
+      ttsDownloadConcurrencyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ttsDownloadConcurrency');
     });
   }
 

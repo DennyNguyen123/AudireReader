@@ -6,6 +6,8 @@ import '../../../models/settings.dart';
 import '../../library/widgets/settings/tts_settings_section.dart';
 import '../../library/pronunciation_dictionary_screen.dart';
 import '../../../core/database/database_helper.dart';
+import 'tts_download_manager_sheet.dart';
+
 
 class ReaderTtsSettingsSheet extends StatefulWidget {
   final TtsService ttsService;
@@ -486,6 +488,36 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
                               );
                             },
                           ),
+                    if (widget.ttsService.activeBook != null) ...[
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.download_for_offline_rounded),
+                        label: Text(AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Quản lý TTS Offline' : 'Manage Offline TTS'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          final book = widget.ttsService.activeBook;
+                          Navigator.pop(context);
+                          if (book != null) {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => TtsDownloadManagerSheet(
+                                book: book,
+                                chapters: widget.ttsService.chapters,
+                                isDark: isDark,
+                                textColor: labelColor,
+                                sheetBg: sheetBg,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+
                   ],
                 ),
               );

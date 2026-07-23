@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+
 
 abstract class EdgeTtsChunk {}
 
@@ -40,17 +42,18 @@ class EdgeTtsService {
   static int _tokenTime = 0;
   static const int _tokenTtl = 5 * 60 * 1000; // 5 minutes
 
-  static Future<EdgeToken> _getToken() async {
+  static Future<EdgeToken> _getToken(http.Client client) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (_cachedToken != null && (now - _tokenTime < _tokenTtl)) {
       return _cachedToken!;
     }
 
-    final res = await http.get(
+    final res = await client.get(
       Uri.parse("https://www.bing.com/translator"),
       headers: {
         "User-Agent": _userAgent,
         "Accept-Language": "vi,en-US;q=0.9,en;q=0.8",
+        "Connection": "close",
       },
     );
 
@@ -83,7 +86,120 @@ class EdgeTtsService {
     return _cachedToken!;
   }
 
+  // Đã gỡ bỏ: static final http.Client _httpClient = http.Client();
+
+  static Future<int> synthesizeToFile({
+    required String text,
+    required String voice,
+    required File targetFile,
+    double rate = 0.5,
+  }) async {
+    final chunksText = _splitText(text);
+    int totalBytesWritten = 0;
+    final sink = targetFile.openWrite();
+
+    final client = http.Client();
+
+    try {
+      for (final chunkText in chunksText) {
+        final token = await _getToken(client);
+        final bytesWritten = await _ttsRequestStreamToSink(chunkText, voice, rate, token, sink, client);
+        totalBytesWritten += bytesWritten;
+      }
+    } finally {
+      client.close();
+      await sink.flush();
+      await sink.close();
+    }
+
+    return totalBytesWritten;
+  }
+
+  static Future<int> _ttsRequestStreamToSink(
+    String text, 
+    String voiceId, 
+    double rate, 
+    EdgeToken token,
+    IOSink sink,
+    http.Client client,
+  ) async {
+    final rateStr = convertRate(rate);
+    final parts = voiceId.split("-");
+    final xmlLang = parts.length >= 2 ? parts.sublist(0, 2).join("-") : "en-US";
+    final gender = voiceId.toLowerCase().contains("male") ? "Male" : "Female";
+    
+    final escapedText = text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
+
+    final ssml = "<speak version='1.0' xml:lang='$xmlLang'><voice xml:lang='$xmlLang' xml:gender='$gender' name='$voiceId'><prosody rate='$rateStr'>$escapedText</prosody></voice></speak>";
+
+    final url = Uri.parse("https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1");
+    final req = http.Request('POST', url);
+    req.headers.addAll({
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Accept": "*/*",
+      "Origin": "https://www.bing.com",
+      "Referer": "https://www.bing.com/translator",
+      "User-Agent": _userAgent,
+      "Connection": "close",
+    });
+    if (token.cookie.isNotEmpty) {
+      req.headers["Cookie"] = token.cookie;
+    }
+    req.bodyFields = {
+      "ssml": ssml,
+      "token": token.token,
+      "key": token.key,
+    };
+
+    final response = await client.send(req);
+
+    if (response.statusCode == 429 || response.statusCode == 403) {
+      _cachedToken = null;
+      _tokenTime = 0;
+      final newToken = await _getToken(client);
+      final retryReq = http.Request('POST', url);
+      retryReq.headers.addAll(req.headers);
+      if (newToken.cookie.isNotEmpty) {
+        retryReq.headers["Cookie"] = newToken.cookie;
+      }
+      retryReq.bodyFields = {
+        "ssml": ssml,
+        "token": newToken.token,
+        "key": newToken.key,
+      };
+      final retryRes = await client.send(retryReq);
+      if (retryRes.statusCode != 200) {
+        throw Exception("Bing TTS failed on retry: ${retryRes.statusCode}");
+      }
+      int count = 0;
+      final byteStream = retryRes.stream.map((chunk) {
+        count += chunk.length;
+        return chunk;
+      });
+      await sink.addStream(byteStream);
+      return count;
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Bing TTS failed: ${response.statusCode}");
+    }
+
+    int count = 0;
+    final byteStream = response.stream.map((chunk) {
+      count += chunk.length;
+      return chunk;
+    });
+    await sink.addStream(byteStream);
+    return count;
+  }
+
   static Future<List<int>> _ttsRequest(String text, String voiceId, double rate, EdgeToken token) async {
+
     final rateStr = convertRate(rate);
     final parts = voiceId.split("-");
     final xmlLang = parts.length >= 2 ? parts.sublist(0, 2).join("-") : "en-US";
@@ -125,7 +241,7 @@ class EdgeTtsService {
     if (res.statusCode == 429 || res.statusCode == 403) {
       _cachedToken = null;
       _tokenTime = 0;
-      final newToken = await _getToken();
+      final newToken = await _getToken(http.Client());
       
       final newHeaders = Map<String, String>.from(headers);
       if (newToken.cookie.isNotEmpty) {
@@ -225,10 +341,15 @@ class EdgeTtsService {
     // Bing translator API can't handle very large SSML at once. So we split.
     final chunksText = _splitText(text);
 
-    for (final chunkText in chunksText) {
-      final token = await _getToken();
-      final audioBytes = await _ttsRequest(chunkText, voice, rate, token);
-      yield EdgeAudioChunk(audioBytes);
+    final client = http.Client();
+    try {
+      for (final chunkText in chunksText) {
+        final token = await _getToken(client);
+        final audioBytes = await _ttsRequest(chunkText, voice, rate, token);
+        yield EdgeAudioChunk(audioBytes);
+      }
+    } finally {
+      client.close();
     }
   }
 }

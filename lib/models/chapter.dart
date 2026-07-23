@@ -26,6 +26,7 @@ class Chapter {
     try {
       final decodedJson = utf8.decode(gzip.decode(paragraphsBytes));
       _cachedParagraphs = List<String>.from(json.decode(decodedJson));
+      print('[RAM Diagnostic] Chapter $chapterIndex decompressed gzip paragraphs (${_cachedParagraphs?.length} items). Current Process RSS: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB');
     } catch (e) {
       _cachedParagraphs = [];
     }
@@ -37,4 +38,12 @@ class Chapter {
     final jsonStr = json.encode(value);
     paragraphsBytes = gzip.encode(utf8.encode(jsonStr));
   }
+
+  void clearCache() {
+    if (_cachedParagraphs != null) {
+      _cachedParagraphs = null;
+      print('[RAM Diagnostic] Chapter $chapterIndex cleared paragraph cache. Current Process RSS: ${(ProcessInfo.currentRss / (1024 * 1024)).toStringAsFixed(1)} MB');
+    }
+  }
 }
+
