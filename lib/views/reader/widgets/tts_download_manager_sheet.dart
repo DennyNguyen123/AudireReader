@@ -38,6 +38,9 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   bool _isMultiSelectMode = false;
   final Set<int> _selectedChapterIndices = {};
 
+  final ScrollController _scrollController = ScrollController();
+  int _lastScrolledIndex = -1;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +51,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   @override
   void dispose() {
     _offlineService.removeListener(_onServiceUpdate);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -55,8 +59,36 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     if (!mounted) return;
     if (_offlineService.isDownloading) {
       setState(() {});
+      _scrollToDownloadingIndex();
     } else {
       _loadStorageAndStatus();
+    }
+  }
+
+  void _scrollToDownloadingIndex() {
+    if (!_scrollController.hasClients) return;
+    
+    // Find first downloading chapter
+    int downloadingIndex = widget.chapters.indexWhere(
+      (ch) => _offlineService.chapterStatus[ch.chapterIndex] == 'downloading'
+    );
+    
+    if (downloadingIndex != -1 && downloadingIndex != _lastScrolledIndex) {
+      _lastScrolledIndex = downloadingIndex;
+      
+      // Approximate offset: header is ~400px, each item is ~66px
+      double offset = 400.0 + downloadingIndex * 66.0;
+      
+      // Ensure we don't scroll past the max extent
+      if (offset > _scrollController.position.maxScrollExtent) {
+        offset = _scrollController.position.maxScrollExtent;
+      }
+      
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -405,6 +437,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
               else
                 Expanded(
                   child: CustomScrollView(
+                    controller: _scrollController,
                     slivers: [
                       SliverPadding(
                         padding: const EdgeInsets.symmetric(
