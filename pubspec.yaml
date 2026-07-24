@@ -79,6 +79,7 @@ dependencies:
 
   just_audio: any
   flutter_onnxruntime: any
+  flame: ^1.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

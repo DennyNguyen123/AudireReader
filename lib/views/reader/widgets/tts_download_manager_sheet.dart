@@ -257,6 +257,90 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     });
   }
 
+  Future<void> _showSelectRangeDialog() async {
+    final startController = TextEditingController();
+    final endController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
+              ? 'Chọn theo khoảng'
+              : 'Select Range',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
+                  ? 'Nhập thứ tự chương (1 - ${widget.chapters.length}):'
+                  : 'Enter chapter range (1 - ${widget.chapters.length}):',
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: startController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
+                          ? 'Từ'
+                          : 'From',
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: endController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
+                          ? 'Đến'
+                          : 'To',
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Chọn' : 'Select'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      final start = int.tryParse(startController.text) ?? 0;
+      final end = int.tryParse(endController.text) ?? 0;
+
+      if (start > 0 && end > 0 && start <= end) {
+        setState(() {
+          final startIdx = (start - 1).clamp(0, widget.chapters.length - 1);
+          final endIdx = (end - 1).clamp(0, widget.chapters.length - 1);
+          
+          for (int i = startIdx; i <= endIdx; i++) {
+            _selectedChapterIndices.add(widget.chapters[i].chapterIndex);
+          }
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -728,6 +812,17 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                                             'Tiếng Việt'
                                                         ? 'Bỏ chọn'
                                                         : 'Clear',
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: _showSelectRangeDialog,
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                              context,
+                                                            )?.vietnamese ==
+                                                            'Tiếng Việt'
+                                                        ? 'Khoảng'
+                                                        : 'Range',
                                                   ),
                                                 ),
                                               ],
