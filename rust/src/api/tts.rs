@@ -5,6 +5,8 @@ use regex::Regex;
 use parking_lot::RwLock;
 use once_cell::sync::Lazy;
 
+static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
+
 const TRUSTED_CLIENT_TOKEN: &str = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
 const USER_AGENT_STR: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
@@ -120,7 +122,7 @@ pub async fn get_edge_voices() -> Result<Vec<EdgeVoice>, String> {
 }
 
 pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> Result<Vec<u8>, String> {
-    let client = Client::new();
+    let client = &*REQWEST_CLIENT;
     let mut token = get_token(&client).await?;
     
     let rate_str = convert_rate(rate);
@@ -197,7 +199,7 @@ pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> R
 }
 
 pub async fn synthesize_openai_tts(text: String, voice: String, api_key: String, speed: f64) -> Result<Vec<u8>, String> {
-    let client = Client::new();
+    let client = &*REQWEST_CLIENT;
     let url = "https://api.openai.com/v1/audio/speech";
 
     let mut headers = HeaderMap::new();

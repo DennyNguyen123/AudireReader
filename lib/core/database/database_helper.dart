@@ -219,7 +219,7 @@ class DatabaseHelper {
         needSave = true;
       }
       if (settings.ttsDownloadConcurrency < 1 ||
-          settings.ttsDownloadConcurrency > 10) {
+          settings.ttsDownloadConcurrency > 50) {
         settings.ttsDownloadConcurrency = 3;
         needSave = true;
       }

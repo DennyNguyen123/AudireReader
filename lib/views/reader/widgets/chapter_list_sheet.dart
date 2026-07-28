@@ -58,7 +58,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
           widget.scrollController!.hasClients) {
         final currentIdx = widget.ttsService.currentChapterIndex;
         if (currentIdx > 0) {
-          final offset = (currentIdx * 52.0) - 52.0;
+          final offset = (currentIdx * 52.0);
           final maxScroll = widget.scrollController!.position.maxScrollExtent;
           widget.scrollController!.jumpTo(
             offset > maxScroll ? maxScroll : (offset > 0 ? offset : 0),
@@ -308,17 +308,21 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                             originalIndex,
                                           );
 
-                                      return ListTile(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 2,
-                                            ),
-                                        title: Row(
+                                      return SizedBox(
+                                        height: 52.0,
+                                        child: ListTile(
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 0,
+                                              ),
+                                          title: Row(
                                           children: [
                                             Expanded(
                                               child: Text(
                                                 chapter.title,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: isCurrent
@@ -361,8 +365,9 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                             originalIndex,
                                           );
                                         },
-                                      );
-                                    },
+                                      ),
+                                    );
+                                  },
                                   ),
                           ),
                         ],

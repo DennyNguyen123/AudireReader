@@ -81,6 +81,9 @@ dependencies:
   flutter_onnxruntime: any
   flame: ^1.5.0
   wakelock_plus: ^1.5.2
+  scroll_to_index: ^3.0.1
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -4,6 +4,7 @@ import '../../../core/database/database_helper.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../models/settings.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 import '../../../services/offline_tts_service.dart';
 
 class TtsDownloadManagerSheet extends StatefulWidget {
@@ -38,8 +39,19 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   bool _isMultiSelectMode = false;
   final Set<int> _selectedChapterIndices = {};
 
-  final ScrollController _scrollController = ScrollController();
+  final AutoScrollController _autoScrollController = AutoScrollController();
   int _lastScrolledIndex = -1;
+
+  List<Chapter> get _displayChapters {
+    if (_offlineService.isDownloading || _offlineService.isPaused) {
+      return widget.chapters
+          .where(
+            (ch) => _offlineService.chapterStatus.containsKey(ch.chapterIndex),
+          )
+          .toList();
+    }
+    return widget.chapters;
+  }
 
   @override
   void initState() {
@@ -51,7 +63,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   @override
   void dispose() {
     _offlineService.removeListener(_onServiceUpdate);
-    _scrollController.dispose();
+    _autoScrollController.dispose();
     super.dispose();
   }
 
@@ -66,28 +78,20 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   }
 
   void _scrollToDownloadingIndex() {
-    if (!_scrollController.hasClients) return;
+    if (!_autoScrollController.hasClients) return;
     
     // Find first downloading chapter
-    int downloadingIndex = widget.chapters.indexWhere(
+    int downloadingIndex = _displayChapters.indexWhere(
       (ch) => _offlineService.chapterStatus[ch.chapterIndex] == 'downloading'
     );
     
     if (downloadingIndex != -1 && downloadingIndex != _lastScrolledIndex) {
       _lastScrolledIndex = downloadingIndex;
       
-      // Approximate offset: header is ~400px, each item is ~66px
-      double offset = 400.0 + downloadingIndex * 66.0;
-      
-      // Ensure we don't scroll past the max extent
-      if (offset > _scrollController.position.maxScrollExtent) {
-        offset = _scrollController.position.maxScrollExtent;
-      }
-      
-      _scrollController.animateTo(
-        offset,
+      _autoScrollController.scrollToIndex(
+        downloadingIndex,
+        preferPosition: AutoScrollPosition.begin,
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
       );
     }
   }
@@ -141,7 +145,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
 
   Future<void> _updateConcurrency(double val) async {
     if (_settings == null) return;
-    final int newConcurrency = val.round().clamp(1, 10);
+    final int newConcurrency = val.round().clamp(1, 50);
     setState(() {
       _settings!.ttsDownloadConcurrency = newConcurrency;
     });
@@ -436,18 +440,16 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                 )
               else
                 Expanded(
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    slivers: [
-                      SliverPadding(
+                  child: Column(
+                    children: [
+                      Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 16,
                         ),
-                        sliver: SliverToBoxAdapter(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                               // Storage usage card
                               Container(
                                 padding: const EdgeInsets.all(16),
@@ -577,7 +579,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                             ),
                                           ),
                                           child: Text(
-                                            '${(_settings?.ttsDownloadConcurrency ?? 3).clamp(1, 10)}',
+                                            '${(_settings?.ttsDownloadConcurrency ?? 3).clamp(1, 50)}',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
@@ -590,18 +592,18 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                       value:
                                           (_settings?.ttsDownloadConcurrency ??
                                                   3)
-                                              .clamp(1, 10)
+                                              .clamp(1, 50)
                                               .toDouble(),
                                       min: 1.0,
-                                      max: 10.0,
-                                      divisions: 9,
+                                      max: 50.0,
+                                      divisions: 49,
                                       activeColor: primaryColor,
                                       onChanged: _updateConcurrency,
                                     ),
                                     if (((_settings?.ttsDownloadConcurrency ??
                                                 3)
-                                            .clamp(1, 10)) >
-                                        5)
+                                            .clamp(1, 50)) >
+                                        20)
                                       Padding(
                                         padding: const EdgeInsets.only(top: 4),
                                         child: Text(
@@ -609,8 +611,8 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                                     context,
                                                   )?.vietnamese ==
                                                   'Tiếng Việt'
-                                              ? '⚠️ Số luồng cao (>5) có thể khiến server Edge/OpenAI tạm ngắt băng thông (lỗi 429).'
-                                              : '⚠️ High thread count (>5) may cause server rate-limiting (HTTP 429).',
+                                              ? '⚠️ Số luồng cao (>20) có thể khiến server chặn (lỗi 429).'
+                                              : '⚠️ High thread count (>20) may cause server rate-limiting (HTTP 429).',
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: Colors.orangeAccent,
@@ -941,15 +943,15 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                             ],
                           ),
                         ),
-                      ),
 
-                      // Chapter status list using lazy SliverList.builder
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList.builder(
-                          itemCount: widget.chapters.length,
+                        // Chapter status list
+                      Expanded(
+                        child: ListView.builder(
+                          controller: _autoScrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          itemCount: _displayChapters.length,
                           itemBuilder: (context, index) {
-                            final ch = widget.chapters[index];
+                            final ch = _displayChapters[index];
                             final isDownloaded = _downloadedChapterIndices
                                 .contains(ch.chapterIndex);
                             final status =
@@ -965,8 +967,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                               ch.chapterIndex,
                             );
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 6),
+                            return AutoScrollTag(
+                              key: ValueKey(ch.chapterIndex),
+                              controller: _autoScrollController,
+                              index: index,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? primaryColor.withValues(alpha: 0.15)
@@ -1105,11 +1111,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                       }
                                     : null,
                               ),
+                            ),
                             );
                           },
                         ),
                       ),
-                      const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),

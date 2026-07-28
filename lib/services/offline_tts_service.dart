@@ -237,7 +237,7 @@ class OfflineTtsService extends ChangeNotifier {
 
   /// Process download queue sequentially for chapters
   Future<void> _processQueue(Book book, AppSettings settings) async {
-    final concurrency = settings.ttsDownloadConcurrency.clamp(1, 10);
+    final concurrency = settings.ttsDownloadConcurrency.clamp(1, 50);
 
     while (_pendingQueue.isNotEmpty &&
         _state == DownloadState.downloading &&
