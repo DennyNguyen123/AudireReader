@@ -1254,28 +1254,65 @@ class _ReaderScreenState extends State<ReaderScreen>
                           icon: const Icon(Icons.format_list_bulleted_rounded),
                           onPressed: () => _showChapterList(context),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.palette_rounded),
-                          tooltip: 'Appearance Settings',
-                          onPressed: _showSettings,
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _showSystemUI
-                                ? Icons.fullscreen_rounded
-                                : Icons.fullscreen_exit_rounded,
-                          ),
-                          tooltip: 'Toggle Fullscreen',
-                          onPressed: () {
-                            setState(() {
-                              _showSystemUI = !_showSystemUI;
-                              SystemChrome.setEnabledSystemUIMode(
-                                _showSystemUI
-                                    ? SystemUiMode.edgeToEdge
-                                    : SystemUiMode.immersiveSticky,
-                              );
-                            });
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'sync':
+                                _showSyncBottomSheet(context);
+                                break;
+                              case 'settings':
+                                _showSettings();
+                                break;
+                              case 'fullscreen':
+                                setState(() {
+                                  _showSystemUI = !_showSystemUI;
+                                  SystemChrome.setEnabledSystemUIMode(
+                                    _showSystemUI
+                                        ? SystemUiMode.edgeToEdge
+                                        : SystemUiMode.immersiveSticky,
+                                  );
+                                });
+                                break;
+                            }
                           },
+                          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                            if (_webDavEnabled)
+                              PopupMenuItem<String>(
+                                value: 'sync',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.sync_rounded),
+                                    const SizedBox(width: 12),
+                                    Text(AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ tiến trình'),
+                                  ],
+                                ),
+                              ),
+                            const PopupMenuItem<String>(
+                              value: 'settings',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.palette_rounded),
+                                  SizedBox(width: 12),
+                                  Text('Appearance Settings'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'fullscreen',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _showSystemUI
+                                        ? Icons.fullscreen_rounded
+                                        : Icons.fullscreen_exit_rounded,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text('Toggle Fullscreen'),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     )
