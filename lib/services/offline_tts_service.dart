@@ -13,6 +13,7 @@ import 'openai_tts_service.dart';
 import 'supertonic_service.dart';
 import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import 'tts_service.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 enum DownloadState { idle, downloading, paused, completed, error }
 
@@ -202,6 +203,7 @@ class OfflineTtsService extends ChangeNotifier {
     }
 
     _state = DownloadState.downloading;
+    WakelockPlus.enable();
     notifyListeners();
 
     _processQueue(book, settings);
@@ -210,6 +212,7 @@ class OfflineTtsService extends ChangeNotifier {
   void pauseDownload() {
     if (_state == DownloadState.downloading) {
       _state = DownloadState.paused;
+      WakelockPlus.disable();
       notifyListeners();
     }
   }
@@ -217,6 +220,7 @@ class OfflineTtsService extends ChangeNotifier {
   void resumeDownload(Book book, AppSettings settings) {
     if (_state == DownloadState.paused) {
       _state = DownloadState.downloading;
+      WakelockPlus.enable();
       notifyListeners();
       _processQueue(book, settings);
     }
@@ -227,6 +231,7 @@ class OfflineTtsService extends ChangeNotifier {
     _pendingQueue.clear();
     _activeDownloadingIndices.clear();
     _state = DownloadState.idle;
+    WakelockPlus.disable();
     notifyListeners();
   }
 
@@ -255,6 +260,7 @@ class OfflineTtsService extends ChangeNotifier {
         _activeDownloadingIndices.isEmpty &&
         _state == DownloadState.downloading) {
       _state = DownloadState.completed;
+      WakelockPlus.disable();
       _notifyListenersImmediate();
     }
   }
