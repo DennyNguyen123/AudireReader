@@ -805,7 +805,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String downloading(String percent) {
-    return 'Downloading... $percent%';
+    return 'Downloading';
   }
 
   @override
@@ -1178,4 +1178,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionOpenBgmSettings => 'Open BGM Settings';
+
+  @override
+  String get allChaptersDownloaded => 'All chapters are already downloaded';
+
+  @override
+  String get deleteSelectedChapters => 'Delete selected chapters';
+
+  @override
+  String confirmDeleteSelected(int count) {
+    return 'Are you sure you want to delete offline TTS for $count selected chapters?';
+  }
+
+  @override
+  String get deleteAllOfflineTts => 'Delete all offline TTS';
+
+  @override
+  String get confirmDeleteAllOfflineTts =>
+      'Are you sure you want to delete all offline TTS audio files for this book?';
+
+  @override
+  String get selectRange => 'Select Range';
+
+  @override
+  String enterChapterRange(int total) {
+    return 'Enter chapter range (1 - $total):';
+  }
+
+  @override
+  String get fromRange => 'From';
+
+  @override
+  String get toRange => 'To';
+
+  @override
+  String get selectButton => 'Select';
+
+  @override
+  String get offlineTtsManager => 'Offline TTS Manager';
+
+  @override
+  String get storageUsed => 'Storage used';
+
+  @override
+  String get chaptersDownloaded => 'chapters downloaded';
+
+  @override
+  String get deleteAll => 'Delete All';
+
+  @override
+  String get advancedSettings => 'Advanced Settings';
+
+  @override
+  String get parallelDownloadThreads => 'Parallel download threads';
+
+  @override
+  String get highThreadCountWarning =>
+      '⚠️ High thread count (>20) may cause server rate-limiting (HTTP 429).';
+
+  @override
+  String get downloadMissing => 'Download missing';
+
+  @override
+  String get downloadAll => 'Download All';
+
+  @override
+  String get chapterList => 'Chapter List';
+
+  @override
+  String get selectMulti => 'Select Multi';
+
+  @override
+  String get selected => 'Selected';
+
+  @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get clearSelection => 'Clear';
+
+  @override
+  String get downloadSelected => 'Download';
+
+  @override
+  String get deleteSelected => 'Delete';
+
+  @override
+  String get selectMissing => 'Missing';
+
+  @override
+  String get selectFromCurrentToEnd => 'From Current to End';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterDownloaded => 'Downloaded';
+
+  @override
+  String get filterNotDownloaded => 'Not Downloaded';
 }

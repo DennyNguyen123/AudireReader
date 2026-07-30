@@ -1534,7 +1534,7 @@ abstract class AppLocalizations {
   /// No description provided for @downloading.
   ///
   /// In en, this message translates to:
-  /// **'Downloading... {percent}%'**
+  /// **'Downloading'**
   String downloading(String percent);
 
   /// No description provided for @success.
@@ -2190,6 +2190,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open BGM Settings'**
   String get actionOpenBgmSettings;
+
+  /// No description provided for @allChaptersDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'All chapters are already downloaded'**
+  String get allChaptersDownloaded;
+
+  /// No description provided for @deleteSelectedChapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected chapters'**
+  String get deleteSelectedChapters;
+
+  /// No description provided for @confirmDeleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete offline TTS for {count} selected chapters?'**
+  String confirmDeleteSelected(int count);
+
+  /// No description provided for @deleteAllOfflineTts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all offline TTS'**
+  String get deleteAllOfflineTts;
+
+  /// No description provided for @confirmDeleteAllOfflineTts.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete all offline TTS audio files for this book?'**
+  String get confirmDeleteAllOfflineTts;
+
+  /// No description provided for @selectRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Range'**
+  String get selectRange;
+
+  /// No description provided for @enterChapterRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter chapter range (1 - {total}):'**
+  String enterChapterRange(int total);
+
+  /// No description provided for @fromRange.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get fromRange;
+
+  /// No description provided for @toRange.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get toRange;
+
+  /// No description provided for @selectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get selectButton;
+
+  /// No description provided for @offlineTtsManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline TTS Manager'**
+  String get offlineTtsManager;
+
+  /// No description provided for @storageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get storageUsed;
+
+  /// No description provided for @chaptersDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'chapters downloaded'**
+  String get chaptersDownloaded;
+
+  /// No description provided for @deleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete All'**
+  String get deleteAll;
+
+  /// No description provided for @advancedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Settings'**
+  String get advancedSettings;
+
+  /// No description provided for @parallelDownloadThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel download threads'**
+  String get parallelDownloadThreads;
+
+  /// No description provided for @highThreadCountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ High thread count (>20) may cause server rate-limiting (HTTP 429).'**
+  String get highThreadCountWarning;
+
+  /// No description provided for @downloadMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Download missing'**
+  String get downloadMissing;
+
+  /// No description provided for @downloadAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Download All'**
+  String get downloadAll;
+
+  /// No description provided for @chapterList.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter List'**
+  String get chapterList;
+
+  /// No description provided for @selectMulti.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Multi'**
+  String get selectMulti;
+
+  /// No description provided for @selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get selected;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearSelection;
+
+  /// No description provided for @downloadSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get downloadSelected;
+
+  /// No description provided for @deleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteSelected;
+
+  /// No description provided for @selectMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get selectMissing;
+
+  /// No description provided for @selectFromCurrentToEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'From Current to End'**
+  String get selectFromCurrentToEnd;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get filterDownloaded;
+
+  /// No description provided for @filterNotDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Downloaded'**
+  String get filterNotDownloaded;
 }
 
 class _AppLocalizationsDelegate

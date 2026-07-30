@@ -1,7 +1,7 @@
 {
   "@@locale": "vi",
   "uploadBook": "Đẩy sách lên Cloud",
-  "downloadBook": "Tải sách về máy",
+  "downloadBook": "Tải xuống",
   "uploadingBook": "Đang đẩy sách lên Cloud...",
   "downloadingBook": "Đang tải sách từ Cloud...",
   "uploadSuccess": "Đã đẩy sách \"{title}\" lên Cloud thành công!",
@@ -85,9 +85,15 @@
   "syncConflictDesc": "Tiến trình đọc hiện tại của bạn xung đột với dữ liệu từ máy \"{deviceName}\".\n\nCloud: Chương {cloudChapter}\nLocal: Chương {localChapter}\n\nBạn muốn giữ lại tiến trình nào?",
   "@syncConflictDesc": {
     "placeholders": {
-      "deviceName": { "type": "String" },
-      "cloudChapter": { "type": "String" },
-      "localChapter": { "type": "String" }
+      "deviceName": {
+        "type": "String"
+      },
+      "cloudChapter": {
+        "type": "String"
+      },
+      "localChapter": {
+        "type": "String"
+      }
     }
   },
   "keepLocal": "Giữ Local",
@@ -121,7 +127,7 @@
   "resetHotkeys": "Đặt lại phím nóng mặc định",
   "cloudLibrarySync": "Đồng bộ thư viện đám mây",
   "cloudSyncDesc": "Đồng bộ kệ truyện, ảnh bìa, tiến trình đọc chính xác và nội dung sách giữa các thiết bị sử dụng máy chủ WebDAV cá nhân.",
-  "autoSyncDesc": "Tự động đồng bộ khi mở hoặc đóng sách",
+  "autoSyncDesc": "Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.",
   "webdavServerConfig": "Cấu hình máy chủ WebDAV",
   "webdavServerUrl": "Đường dẫn máy chủ WebDAV",
   "username": "Tên đăng nhập",
@@ -244,7 +250,7 @@
   "loopOne": "Lặp một bài",
   "loopPlaylist": "Lặp toàn danh sách",
   "noBgmTracks": "Chưa có bài nhạc nền nào được thêm",
-  "downloading": "Đang tải xuống... {percent}%",
+  "downloading": "Đang tải",
   "success": "Thành công",
   "error": "Lỗi",
   "forcePush": "Đẩy lên mây (Ghi đè Cloud)",
@@ -255,7 +261,6 @@
   "forcePullConfirmDesc": "Hành động này sẽ ghi đè toàn bộ dữ liệu trên thiết bị này bằng dữ liệu từ đám mây. Sách và tiến trình cục bộ không có trên mây sẽ bị xóa. Bạn có chắc chắn muốn tiếp tục?",
   "forcePushSuccess": "Đẩy dữ liệu lên mây thành công!",
   "forcePullSuccess": "Tải dữ liệu từ mây về thành công!",
-  "cancel": "Hủy",
   "confirm": "Xác nhận",
   "onlySyncProgress": "Chỉ ghi đè tiến trình đọc",
   "onlySyncProgressDesc": "Đồng bộ nhanh tiến trình đọc, giữ nguyên danh mục sách.",
@@ -263,7 +268,6 @@
   "addLink": "Dán link URL",
   "trackUrl": "Đường dẫn Link (URL)",
   "editTrack": "Sửa thông tin nhạc",
-  "save": "Lưu",
   "addSuccess": "Đã thêm vào thư viện thành công!",
   "updateSuccess": "Cập nhật thành công!",
   "deleteSuccess": "Đã xóa thành công!",
@@ -291,7 +295,6 @@
   "cloudSource": "Đám mây",
   "syncProgress": "Đồng bộ tiến trình",
   "autoSyncTitle": "Đồng bộ tự động (Sync Now)",
-  "autoSyncDesc": "Tự động đồng bộ tiến trình đọc của tất cả sách và cập nhật chỉ mục mây.",
   "forcePushDesc": "Đẩy đè tất cả tệp sách cục bộ và tiến trình hiện tại lên WebDAV Cloud.",
   "forcePullDesc": "Tải toàn bộ tệp sách và tiến trình từ WebDAV Cloud về ghi đè lên máy này.",
   "syncBookProgressDesc": "Đồng bộ hóa tiến trình đọc của truyện \"{title}\"",
@@ -320,7 +323,6 @@
   },
   "requestedDeletionFromCloud": "Đã gửi yêu cầu xóa khỏi Cloud",
   "deleteBookTitle": "Xóa sách",
-  "downloadBook": "Tải xuống",
   "bookNotOnCloudCannotPull": "Cuốn sách này chưa từng được tải lên đám mây. Không thể kéo dữ liệu về.",
   "bookNotOnCloudPushFull": "Cuốn sách này chưa tồn tại trên đám mây. Hệ thống sẽ tải lên toàn bộ tệp sách và tiến trình đọc.",
   "qrDeviceSync": "Đồng bộ nhanh thiết bị (QR)",
@@ -330,7 +332,6 @@
   "receiveConfigDesc": "Hiện mã QR nhận cấu hình (Không cần Camera)",
   "shareConfig": "Chia sẻ cấu hình (Cho)",
   "shareConfigDesc": "Quét mã QR của máy nhận và gửi cấu hình đi",
-  "close": "Đóng",
   "shareConfigQrScanner": "Chia sẻ cấu hình (Quét QR)",
   "needCameraPermission": "Cần quyền truy cập Camera để quét QR code",
   "cameraPermissionDesc": "Vui lòng cấp quyền camera cho ứng dụng trong phần Cài đặt thiết bị để tiếp tục.",
@@ -342,7 +343,9 @@
   "sendConfigErrorDesc": "Không thể kết nối và truyền cấu hình tới thiết bị nhận. Chi tiết: {error}",
   "@sendConfigErrorDesc": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "rescan": "Quét lại",
@@ -358,20 +361,26 @@
   "librarySyncFailed": "Đồng bộ thư viện thất bại: {message}",
   "@librarySyncFailed": {
     "placeholders": {
-      "message": { "type": "String" }
+      "message": {
+        "type": "String"
+      }
     }
   },
   "webdavConnectionErrorTitle": "Lỗi kết nối WebDAV",
   "webdavConnectionErrorDesc": "Cấu hình đã nhận từ \"{deviceName}\", nhưng không thể kết nối tới máy chủ WebDAV. Vui lòng kiểm tra lại cấu hình trên máy chủ WebDAV.",
   "@webdavConnectionErrorDesc": {
     "placeholders": {
-      "deviceName": { "type": "String" }
+      "deviceName": {
+        "type": "String"
+      }
     }
   },
   "applyConfigError": "Lỗi áp dụng cấu hình: {error}",
   "@applyConfigError": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "bgmLocalFile": "File cục bộ",
@@ -392,5 +401,50 @@
   "actionNextChapter": "Chương tiếp theo (Next Chapter)",
   "actionPrevChapter": "Chương trước đó (Prev Chapter)",
   "actionOpenTtsSettings": "Mở Cài đặt TTS",
-  "actionOpenBgmSettings": "Mở Cài đặt BGM (Nhạc nền)"
+  "actionOpenBgmSettings": "Mở Cài đặt BGM (Nhạc nền)",
+  "allChaptersDownloaded": "Tất cả các chương đã được tải xuống",
+  "deleteSelectedChapters": "Xoá các chương đã chọn",
+  "confirmDeleteSelected": "Bạn có chắc chắn muốn xoá TTS offline của {count} chương đã chọn?",
+  "@confirmDeleteSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAllOfflineTts": "Xoá tất cả TTS Offline",
+  "confirmDeleteAllOfflineTts": "Bạn có chắc chắn muốn xoá toàn bộ dữ liệu audio TTS offline của cuốn sách này?",
+  "selectRange": "Khoảng",
+  "enterChapterRange": "Nhập thứ tự chương (1 - {total}):",
+  "@enterChapterRange": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "fromRange": "Từ",
+  "toRange": "Đến",
+  "selectButton": "Chọn",
+  "offlineTtsManager": "Quản lý TTS Offline",
+  "storageUsed": "Dung lượng đã sử dụng",
+  "chaptersDownloaded": "chương đã tải",
+  "deleteAll": "Xoá tất cả",
+  "advancedSettings": "Cài đặt nâng cao",
+  "parallelDownloadThreads": "Số luồng tải song song",
+  "highThreadCountWarning": "⚠️ Số luồng cao (>20) có thể khiến server chặn (lỗi 429).",
+  "downloadMissing": "Tải các chương chưa tải",
+  "downloadAll": "Tải tất cả",
+  "chapterList": "Danh sách chương",
+  "selectMulti": "Chọn nhiều",
+  "selected": "Đã chọn",
+  "selectAll": "Tất cả",
+  "clearSelection": "Bỏ chọn",
+  "downloadSelected": "Tải đã chọn",
+  "deleteSelected": "Xoá đã chọn",
+  "selectMissing": "Chưa tải",
+  "selectFromCurrentToEnd": "Từ hiện tại đến hết",
+  "filterAll": "Tất cả",
+  "filterDownloaded": "Đã tải",
+  "filterNotDownloaded": "Chưa tải"
 }

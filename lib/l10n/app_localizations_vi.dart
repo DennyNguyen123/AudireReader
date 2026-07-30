@@ -808,7 +808,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String downloading(String percent) {
-    return 'Đang tải xuống... $percent%';
+    return 'Đang tải';
   }
 
   @override
@@ -1179,4 +1179,103 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get actionOpenBgmSettings => 'Mở Cài đặt BGM (Nhạc nền)';
+
+  @override
+  String get allChaptersDownloaded => 'Tất cả các chương đã được tải xuống';
+
+  @override
+  String get deleteSelectedChapters => 'Xoá các chương đã chọn';
+
+  @override
+  String confirmDeleteSelected(int count) {
+    return 'Bạn có chắc chắn muốn xoá TTS offline của $count chương đã chọn?';
+  }
+
+  @override
+  String get deleteAllOfflineTts => 'Xoá tất cả TTS Offline';
+
+  @override
+  String get confirmDeleteAllOfflineTts =>
+      'Bạn có chắc chắn muốn xoá toàn bộ dữ liệu audio TTS offline của cuốn sách này?';
+
+  @override
+  String get selectRange => 'Khoảng';
+
+  @override
+  String enterChapterRange(int total) {
+    return 'Nhập thứ tự chương (1 - $total):';
+  }
+
+  @override
+  String get fromRange => 'Từ';
+
+  @override
+  String get toRange => 'Đến';
+
+  @override
+  String get selectButton => 'Chọn';
+
+  @override
+  String get offlineTtsManager => 'Quản lý TTS Offline';
+
+  @override
+  String get storageUsed => 'Dung lượng đã sử dụng';
+
+  @override
+  String get chaptersDownloaded => 'chương đã tải';
+
+  @override
+  String get deleteAll => 'Xoá tất cả';
+
+  @override
+  String get advancedSettings => 'Cài đặt nâng cao';
+
+  @override
+  String get parallelDownloadThreads => 'Số luồng tải song song';
+
+  @override
+  String get highThreadCountWarning =>
+      '⚠️ Số luồng cao (>20) có thể khiến server chặn (lỗi 429).';
+
+  @override
+  String get downloadMissing => 'Tải các chương chưa tải';
+
+  @override
+  String get downloadAll => 'Tải tất cả';
+
+  @override
+  String get chapterList => 'Danh sách chương';
+
+  @override
+  String get selectMulti => 'Chọn nhiều';
+
+  @override
+  String get selected => 'Đã chọn';
+
+  @override
+  String get selectAll => 'Tất cả';
+
+  @override
+  String get clearSelection => 'Bỏ chọn';
+
+  @override
+  String get downloadSelected => 'Tải đã chọn';
+
+  @override
+  String get deleteSelected => 'Xoá đã chọn';
+
+  @override
+  String get selectMissing => 'Chưa tải';
+
+  @override
+  String get selectFromCurrentToEnd => 'Từ hiện tại đến hết';
+
+  @override
+  String get filterAll => 'Tất cả';
+
+  @override
+  String get filterDownloaded => 'Đã tải';
+
+  @override
+  String get filterNotDownloaded => 'Chưa tải';
 }

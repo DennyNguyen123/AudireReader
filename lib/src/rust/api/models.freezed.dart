@@ -12,7 +12,8 @@ part of 'models.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 /// @nodoc
 mixin _$Book {
@@ -35,16 +36,17 @@ abstract class $BookCopyWith<$Res> {
   factory $BookCopyWith(Book value, $Res Function(Book) then) =
       _$BookCopyWithImpl<$Res, Book>;
   @useResult
-  $Res call(
-      {int? id,
-      String uuid,
-      String title,
-      String author,
-      String? coverPath,
-      int totalChapters,
-      int dateAdded,
-      String status,
-      List<String> tags});
+  $Res call({
+    int? id,
+    String uuid,
+    String title,
+    String author,
+    String? coverPath,
+    int totalChapters,
+    int dateAdded,
+    String status,
+    List<String> tags,
+  });
 }
 
 /// @nodoc
@@ -70,64 +72,69 @@ class _$BookCopyWithImpl<$Res, $Val extends Book>
     Object? status = null,
     Object? tags = null,
   }) {
-    return _then(_value.copyWith(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      uuid: null == uuid
-          ? _value.uuid
-          : uuid // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as String,
-      coverPath: freezed == coverPath
-          ? _value.coverPath
-          : coverPath // ignore: cast_nullable_to_non_nullable
-              as String?,
-      totalChapters: null == totalChapters
-          ? _value.totalChapters
-          : totalChapters // ignore: cast_nullable_to_non_nullable
-              as int,
-      dateAdded: null == dateAdded
-          ? _value.dateAdded
-          : dateAdded // ignore: cast_nullable_to_non_nullable
-              as int,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as String,
-      tags: null == tags
-          ? _value.tags
-          : tags // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: freezed == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            uuid: null == uuid
+                ? _value.uuid
+                : uuid // ignore: cast_nullable_to_non_nullable
+                      as String,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            author: null == author
+                ? _value.author
+                : author // ignore: cast_nullable_to_non_nullable
+                      as String,
+            coverPath: freezed == coverPath
+                ? _value.coverPath
+                : coverPath // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            totalChapters: null == totalChapters
+                ? _value.totalChapters
+                : totalChapters // ignore: cast_nullable_to_non_nullable
+                      as int,
+            dateAdded: null == dateAdded
+                ? _value.dateAdded
+                : dateAdded // ignore: cast_nullable_to_non_nullable
+                      as int,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String,
+            tags: null == tags
+                ? _value.tags
+                : tags // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$BookImplCopyWith<$Res> implements $BookCopyWith<$Res> {
   factory _$$BookImplCopyWith(
-          _$BookImpl value, $Res Function(_$BookImpl) then) =
-      __$$BookImplCopyWithImpl<$Res>;
+    _$BookImpl value,
+    $Res Function(_$BookImpl) then,
+  ) = __$$BookImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int? id,
-      String uuid,
-      String title,
-      String author,
-      String? coverPath,
-      int totalChapters,
-      int dateAdded,
-      String status,
-      List<String> tags});
+  $Res call({
+    int? id,
+    String uuid,
+    String title,
+    String author,
+    String? coverPath,
+    int totalChapters,
+    int dateAdded,
+    String status,
+    List<String> tags,
+  });
 }
 
 /// @nodoc
@@ -135,7 +142,7 @@ class __$$BookImplCopyWithImpl<$Res>
     extends _$BookCopyWithImpl<$Res, _$BookImpl>
     implements _$$BookImplCopyWith<$Res> {
   __$$BookImplCopyWithImpl(_$BookImpl _value, $Res Function(_$BookImpl) _then)
-      : super(_value, _then);
+    : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
@@ -150,61 +157,63 @@ class __$$BookImplCopyWithImpl<$Res>
     Object? status = null,
     Object? tags = null,
   }) {
-    return _then(_$BookImpl(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      uuid: null == uuid
-          ? _value.uuid
-          : uuid // ignore: cast_nullable_to_non_nullable
-              as String,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as String,
-      coverPath: freezed == coverPath
-          ? _value.coverPath
-          : coverPath // ignore: cast_nullable_to_non_nullable
-              as String?,
-      totalChapters: null == totalChapters
-          ? _value.totalChapters
-          : totalChapters // ignore: cast_nullable_to_non_nullable
-              as int,
-      dateAdded: null == dateAdded
-          ? _value.dateAdded
-          : dateAdded // ignore: cast_nullable_to_non_nullable
-              as int,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as String,
-      tags: null == tags
-          ? _value._tags
-          : tags // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-    ));
+    return _then(
+      _$BookImpl(
+        id: freezed == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        uuid: null == uuid
+            ? _value.uuid
+            : uuid // ignore: cast_nullable_to_non_nullable
+                  as String,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        author: null == author
+            ? _value.author
+            : author // ignore: cast_nullable_to_non_nullable
+                  as String,
+        coverPath: freezed == coverPath
+            ? _value.coverPath
+            : coverPath // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        totalChapters: null == totalChapters
+            ? _value.totalChapters
+            : totalChapters // ignore: cast_nullable_to_non_nullable
+                  as int,
+        dateAdded: null == dateAdded
+            ? _value.dateAdded
+            : dateAdded // ignore: cast_nullable_to_non_nullable
+                  as int,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String,
+        tags: null == tags
+            ? _value._tags
+            : tags // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
 class _$BookImpl implements _Book {
-  const _$BookImpl(
-      {this.id,
-      required this.uuid,
-      required this.title,
-      required this.author,
-      this.coverPath,
-      required this.totalChapters,
-      required this.dateAdded,
-      required this.status,
-      required final List<String> tags})
-      : _tags = tags;
+  const _$BookImpl({
+    this.id,
+    required this.uuid,
+    required this.title,
+    required this.author,
+    this.coverPath,
+    required this.totalChapters,
+    required this.dateAdded,
+    required this.status,
+    required final List<String> tags,
+  }) : _tags = tags;
 
   @override
   final int? id;
@@ -256,16 +265,17 @@ class _$BookImpl implements _Book {
 
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      uuid,
-      title,
-      author,
-      coverPath,
-      totalChapters,
-      dateAdded,
-      status,
-      const DeepCollectionEquality().hash(_tags));
+    runtimeType,
+    id,
+    uuid,
+    title,
+    author,
+    coverPath,
+    totalChapters,
+    dateAdded,
+    status,
+    const DeepCollectionEquality().hash(_tags),
+  );
 
   @JsonKey(ignore: true)
   @override
@@ -275,16 +285,17 @@ class _$BookImpl implements _Book {
 }
 
 abstract class _Book implements Book {
-  const factory _Book(
-      {final int? id,
-      required final String uuid,
-      required final String title,
-      required final String author,
-      final String? coverPath,
-      required final int totalChapters,
-      required final int dateAdded,
-      required final String status,
-      required final List<String> tags}) = _$BookImpl;
+  const factory _Book({
+    final int? id,
+    required final String uuid,
+    required final String title,
+    required final String author,
+    final String? coverPath,
+    required final int totalChapters,
+    required final int dateAdded,
+    required final String status,
+    required final List<String> tags,
+  }) = _$BookImpl;
 
   @override
   int? get id;
@@ -327,12 +338,13 @@ abstract class $ChapterCopyWith<$Res> {
   factory $ChapterCopyWith(Chapter value, $Res Function(Chapter) then) =
       _$ChapterCopyWithImpl<$Res, Chapter>;
   @useResult
-  $Res call(
-      {int? id,
-      String bookUuid,
-      int chapterIndex,
-      String title,
-      List<String> paragraphs});
+  $Res call({
+    int? id,
+    String bookUuid,
+    int chapterIndex,
+    String title,
+    List<String> paragraphs,
+  });
 }
 
 /// @nodoc
@@ -354,44 +366,49 @@ class _$ChapterCopyWithImpl<$Res, $Val extends Chapter>
     Object? title = null,
     Object? paragraphs = null,
   }) {
-    return _then(_value.copyWith(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      bookUuid: null == bookUuid
-          ? _value.bookUuid
-          : bookUuid // ignore: cast_nullable_to_non_nullable
-              as String,
-      chapterIndex: null == chapterIndex
-          ? _value.chapterIndex
-          : chapterIndex // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      paragraphs: null == paragraphs
-          ? _value.paragraphs
-          : paragraphs // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: freezed == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            bookUuid: null == bookUuid
+                ? _value.bookUuid
+                : bookUuid // ignore: cast_nullable_to_non_nullable
+                      as String,
+            chapterIndex: null == chapterIndex
+                ? _value.chapterIndex
+                : chapterIndex // ignore: cast_nullable_to_non_nullable
+                      as int,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            paragraphs: null == paragraphs
+                ? _value.paragraphs
+                : paragraphs // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$ChapterImplCopyWith<$Res> implements $ChapterCopyWith<$Res> {
   factory _$$ChapterImplCopyWith(
-          _$ChapterImpl value, $Res Function(_$ChapterImpl) then) =
-      __$$ChapterImplCopyWithImpl<$Res>;
+    _$ChapterImpl value,
+    $Res Function(_$ChapterImpl) then,
+  ) = __$$ChapterImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int? id,
-      String bookUuid,
-      int chapterIndex,
-      String title,
-      List<String> paragraphs});
+  $Res call({
+    int? id,
+    String bookUuid,
+    int chapterIndex,
+    String title,
+    List<String> paragraphs,
+  });
 }
 
 /// @nodoc
@@ -399,8 +416,9 @@ class __$$ChapterImplCopyWithImpl<$Res>
     extends _$ChapterCopyWithImpl<$Res, _$ChapterImpl>
     implements _$$ChapterImplCopyWith<$Res> {
   __$$ChapterImplCopyWithImpl(
-      _$ChapterImpl _value, $Res Function(_$ChapterImpl) _then)
-      : super(_value, _then);
+    _$ChapterImpl _value,
+    $Res Function(_$ChapterImpl) _then,
+  ) : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
@@ -411,41 +429,43 @@ class __$$ChapterImplCopyWithImpl<$Res>
     Object? title = null,
     Object? paragraphs = null,
   }) {
-    return _then(_$ChapterImpl(
-      id: freezed == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int?,
-      bookUuid: null == bookUuid
-          ? _value.bookUuid
-          : bookUuid // ignore: cast_nullable_to_non_nullable
-              as String,
-      chapterIndex: null == chapterIndex
-          ? _value.chapterIndex
-          : chapterIndex // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      paragraphs: null == paragraphs
-          ? _value._paragraphs
-          : paragraphs // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-    ));
+    return _then(
+      _$ChapterImpl(
+        id: freezed == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        bookUuid: null == bookUuid
+            ? _value.bookUuid
+            : bookUuid // ignore: cast_nullable_to_non_nullable
+                  as String,
+        chapterIndex: null == chapterIndex
+            ? _value.chapterIndex
+            : chapterIndex // ignore: cast_nullable_to_non_nullable
+                  as int,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        paragraphs: null == paragraphs
+            ? _value._paragraphs
+            : paragraphs // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
+      ),
+    );
   }
 }
 
 /// @nodoc
 
 class _$ChapterImpl implements _Chapter {
-  const _$ChapterImpl(
-      {this.id,
-      required this.bookUuid,
-      required this.chapterIndex,
-      required this.title,
-      required final List<String> paragraphs})
-      : _paragraphs = paragraphs;
+  const _$ChapterImpl({
+    this.id,
+    required this.bookUuid,
+    required this.chapterIndex,
+    required this.title,
+    required final List<String> paragraphs,
+  }) : _paragraphs = paragraphs;
 
   @override
   final int? id;
@@ -479,13 +499,21 @@ class _$ChapterImpl implements _Chapter {
             (identical(other.chapterIndex, chapterIndex) ||
                 other.chapterIndex == chapterIndex) &&
             (identical(other.title, title) || other.title == title) &&
-            const DeepCollectionEquality()
-                .equals(other._paragraphs, _paragraphs));
+            const DeepCollectionEquality().equals(
+              other._paragraphs,
+              _paragraphs,
+            ));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, bookUuid, chapterIndex,
-      title, const DeepCollectionEquality().hash(_paragraphs));
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    bookUuid,
+    chapterIndex,
+    title,
+    const DeepCollectionEquality().hash(_paragraphs),
+  );
 
   @JsonKey(ignore: true)
   @override
@@ -495,12 +523,13 @@ class _$ChapterImpl implements _Chapter {
 }
 
 abstract class _Chapter implements Chapter {
-  const factory _Chapter(
-      {final int? id,
-      required final String bookUuid,
-      required final int chapterIndex,
-      required final String title,
-      required final List<String> paragraphs}) = _$ChapterImpl;
+  const factory _Chapter({
+    final int? id,
+    required final String bookUuid,
+    required final int chapterIndex,
+    required final String title,
+    required final List<String> paragraphs,
+  }) = _$ChapterImpl;
 
   @override
   int? get id;

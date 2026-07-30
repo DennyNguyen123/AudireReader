@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/database/database_helper.dart';
@@ -13,6 +14,7 @@ class TtsDownloadManagerSheet extends StatefulWidget {
   final bool isDark;
   final Color textColor;
   final Color sheetBg;
+  final int currentChapterIndex;
 
   const TtsDownloadManagerSheet({
     super.key,
@@ -21,6 +23,7 @@ class TtsDownloadManagerSheet extends StatefulWidget {
     required this.isDark,
     required this.textColor,
     required this.sheetBg,
+    this.currentChapterIndex = 0,
   });
 
   @override
@@ -40,17 +43,34 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   final Set<int> _selectedChapterIndices = {};
 
   final AutoScrollController _autoScrollController = AutoScrollController();
-  int _lastScrolledIndex = -1;
+
+  String _filterMode = 'all';
 
   List<Chapter> get _displayChapters {
-    if (_offlineService.isDownloading || _offlineService.isPaused) {
-      return widget.chapters
-          .where(
-            (ch) => _offlineService.chapterStatus.containsKey(ch.chapterIndex),
-          )
+    List<Chapter> list = widget.chapters;
+    if (_filterMode == 'downloaded') {
+      return list
+          .where((ch) => _downloadedChapterIndices.contains(ch.chapterIndex))
           .toList();
+    } else if (_filterMode == 'not_downloaded') {
+      final notDownloaded = list
+          .where((ch) => !_downloadedChapterIndices.contains(ch.chapterIndex))
+          .toList();
+
+      notDownloaded.sort((a, b) {
+        final aActive = _offlineService.activeChapterIndices.contains(
+          a.chapterIndex,
+        );
+        final bActive = _offlineService.activeChapterIndices.contains(
+          b.chapterIndex,
+        );
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+        return a.chapterIndex.compareTo(b.chapterIndex);
+      });
+      return notDownloaded;
     }
-    return widget.chapters;
+    return list;
   }
 
   @override
@@ -62,43 +82,46 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
 
   @override
   void dispose() {
+    _updateDebounceTimer?.cancel();
     _offlineService.removeListener(_onServiceUpdate);
     _autoScrollController.dispose();
     super.dispose();
   }
 
+  Timer? _updateDebounceTimer;
+
   void _onServiceUpdate() {
     if (!mounted) return;
-    if (_offlineService.isDownloading) {
-      setState(() {});
-      _scrollToDownloadingIndex();
-    } else {
-      _loadStorageAndStatus();
-    }
-  }
+    if (_updateDebounceTimer?.isActive ?? false) return;
 
-  void _scrollToDownloadingIndex() {
-    if (!_autoScrollController.hasClients) return;
-    
-    // Find first downloading chapter
-    int downloadingIndex = _displayChapters.indexWhere(
-      (ch) => _offlineService.chapterStatus[ch.chapterIndex] == 'downloading'
-    );
-    
-    if (downloadingIndex != -1 && downloadingIndex != _lastScrolledIndex) {
-      _lastScrolledIndex = downloadingIndex;
-      
-      _autoScrollController.scrollToIndex(
-        downloadingIndex,
-        preferPosition: AutoScrollPosition.begin,
-        duration: const Duration(milliseconds: 300),
-      );
-    }
+    _updateDebounceTimer = Timer(const Duration(milliseconds: 1000), () async {
+      if (!mounted) return;
+      await _loadStorageAndStatus();
+      if (_offlineService.isDownloading || _offlineService.isPaused) {
+        setState(() {
+          if (_offlineService.storageSize > 0) {
+            _storageSize = _offlineService.storageSize;
+          }
+          if (_offlineService.downloadedChapterIndices.isNotEmpty) {
+            _downloadedChapterIndices = _offlineService.downloadedChapterIndices
+                .toSet();
+          }
+          if (_offlineService.chapterSizes.isNotEmpty) {
+            _chapterSizes = _offlineService.chapterSizes;
+          }
+        });
+      }
+    });
   }
 
   Future<void> _loadInitialData() async {
+    _currentChapterIndex = widget.currentChapterIndex;
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
+    final progress = await db.getProgress(widget.book.uuid);
+    if (progress != null) {
+      _currentChapterIndex = progress.currentChapterIndex;
+    }
     setState(() {
       _settings = settings;
     });
@@ -111,28 +134,15 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   }
 
   Future<void> _loadStorageAndStatus() async {
-    final size = await _offlineService.getStorageUsage(widget.book.uuid);
-    final sizes = await _offlineService.getChapterStorageSizes(
-      widget.book.uuid,
-    );
-    final downloaded = <int>{};
-    if (_settings != null) {
-      for (final ch in widget.chapters) {
-        final isDownloaded = await _offlineService.isChapterDownloaded(
-          widget.book.uuid,
-          ch.chapterIndex,
-          _settings!,
-        );
-        if (isDownloaded) {
-          downloaded.add(ch.chapterIndex);
-        }
-      }
-    }
-    if (mounted) {
+    final info = await _offlineService.getBookStorageInfo(widget.book.uuid);
+    if (info != null && mounted) {
       setState(() {
-        _storageSize = size;
-        _chapterSizes = sizes;
-        _downloadedChapterIndices = downloaded;
+        _storageSize = info.totalBytes.toInt();
+        _downloadedChapterIndices = info.chapterIndices.toSet();
+        _chapterSizes = {
+          for (final item in info.chapterSizes)
+            item.chapterIndex: item.bytes.toInt(),
+        };
       });
     }
   }
@@ -145,45 +155,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
 
   Future<void> _updateConcurrency(double val) async {
     if (_settings == null) return;
-    final int newConcurrency = val.round().clamp(1, 50);
+    final int newConcurrency = val.round().clamp(1, 100);
     setState(() {
       _settings!.ttsDownloadConcurrency = newConcurrency;
     });
     final db = await DatabaseHelper.getInstance();
     await db.saveSettings(_settings!);
-  }
-
-  void _startDownloadAll() {
-    if (_settings == null) return;
-    _offlineService.startDownload(
-      book: widget.book,
-      chapters: widget.chapters,
-      settings: _settings!,
-    );
-  }
-
-  void _startDownloadUndownloaded() {
-    if (_settings == null) return;
-    final undownloaded = widget.chapters
-        .where((ch) => !_downloadedChapterIndices.contains(ch.chapterIndex))
-        .toList();
-    if (undownloaded.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-                ? 'Tất cả các chương đã được tải xuống'
-                : 'All chapters are already downloaded',
-          ),
-        ),
-      );
-      return;
-    }
-    _offlineService.startDownload(
-      book: widget.book,
-      chapters: undownloaded,
-      settings: _settings!,
-    );
   }
 
   void _startDownloadSelected() {
@@ -208,15 +185,9 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-              ? 'Xoá các chương đã chọn'
-              : 'Delete selected chapters',
-        ),
+        title: Text(AppLocalizations.of(context)!.deleteSelectedChapters),
         content: Text(
-          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-              ? 'Bạn có chắc chắn muốn xoá TTS offline của $count chương đã chọn?'
-              : 'Are you sure you want to delete offline TTS for $count selected chapters?',
+          AppLocalizations.of(context)!.confirmDeleteSelected(count),
         ),
         actions: [
           TextButton(
@@ -249,16 +220,8 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-              ? 'Xoá tất cả TTS Offline'
-              : 'Delete all offline TTS',
-        ),
-        content: Text(
-          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-              ? 'Bạn có chắc chắn muốn xoá toàn bộ dữ liệu audio TTS offline của cuốn sách này?'
-              : 'Are you sure you want to delete all offline TTS audio files for this book?',
-        ),
+        title: Text(AppLocalizations.of(context)!.deleteAllOfflineTts),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteAllOfflineTts),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -281,9 +244,35 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
 
   void _selectAll() {
     setState(() {
+      _selectedChapterIndices.clear();
       _selectedChapterIndices.addAll(
-        widget.chapters.map((c) => c.chapterIndex),
+        widget.chapters.map((e) => e.chapterIndex),
       );
+    });
+  }
+
+  void _selectMissing() {
+    setState(() {
+      _selectedChapterIndices.clear();
+      for (final ch in widget.chapters) {
+        if (!_downloadedChapterIndices.contains(ch.chapterIndex)) {
+          _selectedChapterIndices.add(ch.chapterIndex);
+        }
+      }
+    });
+  }
+
+  int _currentChapterIndex = 0;
+
+  void _selectFromCurrentToEnd() {
+    setState(() {
+      _selectedChapterIndices.clear();
+      for (final ch in widget.chapters) {
+        if (ch.chapterIndex >= _currentChapterIndex &&
+            !_downloadedChapterIndices.contains(ch.chapterIndex)) {
+          _selectedChapterIndices.add(ch.chapterIndex);
+        }
+      }
     });
   }
 
@@ -300,18 +289,14 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-              ? 'Chọn theo khoảng'
-              : 'Select Range',
-        ),
+        title: Text(AppLocalizations.of(context)!.selectRange),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-                  ? 'Nhập thứ tự chương (1 - ${widget.chapters.length}):'
-                  : 'Enter chapter range (1 - ${widget.chapters.length}):',
+              AppLocalizations.of(
+                context,
+              )!.enterChapterRange(widget.chapters.length),
             ),
             const SizedBox(height: 16),
             Row(
@@ -321,11 +306,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                     controller: startController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-                          ? 'Từ'
-                          : 'From',
+                      labelText: AppLocalizations.of(context)!.fromRange,
                       border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ),
@@ -335,11 +321,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                     controller: endController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-                          ? 'Đến'
-                          : 'To',
+                      labelText: AppLocalizations.of(context)!.toRange,
                       border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ),
@@ -354,7 +341,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Chọn' : 'Select'),
+            child: Text(AppLocalizations.of(context)!.selectButton),
           ),
         ],
       ),
@@ -368,7 +355,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
         setState(() {
           final startIdx = (start - 1).clamp(0, widget.chapters.length - 1);
           final endIdx = (end - 1).clamp(0, widget.chapters.length - 1);
-          
+
           for (int i = startIdx; i <= endIdx; i++) {
             _selectedChapterIndices.add(widget.chapters[i].chapterIndex);
           }
@@ -387,7 +374,7 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.85,
+          height: MediaQuery.of(context).size.height * 0.93,
           decoration: BoxDecoration(
             color: widget.sheetBg.withValues(alpha: widget.isDark ? 0.9 : 0.95),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -409,15 +396,13 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 8,
+                  vertical: 4,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt'
-                          ? 'Quản lý TTS Offline'
-                          : 'Offline TTS Manager',
+                      AppLocalizations.of(context)!.offlineTtsManager,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -442,39 +427,37 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                 Expanded(
                   child: Column(
                     children: [
+                      // Top compact controls header
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
+                          horizontal: 16,
+                          vertical: 4,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                              // Storage usage card
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: primaryColor.withValues(alpha: 0.2),
-                                  ),
+                            // Compact Storage usage card
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: primaryColor.withValues(alpha: 0.15),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Row(
                                       children: [
                                         Text(
-                                          AppLocalizations.of(
-                                                    context,
-                                                  )?.vietnamese ==
-                                                  'Tiếng Việt'
-                                              ? 'Dung lượng đã sử dụng'
-                                              : 'Storage used',
+                                          '${AppLocalizations.of(context)!.storageUsed}: ',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: widget.textColor.withValues(
@@ -482,486 +465,576 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
                                         Text(
                                           _formatSize(_storageSize),
                                           style: TextStyle(
-                                            fontSize: 20,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.bold,
                                             color: primaryColor,
                                           ),
                                         ),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          '${_downloadedChapterIndices.length} / ${widget.chapters.length} ${AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'chương đã tải' : 'chapters downloaded'}',
+                                          '(${_downloadedChapterIndices.length}/${widget.chapters.length})',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 11,
                                             color: widget.textColor.withValues(
-                                              alpha: 0.6,
+                                              alpha: 0.5,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    if (_storageSize > 0)
-                                      OutlinedButton.icon(
-                                        icon: const Icon(
-                                          Icons.delete_outline_rounded,
-                                          size: 18,
+                                  ),
+                                  if (_storageSize > 0)
+                                    OutlinedButton.icon(
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 14,
+                                        color: Colors.redAccent,
+                                      ),
+                                      label: Text(
+                                        AppLocalizations.of(context)!.deleteAll,
+                                        style: const TextStyle(
+                                          fontSize: 11,
                                           color: Colors.redAccent,
                                         ),
-                                        label: Text(
-                                          AppLocalizations.of(
-                                                    context,
-                                                  )?.vietnamese ==
-                                                  'Tiếng Việt'
-                                              ? 'Xoá tất cả'
-                                              : 'Delete All',
-                                          style: const TextStyle(
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                        style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(
-                                            color: Colors.redAccent,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        onPressed: _confirmDeleteAll,
                                       ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Concurrency slider
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: widget.isDark
-                                      ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.black.withValues(alpha: 0.03),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          AppLocalizations.of(
-                                                    context,
-                                                  )?.vietnamese ==
-                                                  'Tiếng Việt'
-                                              ? 'Số luồng tải song song'
-                                              : 'Parallel download threads',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: widget.textColor,
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: primaryColor,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${(_settings?.ttsDownloadConcurrency ?? 3).clamp(1, 50)}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Slider(
-                                      value:
-                                          (_settings?.ttsDownloadConcurrency ??
-                                                  3)
-                                              .clamp(1, 50)
-                                              .toDouble(),
-                                      min: 1.0,
-                                      max: 50.0,
-                                      divisions: 49,
-                                      activeColor: primaryColor,
-                                      onChanged: _updateConcurrency,
-                                    ),
-                                    if (((_settings?.ttsDownloadConcurrency ??
-                                                3)
-                                            .clamp(1, 50)) >
-                                        20)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          AppLocalizations.of(
-                                                    context,
-                                                  )?.vietnamese ==
-                                                  'Tiếng Việt'
-                                              ? '⚠️ Số luồng cao (>20) có thể khiến server chặn (lỗi 429).'
-                                              : '⚠️ High thread count (>20) may cause server rate-limiting (HTTP 429).',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.orangeAccent,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Action buttons
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      icon: const Icon(Icons.download_rounded),
-                                      label: Text(
-                                        AppLocalizations.of(
-                                                  context,
-                                                )?.vietnamese ==
-                                                'Tiếng Việt'
-                                            ? 'Tải các chương chưa tải'
-                                            : 'Download missing',
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: primaryColor,
-                                        foregroundColor: Colors.white,
+                                      style: OutlinedButton.styleFrom(
+                                        visualDensity: VisualDensity.compact,
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        side: const BorderSide(
+                                          color: Colors.redAccent,
                                         ),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            6,
                                           ),
                                         ),
                                       ),
-                                      onPressed: _offlineService.isDownloading
-                                          ? null
-                                          : _startDownloadUndownloaded,
+                                      onPressed: _confirmDeleteAll,
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  OutlinedButton.icon(
-                                    icon: const Icon(Icons.select_all_rounded),
-                                    label: Text(
-                                      AppLocalizations.of(
-                                                context,
-                                              )?.vietnamese ==
-                                              'Tiếng Việt'
-                                          ? 'Tải tất cả'
-                                          : 'Download All',
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                        horizontal: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    onPressed: _offlineService.isDownloading
-                                        ? null
-                                        : _startDownloadAll,
-                                  ),
                                 ],
                               ),
+                            ),
 
-                              if (_offlineService.isDownloading ||
-                                  _offlineService.isPaused)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 16),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withValues(
-                                        alpha: 0.15,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            '${AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Đang tải' : 'Downloading'} ${_offlineService.completedChaptersCount}/${_offlineService.totalChaptersToDownload}',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: widget.textColor,
-                                            ),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: Icon(
-                                            _offlineService.isPaused
-                                                ? Icons.play_arrow_rounded
-                                                : Icons.pause_rounded,
-                                            color: primaryColor,
-                                          ),
-                                          onPressed: () {
-                                            if (_offlineService.isPaused &&
-                                                _settings != null) {
-                                              _offlineService.resumeDownload(
-                                                widget.book,
-                                                _settings!,
-                                              );
-                                            } else {
-                                              _offlineService.pauseDownload();
-                                            }
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.cancel_outlined,
-                                            color: Colors.redAccent,
-                                          ),
-                                          onPressed: () =>
-                                              _offlineService.cancelDownload(),
-                                        ),
-                                      ],
-                                    ),
+                            // Concurrency slider
+                            Theme(
+                              data: theme.copyWith(
+                                dividerColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                tilePadding: EdgeInsets.zero,
+                                title: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.advancedSettings,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.textColor,
                                   ),
                                 ),
-
-                              const SizedBox(height: 20),
-
-                              // Chapter list header with Multi-select toggle
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    AppLocalizations.of(context)?.vietnamese ==
-                                            'Tiếng Việt'
-                                        ? 'Danh sách chương'
-                                        : 'Chapter List',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: widget.textColor,
-                                    ),
-                                  ),
-                                  TextButton.icon(
-                                    icon: Icon(
-                                      _isMultiSelectMode
-                                          ? Icons.close_rounded
-                                          : Icons.checklist_rounded,
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      _isMultiSelectMode
-                                          ? (AppLocalizations.of(
-                                                      context,
-                                                    )?.vietnamese ==
-                                                    'Tiếng Việt'
-                                                ? 'Hủy chọn'
-                                                : 'Cancel')
-                                          : (AppLocalizations.of(
-                                                      context,
-                                                    )?.vietnamese ==
-                                                    'Tiếng Việt'
-                                                ? 'Chọn nhiều'
-                                                : 'Select Multi'),
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isMultiSelectMode =
-                                            !_isMultiSelectMode;
-                                        _selectedChapterIndices.clear();
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-
-                              // Multi-select actions bar
-                              if (_isMultiSelectMode)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: primaryColor.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: widget.isDark
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : Colors.black.withValues(
+                                              alpha: 0.03,
+                                            ),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              '${AppLocalizations.of(context)?.vietnamese == 'Tiếng Việt' ? 'Đã chọn' : 'Selected'}: ${_selectedChapterIndices.length}',
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.parallelDownloadThreads,
                                               style: TextStyle(
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                color: primaryColor,
+                                                color: widget.textColor,
                                               ),
                                             ),
-                                            Row(
-                                              children: [
-                                                TextButton(
-                                                  onPressed: _selectAll,
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                              context,
-                                                            )?.vietnamese ==
-                                                            'Tiếng Việt'
-                                                        ? 'Tất cả'
-                                                        : 'Select All',
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
                                                   ),
+                                              decoration: BoxDecoration(
+                                                color: primaryColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '${(_settings?.ttsDownloadConcurrency ?? 3).clamp(1, 100)}',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                                TextButton(
-                                                  onPressed: _deselectAll,
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                              context,
-                                                            )?.vietnamese ==
-                                                            'Tiếng Việt'
-                                                        ? 'Bỏ chọn'
-                                                        : 'Clear',
-                                                  ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: _showSelectRangeDialog,
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                              context,
-                                                            )?.vietnamese ==
-                                                            'Tiếng Việt'
-                                                        ? 'Khoảng'
-                                                        : 'Range',
-                                                  ),
-                                                ),
-                                              ],
+                                              ),
                                             ),
                                           ],
                                         ),
-                                        if (_selectedChapterIndices
-                                            .isNotEmpty) ...[
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: ElevatedButton.icon(
-                                                  icon: const Icon(
-                                                    Icons.download_rounded,
-                                                    size: 18,
-                                                  ),
-                                                  label: Text(
-                                                    AppLocalizations.of(
-                                                              context,
-                                                            )?.vietnamese ==
-                                                            'Tiếng Việt'
-                                                        ? 'Tải đã chọn'
-                                                        : 'Download',
-                                                  ),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        primaryColor,
-                                                    foregroundColor:
-                                                        Colors.white,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            10,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  onPressed:
-                                                      _startDownloadSelected,
-                                                ),
+                                        Slider(
+                                          value:
+                                              (_settings?.ttsDownloadConcurrency ??
+                                                      3)
+                                                  .clamp(1, 100)
+                                                  .toDouble(),
+                                          min: 1.0,
+                                          max: 100.0,
+                                          divisions: 99,
+                                          activeColor: primaryColor,
+                                          onChanged: _updateConcurrency,
+                                        ),
+                                        if (((_settings?.ttsDownloadConcurrency ??
+                                                    3)
+                                                .clamp(1, 100)) >
+                                            20)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 2,
+                                            ),
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.highThreadCountWarning,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.orangeAccent,
                                               ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  icon: const Icon(
-                                                    Icons
-                                                        .delete_outline_rounded,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  label: Text(
-                                                    AppLocalizations.of(
-                                                              context,
-                                                            )?.vietnamese ==
-                                                            'Tiếng Việt'
-                                                        ? 'Xoá đã chọn'
-                                                        : 'Delete',
-                                                    style: const TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                  style: OutlinedButton.styleFrom(
-                                                    side: const BorderSide(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            10,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  onPressed: _deleteSelected,
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
-                                        ],
                                       ],
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
+                                ],
+                              ),
+                            ),
 
-                        // Chapter status list
+                            // Compact Active Download Bar
+                            if (_offlineService.isDownloading ||
+                                _offlineService.isPaused)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.0,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.downloading(
+                                            '${_offlineService.completedChaptersCount}/${_offlineService.totalChaptersToDownload}',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: widget.textColor,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(4),
+                                        icon: Icon(
+                                          _offlineService.isPaused
+                                              ? Icons.play_arrow_rounded
+                                              : Icons.pause_rounded,
+                                          size: 18,
+                                          color: primaryColor,
+                                        ),
+                                        onPressed: () {
+                                          if (_offlineService.isPaused &&
+                                              _settings != null) {
+                                            _offlineService.resumeDownload(
+                                              widget.book,
+                                              _settings!,
+                                            );
+                                          } else {
+                                            _offlineService.pauseDownload();
+                                          }
+                                        },
+                                      ),
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(4),
+                                        icon: const Icon(
+                                          Icons.cancel_rounded,
+                                          size: 18,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: () {
+                                          _offlineService.cancelDownload();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                            const SizedBox(height: 6),
+
+                            // Chapter list header with Filter & Multi-select toggle
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context)!.chapterList,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.textColor,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    PopupMenuButton<String>(
+                                      icon: Icon(
+                                        Icons.filter_list_rounded,
+                                        color: widget.textColor,
+                                      ),
+                                      tooltip: 'Filter',
+                                      onSelected: (mode) {
+                                        setState(() {
+                                          _filterMode = mode;
+                                        });
+                                      },
+                                      itemBuilder: (ctx) => [
+                                        PopupMenuItem(
+                                          value: 'all',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode == 'all')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterAll,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'downloaded',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode == 'downloaded')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterDownloaded,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'not_downloaded',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode ==
+                                                  'not_downloaded')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterNotDownloaded,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    TextButton.icon(
+                                      icon: Icon(
+                                        _isMultiSelectMode
+                                            ? Icons.close_rounded
+                                            : Icons.checklist_rounded,
+                                        size: 18,
+                                        color: primaryColor,
+                                      ),
+                                      label: Text(
+                                        _isMultiSelectMode
+                                            ? (AppLocalizations.of(
+                                                    context,
+                                                  )?.cancel ??
+                                                  'Cancel')
+                                            : AppLocalizations.of(
+                                                context,
+                                              )!.selectMulti,
+                                        style: TextStyle(
+                                          color: primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isMultiSelectMode =
+                                              !_isMultiSelectMode;
+                                          if (!_isMultiSelectMode) {
+                                            _selectedChapterIndices.clear();
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+
+                            if (_isMultiSelectMode) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${_selectedChapterIndices.length} ${AppLocalizations.of(context)!.selected}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: widget.textColor,
+                                          ),
+                                        ),
+                                        PopupMenuButton<String>(
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.selectMulti,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: primaryColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Icon(
+                                                Icons.arrow_drop_down_rounded,
+                                                color: primaryColor,
+                                              ),
+                                            ],
+                                          ),
+                                          onSelected: (val) {
+                                            if (val == 'all') {
+                                              _selectAll();
+                                            }
+                                            if (val == 'missing') {
+                                              _selectMissing();
+                                            }
+                                            if (val == 'from_current') {
+                                              _selectFromCurrentToEnd();
+                                            }
+                                            if (val == 'range') {
+                                              _showSelectRangeDialog();
+                                            }
+                                            if (val == 'clear') {
+                                              _deselectAll();
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: 'all',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.selectAll,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'missing',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.selectMissing,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'from_current',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.selectFromCurrentToEnd,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'range',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.selectRange,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'clear',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.clearSelection,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            icon: const Icon(
+                                              Icons.download_rounded,
+                                              size: 16,
+                                            ),
+                                            label: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.downloadSelected,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: primaryColor,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            onPressed: _startDownloadSelected,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            icon: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              size: 16,
+                                              color: Colors.redAccent,
+                                            ),
+                                            label: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.deleteSelected,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.redAccent,
+                                              ),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(
+                                                color: Colors.redAccent,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            onPressed: _deleteSelected,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      // Chapter status list filling 100% remaining vertical height
                       Expanded(
                         child: ListView.builder(
                           controller: _autoScrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
                           itemCount: _displayChapters.length,
                           itemBuilder: (context, index) {
                             final ch = _displayChapters[index];
+                            final isDownloading = _offlineService
+                                .activeChapterIndices
+                                .contains(ch.chapterIndex);
                             final isDownloaded = _downloadedChapterIndices
                                 .contains(ch.chapterIndex);
-                            final status =
-                                _offlineService.chapterStatus[ch
-                                    .chapterIndex] ??
-                                (isDownloaded ? 'completed' : 'idle');
-                            final progress =
-                                _offlineService.chapterProgress[ch
-                                    .chapterIndex] ??
-                                (isDownloaded ? 1.0 : 0.0);
+                            final isFailed = _offlineService
+                                .failedChapterIndices
+                                .contains(ch.chapterIndex);
+                            final status = isDownloading
+                                ? 'downloading'
+                                : (isFailed
+                                      ? 'failed'
+                                      : (isDownloaded ? 'completed' : 'idle'));
                             final chSize = _chapterSizes[ch.chapterIndex] ?? 0;
                             final isSelected = _selectedChapterIndices.contains(
                               ch.chapterIndex,
@@ -973,145 +1046,188 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                               index: index,
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 6),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? primaryColor.withValues(alpha: 0.15)
-                                    : (widget.isDark
-                                          ? Colors.white.withValues(alpha: 0.03)
-                                          : Colors.black.withValues(
-                                              alpha: 0.02,
-                                            )),
-                                borderRadius: BorderRadius.circular(10),
-                                border: isSelected
-                                    ? Border.all(
-                                        color: primaryColor,
-                                        width: 1.5,
-                                      )
-                                    : null,
-                              ),
-                              child: ListTile(
-                                dense: true,
-                                leading: _isMultiSelectMode
-                                    ? Checkbox(
-                                        value: isSelected,
-                                        activeColor: primaryColor,
-                                        onChanged: (val) {
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? primaryColor.withValues(alpha: 0.15)
+                                      : (widget.isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.03,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.02,
+                                              )),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: isSelected
+                                      ? Border.all(
+                                          color: primaryColor,
+                                          width: 1.5,
+                                        )
+                                      : null,
+                                ),
+                                child: ListTile(
+                                  dense: true,
+                                  leading: _isMultiSelectMode
+                                      ? Checkbox(
+                                          value: isSelected,
+                                          activeColor: primaryColor,
+                                          onChanged: (val) {
+                                            setState(() {
+                                              if (val == true) {
+                                                _selectedChapterIndices.add(
+                                                  ch.chapterIndex,
+                                                );
+                                              } else {
+                                                _selectedChapterIndices.remove(
+                                                  ch.chapterIndex,
+                                                );
+                                              }
+                                            });
+                                          },
+                                        )
+                                      : null,
+                                  title: Text(
+                                    ch.title,
+                                    style: TextStyle(
+                                      color: widget.textColor,
+                                      fontSize: 13,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                  subtitle: status == 'downloading'
+                                      ? const Text(
+                                          'Downloading...',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.amber,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : status == 'failed'
+                                      ? const Text(
+                                          'Failed to download',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : (chSize > 0
+                                            ? Text(
+                                                _formatSize(chSize),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: primaryColor
+                                                      .withValues(alpha: 0.8),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
+                                            : null),
+                                  trailing: status == 'downloading'
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.amber,
+                                                ),
+                                          ),
+                                        )
+                                      : status == 'failed'
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.error_outline_rounded,
+                                              color: Colors.redAccent,
+                                              size: 20,
+                                            ),
+                                            if (!_isMultiSelectMode)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.refresh_rounded,
+                                                  size: 20,
+                                                  color: Colors.amber,
+                                                ),
+                                                onPressed: () {
+                                                  if (_settings != null) {
+                                                    _offlineService
+                                                        .startDownload(
+                                                          book: widget.book,
+                                                          chapters: [ch],
+                                                          settings: _settings!,
+                                                        );
+                                                  }
+                                                },
+                                              ),
+                                          ],
+                                        )
+                                      : status == 'completed'
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.check_circle_rounded,
+                                              color: Colors.green,
+                                              size: 18,
+                                            ),
+                                            if (!_isMultiSelectMode)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete_outline_rounded,
+                                                  size: 18,
+                                                  color: Colors.redAccent,
+                                                ),
+                                                onPressed: () async {
+                                                  await _offlineService
+                                                      .deleteOfflineTtsForChapter(
+                                                        widget.book.uuid,
+                                                        ch.chapterIndex,
+                                                      );
+                                                  await _loadStorageAndStatus();
+                                                },
+                                              ),
+                                          ],
+                                        )
+                                      : (!_isMultiSelectMode
+                                            ? IconButton(
+                                                icon: const Icon(
+                                                  Icons
+                                                      .download_for_offline_outlined,
+                                                  size: 20,
+                                                ),
+                                                onPressed: () {
+                                                  if (_settings != null) {
+                                                    _offlineService
+                                                        .startDownload(
+                                                          book: widget.book,
+                                                          chapters: [ch],
+                                                          settings: _settings!,
+                                                        );
+                                                  }
+                                                },
+                                              )
+                                            : null),
+                                  onTap: _isMultiSelectMode
+                                      ? () {
                                           setState(() {
-                                            if (val == true) {
-                                              _selectedChapterIndices.add(
+                                            if (isSelected) {
+                                              _selectedChapterIndices.remove(
                                                 ch.chapterIndex,
                                               );
                                             } else {
-                                              _selectedChapterIndices.remove(
+                                              _selectedChapterIndices.add(
                                                 ch.chapterIndex,
                                               );
                                             }
                                           });
-                                        },
-                                      )
-                                    : null,
-                                title: Text(
-                                  ch.title,
-                                  style: TextStyle(
-                                    color: widget.textColor,
-                                    fontSize: 13,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
+                                        }
+                                      : null,
                                 ),
-                                subtitle: status == 'downloading'
-                                    ? ExcludeSemantics(
-                                        child: LinearProgressIndicator(
-                                          value: progress,
-                                          minHeight: 3,
-                                        ),
-                                      )
-                                    : (chSize > 0
-                                          ? Text(
-                                              _formatSize(chSize),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: primaryColor.withValues(
-                                                  alpha: 0.8,
-                                                ),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          : null),
-                                trailing: status == 'downloading'
-                                    ? ExcludeSemantics(
-                                        child: Text(
-                                          '${(progress * 100).toInt()}%',
-                                          style: TextStyle(
-                                            color: primaryColor,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      )
-                                    : status == 'completed'
-                                    ? Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.check_circle_rounded,
-                                            color: Colors.green,
-                                            size: 18,
-                                          ),
-                                          if (!_isMultiSelectMode)
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete_outline_rounded,
-                                                size: 18,
-                                                color: Colors.redAccent,
-                                              ),
-                                              onPressed: () async {
-                                                await _offlineService
-                                                    .deleteOfflineTtsForChapter(
-                                                      widget.book.uuid,
-                                                      ch.chapterIndex,
-                                                    );
-                                                await _loadStorageAndStatus();
-                                              },
-                                            ),
-                                        ],
-                                      )
-                                    : (!_isMultiSelectMode
-                                          ? IconButton(
-                                              icon: const Icon(
-                                                Icons
-                                                    .download_for_offline_outlined,
-                                                size: 20,
-                                              ),
-                                              onPressed: () {
-                                                if (_settings != null) {
-                                                  _offlineService.startDownload(
-                                                    book: widget.book,
-                                                    chapters: [ch],
-                                                    settings: _settings!,
-                                                  );
-                                                }
-                                              },
-                                            )
-                                          : null),
-                                onTap: _isMultiSelectMode
-                                    ? () {
-                                        setState(() {
-                                          if (isSelected) {
-                                            _selectedChapterIndices.remove(
-                                              ch.chapterIndex,
-                                            );
-                                          } else {
-                                            _selectedChapterIndices.add(
-                                              ch.chapterIndex,
-                                            );
-                                          }
-                                        });
-                                      }
-                                    : null,
                               ),
-                            ),
                             );
                           },
                         ),

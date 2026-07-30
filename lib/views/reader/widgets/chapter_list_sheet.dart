@@ -77,20 +77,9 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
   Future<void> _loadDownloadedStatus() async {
     final book = widget.ttsService.activeBook;
     if (book == null) return;
-    final db = await DatabaseHelper.getInstance();
-    final settings = await db.getSettings();
 
-    final downloaded = <int>{};
-    for (final ch in widget.ttsService.chapters) {
-      final isDownloaded = await _offlineService.isChapterDownloaded(
-        book.uuid,
-        ch.chapterIndex,
-        settings,
-      );
-      if (isDownloaded) {
-        downloaded.add(ch.chapterIndex);
-      }
-    }
+    final info = await _offlineService.getBookStorageInfo(book.uuid);
+    final downloaded = info?.chapterIndices.toSet() ?? {};
     if (mounted) {
       setState(() {
         _downloadedChapterIndices = downloaded;
@@ -109,6 +98,7 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
       builder: (context) => TtsDownloadManagerSheet(
         book: book,
         chapters: widget.ttsService.chapters,
+        currentChapterIndex: widget.ttsService.currentChapterIndex,
         isDark: widget.isDark,
         textColor: widget.textColor,
         sheetBg: widget.sheetBg,
@@ -317,57 +307,59 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                                 vertical: 0,
                                               ),
                                           title: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                chapter.title,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: isCurrent
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
-                                                  color: isCurrent
-                                                      ? primaryColor
-                                                      : widget.textColor,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  chapter.title,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: isCurrent
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
+                                                    color: isCurrent
+                                                        ? primaryColor
+                                                        : widget.textColor,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            if (isDownloaded)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  left: 6,
+                                              if (isDownloaded)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        left: 6,
+                                                      ),
+                                                  child: Icon(
+                                                    Icons.check_circle_rounded,
+                                                    color: Colors.green
+                                                        .withValues(alpha: 0.8),
+                                                    size: 16,
+                                                  ),
                                                 ),
-                                                child: Icon(
-                                                  Icons.check_circle_rounded,
-                                                  color: Colors.green
-                                                      .withValues(alpha: 0.8),
-                                                  size: 16,
-                                                ),
-                                              ),
-                                          ],
+                                            ],
+                                          ),
+                                          trailing: isCurrent
+                                              ? Icon(
+                                                  Icons.volume_up_rounded,
+                                                  color: primaryColor,
+                                                )
+                                              : null,
+                                          tileColor: isCurrent
+                                              ? primaryColor.withValues(
+                                                  alpha: 0.15,
+                                                )
+                                              : null,
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            widget.ttsService.jumpToChapter(
+                                              originalIndex,
+                                            );
+                                          },
                                         ),
-                                        trailing: isCurrent
-                                            ? Icon(
-                                                Icons.volume_up_rounded,
-                                                color: primaryColor,
-                                              )
-                                            : null,
-                                        tileColor: isCurrent
-                                            ? primaryColor.withValues(
-                                                alpha: 0.15,
-                                              )
-                                            : null,
-                                        onTap: () {
-                                          Navigator.pop(context);
-                                          widget.ttsService.jumpToChapter(
-                                            originalIndex,
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
+                                      );
+                                    },
                                   ),
                           ),
                         ],

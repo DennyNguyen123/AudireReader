@@ -1026,8 +1026,9 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (_themeMode == 'Light' ||
         _themeMode == 'Sepia' ||
         _themeMode == 'Mint' ||
-        _themeMode == 'Parchment')
+        _themeMode == 'Parchment') {
       return false;
+    }
     return Theme.of(context).brightness == Brightness.dark;
   }
 
@@ -1258,9 +1259,6 @@ class _ReaderScreenState extends State<ReaderScreen>
                           icon: const Icon(Icons.more_vert_rounded),
                           onSelected: (value) {
                             switch (value) {
-                              case 'sync':
-                                _showSyncBottomSheet(context);
-                                break;
                               case 'settings':
                                 _showSettings();
                                 break;
@@ -1276,43 +1274,33 @@ class _ReaderScreenState extends State<ReaderScreen>
                                 break;
                             }
                           },
-                          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                            if (_webDavEnabled)
-                              PopupMenuItem<String>(
-                                value: 'sync',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.sync_rounded),
-                                    const SizedBox(width: 12),
-                                    Text(AppLocalizations.of(context)?.syncProgress ?? 'Đồng bộ tiến trình'),
-                                  ],
-                                ),
-                              ),
-                            const PopupMenuItem<String>(
-                              value: 'settings',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.palette_rounded),
-                                  SizedBox(width: 12),
-                                  Text('Appearance Settings'),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'fullscreen',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _showSystemUI
-                                        ? Icons.fullscreen_rounded
-                                        : Icons.fullscreen_exit_rounded,
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'settings',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.palette_rounded),
+                                      SizedBox(width: 12),
+                                      Text('Appearance Settings'),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  Text('Toggle Fullscreen'),
-                                ],
-                              ),
-                            ),
-                          ],
+                                ),
+                                PopupMenuItem<String>(
+                                  value: 'fullscreen',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _showSystemUI
+                                            ? Icons.fullscreen_rounded
+                                            : Icons.fullscreen_exit_rounded,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text('Toggle Fullscreen'),
+                                    ],
+                                  ),
+                                ),
+                              ],
                         ),
                       ],
                     )

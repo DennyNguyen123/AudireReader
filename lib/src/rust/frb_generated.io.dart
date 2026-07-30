@@ -5,6 +5,7 @@
 
 import 'api/database.dart';
 import 'api/models.dart';
+import 'api/offline_downloader.dart';
 import 'api/parsers.dart';
 import 'api/simple.dart';
 import 'api/sync.dart';
@@ -52,6 +53,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Book dco_decode_book(dynamic raw);
 
   @protected
+  BookStorageInfo dco_decode_book_storage_info(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
@@ -62,6 +66,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Chapter dco_decode_chapter(dynamic raw);
+
+  @protected
+  ChapterStorageSize dco_decode_chapter_storage_size(dynamic raw);
+
+  @protected
+  DownloadStatusInfo dco_decode_download_status_info(dynamic raw);
 
   @protected
   EdgeVoice dco_decode_edge_voice(dynamic raw);
@@ -88,7 +98,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Chapter> dco_decode_list_chapter(dynamic raw);
 
   @protected
+  List<ChapterStorageSize> dco_decode_list_chapter_storage_size(dynamic raw);
+
+  @protected
   List<EdgeVoice> dco_decode_list_edge_voice(dynamic raw);
+
+  @protected
+  List<int> dco_decode_list_prim_i_32_loose(dynamic raw);
+
+  @protected
+  Int32List dco_decode_list_prim_i_32_strict(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -104,6 +123,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ParsedBookData dco_decode_parsed_book_data(dynamic raw);
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -139,6 +161,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Book sse_decode_book(SseDeserializer deserializer);
 
   @protected
+  BookStorageInfo sse_decode_book_storage_info(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
@@ -149,6 +174,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Chapter sse_decode_chapter(SseDeserializer deserializer);
+
+  @protected
+  ChapterStorageSize sse_decode_chapter_storage_size(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  DownloadStatusInfo sse_decode_download_status_info(
+    SseDeserializer deserializer,
+  );
 
   @protected
   EdgeVoice sse_decode_edge_voice(SseDeserializer deserializer);
@@ -175,7 +210,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Chapter> sse_decode_list_chapter(SseDeserializer deserializer);
 
   @protected
+  List<ChapterStorageSize> sse_decode_list_chapter_storage_size(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<EdgeVoice> sse_decode_list_edge_voice(SseDeserializer deserializer);
+
+  @protected
+  List<int> sse_decode_list_prim_i_32_loose(SseDeserializer deserializer);
+
+  @protected
+  Int32List sse_decode_list_prim_i_32_strict(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -191,6 +237,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ParsedBookData sse_decode_parsed_book_data(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -229,6 +278,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_book(Book self, SseSerializer serializer);
 
   @protected
+  void sse_encode_book_storage_info(
+    BookStorageInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
@@ -242,6 +297,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_chapter(Chapter self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_chapter_storage_size(
+    ChapterStorageSize self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_download_status_info(
+    DownloadStatusInfo self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_edge_voice(EdgeVoice self, SseSerializer serializer);
@@ -268,8 +335,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_chapter(List<Chapter> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_chapter_storage_size(
+    List<ChapterStorageSize> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_edge_voice(
     List<EdgeVoice> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_i_32_loose(
+    List<int> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_i_32_strict(
+    Int32List self,
     SseSerializer serializer,
   );
 
@@ -296,6 +381,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ParsedBookData self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

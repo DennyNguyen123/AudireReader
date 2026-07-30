@@ -239,7 +239,7 @@
   "resetHotkeys": "Reset to Default Hotkeys",
   "cloudLibrarySync": "Cloud Library Sync",
   "cloudSyncDesc": "Synchronize your novel shelf, cover arts, exact reading progress, and book contents across devices using a private WebDAV server.",
-  "autoSyncDesc": "Auto-sync when launching or leaving a book",
+  "autoSyncDesc": "Automatically synchronize reading progress of all books and cloud index.",
   "webdavServerConfig": "WebDAV Server Configuration",
   "webdavServerUrl": "WebDAV Server URL",
   "username": "Username",
@@ -461,7 +461,7 @@
   "loopOne": "Loop One Track",
   "loopPlaylist": "Loop Playlist",
   "noBgmTracks": "No background music tracks added yet",
-  "downloading": "Downloading... {percent}%",
+  "downloading": "Downloading",
   "@downloading": {
     "placeholders": {
       "percent": {
@@ -479,7 +479,6 @@
   "forcePullConfirmDesc": "This action will overwrite all data on this device with the data from the cloud server. Local books and progress not on the cloud will be deleted. Are you sure you want to continue?",
   "forcePushSuccess": "Force push completed successfully!",
   "forcePullSuccess": "Force pull completed successfully!",
-  "cancel": "Cancel",
   "confirm": "Confirm",
   "onlySyncProgress": "Only overwrite reading progress",
   "onlySyncProgressDesc": "Quickly sync reading progress without modifying book shelf.",
@@ -487,7 +486,6 @@
   "addLink": "Add Link URL",
   "trackUrl": "Link URL",
   "editTrack": "Edit Track Info",
-  "save": "Save",
   "addSuccess": "Added to library successfully!",
   "updateSuccess": "Updated successfully!",
   "deleteSuccess": "Deleted successfully!",
@@ -543,7 +541,6 @@
   "cloudSource": "Cloud",
   "syncProgress": "Sync Progress",
   "autoSyncTitle": "Auto Sync (Sync Now)",
-  "autoSyncDesc": "Automatically synchronize reading progress of all books and cloud index.",
   "forcePushDesc": "Force push all local book files and reading progress to WebDAV Cloud.",
   "forcePullDesc": "Force pull all book files and reading progress from WebDAV Cloud to overwrite local data.",
   "syncBookProgressDesc": "Synchronize reading progress of book \"{title}\"",
@@ -572,7 +569,6 @@
   },
   "requestedDeletionFromCloud": "Requested deletion from Cloud",
   "deleteBookTitle": "Delete Book",
-  "downloadBook": "Download Book",
   "bookNotOnCloudCannotPull": "This book has never been uploaded to the cloud. Cannot pull data.",
   "bookNotOnCloudPushFull": "This book does not exist on the cloud. The entire book file and reading progress will be uploaded.",
   "qrDeviceSync": "Quick Device Sync (QR)",
@@ -582,7 +578,6 @@
   "receiveConfigDesc": "Show QR code to receive configuration (No Camera required)",
   "shareConfig": "Share Configuration (Share)",
   "shareConfigDesc": "Scan receiver''s QR code and send configuration",
-  "close": "Close",
   "shareConfigQrScanner": "Share Configuration (Scan QR)",
   "needCameraPermission": "Camera permission required to scan QR code",
   "cameraPermissionDesc": "Please grant camera permission to the app in Device Settings to continue.",
@@ -594,7 +589,9 @@
   "sendConfigErrorDesc": "Failed to connect and transfer configuration to receiver. Details: {error}",
   "@sendConfigErrorDesc": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "rescan": "Re-scan",
@@ -610,20 +607,26 @@
   "librarySyncFailed": "Library sync failed: {message}",
   "@librarySyncFailed": {
     "placeholders": {
-      "message": { "type": "String" }
+      "message": {
+        "type": "String"
+      }
     }
   },
   "webdavConnectionErrorTitle": "WebDAV Connection Error",
   "webdavConnectionErrorDesc": "Configuration received from \"{deviceName}\", but failed to connect to WebDAV server. Please verify configuration on WebDAV server.",
   "@webdavConnectionErrorDesc": {
     "placeholders": {
-      "deviceName": { "type": "String" }
+      "deviceName": {
+        "type": "String"
+      }
     }
   },
   "applyConfigError": "Failed to apply configuration: {error}",
   "@applyConfigError": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "bgmLocalFile": "Local File",
@@ -644,5 +647,50 @@
   "actionNextChapter": "Next Chapter",
   "actionPrevChapter": "Prev Chapter",
   "actionOpenTtsSettings": "Open TTS Settings",
-  "actionOpenBgmSettings": "Open BGM Settings"
+  "actionOpenBgmSettings": "Open BGM Settings",
+  "allChaptersDownloaded": "All chapters are already downloaded",
+  "deleteSelectedChapters": "Delete selected chapters",
+  "confirmDeleteSelected": "Are you sure you want to delete offline TTS for {count} selected chapters?",
+  "@confirmDeleteSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAllOfflineTts": "Delete all offline TTS",
+  "confirmDeleteAllOfflineTts": "Are you sure you want to delete all offline TTS audio files for this book?",
+  "selectRange": "Select Range",
+  "enterChapterRange": "Enter chapter range (1 - {total}):",
+  "@enterChapterRange": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "fromRange": "From",
+  "toRange": "To",
+  "selectButton": "Select",
+  "offlineTtsManager": "Offline TTS Manager",
+  "storageUsed": "Storage used",
+  "chaptersDownloaded": "chapters downloaded",
+  "deleteAll": "Delete All",
+  "advancedSettings": "Advanced Settings",
+  "parallelDownloadThreads": "Parallel download threads",
+  "highThreadCountWarning": "⚠️ High thread count (>20) may cause server rate-limiting (HTTP 429).",
+  "downloadMissing": "Download missing",
+  "downloadAll": "Download All",
+  "chapterList": "Chapter List",
+  "selectMulti": "Select Multi",
+  "selected": "Selected",
+  "selectAll": "Select All",
+  "clearSelection": "Clear",
+  "downloadSelected": "Download",
+  "deleteSelected": "Delete",
+  "selectMissing": "Missing",
+  "selectFromCurrentToEnd": "From Current to End",
+  "filterAll": "All",
+  "filterDownloaded": "Downloaded",
+  "filterNotDownloaded": "Not Downloaded"
 }
