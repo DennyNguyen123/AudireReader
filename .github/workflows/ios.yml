@@ -31,7 +31,7 @@ jobs:
         with:
           workspaces: rust
 
-      - name: Run Code Generation (Isar Schemas)
+      - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Configure iOS Permissions (Background Audio & File Sharing)
