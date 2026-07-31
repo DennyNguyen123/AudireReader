@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -722824344;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -945915457;
 
 // Section: executor
 
@@ -759,6 +759,78 @@ fn wire__crate__api__offline_downloader__cancel_offline_download_impl(
         },
     )
 }
+fn wire__crate__api__supertonic__check_supertonic_model_exists_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "check_supertonic_model_exists",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_base_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(
+                        crate::api::supertonic::check_supertonic_model_exists(api_base_dir),
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__chunk_text_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "chunk_text",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_max_len = <usize>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::supertonic::chunk_text(
+                        &api_text,
+                        api_max_len,
+                    ))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__database__delete_bgm_track_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1089,6 +1161,148 @@ fn wire__crate__api__database__delete_reading_progress_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::database::delete_reading_progress(api_book_uuid)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__delete_supertonic_models_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "delete_supertonic_models",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_base_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::supertonic::delete_supertonic_models(api_base_dir)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__detect_language_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "detect_language",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::api::supertonic::detect_language(&api_text))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__download_supertonic_models_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "download_supertonic_models",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_base_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::supertonic::download_supertonic_models(api_base_dir)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__encode_wav_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "encode_wav",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_audio_data = <Vec<f32>>::sse_decode(&mut deserializer);
+            let api_sample_rate = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::supertonic::encode_wav(
+                        &api_audio_data,
+                        api_sample_rate,
+                    ))?;
                     Ok(output_ok)
                 })())
             }
@@ -1759,6 +1973,47 @@ fn wire__crate__api__tts__init_offline_tts_impl(
         },
     )
 }
+fn wire__crate__api__supertonic__init_supertonic_engine_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "init_supertonic_engine",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_base_dir = <String>::sse_decode(&mut deserializer);
+            let api_voice_style = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::supertonic::init_supertonic_engine(
+                            api_base_dir,
+                            api_voice_style,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__database__insert_book_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1852,6 +2107,40 @@ fn wire__crate__api__offline_downloader__is_download_running_impl(
                 transform_result_sse::<_, ()>((move || {
                     let output_ok =
                         Result::<_, ()>::Ok(crate::api::offline_downloader::is_download_running())?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__is_valid_lang_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "is_valid_lang",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_lang = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::api::supertonic::is_valid_lang(&api_lang))?;
                     Ok(output_ok)
                 })())
             }
@@ -2076,6 +2365,75 @@ fn wire__crate__api__offline_downloader__pause_offline_download_impl(
                     })?;
                     Ok(output_ok)
                 })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__preprocess_text_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "preprocess_text",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_lang = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::supertonic::preprocess_text(&api_text, &api_lang)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__release_supertonic_engine_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "release_supertonic_engine",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::supertonic::release_supertonic_engine().await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
             }
         },
     )
@@ -2365,6 +2723,8 @@ fn wire__crate__api__tts__synthesize_openai_tts_impl(
             let api_voice = <String>::sse_decode(&mut deserializer);
             let api_api_key = <String>::sse_decode(&mut deserializer);
             let api_speed = <f64>::sse_decode(&mut deserializer);
+            let api_endpoint = <Option<String>>::sse_decode(&mut deserializer);
+            let api_model = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -2374,6 +2734,96 @@ fn wire__crate__api__tts__synthesize_openai_tts_impl(
                             api_voice,
                             api_api_key,
                             api_speed,
+                            api_endpoint,
+                            api_model,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__supertonic__synthesize_supertonic_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "synthesize_supertonic",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_lang = <String>::sse_decode(&mut deserializer);
+            let api_speed = <f64>::sse_decode(&mut deserializer);
+            let api_denoise_steps = <i32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::supertonic::synthesize_supertonic(
+                            api_text,
+                            api_lang,
+                            api_speed,
+                            api_denoise_steps,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__tts__synthesize_system_tts_to_wav_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "synthesize_system_tts_to_wav",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_voice_name = <Option<String>>::sse_decode(&mut deserializer);
+            let api_rate = <f64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::tts::synthesize_system_tts_to_wav(
+                            api_text,
+                            api_voice_name,
+                            api_rate,
                         )
                         .await?;
                         Ok(output_ok)
@@ -3279,6 +3729,18 @@ impl SseDecode for Vec<crate::api::models::OfflineTtsRecord> {
     }
 }
 
+impl SseDecode for Vec<f32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<f32>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<i32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3493,6 +3955,13 @@ impl SseDecode for crate::api::models::ReadingProgress {
     }
 }
 
+impl SseDecode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u32::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for u64 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3591,160 +4060,207 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__database__delete_bgm_track_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__database__delete_book_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__database__delete_bookmark_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__database__delete_bookmarks_for_book_impl(
+        15 => wire__crate__api__supertonic__check_supertonic_model_exists_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__database__delete_highlight_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__database__delete_highlights_for_book_impl(
+        16 => wire__crate__api__supertonic__chunk_text_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__database__delete_bgm_track_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__database__delete_book_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__database__delete_bookmark_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__database__delete_bookmarks_for_book_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__database__delete_offline_tts_record_impl(
+        21 => wire__crate__api__database__delete_highlight_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__database__delete_highlights_for_book_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__database__delete_offline_tts_records_for_book_impl(
+        23 => wire__crate__api__database__delete_offline_tts_record_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => wire__crate__api__database__delete_pronunciation_rule_impl(
+        24 => wire__crate__api__database__delete_offline_tts_records_for_book_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => wire__crate__api__database__delete_reading_progress_impl(
+        25 => wire__crate__api__database__delete_pronunciation_rule_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => wire__crate__api__database__get_all_bookmarks_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__database__get_all_books_impl(port, ptr, rust_vec_len, data_len),
-        27 => {
+        26 => wire__crate__api__database__delete_reading_progress_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        27 => wire__crate__api__supertonic__delete_supertonic_models_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        28 => wire__crate__api__supertonic__detect_language_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__supertonic__download_supertonic_models_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        30 => wire__crate__api__supertonic__encode_wav_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__database__get_all_bookmarks_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__database__get_all_books_impl(port, ptr, rust_vec_len, data_len),
+        33 => {
             wire__crate__api__database__get_all_highlights_impl(port, ptr, rust_vec_len, data_len)
         }
-        28 => wire__crate__api__database__get_all_reading_progress_impl(
+        34 => wire__crate__api__database__get_all_reading_progress_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        29 => wire__crate__api__database__get_bgm_tracks_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__offline_downloader__get_book_storage_info_impl(
+        35 => wire__crate__api__database__get_bgm_tracks_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__offline_downloader__get_book_storage_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__database__get_bookmarks_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__database__get_chapters_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__offline_downloader__get_download_status_impl(
+        37 => wire__crate__api__database__get_bookmarks_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__database__get_chapters_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__offline_downloader__get_download_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__tts__get_edge_voices_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__database__get_highlights_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__database__get_offline_tts_record_impl(
+        40 => wire__crate__api__tts__get_edge_voices_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__database__get_highlights_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__database__get_offline_tts_record_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__database__get_offline_tts_records_impl(
+        43 => wire__crate__api__database__get_offline_tts_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        38 => wire__crate__api__database__get_pronunciation_rules_impl(
+        44 => wire__crate__api__database__get_pronunciation_rules_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        39 => {
+        45 => {
             wire__crate__api__database__get_reading_progress_impl(port, ptr, rust_vec_len, data_len)
         }
-        40 => wire__crate__api__database__get_settings_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__tts__init_offline_tts_impl(port, ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__database__insert_book_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__database__insert_chapters_impl(port, ptr, rust_vec_len, data_len),
-        47 => wire__crate__api__offline_downloader__is_download_running_impl(
+        46 => wire__crate__api__database__get_settings_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__tts__init_offline_tts_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__supertonic__init_supertonic_engine_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        48 => wire__crate__api__tts__offline_tts_speak_impl(port, ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__tts__offline_tts_stop_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__offline_downloader__pause_offline_download_impl(
+        52 => wire__crate__api__database__insert_book_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__database__insert_chapters_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__offline_downloader__is_download_running_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => wire__crate__api__offline_downloader__resume_offline_download_impl(
+        55 => wire__crate__api__supertonic__is_valid_lang_impl(port, ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__tts__offline_tts_speak_impl(port, ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__tts__offline_tts_stop_impl(port, ptr, rust_vec_len, data_len),
+        62 => wire__crate__api__offline_downloader__pause_offline_download_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        56 => wire__crate__api__database__save_offline_tts_record_impl(
+        63 => wire__crate__api__supertonic__preprocess_text_impl(port, ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__supertonic__release_supertonic_engine_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        57 => wire__crate__api__database__save_pronunciation_rule_impl(
+        65 => wire__crate__api__offline_downloader__resume_offline_download_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        58 => wire__crate__api__database__save_reading_progress_impl(
+        66 => wire__crate__api__database__save_offline_tts_record_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        59 => wire__crate__api__database__save_settings_impl(port, ptr, rust_vec_len, data_len),
-        60 => wire__crate__api__offline_downloader__start_offline_download_job_impl(
+        67 => wire__crate__api__database__save_pronunciation_rule_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        61 => wire__crate__api__tts__synthesize_edge_tts_impl(port, ptr, rust_vec_len, data_len),
-        62 => wire__crate__api__tts__synthesize_openai_tts_impl(port, ptr, rust_vec_len, data_len),
-        63 => wire__crate__api__database__vacuum_database_impl(port, ptr, rust_vec_len, data_len),
-        64 => wire__crate__api__sync__webdav_download_bytes_impl(port, ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__sync__webdav_download_file_impl(port, ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__sync__webdav_file_exists_impl(port, ptr, rust_vec_len, data_len),
-        67 => wire__crate__api__sync__webdav_init_impl(port, ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__sync__webdav_list_files_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__sync__webdav_mkdir_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__sync__webdav_remove_impl(port, ptr, rust_vec_len, data_len),
-        71 => {
+        68 => wire__crate__api__database__save_reading_progress_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        69 => wire__crate__api__database__save_settings_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__offline_downloader__start_offline_download_job_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        71 => wire__crate__api__tts__synthesize_edge_tts_impl(port, ptr, rust_vec_len, data_len),
+        72 => wire__crate__api__tts__synthesize_openai_tts_impl(port, ptr, rust_vec_len, data_len),
+        73 => wire__crate__api__supertonic__synthesize_supertonic_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        74 => wire__crate__api__tts__synthesize_system_tts_to_wav_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        75 => wire__crate__api__database__vacuum_database_impl(port, ptr, rust_vec_len, data_len),
+        76 => wire__crate__api__sync__webdav_download_bytes_impl(port, ptr, rust_vec_len, data_len),
+        77 => wire__crate__api__sync__webdav_download_file_impl(port, ptr, rust_vec_len, data_len),
+        78 => wire__crate__api__sync__webdav_file_exists_impl(port, ptr, rust_vec_len, data_len),
+        79 => wire__crate__api__sync__webdav_init_impl(port, ptr, rust_vec_len, data_len),
+        80 => wire__crate__api__sync__webdav_list_files_impl(port, ptr, rust_vec_len, data_len),
+        81 => wire__crate__api__sync__webdav_mkdir_impl(port, ptr, rust_vec_len, data_len),
+        82 => wire__crate__api__sync__webdav_remove_impl(port, ptr, rust_vec_len, data_len),
+        83 => {
             wire__crate__api__sync__webdav_test_connection_impl(port, ptr, rust_vec_len, data_len)
         }
-        72 => wire__crate__api__sync__webdav_upload_bytes_impl(port, ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__sync__webdav_upload_file_impl(port, ptr, rust_vec_len, data_len),
+        84 => wire__crate__api__sync__webdav_upload_bytes_impl(port, ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__sync__webdav_upload_file_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -3757,12 +4273,12 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        41 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__database__init_database_impl(ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__parsers__parse_docx_file_impl(ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__parsers__parse_epub_file_impl(ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__parsers__parse_pdf_file_impl(ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__parsers__parse_txt_file_impl(ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__database__init_database_impl(ptr, rust_vec_len, data_len),
+        58 => wire__crate__api__parsers__parse_docx_file_impl(ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__parsers__parse_epub_file_impl(ptr, rust_vec_len, data_len),
+        60 => wire__crate__api__parsers__parse_pdf_file_impl(ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__parsers__parse_txt_file_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -4522,6 +5038,16 @@ impl SseEncode for Vec<crate::api::models::OfflineTtsRecord> {
     }
 }
 
+impl SseEncode for Vec<f32> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <f32>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<i32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -4677,6 +5203,13 @@ impl SseEncode for crate::api::models::ReadingProgress {
         <i32>::sse_encode(self.current_paragraph_index, serializer);
         <i32>::sse_encode(self.current_character_offset, serializer);
         <i64>::sse_encode(self.last_read, serializer);
+    }
+}
+
+impl SseEncode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
     }
 }
 

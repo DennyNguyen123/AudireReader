@@ -5,13 +5,12 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:path/path.dart' as p;
 import '../core/utils/path_helper.dart';
 import 'dart:async';
-import 'dart:io' show Platform, File, Process;
+import 'dart:io' show Platform, File;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../core/database/database_helper.dart';
-import 'edge_tts_service.dart';
+import 'edge_tts_models.dart';
 import 'supertonic_service.dart';
-import 'openai_tts_service.dart';
 import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import 'bgm_service.dart';
 
@@ -102,7 +101,22 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   Future<String> _synthesizeOpenAiToAudio(String text, String voiceName, double rate) async {
-    return await OpenAiTtsService.synthesizeToWav(text, voiceName, rate);
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final audioBytes = await rust_tts.synthesizeOpenaiTts(
+      text: text,
+      voice: voiceName,
+      apiKey: settings.openAiTtsApiKey,
+      speed: rate,
+      endpoint: settings.openAiTtsEndpoint,
+      model: settings.openAiTtsModel,
+    );
+    if (audioBytes.isEmpty) throw Exception("Empty audio bytes from OpenAI TTS");
+    final tempDir = await PathHelper.getAppCacheDirectory();
+    final cacheKey = _computeSha256("$text|$voiceName|$rate");
+    final file = File('${tempDir.path}/tts_$cacheKey.mp3');
+    await file.writeAsBytes(audioBytes, flush: true);
+    return file.path;
   }
 
   Future<String> _synthesizeSupertonicToWav(String text, String voiceStyle, double rate) async {
@@ -110,7 +124,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     await supertonic.initializeEngine(voiceStyle: voiceStyle);
     
     // Nhận diện ngôn ngữ động của văn bản
-    final detectedLang = supertonic.detectLanguage(text);
+    final detectedLang = await supertonic.detectLanguage(text);
     
     final wavPath = await supertonic.synthesizeToWav(
       text,
@@ -132,112 +146,18 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     if (wavFile.existsSync() && wavFile.lengthSync() > 0) {
       return wavPath;
     }
-    
-    final txtPath = '${tempDir.path}\\sys_text_$cacheKey.txt';
-    final ps1Path = '${tempDir.path}\\sys_synth_$cacheKey.ps1';
-    
-    // Ghi file text tạm (UTF-8)
-    await File(txtPath).writeAsString(text, encoding: utf8);
-    
-    // Tạo script powershell
-    final escapedWavPath = wavPath.replaceAll('\\', '\\\\');
-    final escapedTxtPath = txtPath.replaceAll('\\', '\\\\');
-    
-    final ps1Content = '''
-try {
-    [void][Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType=WindowsRuntime]
-    
-    # Load assembly chứa WindowsRuntimeSystemExtensions
-    \$assembly = [System.Reflection.Assembly]::Load("System.Runtime.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-    \$extType = \$assembly.GetType("System.WindowsRuntimeSystemExtensions")
-    
-    \$synth = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer
-    
-    # Cấu hình giọng đọc
-    \$selectedVoice = '$voiceName'
-    \$voices = [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices
-    \$voice = \$null
-    
-    if (\$selectedVoice -ne '' -and \$selectedVoice -ne 'default') {
-        \$voice = \$voices | Where-Object { \$_.DisplayName -eq \$selectedVoice -or \$_.Id -eq \$selectedVoice -or \$_.DisplayName -like "*\$selectedVoice*" } | Select-Object -First 1
+
+    final bytes = await rust_tts.synthesizeSystemTtsToWav(
+      text: text,
+      voiceName: voiceName,
+      rate: rate,
+    );
+
+    if (bytes.isEmpty) {
+      throw Exception("Rust System TTS returned empty bytes");
     }
-    
-    if (\$voice -eq \$null) {
-        # Tự động tìm giọng tiếng Việt nếu chưa setup voice hoặc không tìm thấy voice đã chọn
-        \$voice = \$voices | Where-Object { \$_.Language -like '*vi*' -or \$_.DisplayName -like '*An*' } | Select-Object -First 1
-    }
-    
-    if (\$voice -ne \$null) {
-        \$synth.Voice = \$voice
-    }
-    
-    # Cấu hình Rate (Tốc độ đọc)
-    # WinRT SpeechRate từ 0.5 đến 6.0. Mặc định là 1.0 (tương đương với rate 0.5 từ Flutter)
-    \$winrtRate = $rate * 2.0
-    if (\$winrtRate -lt 0.5) { \$winrtRate = 0.5 }
-    if (\$winrtRate -gt 6.0) { \$winrtRate = 6.0 }
-    \$synth.Options.SpeakingRate = \$winrtRate
-    
-    # Đọc text từ file
-    \$text = Get-Content -Path '$escapedTxtPath' -Raw -Encoding UTF8
-    
-    \$asyncOp = \$synth.SynthesizeTextToStreamAsync(\$text)
-    
-    # Chuyển đổi AsTask
-    \$asTaskMethod = \$extType.GetMethods() | Where-Object { \$_.Name -eq 'AsTask' -and \$_.IsGenericMethodDefinition } | Select-Object -First 1
-    \$streamType = [Windows.Media.SpeechSynthesis.SpeechSynthesisStream, Windows.Media, ContentType=WindowsRuntime]
-    \$concreteMethod = \$asTaskMethod.MakeGenericMethod(\$streamType)
-    
-    \$task = \$concreteMethod.Invoke(\$null, @(\$asyncOp))
-    \$task.Wait()
-    \$stream = \$task.Result
-    
-    # Ghi file
-    \$fileStream = [System.IO.File]::Create('$escapedWavPath')
-    \$inputStream = \$stream.GetInputStreamAt(0)
-    \$reader = New-Object Windows.Storage.Streams.DataReader(\$inputStream)
-    
-    \$loadOp = \$reader.LoadAsync(\$stream.Size)
-    \$uintType = [System.UInt32]
-    \$concreteMethodLoad = \$asTaskMethod.MakeGenericMethod(\$uintType)
-    \$loadTask = \$concreteMethodLoad.Invoke(\$null, @(\$loadOp))
-    \$loadTask.Wait()
-    
-    \$bytes = New-Object Byte[](\$stream.Size)
-    \$reader.ReadBytes(\$bytes)
-    \$fileStream.Write(\$bytes, 0, \$bytes.Length)
-    \$fileStream.Close()
-    \$reader.Dispose()
-    \$stream.Dispose()
-    \$synth.Dispose()
-} catch {
-    Write-Error \$_
-    exit 1
-}
-''';
-    
-    await File(ps1Path).writeAsString(ps1Content, encoding: utf8);
-    
-    // Thực thi PowerShell ngầm
-    final result = await Process.run('powershell', [
-      '-ExecutionPolicy', 'Bypass',
-      '-File', ps1Path
-    ]);
-    
-    // Dọn dẹp files tạm
-    try {
-      await File(txtPath).delete();
-      await File(ps1Path).delete();
-    } catch (_) {}
-    
-    if (result.exitCode != 0) {
-      throw Exception("PowerShell SpeechSynthesis failed: ${result.stderr}");
-    }
-    
-    if (!wavFile.existsSync() || wavFile.lengthSync() == 0) {
-      throw Exception("Wav file was not generated or is empty");
-    }
-    
+
+    await wavFile.writeAsBytes(bytes, flush: true);
     return wavPath;
   }
 
@@ -279,8 +199,15 @@ try {
     } else if (provider == 'openai') {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
-      final apiKey = settings.openAiTtsApiKey ?? '';
-      rust_tts.synthesizeOpenaiTts(text: text, voice: voice, apiKey: apiKey, speed: rate)
+      final apiKey = settings.openAiTtsApiKey;
+      rust_tts.synthesizeOpenaiTts(
+        text: text,
+        voice: voice,
+        apiKey: apiKey,
+        speed: rate,
+        endpoint: settings.openAiTtsEndpoint,
+        model: settings.openAiTtsModel,
+      )
           .then((audioBytes) async {
             if (audioBytes.isEmpty) throw Exception("Empty audio bytes");
             final tempDir = await PathHelper.getAppCacheDirectory();

@@ -8,6 +8,7 @@ import 'api/models.dart';
 import 'api/offline_downloader.dart';
 import 'api/parsers.dart';
 import 'api/simple.dart';
+import 'api/supertonic.dart';
 import 'api/sync.dart';
 import 'api/tts.dart';
 import 'dart:async';
@@ -152,6 +153,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<OfflineTtsRecord> dco_decode_list_offline_tts_record(dynamic raw);
 
   @protected
+  List<double> dco_decode_list_prim_f_32_loose(dynamic raw);
+
+  @protected
+  Float32List dco_decode_list_prim_f_32_strict(dynamic raw);
+
+  @protected
   List<int> dco_decode_list_prim_i_32_loose(dynamic raw);
 
   @protected
@@ -201,6 +208,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ReadingProgress dco_decode_reading_progress(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -355,6 +365,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer);
+
+  @protected
+  Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer);
+
+  @protected
   List<int> sse_decode_list_prim_i_32_loose(SseDeserializer deserializer);
 
   @protected
@@ -414,6 +430,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ReadingProgress sse_decode_reading_progress(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -599,6 +618,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_prim_f_32_loose(
+    List<double> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_f_32_strict(
+    Float32List self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_i_32_loose(
     List<int> self,
     SseSerializer serializer,
@@ -690,6 +721,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ReadingProgress self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_64(BigInt self, SseSerializer serializer);

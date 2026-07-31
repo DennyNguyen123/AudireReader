@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'audio_handler.dart';
 import 'supertonic_service.dart';
-import 'edge_tts_service.dart';
 import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import '../core/database/database_helper.dart';
 import 'sync_service.dart';

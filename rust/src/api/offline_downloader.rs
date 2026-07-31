@@ -353,6 +353,16 @@ pub async fn start_offline_download_job(
                                 voice_inner.clone(),
                                 api_key_inner.clone().unwrap_or_default(),
                                 speech_rate,
+                                None,
+                                None,
+                            ).await
+                        } else if provider_inner == "supertonic" {
+                            let lang = crate::api::supertonic::detect_language(&raw_text);
+                            crate::api::supertonic::synthesize_supertonic(
+                                raw_text.to_string(),
+                                lang,
+                                speech_rate,
+                                16,
                             ).await
                         } else {
                             Err("Unsupported provider".to_string())

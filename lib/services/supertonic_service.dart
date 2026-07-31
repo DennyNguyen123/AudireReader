@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_sdk/helper.dart';
-// ignore: depend_on_referenced_packages
-import 'package:flutter_onnxruntime/flutter_onnxruntime.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:audire_reader/src/rust/api/supertonic.dart' as rust_supertonic;
 import 'logger_service.dart';
 
 class SupertonicService extends ChangeNotifier {
@@ -18,11 +14,7 @@ class SupertonicService extends ChangeNotifier {
   String _downloadStatus = '';
   bool _isInitialized = false;
   bool _isLoadingModel = false;
-
-  TextToSpeech? _textToSpeech;
-  Style? _activeStyle;
-  String _currentVoiceStyleName = ''; // 'M1' hoặc 'F1'
-  Future<void> _synthesisLock = Future.value();
+  String _currentVoiceStyleName = '';
 
   // Trạng thái các biến getter
   bool get isDownloading => _isDownloading;
@@ -32,35 +24,9 @@ class SupertonicService extends ChangeNotifier {
   bool get isLoadingModel => _isLoadingModel;
   String get currentVoiceStyleName => _currentVoiceStyleName;
 
-  /// Tự động phát hiện ngôn ngữ của văn bản dựa trên đặc trưng ký tự
-  String detectLanguage(String text) {
-    final cleanText = text.trim();
-    if (cleanText.isEmpty) return 'en';
-
-    // 1. Kiểm tra Tiếng Hàn (Hangul)
-    final hangulRegExp = RegExp(
-      r'[\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7AF\uD7B0-\uD7FF]',
-    );
-    if (hangulRegExp.hasMatch(cleanText)) {
-      return 'ko';
-    }
-
-    // 2. Kiểm tra Tiếng Nhật (Hiragana/Katakana)
-    final japaneseRegExp = RegExp(r'[\u3040-\u309F\u30A0-\u30FF]');
-    if (japaneseRegExp.hasMatch(cleanText)) {
-      return 'ja';
-    }
-
-    // 3. Kiểm tra Tiếng Việt (chứa ký tự có dấu đặc trưng)
-    final vietnameseRegExp = RegExp(
-      r'[àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđĐ]',
-    );
-    if (vietnameseRegExp.hasMatch(cleanText)) {
-      return 'vi';
-    }
-
-    // Mặc định là Tiếng Anh
-    return 'en';
+  /// Tự động phát hiện ngôn ngữ của văn bản
+  Future<String> detectLanguage(String text) async {
+    return await rust_supertonic.detectLanguage(text: text);
   }
 
   SupertonicService._();
@@ -70,46 +36,16 @@ class SupertonicService extends ChangeNotifier {
     return _instance!;
   }
 
-  /// Trích xuất thư mục lưu trữ asset của Supertonic cục bộ
-  Future<Directory> _getAssetsDirectory() async {
+  Future<String> _getBaseDirectory() async {
     final appDir = await getApplicationSupportDirectory();
-    final assetsDir = Directory(p.join(appDir.path, 'supertonic_assets'));
-    if (!assetsDir.existsSync()) {
-      assetsDir.createSync(recursive: true);
-    }
-    return assetsDir;
+    return appDir.path;
   }
 
-  /// Kiểm tra xem toàn bộ các tệp tin model đã được tải đầy đủ cục bộ chưa
+  /// Kiểm tra xem toàn bộ các tệp tin model đã được tải đầy đủ chưa
   Future<bool> checkModelExists() async {
     try {
-      final dir = await _getAssetsDirectory();
-      final requiredFiles = [
-        'duration_predictor.onnx',
-        'text_encoder.onnx',
-        'vector_estimator.onnx',
-        'vocoder.onnx',
-        'tts.json',
-        'unicode_indexer.json',
-        'M1.json',
-        'M2.json',
-        'M3.json',
-        'M4.json',
-        'M5.json',
-        'F1.json',
-        'F2.json',
-        'F3.json',
-        'F4.json',
-        'F5.json',
-      ];
-
-      for (final filename in requiredFiles) {
-        final file = File(p.join(dir.path, filename));
-        if (!file.existsSync() || file.lengthSync() == 0) {
-          return false;
-        }
-      }
-      return true;
+      final baseDir = await _getBaseDirectory();
+      return rust_supertonic.checkSupertonicModelExists(baseDir: baseDir);
     } catch (e) {
       LoggerService().log(
         "Error checking model files: $e",
@@ -120,7 +56,7 @@ class SupertonicService extends ChangeNotifier {
     }
   }
 
-  /// Bắt đầu tải xuống toàn bộ tệp tin mô hình từ Hugging Face thủ công
+  /// Bắt đầu tải xuống toàn bộ tệp tin mô hình từ Hugging Face qua Rust
   Future<bool> downloadModelFiles() async {
     if (_isDownloading) return false;
 
@@ -129,123 +65,16 @@ class SupertonicService extends ChangeNotifier {
     _downloadStatus = 'Connecting to Hugging Face...';
     notifyListeners();
 
-    final dir = await _getAssetsDirectory();
-    final client = http.Client();
-
-    // Định nghĩa danh sách các tệp tin và link tải tương ứng từ CDN Hugging Face của Supertonic-3
-    final baseUrl =
-        'https://huggingface.co/Supertone/supertonic-3/resolve/main';
-    final filesToDownload = {
-      'tts.json': '$baseUrl/onnx/tts.json',
-      'unicode_indexer.json': '$baseUrl/onnx/unicode_indexer.json',
-      'M1.json': '$baseUrl/voice_styles/M1.json',
-      'M2.json': '$baseUrl/voice_styles/M2.json',
-      'M3.json': '$baseUrl/voice_styles/M3.json',
-      'M4.json': '$baseUrl/voice_styles/M4.json',
-      'M5.json': '$baseUrl/voice_styles/M5.json',
-      'F1.json': '$baseUrl/voice_styles/F1.json',
-      'F2.json': '$baseUrl/voice_styles/F2.json',
-      'F3.json': '$baseUrl/voice_styles/F3.json',
-      'F4.json': '$baseUrl/voice_styles/F4.json',
-      'F5.json': '$baseUrl/voice_styles/F5.json',
-      'duration_predictor.onnx': '$baseUrl/onnx/duration_predictor.onnx',
-      'text_encoder.onnx': '$baseUrl/onnx/text_encoder.onnx',
-      'vector_estimator.onnx': '$baseUrl/onnx/vector_estimator.onnx',
-      'vocoder.onnx': '$baseUrl/onnx/vocoder.onnx',
-    };
-
-    // Tính tổng dung lượng ước lượng (~96MB) để tính toán tiến trình tổng quát
-    // Gán kích thước các file để tính progress chuẩn xác
-    final fileSizes = {
-      'tts.json': 635,
-      'unicode_indexer.json': 207399,
-      'M1.json': 24707,
-      'M2.json': 24707,
-      'M3.json': 24707,
-      'M4.json': 24707,
-      'M5.json': 24707,
-      'F1.json': 24707,
-      'F2.json': 24707,
-      'F3.json': 24707,
-      'F4.json': 24707,
-      'F5.json': 24707,
-      'duration_predictor.onnx': 8920150,
-      'text_encoder.onnx': 29910543,
-      'vector_estimator.onnx': 38043521,
-      'vocoder.onnx': 22971213,
-    };
-
-    final double totalBytes = fileSizes.values.fold(
-      0.0,
-      (sum, size) => sum + size,
-    );
-    double downloadedBytesTotal = 0.0;
-
     try {
-      for (final entry in filesToDownload.entries) {
-        final filename = entry.key;
-        final url = entry.value;
-        final destinationFile = File(p.join(dir.path, filename));
-
-        _downloadStatus = 'Downloading $filename...';
-        notifyListeners();
-
-        LoggerService().log(
-          "Downloading file: $filename from $url",
-          tag: 'SUPERTONIC',
-        );
-
-        final request = http.Request('GET', Uri.parse(url));
-        final response = await client
-            .send(request)
-            .timeout(const Duration(seconds: 45));
-
-        if (response.statusCode != 200) {
-          throw Exception(
-            "Failed to download $filename: HTTP ${response.statusCode}",
-          );
-        }
-
-        final fileStream = destinationFile.openWrite();
-        double fileDownloadedBytes = 0;
-        final fileSize = fileSizes[filename] ?? response.contentLength ?? 1;
-
-        await response.stream
-            .listen(
-              (chunk) {
-                fileStream.add(chunk);
-                fileDownloadedBytes += chunk.length;
-
-                // Tính toán tiến trình tổng dựa trên dung lượng byte đã tải thực tế
-                final currentTotalProgress =
-                    (downloadedBytesTotal + fileDownloadedBytes) / totalBytes;
-                _downloadProgress = currentTotalProgress.clamp(0.0, 1.0);
-                notifyListeners();
-              },
-              onDone: () async {
-                await fileStream.flush();
-                await fileStream.close();
-                downloadedBytesTotal += fileSize;
-                LoggerService().log(
-                  "Finished downloading $filename",
-                  tag: 'SUPERTONIC',
-                );
-              },
-              onError: (err) {
-                fileStream.close();
-                throw err;
-              },
-              cancelOnError: true,
-            )
-            .asFuture();
-      }
+      final baseDir = await _getBaseDirectory();
+      await rust_supertonic.downloadSupertonicModels(baseDir: baseDir);
 
       _isDownloading = false;
       _downloadProgress = 1.0;
       _downloadStatus = 'All files downloaded successfully!';
       notifyListeners();
       LoggerService().log(
-        "Successfully downloaded all Supertonic assets.",
+        "Successfully downloaded all Supertonic assets via Rust.",
         tag: 'SUPERTONIC',
       );
       return true;
@@ -259,8 +88,6 @@ class SupertonicService extends ChangeNotifier {
         level: LogLevel.error,
       );
       return false;
-    } finally {
-      client.close();
     }
   }
 
@@ -273,76 +100,26 @@ class SupertonicService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final hasModels = await checkModelExists();
-      if (!hasModels) {
-        throw Exception("Model files are missing. Please download first.");
-      }
-
-      final dir = await _getAssetsDirectory();
-
-      LoggerService().log(
-        "Loading Supertonic 3 models offline from ${dir.path}...",
-        tag: 'SUPERTONIC',
+      final baseDir = await _getBaseDirectory();
+      final success = await rust_supertonic.initSupertonicEngine(
+        baseDir: baseDir,
+        voiceStyle: voiceStyle,
       );
 
-      // Giải phóng engine cũ nếu có trước khi nạp mới
-      await releaseEngine();
-
-      // Nạp cấu hình & các session ONNX trực tiếp từ file vật lý cục bộ
-      final cfgs =
-          jsonDecode(File(p.join(dir.path, 'tts.json')).readAsStringSync())
-              as Map<String, dynamic>;
-      final textProcessor = await UnicodeProcessor.load(
-        p.join(dir.path, 'unicode_indexer.json'),
-      );
-
-      final ort = OnnxRuntime();
-      final models = [
-        'duration_predictor',
-        'text_encoder',
-        'vector_estimator',
-        'vocoder',
-      ];
-
-      // Khởi tạo OrtSession từ file vật lý
-      final sessions = await Future.wait(
-        models.map((name) async {
-          final filePath = p.join(dir.path, '$name.onnx');
-          LoggerService().log(
-            "Loading ONNX session for $name...",
-            tag: 'SUPERTONIC',
-          );
-          return ort.createSession(filePath);
-        }),
-      );
-
-      _textToSpeech = TextToSpeech(
-        cfgs,
-        textProcessor,
-        sessions[0],
-        sessions[1],
-        sessions[2],
-        sessions[3],
-      );
-
-      // Nạp style giọng đọc được chọn ('M1' hoặc 'F1')
-      final stylePath = p.join(dir.path, '$voiceStyle.json');
-      _activeStyle = await loadVoiceStyle([stylePath]);
-      _currentVoiceStyleName = voiceStyle;
-      _isInitialized = true;
+      _isInitialized = success;
       _isLoadingModel = false;
-
+      if (success) {
+        _currentVoiceStyleName = voiceStyle;
+        LoggerService().log(
+          "Supertonic 3 Engine loaded successfully offline with style $voiceStyle via Rust!",
+          tag: 'SUPERTONIC',
+        );
+      }
       notifyListeners();
-      LoggerService().log(
-        "Supertonic 3 Engine loaded successfully offline with style $voiceStyle!",
-        tag: 'SUPERTONIC',
-      );
-      return true;
+      return success;
     } catch (e) {
       _isLoadingModel = false;
       _isInitialized = false;
-      _textToSpeech = null;
-      _activeStyle = null;
       _currentVoiceStyleName = '';
       notifyListeners();
       LoggerService().log(
@@ -354,20 +131,14 @@ class SupertonicService extends ChangeNotifier {
     }
   }
 
-  /// Đọc văn bản offline và sinh ra tệp WAV tạm thời, trả về đường dẫn file âm thanh sinh ra
+  /// Đọc văn bản offline và sinh ra tệp WAV tạm thời
   Future<String?> synthesizeToWav(
     String text, {
     double speed = 1.05,
     String lang = 'vi',
   }) async {
-    final completer = Completer<void>();
-    final previousLock = _synthesisLock;
-    _synthesisLock = completer.future;
-
-    await previousLock;
-
     try {
-      if (!_isInitialized || _textToSpeech == null || _activeStyle == null) {
+      if (!_isInitialized) {
         LoggerService().log(
           "Engine is not initialized yet.",
           tag: 'SUPERTONIC',
@@ -379,84 +150,42 @@ class SupertonicService extends ChangeNotifier {
       final cleanText = text.trim();
       if (cleanText.isEmpty) return null;
 
-      LoggerService().log(
-        "Generating speech offline using Supertonic v3. Text: \"${cleanText.substring(0, cleanText.length > 25 ? 25 : cleanText.length)}...\"",
-        tag: 'SUPERTONIC',
-      );
-
-      // Tự động phân tích ngôn ngữ hợp lệ (mặc định 'vi' nếu có, hoặc fallback 'en')
-      final targetLang = isValidLang(lang) ? lang : 'vi';
-
-      // Chạy suy luận nơ-ron cục bộ thông qua ONNX
-      // ví dụ chạy denoising loop với 16 steps để nâng cao chất lượng giọng đọc
-      final result = await _textToSpeech!.call(
-        cleanText,
-        targetLang,
-        _activeStyle!,
-        16,
+      final wavBytes = await rust_supertonic.synthesizeSupertonic(
+        text: cleanText,
+        lang: lang,
         speed: speed,
+        denoiseSteps: 16,
       );
 
-      final List<double> wav = result['wav'] is List<double>
-          ? result['wav'] as List<double>
-          : (result['wav'] as List).cast<double>();
+      if (wavBytes.isEmpty) return null;
 
       final tempDir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final outputPath = p.join(tempDir.path, 'supertonic_$timestamp.wav');
 
-      // Ghi ra file WAV tiêu chuẩn
-      writeWavFile(outputPath, wav, _textToSpeech!.sampleRate);
-
       final file = File(outputPath);
-      if (file.existsSync() && file.lengthSync() > 0) {
-        LoggerService().log(
-          "Audio successfully synthesized and saved offline to: $outputPath",
-          tag: 'SUPERTONIC',
-        );
-        return file.absolute.path;
-      } else {
-        throw Exception("Failed to generate valid WAV file.");
-      }
+      await file.writeAsBytes(wavBytes, flush: true);
+
+      return file.path;
     } catch (e) {
       LoggerService().log(
-        "Fatal error in offline synthesis: $e",
+        "Fatal error in offline synthesis via Rust: $e",
         tag: 'SUPERTONIC',
         level: LogLevel.error,
       );
       return null;
-    } finally {
-      completer.complete();
     }
   }
 
-  /// Giải phóng bộ nhớ RAM bằng cách hủy các session của Engine ONNX
+  /// Giải phóng bộ nhớ RAM
   Future<void> releaseEngine() async {
     if (!_isInitialized) return;
 
     try {
-      LoggerService().log(
-        "Releasing Supertonic 3 ONNX sessions...",
-        tag: 'SUPERTONIC',
-      );
-
-      // Hủy session ONNX trong engine thông qua các API close và dispose
-      // Giải phóng OrtSession
-      await _textToSpeech?.dpOrt.close();
-      await _textToSpeech?.textEncOrt.close();
-      await _textToSpeech?.vectorEstOrt.close();
-      await _textToSpeech?.vocoderOrt.close();
-
-      // Giải phóng OrtValue trong style
-      _activeStyle?.ttl.dispose();
-      _activeStyle?.dp.dispose();
-
-      _textToSpeech = null;
-      _activeStyle = null;
+      await rust_supertonic.releaseSupertonicEngine();
       _currentVoiceStyleName = '';
       _isInitialized = false;
       notifyListeners();
-
       LoggerService().log(
         "Supertonic 3 Engine released successfully.",
         tag: 'SUPERTONIC',
@@ -470,19 +199,12 @@ class SupertonicService extends ChangeNotifier {
     }
   }
 
-  /// Xóa các tệp mô hình offline để giải phóng dung lượng đĩa
+  /// Xóa các tệp mô hình offline
   Future<void> deleteModelFiles() async {
     await releaseEngine();
-
     try {
-      final dir = await _getAssetsDirectory();
-      if (dir.existsSync()) {
-        dir.deleteSync(recursive: true);
-        LoggerService().log(
-          "Successfully deleted offline model directory.",
-          tag: 'SUPERTONIC',
-        );
-      }
+      final baseDir = await _getBaseDirectory();
+      await rust_supertonic.deleteSupertonicModels(baseDir: baseDir);
       notifyListeners();
     } catch (e) {
       LoggerService().log(

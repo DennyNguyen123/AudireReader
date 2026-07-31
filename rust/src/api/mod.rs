@@ -5,3 +5,4 @@ pub mod parsers;
 pub mod tts;
 pub mod sync;
 pub mod offline_downloader;
+pub mod supertonic;

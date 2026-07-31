@@ -28,11 +28,15 @@ Future<Uint8List> synthesizeOpenaiTts({
   required String voice,
   required String apiKey,
   required double speed,
+  String? endpoint,
+  String? model,
 }) => RustLib.instance.api.crateApiTtsSynthesizeOpenaiTts(
   text: text,
   voice: voice,
   apiKey: apiKey,
   speed: speed,
+  endpoint: endpoint,
+  model: model,
 );
 
 Future<bool> initOfflineTts() =>
@@ -43,6 +47,16 @@ Future<bool> offlineTtsSpeak({required String text, required double rate}) =>
 
 Future<bool> offlineTtsStop() =>
     RustLib.instance.api.crateApiTtsOfflineTtsStop();
+
+Future<Uint8List> synthesizeSystemTtsToWav({
+  required String text,
+  String? voiceName,
+  required double rate,
+}) => RustLib.instance.api.crateApiTtsSynthesizeSystemTtsToWav(
+  text: text,
+  voiceName: voiceName,
+  rate: rate,
+);
 
 class EdgeVoice {
   final String name;

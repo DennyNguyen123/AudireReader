@@ -257,24 +257,69 @@ pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> R
     Ok(bytes.to_vec())
 }
 
-pub async fn synthesize_openai_tts(text: String, voice: String, api_key: String, speed: f64) -> Result<Vec<u8>, String> {
+pub async fn synthesize_openai_tts(
+    text: String,
+    voice: String,
+    api_key: String,
+    speed: f64,
+    endpoint: Option<String>,
+    model: Option<String>,
+) -> Result<Vec<u8>, String> {
     let client = &*REQWEST_CLIENT;
-    let url = "https://api.openai.com/v1/audio/speech";
+
+    let base_endpoint = endpoint
+        .filter(|e| !e.trim().is_empty())
+        .unwrap_or_else(|| "https://api.openai.com/v1".to_string());
+    
+    let trimmed_endpoint = base_endpoint.trim_end_matches('/');
+    let url = if trimmed_endpoint.ends_with("/audio/speech") {
+        trimmed_endpoint.to_string()
+    } else {
+        format!("{}/audio/speech", trimmed_endpoint)
+    };
+
+    let model_name = model
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| "tts-1".to_string());
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    if let Ok(auth_val) = HeaderValue::from_str(&format!("Bearer {}", api_key)) {
-        headers.insert(reqwest::header::AUTHORIZATION, auth_val);
+    if !api_key.is_empty() {
+        if let Ok(auth_val) = HeaderValue::from_str(&format!("Bearer {}", api_key)) {
+            headers.insert(reqwest::header::AUTHORIZATION, auth_val);
+        }
     }
 
-    let payload = serde_json::json!({
-        "model": "tts-1",
+    let mut calculated_speed = speed * 2.0;
+    if calculated_speed < 0.25 {
+        calculated_speed = 0.25;
+    }
+    if calculated_speed > 4.0 {
+        calculated_speed = 4.0;
+    }
+
+    let mut payload = serde_json::json!({
+        "model": model_name,
         "input": text,
-        "voice": voice,
-        "speed": speed
+        "response_format": "mp3",
+        "speed": calculated_speed
     });
 
-    let res = client.post(url)
+    if !voice.is_empty() {
+        payload["voice"] = serde_json::json!(voice);
+    }
+
+    if !url.contains("api.openai.com") {
+        if let Some(obj) = payload.as_object_mut() {
+            obj.remove("response_format");
+            if (calculated_speed - 1.0).abs() < 0.01 {
+                obj.remove("speed");
+            }
+        }
+    }
+
+    let res = client
+        .post(&url)
         .headers(headers)
         .json(&payload)
         .send()
@@ -282,7 +327,9 @@ pub async fn synthesize_openai_tts(text: String, voice: String, api_key: String,
         .map_err(|e| e.to_string())?;
 
     if !res.status().is_success() {
-        return Err(format!("OpenAI TTS failed: {}", res.status()));
+        let status = res.status();
+        let err_text = res.text().await.unwrap_or_default();
+        return Err(format!("OpenAI TTS failed: {} - {}", status, err_text));
     }
 
     let bytes = res.bytes().await.map_err(|e| e.to_string())?;
@@ -359,6 +406,105 @@ pub fn offline_tts_stop() -> Result<bool, String> {
     } else {
         Err("Offline TTS not initialized".to_string())
     }
+}
+
+#[cfg(target_os = "windows")]
+pub async fn synthesize_system_tts_to_wav(
+    text: String,
+    voice_name: Option<String>,
+    rate: f64,
+) -> Result<Vec<u8>, String> {
+    use windows::Media::SpeechSynthesis::SpeechSynthesizer;
+    use windows::Storage::Streams::DataReader;
+
+    let synth = SpeechSynthesizer::new().map_err(|e| format!("Failed to create SpeechSynthesizer: {}", e))?;
+
+    // Voice Selection
+    let voices = SpeechSynthesizer::AllVoices().map_err(|e| format!("Failed to get voices: {}", e))?;
+    let mut target_voice = None;
+
+    if let Some(ref selected_name) = voice_name {
+        if !selected_name.is_empty() && selected_name != "default" {
+            for v in &voices {
+                if let Ok(display_name) = v.DisplayName() {
+                    let display_str = display_name.to_string();
+                    if display_str == *selected_name || display_str.contains(selected_name.as_str()) {
+                        target_voice = Some(v);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if target_voice.is_none() {
+        for v in &voices {
+            if let Ok(lang) = v.Language() {
+                let lang_str = lang.to_string();
+                if lang_str.to_lowercase().contains("vi") {
+                    target_voice = Some(v);
+                    break;
+                }
+            }
+        }
+    }
+
+    if let Some(v) = target_voice {
+        let _ = synth.SetVoice(&v);
+    }
+
+    // Rate Options
+    if let Ok(options) = synth.Options() {
+        let mut winrt_rate = rate * 2.0;
+        if winrt_rate < 0.5 {
+            winrt_rate = 0.5;
+        }
+        if winrt_rate > 6.0 {
+            winrt_rate = 6.0;
+        }
+        let _ = options.SetSpeakingRate(winrt_rate);
+    }
+
+    let hstring_text = windows::core::HSTRING::from(&text);
+    let stream_op = synth
+        .SynthesizeTextToStreamAsync(&hstring_text)
+        .map_err(|e| format!("SynthesizeTextToStreamAsync failed: {}", e))?;
+
+    let stream = stream_op
+        .get()
+        .map_err(|e| format!("Synthesize stream get failed: {}", e))?;
+
+    let size = stream
+        .Size()
+        .map_err(|e| format!("Failed to get stream size: {}", e))? as u32;
+
+    let input_stream = stream
+        .GetInputStreamAt(0)
+        .map_err(|e| format!("Failed to get input stream: {}", e))?;
+
+    let reader = DataReader::CreateDataReader(&input_stream)
+        .map_err(|e| format!("Failed to create DataReader: {}", e))?;
+
+    let _ = reader
+        .LoadAsync(size)
+        .map_err(|e| format!("LoadAsync failed: {}", e))?
+        .get();
+
+    let mut buffer = vec![0u8; size as usize];
+    reader
+        .ReadBytes(&mut buffer)
+        .map_err(|e| format!("ReadBytes failed: {}", e))?;
+
+    Ok(buffer)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub async fn synthesize_system_tts_to_wav(
+    _text: String,
+    _voice_name: Option<String>,
+    _rate: f64,
+) -> Result<Vec<u8>, String> {
+    Err("System TTS to WAV is only supported on Windows".to_string())
 }
 
 
