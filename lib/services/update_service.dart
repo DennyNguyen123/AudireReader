@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -172,6 +173,15 @@ class UpdateService {
             ),
           ),
           actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: downloadUrl));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Download link copied')),
+                );
+              },
+              child: const Text('Copy Link'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Later'),

@@ -401,12 +401,15 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      AppLocalizations.of(context)!.offlineTtsManager,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: widget.textColor,
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.offlineTtsManager,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: widget.textColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
@@ -425,10 +428,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                 )
               else
                 Expanded(
-                  child: Column(
-                    children: [
+                  child: CustomScrollView(
+                    controller: _autoScrollController,
+                    slivers: [
                       // Top compact controls header
-                      Padding(
+                      SliverToBoxAdapter(
+                        child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 4,
@@ -454,7 +459,8 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
-                                    child: Row(
+                                    child: Wrap(
+                                      crossAxisAlignment: WrapCrossAlignment.center,
                                       children: [
                                         Text(
                                           '${AppLocalizations.of(context)!.storageUsed}: ',
@@ -560,14 +566,16 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.parallelDownloadThreads,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: widget.textColor,
+                                            Expanded(
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.parallelDownloadThreads,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: widget.textColor,
+                                                ),
                                               ),
                                             ),
                                             Container(
@@ -713,12 +721,15 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  AppLocalizations.of(context)!.chapterList,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: widget.textColor,
+                                Expanded(
+                                  child: Text(
+                                    AppLocalizations.of(context)!.chapterList,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: widget.textColor,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 Row(
@@ -1010,17 +1021,16 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                           ],
                         ),
                       ),
-
-                      // Chapter status list filling 100% remaining vertical height
-                      Expanded(
-                        child: ListView.builder(
-                          controller: _autoScrollController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          itemCount: _displayChapters.length,
-                          itemBuilder: (context, index) {
+                    ),
+                    // Chapter status list filling 100% remaining vertical height
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
                             final ch = _displayChapters[index];
                             final isDownloading = _offlineService
                                 .activeChapterIndices
@@ -1230,11 +1240,13 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                               ),
                             );
                           },
+                          childCount: _displayChapters.length,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                ),
                 ),
             ],
           ),

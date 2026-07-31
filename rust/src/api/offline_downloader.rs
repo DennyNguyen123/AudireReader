@@ -104,9 +104,13 @@ pub fn get_book_storage_info(base_dir: String, book_uuid: String) -> BookStorage
                 if let Some(folder_name) = entry.file_name().to_str() {
                     if let Ok(ch_idx) = folder_name.parse::<i32>() {
                         let mut ch_bytes: u64 = 0;
+                        let mut is_done = false;
                         if let Ok(files) = fs::read_dir(entry.path()) {
                             for f in files.flatten() {
                                 let path = f.path();
+                                if path.file_name().map_or(false, |n| n == ".done") {
+                                    is_done = true;
+                                }
                                 if path.extension().map_or(false, |ext| ext == "wav" || ext == "mp3") {
                                     if let Ok(meta) = f.metadata() {
                                         let len = meta.len();
@@ -120,7 +124,9 @@ pub fn get_book_storage_info(base_dir: String, book_uuid: String) -> BookStorage
                         // Only add chapter if it has real valid audio bytes > 0
                         if ch_bytes > 0 {
                             total_bytes += ch_bytes;
-                            chapter_indices.push(ch_idx);
+                            if is_done {
+                                chapter_indices.push(ch_idx);
+                            }
                             chapter_sizes.push(ChapterStorageSize {
                                 chapter_index: ch_idx,
                                 bytes: ch_bytes,
@@ -255,6 +261,7 @@ pub async fn start_offline_download_job(
             let paragraphs = &ch.paragraphs;
             chapter_total_p.insert(ch.chapter_index, paragraphs.len());
 
+            let mut has_missing = false;
             for (p_idx, text) in paragraphs.iter().enumerate() {
                 let audio_file = ch_dir.join(format!("p_{}.wav", p_idx));
                 if !audio_file.exists() || audio_file.metadata().map(|m| m.len()).unwrap_or(0) == 0 {
@@ -263,7 +270,11 @@ pub async fn start_offline_download_job(
                         paragraph_index: p_idx,
                         text: text.clone(),
                     });
+                    has_missing = true;
                 }
+            }
+            if !has_missing {
+                let _ = tokio::fs::write(ch_dir.join(".done"), "").await;
             }
         }
 
@@ -370,14 +381,29 @@ pub async fn start_offline_download_job(
                 }
 
                 if success {
-                    let mut p_map = completed_p_inner.lock();
-                    let count = p_map.entry(task.chapter_index).or_insert(0);
-                    *count += 1;
+                    let is_chapter_finished = {
+                        let mut p_map = completed_p_inner.lock();
+                        let count = p_map.entry(task.chapter_index).or_insert(0);
+                        *count += 1;
 
-                    if *count >= total_p_count {
-                        let mut c_count = completed_c_inner.lock();
-                        *c_count += 1;
-                        ACTIVE_CHAPTERS.lock().remove(&task.chapter_index);
+                        if *count >= total_p_count {
+                            let mut c_count = completed_c_inner.lock();
+                            *c_count += 1;
+                            ACTIVE_CHAPTERS.lock().remove(&task.chapter_index);
+                            true
+                        } else {
+                            false
+                        }
+                    };
+
+                    if is_chapter_finished {
+                        // Mark as done
+                        let done_file = Path::new(&base_dir_inner)
+                            .join("tts_offline")
+                            .join(&book_uuid_inner)
+                            .join(task.chapter_index.to_string())
+                            .join(".done");
+                        let _ = tokio::fs::write(&done_file, "").await;
                     }
                 } else {
                     FAILED_CHAPTERS.lock().insert(task.chapter_index);
