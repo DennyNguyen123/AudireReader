@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/database/database_helper.dart';
-import '../../models/pronunciation_rule.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../services/tts_service.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -57,7 +57,9 @@ class _PronunciationDictionaryScreenState
   Future<void> _deleteRule(PronunciationRule rule) async {
     try {
       final db = await DatabaseHelper.getInstance();
-      await db.deletePronunciationRule(rule.id);
+      if (rule.id != null) {
+        await db.deletePronunciationRule(rule.id!.toInt());
+      }
 
       // Cập nhật dịch vụ TTS ngay lập tức
       final tts = await TtsService.getInstance();
@@ -91,10 +93,10 @@ class _PronunciationDictionaryScreenState
   }
 
   Future<void> _toggleRuleActive(PronunciationRule rule, bool value) async {
-    rule.active = value;
+    final updatedRule = rule.copyWith(active: value);
     try {
       final db = await DatabaseHelper.getInstance();
-      await db.savePronunciationRule(rule);
+      await db.savePronunciationRule(updatedRule);
 
       // Cập nhật dịch vụ TTS ngay lập tức
       final tts = await TtsService.getInstance();
@@ -233,11 +235,18 @@ class _PronunciationDictionaryScreenState
                     return;
                   }
 
-                  final newRule = rule ?? PronunciationRule();
-                  newRule.target = target;
-                  newRule.replacement = replacement;
-                  newRule.isRegex = isRegex;
-                  newRule.active = active;
+                  final newRule = rule?.copyWith(
+                        target: target,
+                        replacement: replacement,
+                        isRegex: isRegex,
+                        active: active,
+                      ) ??
+                      PronunciationRule(
+                        target: target,
+                        replacement: replacement,
+                        isRegex: isRegex,
+                        active: active,
+                      );
 
                   try {
                     final db = await DatabaseHelper.getInstance();

@@ -10,7 +10,6 @@ import '../../services/sync_service.dart' hide print;
 import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../../models/progress.dart';
 import '../../core/global_hotkey_manager.dart';
 import '../../core/theme_notifier.dart';
 import '../../core/locale_notifier.dart';
@@ -115,7 +114,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _usernameController.text = settings.webDavUsername;
       _passwordController.text = webDavPassword;
       _deviceNameController.text = settings.deviceName ?? '';
-      _lastSync = settings.webDavLastSync;
+      _lastSync = settings.webDavLastSync != null ? DateTime.fromMillisecondsSinceEpoch(settings.webDavLastSync!.toInt()) : null;
 
       // Load cấu hình đọc sách
       _fontSize = settings.fontSize;
@@ -180,24 +179,26 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   Future<void> _saveGeneralPreference(bool val) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.openLastReadOnLaunch = val;
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(openLastReadOnLaunch: val);
+    await db.saveSettings(updated);
   }
 
   Future<void> _saveAutoCheckUpdatePreference(bool val) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.autoCheckUpdate = val;
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(autoCheckUpdate: val);
+    await db.saveSettings(updated);
   }
 
   Future<void> _saveDeveloperModeSetting(bool val) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.developerMode = val;
-    settings.enableDebugLogs = val;
-    settings.enableWebDavDebug = val;
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(
+      developerMode: val,
+      enableDebugLogs: val,
+      enableWebDavDebug: val,
+    );
+    await db.saveSettings(updated);
     LoggerService().setEnableDebugLogs(val);
     LoggerService().setEnableWebDavDebug(val);
     setState(() {
@@ -217,7 +218,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       final books = await db.getAllBooks();
       final booksCount = books.length;
       final chaptersCount = books.fold<int>(0, (sum, b) => sum + b.totalChapters);
-      final progressCount = await db.isar.readingProgress.count();
+      final allProgress = await db.getAllReadingProgress();
+      final progressCount = allProgress.length;
 
       if (mounted) {
         showDialog(
@@ -349,8 +351,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
-      settings.webDavLastSync = null;
-      await db.saveSettings(settings);
+      final updated = settings.copyWith(webDavLastSync: null);
+      await db.saveSettings(updated);
 
       setState(() {
         _lastSync = null;
@@ -497,7 +499,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       final settings = await db.getSettings();
       if (!mounted) return;
       setState(() {
-        _lastSync = settings.webDavLastSync;
+        _lastSync = settings.webDavLastSync != null ? DateTime.fromMillisecondsSinceEpoch(settings.webDavLastSync!.toInt()) : null;
       });
 
       showDialog(
@@ -626,7 +628,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       final settings = await db.getSettings();
       if (!mounted) return;
       setState(() {
-        _lastSync = settings.webDavLastSync;
+        _lastSync = settings.webDavLastSync != null ? DateTime.fromMillisecondsSinceEpoch(settings.webDavLastSync!.toInt()) : null;
       });
 
       showDialog(
@@ -683,8 +685,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   Future<void> _saveWebDavEnableSetting(bool val) async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.webDavEnabled = val;
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(webDavEnabled: val);
+    await db.saveSettings(updated);
     if (val) {
       SyncService.getInstance().fetchCloudBooks();
     }
@@ -693,10 +695,12 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   Future<void> _saveWebDavTextSettings() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.webDavUrl = _urlController.text.trim();
-    settings.webDavUsername = _usernameController.text.trim();
-    settings.deviceName = _deviceNameController.text.trim();
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(
+      webDavUrl: _urlController.text.trim(),
+      webDavUsername: _usernameController.text.trim(),
+      deviceName: _deviceNameController.text.trim(),
+    );
+    await db.saveSettings(updated);
 
     const storage = FlutterSecureStorage();
     await storage.write(
@@ -710,37 +714,19 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
 
-    switch (key) {
-      case 'nextParagraph':
-        settings.hotkeyNextParagraph = value;
-        break;
-      case 'prevParagraph':
-        settings.hotkeyPrevParagraph = value;
-        break;
-      case 'nextChapter':
-        settings.hotkeyNextChapter = value;
-        break;
-      case 'prevChapter':
-        settings.hotkeyPrevChapter = value;
-        break;
-      case 'playPauseTts':
-        settings.hotkeyPlayPauseTts = value;
-        break;
-      case 'openChapter':
-        settings.hotkeyOpenChapter = value;
-        break;
-      case 'openSetting':
-        settings.hotkeyOpenSetting = value;
-        break;
-      case 'bossKey':
-        settings.hotkeyBossKey = value;
-        break;
-      case 'bossKeyAction':
-        settings.bossKeyAction = value;
-        break;
-    }
+    final updated = settings.copyWith(
+      hotkeyNextParagraph: key == 'nextParagraph' ? value : settings.hotkeyNextParagraph,
+      hotkeyPrevParagraph: key == 'prevParagraph' ? value : settings.hotkeyPrevParagraph,
+      hotkeyNextChapter: key == 'nextChapter' ? value : settings.hotkeyNextChapter,
+      hotkeyPrevChapter: key == 'prevChapter' ? value : settings.hotkeyPrevChapter,
+      hotkeyPlayPauseTts: key == 'playPauseTts' ? value : settings.hotkeyPlayPauseTts,
+      hotkeyOpenChapter: key == 'openChapter' ? value : settings.hotkeyOpenChapter,
+      hotkeyOpenSetting: key == 'openSetting' ? value : settings.hotkeyOpenSetting,
+      hotkeyBossKey: key == 'bossKey' ? value : settings.hotkeyBossKey,
+      bossKeyAction: key == 'bossKeyAction' ? value : settings.bossKeyAction,
+    );
 
-    await db.saveSettings(settings);
+    await db.saveSettings(updated);
 
     try {
       final ttsService = await TtsService.getInstance();
@@ -767,17 +753,19 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
 
-    settings.hotkeyNextParagraph = 'Arrow Down';
-    settings.hotkeyPrevParagraph = 'Arrow Up';
-    settings.hotkeyNextChapter = 'Control+Arrow Right';
-    settings.hotkeyPrevChapter = 'Control+Arrow Left';
-    settings.hotkeyPlayPauseTts = 'Space';
-    settings.hotkeyOpenChapter = 'Control+o';
-    settings.hotkeyOpenSetting = 'Control+comma';
-    settings.hotkeyBossKey = 'Control+b';
-    settings.bossKeyAction = 'minimize';
+    final updated = settings.copyWith(
+      hotkeyNextParagraph: 'Arrow Down',
+      hotkeyPrevParagraph: 'Arrow Up',
+      hotkeyNextChapter: 'Control+Arrow Right',
+      hotkeyPrevChapter: 'Control+Arrow Left',
+      hotkeyPlayPauseTts: 'Space',
+      hotkeyOpenChapter: 'Control+o',
+      hotkeyOpenSetting: 'Control+comma',
+      hotkeyBossKey: 'Control+b',
+      bossKeyAction: 'minimize',
+    );
 
-    await db.saveSettings(settings);
+    await db.saveSettings(updated);
 
     try {
       final ttsService = await TtsService.getInstance();
@@ -878,7 +866,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       final settings = await db.getSettings();
       if (!mounted) return;
       setState(() {
-        _lastSync = settings.webDavLastSync;
+        _lastSync = settings.webDavLastSync != null ? DateTime.fromMillisecondsSinceEpoch(settings.webDavLastSync!.toInt()) : null;
       });
 
       showDialog(
@@ -1055,8 +1043,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               });
                               final db = await DatabaseHelper.getInstance();
                               final settings = await db.getSettings();
-                              settings.appLocale = val;
-                              await db.saveSettings(settings);
+                              final updated = settings.copyWith(appLocale: val);
+                              await db.saveSettings(updated);
                               LocaleNotifier.instance.updateLocale(val);
                             }
                           },

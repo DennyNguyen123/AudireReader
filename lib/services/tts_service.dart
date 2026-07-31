@@ -4,9 +4,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../models/progress.dart';
-import '../models/settings.dart';
-import '../models/pronunciation_rule.dart';
 import 'audio_handler.dart';
 import 'supertonic_service.dart';
 import 'edge_tts_service.dart';
@@ -260,14 +257,19 @@ class TtsService extends ChangeNotifier {
   Future<void> _saveProgressLocally() async {
     if (_activeBook == null) return;
     final db = await DatabaseHelper.getInstance();
-    final progress =
-        await db.getProgress(_activeBook!.uuid) ??
-        (ReadingProgress()..bookUuid = _activeBook!.uuid);
-
-    progress.currentChapterIndex = _currentChapterIndex;
-    progress.currentParagraphIndex = _currentParagraphIndex;
-    progress.currentCharacterOffset = 0;
-    progress.lastRead = DateTime.now();
+    final progress = (await db.getProgress(_activeBook!.uuid))?.copyWith(
+          currentChapterIndex: _currentChapterIndex,
+          currentParagraphIndex: _currentParagraphIndex,
+          currentCharacterOffset: 0,
+          lastRead: DateTime.now().millisecondsSinceEpoch,
+        ) ??
+        ReadingProgress(
+          bookUuid: _activeBook!.uuid,
+          currentChapterIndex: _currentChapterIndex,
+          currentParagraphIndex: _currentParagraphIndex,
+          currentCharacterOffset: 0,
+          lastRead: DateTime.now().millisecondsSinceEpoch,
+        );
     await db.saveProgress(progress);
 
     final isLastChapter = _currentChapterIndex >= _chapters.length - 1;
@@ -549,19 +551,24 @@ class TtsService extends ChangeNotifier {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
 
-    if (fontSize != null) settings.fontSize = fontSize;
-    if (speechRate != null) {
-      _speechRate = speechRate;
-      settings.speechRate = speechRate;
-      await audioHandler.setSpeed(speechRate);
-    }
-    if (openAiTtsEndpoint != null)
-      settings.openAiTtsEndpoint = openAiTtsEndpoint;
-    if (openAiTtsApiKey != null) settings.openAiTtsApiKey = openAiTtsApiKey;
-    if (openAiTtsModel != null) settings.openAiTtsModel = openAiTtsModel;
-    if (voice != null) {
-      settings.selectedVoiceName = voice['name'];
-      settings.selectedVoiceLocale = voice['locale'];
+    String? selectedVoiceName = voice != null ? voice['name'] : settings.selectedVoiceName;
+    String? selectedVoiceLocale = voice != null ? voice['locale'] : settings.selectedVoiceLocale;
+
+    if (ttsProvider != null && ttsProvider != settings.ttsProvider) {
+      if (ttsProvider == 'supertonic') {
+        selectedVoiceName = 'M1';
+        selectedVoiceLocale = 'offline';
+        unawaited(
+          SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'),
+        );
+      } else if (ttsProvider == 'openai') {
+        selectedVoiceName = 'alloy';
+        selectedVoiceLocale = 'en';
+      } else {
+        selectedVoiceName = null;
+        selectedVoiceLocale = null;
+      }
+    } else if (voice != null) {
       if (settings.ttsProvider == 'system') {
         await audioHandler.setVoice(voice);
       } else if (settings.ttsProvider == 'supertonic') {
@@ -573,50 +580,39 @@ class TtsService extends ChangeNotifier {
         );
       }
     }
-    if (fontFamily != null) {
-      settings.fontFamily = fontFamily;
-    }
-    if (themeMode != null) {
-      settings.themeMode = themeMode;
-    }
-    if (ttsProvider != null) {
-      settings.ttsProvider = ttsProvider;
-      if (ttsProvider == 'supertonic') {
-        settings.selectedVoiceName = 'M1';
-        settings.selectedVoiceLocale = 'offline';
-        unawaited(
-          SupertonicService.getInstance().initializeEngine(voiceStyle: 'M1'),
-        );
-      } else if (ttsProvider == 'openai') {
-        settings.selectedVoiceName = 'alloy';
-        settings.selectedVoiceLocale = 'en';
-      } else {
-        settings.selectedVoiceName = null;
-        settings.selectedVoiceLocale = null;
-      }
+
+    if (speechRate != null) {
+      _speechRate = speechRate;
+      await audioHandler.setSpeed(speechRate);
     }
 
-    if (lineHeight != null) settings.lineHeight = lineHeight;
-    if (paragraphSpacing != null) settings.paragraphSpacing = paragraphSpacing;
-    if (textAlignment != null) settings.textAlignment = textAlignment;
-    if (sideMargin != null) settings.sideMargin = sideMargin;
-    if (customBackgroundColor != null)
-      settings.customBackgroundColor = customBackgroundColor;
-    if (customTextColor != null) settings.customTextColor = customTextColor;
-    if (primaryColorHex != null) settings.primaryColorHex = primaryColorHex;
+    final updated = settings.copyWith(
+      fontSize: fontSize ?? settings.fontSize,
+      speechRate: speechRate ?? settings.speechRate,
+      openAiTtsEndpoint: openAiTtsEndpoint ?? settings.openAiTtsEndpoint,
+      openAiTtsApiKey: openAiTtsApiKey ?? settings.openAiTtsApiKey,
+      openAiTtsModel: openAiTtsModel ?? settings.openAiTtsModel,
+      selectedVoiceName: selectedVoiceName,
+      selectedVoiceLocale: selectedVoiceLocale,
+      fontFamily: fontFamily ?? settings.fontFamily,
+      themeMode: themeMode ?? settings.themeMode,
+      ttsProvider: ttsProvider ?? settings.ttsProvider,
+      lineHeight: lineHeight ?? settings.lineHeight,
+      paragraphSpacing: paragraphSpacing ?? settings.paragraphSpacing,
+      textAlignment: textAlignment ?? settings.textAlignment,
+      sideMargin: sideMargin ?? settings.sideMargin,
+      customBackgroundColor: customBackgroundColor ?? settings.customBackgroundColor,
+      customTextColor: customTextColor ?? settings.customTextColor,
+      primaryColorHex: primaryColorHex ?? settings.primaryColorHex,
+      showAssistiveButton: showAssistiveButton ?? settings.showAssistiveButton,
+      assistiveButtonX: assistiveButtonX ?? settings.assistiveButtonX,
+      assistiveButtonY: assistiveButtonY ?? settings.assistiveButtonY,
+      assistiveSingleTapAction: assistiveSingleTapAction ?? settings.assistiveSingleTapAction,
+      assistiveDoubleTapAction: assistiveDoubleTapAction ?? settings.assistiveDoubleTapAction,
+      assistiveLongPressAction: assistiveLongPressAction ?? settings.assistiveLongPressAction,
+    );
 
-    if (showAssistiveButton != null)
-      settings.showAssistiveButton = showAssistiveButton;
-    if (assistiveButtonX != null) settings.assistiveButtonX = assistiveButtonX;
-    if (assistiveButtonY != null) settings.assistiveButtonY = assistiveButtonY;
-    if (assistiveSingleTapAction != null)
-      settings.assistiveSingleTapAction = assistiveSingleTapAction;
-    if (assistiveDoubleTapAction != null)
-      settings.assistiveDoubleTapAction = assistiveDoubleTapAction;
-    if (assistiveLongPressAction != null)
-      settings.assistiveLongPressAction = assistiveLongPressAction;
-
-    await db.saveSettings(settings);
+    await db.saveSettings(updated);
     notifyListeners();
   }
 

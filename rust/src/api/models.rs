@@ -64,6 +64,42 @@ pub struct ReadingProgress {
 
 #[frb(dart_metadata = ("freezed"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PronunciationRule {
+    pub id: Option<i64>,
+    pub target: String,
+    pub replacement: String,
+    pub is_regex: bool,
+    pub active: bool,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BgmTrack {
+    pub id: Option<i64>,
+    pub name: String,
+    pub source_type: String,
+    pub source_path: String,
+    pub date_added: i64,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfflineTtsRecord {
+    pub id: Option<i64>,
+    pub book_uuid: String,
+    pub chapter_index: i32,
+    pub tts_provider: String,
+    pub voice_name: String,
+    pub speech_rate: f64,
+    pub is_completed: bool,
+    pub total_paragraphs: i32,
+    pub downloaded_paragraphs: i32,
+    pub total_size_bytes: i64,
+    pub downloaded_at: i64,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
     pub id: i64,
     pub font_size: f64,
@@ -125,3 +161,4 @@ pub struct AppSettings {
     pub enable_debug_logs: bool,
     pub enable_web_dav_debug: bool,
 }
+

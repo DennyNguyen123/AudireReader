@@ -21,8 +21,116 @@ Future<PlatformInt64> insertBook({required Book book}) =>
 Future<void> deleteBook({required String uuid}) =>
     RustLib.instance.api.crateApiDatabaseDeleteBook(uuid: uuid);
 
+Future<void> vacuumDatabase() =>
+    RustLib.instance.api.crateApiDatabaseVacuumDatabase();
+
 Future<List<Chapter>> getChapters({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseGetChapters(bookUuid: bookUuid);
 
 Future<void> insertChapters({required List<Chapter> chapters}) =>
     RustLib.instance.api.crateApiDatabaseInsertChapters(chapters: chapters);
+
+Future<AppSettings?> getSettings() =>
+    RustLib.instance.api.crateApiDatabaseGetSettings();
+
+Future<void> saveSettings({required AppSettings settings}) =>
+    RustLib.instance.api.crateApiDatabaseSaveSettings(settings: settings);
+
+Future<ReadingProgress?> getReadingProgress({required String bookUuid}) =>
+    RustLib.instance.api.crateApiDatabaseGetReadingProgress(bookUuid: bookUuid);
+
+Future<List<ReadingProgress>> getAllReadingProgress() =>
+    RustLib.instance.api.crateApiDatabaseGetAllReadingProgress();
+
+Future<void> saveReadingProgress({required ReadingProgress progress}) => RustLib
+    .instance
+    .api
+    .crateApiDatabaseSaveReadingProgress(progress: progress);
+
+Future<void> deleteReadingProgress({required String bookUuid}) => RustLib
+    .instance
+    .api
+    .crateApiDatabaseDeleteReadingProgress(bookUuid: bookUuid);
+
+Future<List<Bookmark>> getBookmarks({required String bookUuid}) =>
+    RustLib.instance.api.crateApiDatabaseGetBookmarks(bookUuid: bookUuid);
+
+Future<List<Bookmark>> getAllBookmarks() =>
+    RustLib.instance.api.crateApiDatabaseGetAllBookmarks();
+
+Future<PlatformInt64> addBookmark({required Bookmark bookmark}) =>
+    RustLib.instance.api.crateApiDatabaseAddBookmark(bookmark: bookmark);
+
+Future<void> deleteBookmark({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiDatabaseDeleteBookmark(id: id);
+
+Future<void> deleteBookmarksForBook({required String bookUuid}) => RustLib
+    .instance
+    .api
+    .crateApiDatabaseDeleteBookmarksForBook(bookUuid: bookUuid);
+
+Future<List<Highlight>> getHighlights({required String bookUuid}) =>
+    RustLib.instance.api.crateApiDatabaseGetHighlights(bookUuid: bookUuid);
+
+Future<List<Highlight>> getAllHighlights() =>
+    RustLib.instance.api.crateApiDatabaseGetAllHighlights();
+
+Future<PlatformInt64> addHighlight({required Highlight highlight}) =>
+    RustLib.instance.api.crateApiDatabaseAddHighlight(highlight: highlight);
+
+Future<void> deleteHighlight({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiDatabaseDeleteHighlight(id: id);
+
+Future<void> deleteHighlightsForBook({required String bookUuid}) => RustLib
+    .instance
+    .api
+    .crateApiDatabaseDeleteHighlightsForBook(bookUuid: bookUuid);
+
+Future<List<PronunciationRule>> getPronunciationRules() =>
+    RustLib.instance.api.crateApiDatabaseGetPronunciationRules();
+
+Future<PlatformInt64> savePronunciationRule({
+  required PronunciationRule rule,
+}) => RustLib.instance.api.crateApiDatabaseSavePronunciationRule(rule: rule);
+
+Future<void> deletePronunciationRule({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiDatabaseDeletePronunciationRule(id: id);
+
+Future<List<BgmTrack>> getBgmTracks() =>
+    RustLib.instance.api.crateApiDatabaseGetBgmTracks();
+
+Future<PlatformInt64> addBgmTrack({required BgmTrack track}) =>
+    RustLib.instance.api.crateApiDatabaseAddBgmTrack(track: track);
+
+Future<void> deleteBgmTrack({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiDatabaseDeleteBgmTrack(id: id);
+
+Future<List<OfflineTtsRecord>> getOfflineTtsRecords({
+  required String bookUuid,
+}) => RustLib.instance.api.crateApiDatabaseGetOfflineTtsRecords(
+  bookUuid: bookUuid,
+);
+
+Future<OfflineTtsRecord?> getOfflineTtsRecord({
+  required String bookUuid,
+  required int chapterIndex,
+}) => RustLib.instance.api.crateApiDatabaseGetOfflineTtsRecord(
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+);
+
+Future<void> saveOfflineTtsRecord({required OfflineTtsRecord record}) =>
+    RustLib.instance.api.crateApiDatabaseSaveOfflineTtsRecord(record: record);
+
+Future<void> deleteOfflineTtsRecord({
+  required String bookUuid,
+  required int chapterIndex,
+}) => RustLib.instance.api.crateApiDatabaseDeleteOfflineTtsRecord(
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+);
+
+Future<void> deleteOfflineTtsRecordsForBook({required String bookUuid}) =>
+    RustLib.instance.api.crateApiDatabaseDeleteOfflineTtsRecordsForBook(
+      bookUuid: bookUuid,
+    );

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../../../models/settings.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import '../../../services/offline_tts_service.dart';
 
@@ -156,11 +155,12 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   Future<void> _updateConcurrency(double val) async {
     if (_settings == null) return;
     final int newConcurrency = val.round().clamp(1, 100);
+    final updated = _settings!.copyWith(ttsDownloadConcurrency: newConcurrency);
     setState(() {
-      _settings!.ttsDownloadConcurrency = newConcurrency;
+      _settings = updated;
     });
     final db = await DatabaseHelper.getInstance();
-    await db.saveSettings(_settings!);
+    await db.saveSettings(updated);
   }
 
   void _startDownloadSelected() {

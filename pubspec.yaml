@@ -44,8 +44,6 @@ dependencies:
   audio_service: ^0.18.17
   audio_session: ^0.1.21
   epubx: ^4.0.0
-  isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1 # contains the native binaries for Isar
   path_provider: ^2.1.2
   rxdart: ^0.27.7
   file_picker: ^8.0.0
@@ -97,7 +95,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  isar_generator: ^3.1.0+1
   build_runner: ^2.4.8
   flutter_launcher_icons: ^0.11.0
   inno_bundle: ^0.11.2

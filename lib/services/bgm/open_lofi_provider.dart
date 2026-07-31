@@ -1,4 +1,4 @@
-import '../../models/bgm_track.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import 'bgm_provider.dart';
 
 class OpenLofiProvider implements BgmProvider {
@@ -27,14 +27,13 @@ class OpenLofiProvider implements BgmProvider {
       },
     ];
 
-    return tracksData.map((data) {
-      final track = BgmTrack();
-      track.id = data['url'].hashCode.abs();
-      track.name = data['name']!;
-      track.sourceType = 'openlofi';
-      track.sourcePath = data['url']!;
-      track.dateAdded = DateTime.now();
-      return track;
+    return tracksData.map<BgmTrack>((data) {
+      return BgmTrack(
+        name: data['name']!,
+        sourceType: 'openlofi',
+        sourcePath: data['url']!,
+        dateAdded: DateTime.now().millisecondsSinceEpoch,
+      );
     }).toList();
   }
 }

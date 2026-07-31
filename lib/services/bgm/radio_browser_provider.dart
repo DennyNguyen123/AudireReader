@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../models/bgm_track.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import 'bgm_provider.dart';
 import '../logger_service.dart';
 
@@ -22,17 +22,17 @@ class RadioBrowserProvider implements BgmProvider {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data
-            .map((json) {
-              final track = BgmTrack();
+            .map<BgmTrack?>((json) {
               final url = json['url_resolved'] ?? json['url'];
-              track.id = url.hashCode.abs();
-              track.name = json['name']?.toString().trim() ?? 'Unknown Station';
-              track.sourceType = 'radio';
-              track.sourcePath = url;
-              track.dateAdded = DateTime.now();
-              return track;
+              if (url == null || url.toString().isEmpty) return null;
+              return BgmTrack(
+                name: json['name']?.toString().trim() ?? 'Unknown Station',
+                sourceType: 'radio',
+                sourcePath: url,
+                dateAdded: DateTime.now().millisecondsSinceEpoch,
+              );
             })
-            .where((track) => track.sourcePath.isNotEmpty)
+            .whereType<BgmTrack>()
             .toList();
       } else {
         LoggerService().log(
@@ -67,17 +67,17 @@ class RadioBrowserProvider implements BgmProvider {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data
-            .map((json) {
-              final track = BgmTrack();
+            .map<BgmTrack?>((json) {
               final url = json['url_resolved'] ?? json['url'];
-              track.id = url.hashCode.abs();
-              track.name = json['name']?.toString().trim() ?? 'Unknown Station';
-              track.sourceType = 'radio';
-              track.sourcePath = url;
-              track.dateAdded = DateTime.now();
-              return track;
+              if (url == null || url.toString().isEmpty) return null;
+              return BgmTrack(
+                name: json['name']?.toString().trim() ?? 'Unknown Station',
+                sourceType: 'radio',
+                sourcePath: url,
+                dateAdded: DateTime.now().millisecondsSinceEpoch,
+              );
             })
-            .where((track) => track.sourcePath.isNotEmpty)
+            .whereType<BgmTrack>()
             .toList();
       } else {
         LoggerService().log(

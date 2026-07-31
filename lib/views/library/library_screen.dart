@@ -5,13 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
 import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
 import '../../core/utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../../models/progress.dart';
 import '../../services/epub_parser.dart';
 import '../../services/txt_parser.dart';
 import '../../services/pdf_parser.dart';
@@ -199,7 +197,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final password = await storage.read(key: 'webdav_password') ?? '';
     if (mounted) {
       setState(() {
-        _lastSyncTime = settings.webDavLastSync;
+        _lastSyncTime = settings.webDavLastSync != null
+            ? DateTime.fromMillisecondsSinceEpoch(settings.webDavLastSync!.toInt())
+            : null;
         _webDavEnabled =
             settings.webDavEnabled &&
             settings.webDavUrl.trim().isNotEmpty &&
@@ -1108,10 +1108,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     if (settings.openLastReadOnLaunch) {
       // Tìm tiến trình đọc gần đây nhất
-      final progressList = await db.isar.readingProgress
-          .where()
-          .sortByLastReadDesc()
-          .findAll();
+      final progressList = await db.getAllReadingProgress();
+      progressList.sort((a, b) => (b.lastRead ?? 0).compareTo(a.lastRead ?? 0));
 
       if (progressList.isNotEmpty) {
         final lastProgress = progressList.first;
@@ -1230,10 +1228,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       allBooks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
     } else {
       // 'lastRead':
-      final Map<String, DateTime> lastReadMap = {};
+      final Map<String, int> lastReadMap = {};
       for (final book in allBooks) {
         final progress = await db.getProgress(book.uuid);
-        lastReadMap[book.uuid] = progress?.lastRead ?? DateTime.fromMillisecondsSinceEpoch(book.dateAdded);
+        lastReadMap[book.uuid] = (progress?.lastRead ?? book.dateAdded).toInt();
       }
       allBooks.sort((a, b) {
         final timeA = lastReadMap[a.uuid]!;
@@ -1342,8 +1340,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     Navigator.pop(context);
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    settings.sortBy = type;
-    await db.saveSettings(settings);
+    final updated = settings.copyWith(sortBy: type);
+    await db.saveSettings(updated);
     await _loadBooks();
   }
 

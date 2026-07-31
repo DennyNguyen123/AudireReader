@@ -1,4 +1,4 @@
-import '../../models/bgm_track.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 
 abstract class BgmProvider {
   String get id;

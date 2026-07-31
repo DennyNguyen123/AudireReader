@@ -65,7 +65,7 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
 
     try {
       final db = await DatabaseHelper.getInstance();
-      final settings = await db.getSettings();
+      var settings = await db.getSettings();
 
       // 1. Áp dụng cấu hình WebDAV
       final webDavUrl = data['webDavUrl'] as String? ?? '';
@@ -73,9 +73,11 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
       final webDavPassword = data['webDavPassword'] as String? ?? '';
       final deviceName = data['deviceName'] as String? ?? 'Thiết bị khác';
 
-      settings.webDavUrl = webDavUrl;
-      settings.webDavUsername = webDavUsername;
-      settings.webDavEnabled = true;
+      settings = settings.copyWith(
+        webDavUrl: webDavUrl,
+        webDavUsername: webDavUsername,
+        webDavEnabled: true,
+      );
 
       const storage = FlutterSecureStorage();
       await storage.write(key: 'webdav_password', value: webDavPassword);
@@ -83,107 +85,45 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
       // 2. Áp dụng các settings khác (nếu có)
       if (data.containsKey('settings')) {
         final customSettings = data['settings'] as Map<String, dynamic>;
-
-        if (customSettings.containsKey('fontSize'))
-          settings.fontSize = (customSettings['fontSize'] as num).toDouble();
-        if (customSettings.containsKey('speechRate'))
-          settings.speechRate = (customSettings['speechRate'] as num)
-              .toDouble();
-        if (customSettings.containsKey('selectedVoiceName'))
-          settings.selectedVoiceName = customSettings['selectedVoiceName'];
-        if (customSettings.containsKey('selectedVoiceLocale'))
-          settings.selectedVoiceLocale = customSettings['selectedVoiceLocale'];
-        if (customSettings.containsKey('ttsProvider'))
-          settings.ttsProvider = customSettings['ttsProvider'] ?? 'system';
-
-        if (customSettings.containsKey('openAiTtsEndpoint'))
-          settings.openAiTtsEndpoint =
-              customSettings['openAiTtsEndpoint'] ?? '';
-        if (customSettings.containsKey('openAiTtsApiKey'))
-          settings.openAiTtsApiKey = customSettings['openAiTtsApiKey'] ?? '';
-        if (customSettings.containsKey('openAiTtsModel'))
-          settings.openAiTtsModel = customSettings['openAiTtsModel'] ?? '';
-
-        if (customSettings.containsKey('fontFamily'))
-          settings.fontFamily = customSettings['fontFamily'] ?? 'System';
-        if (customSettings.containsKey('themeMode'))
-          settings.themeMode = customSettings['themeMode'] ?? 'System';
-        if (customSettings.containsKey('appLocale'))
-          settings.appLocale = customSettings['appLocale'] ?? 'en';
-
-        if (customSettings.containsKey('lineHeight'))
-          settings.lineHeight = (customSettings['lineHeight'] as num)
-              .toDouble();
-        if (customSettings.containsKey('paragraphSpacing'))
-          settings.paragraphSpacing =
-              (customSettings['paragraphSpacing'] as num).toDouble();
-        if (customSettings.containsKey('textAlignment'))
-          settings.textAlignment = customSettings['textAlignment'] ?? 'left';
-        if (customSettings.containsKey('sideMargin'))
-          settings.sideMargin = (customSettings['sideMargin'] as num)
-              .toDouble();
-        if (customSettings.containsKey('customBackgroundColor'))
-          settings.customBackgroundColor =
-              customSettings['customBackgroundColor'];
-        if (customSettings.containsKey('customTextColor'))
-          settings.customTextColor = customSettings['customTextColor'];
-        if (customSettings.containsKey('primaryColorHex'))
-          settings.primaryColorHex = customSettings['primaryColorHex'];
-
-        if (customSettings.containsKey('openLastReadOnLaunch'))
-          settings.openLastReadOnLaunch =
-              customSettings['openLastReadOnLaunch'] ?? false;
-
-        if (customSettings.containsKey('hotkeyNextParagraph'))
-          settings.hotkeyNextParagraph =
-              customSettings['hotkeyNextParagraph'] ?? 'Arrow Down';
-        if (customSettings.containsKey('hotkeyPrevParagraph'))
-          settings.hotkeyPrevParagraph =
-              customSettings['hotkeyPrevParagraph'] ?? 'Arrow Up';
-        if (customSettings.containsKey('hotkeyNextChapter'))
-          settings.hotkeyNextChapter =
-              customSettings['hotkeyNextChapter'] ?? 'Control+Arrow Right';
-        if (customSettings.containsKey('hotkeyPrevChapter'))
-          settings.hotkeyPrevChapter =
-              customSettings['hotkeyPrevChapter'] ?? 'Control+Arrow Left';
-        if (customSettings.containsKey('hotkeyPlayPauseTts'))
-          settings.hotkeyPlayPauseTts =
-              customSettings['hotkeyPlayPauseTts'] ?? 'Space';
-        if (customSettings.containsKey('hotkeyOpenChapter'))
-          settings.hotkeyOpenChapter =
-              customSettings['hotkeyOpenChapter'] ?? 'Control+o';
-        if (customSettings.containsKey('hotkeyOpenSetting'))
-          settings.hotkeyOpenSetting =
-              customSettings['hotkeyOpenSetting'] ?? 'Control+comma';
-        if (customSettings.containsKey('hotkeyBossKey'))
-          settings.hotkeyBossKey =
-              customSettings['hotkeyBossKey'] ?? 'Control+b';
-        if (customSettings.containsKey('bossKeyAction'))
-          settings.bossKeyAction =
-              customSettings['bossKeyAction'] ?? 'minimize';
-
-        if (customSettings.containsKey('autoCheckUpdate'))
-          settings.autoCheckUpdate = customSettings['autoCheckUpdate'] ?? true;
-
-        if (customSettings.containsKey('bgmEnabled'))
-          settings.bgmEnabled = customSettings['bgmEnabled'] ?? false;
-        if (customSettings.containsKey('bgmVolume'))
-          settings.bgmVolume = (customSettings['bgmVolume'] as num).toDouble();
-        if (customSettings.containsKey('bgmLoopMode'))
-          settings.bgmLoopMode = customSettings['bgmLoopMode'] ?? 'all';
-        if (customSettings.containsKey('bgmProviderId'))
-          settings.bgmProviderId = customSettings['bgmProviderId'] ?? 'local';
-
-        if (customSettings.containsKey('sortBy'))
-          settings.sortBy = customSettings['sortBy'] ?? 'dateAdded';
-
-        if (customSettings.containsKey('developerMode'))
-          settings.developerMode = customSettings['developerMode'] ?? false;
-        if (customSettings.containsKey('enableDebugLogs'))
-          settings.enableDebugLogs = customSettings['enableDebugLogs'] ?? false;
-        if (customSettings.containsKey('enableWebDavDebug'))
-          settings.enableWebDavDebug =
-              customSettings['enableWebDavDebug'] ?? false;
+        settings = settings.copyWith(
+          fontSize: customSettings.containsKey('fontSize') ? (customSettings['fontSize'] as num).toDouble() : settings.fontSize,
+          speechRate: customSettings.containsKey('speechRate') ? (customSettings['speechRate'] as num).toDouble() : settings.speechRate,
+          selectedVoiceName: customSettings.containsKey('selectedVoiceName') ? customSettings['selectedVoiceName'] : settings.selectedVoiceName,
+          selectedVoiceLocale: customSettings.containsKey('selectedVoiceLocale') ? customSettings['selectedVoiceLocale'] : settings.selectedVoiceLocale,
+          ttsProvider: customSettings.containsKey('ttsProvider') ? customSettings['ttsProvider'] : settings.ttsProvider,
+          openAiTtsEndpoint: customSettings.containsKey('openAiTtsEndpoint') ? customSettings['openAiTtsEndpoint'] : settings.openAiTtsEndpoint,
+          openAiTtsApiKey: customSettings.containsKey('openAiTtsApiKey') ? customSettings['openAiTtsApiKey'] : settings.openAiTtsApiKey,
+          openAiTtsModel: customSettings.containsKey('openAiTtsModel') ? customSettings['openAiTtsModel'] : settings.openAiTtsModel,
+          fontFamily: customSettings.containsKey('fontFamily') ? customSettings['fontFamily'] : settings.fontFamily,
+          themeMode: customSettings.containsKey('themeMode') ? customSettings['themeMode'] : settings.themeMode,
+          appLocale: customSettings.containsKey('appLocale') ? customSettings['appLocale'] : settings.appLocale,
+          lineHeight: customSettings.containsKey('lineHeight') ? (customSettings['lineHeight'] as num).toDouble() : settings.lineHeight,
+          paragraphSpacing: customSettings.containsKey('paragraphSpacing') ? (customSettings['paragraphSpacing'] as num).toDouble() : settings.paragraphSpacing,
+          textAlignment: customSettings.containsKey('textAlignment') ? customSettings['textAlignment'] : settings.textAlignment,
+          sideMargin: customSettings.containsKey('sideMargin') ? (customSettings['sideMargin'] as num).toDouble() : settings.sideMargin,
+          customBackgroundColor: customSettings.containsKey('customBackgroundColor') ? customSettings['customBackgroundColor'] : settings.customBackgroundColor,
+          customTextColor: customSettings.containsKey('customTextColor') ? customSettings['customTextColor'] : settings.customTextColor,
+          primaryColorHex: customSettings.containsKey('primaryColorHex') ? customSettings['primaryColorHex'] : settings.primaryColorHex,
+          openLastReadOnLaunch: customSettings.containsKey('openLastReadOnLaunch') ? customSettings['openLastReadOnLaunch'] : settings.openLastReadOnLaunch,
+          hotkeyNextParagraph: customSettings.containsKey('hotkeyNextParagraph') ? customSettings['hotkeyNextParagraph'] : settings.hotkeyNextParagraph,
+          hotkeyPrevParagraph: customSettings.containsKey('hotkeyPrevParagraph') ? customSettings['hotkeyPrevParagraph'] : settings.hotkeyPrevParagraph,
+          hotkeyNextChapter: customSettings.containsKey('hotkeyNextChapter') ? customSettings['hotkeyNextChapter'] : settings.hotkeyNextChapter,
+          hotkeyPrevChapter: customSettings.containsKey('hotkeyPrevChapter') ? customSettings['hotkeyPrevChapter'] : settings.hotkeyPrevChapter,
+          hotkeyPlayPauseTts: customSettings.containsKey('hotkeyPlayPauseTts') ? customSettings['hotkeyPlayPauseTts'] : settings.hotkeyPlayPauseTts,
+          hotkeyOpenChapter: customSettings.containsKey('hotkeyOpenChapter') ? customSettings['hotkeyOpenChapter'] : settings.hotkeyOpenChapter,
+          hotkeyOpenSetting: customSettings.containsKey('hotkeyOpenSetting') ? customSettings['hotkeyOpenSetting'] : settings.hotkeyOpenSetting,
+          hotkeyBossKey: customSettings.containsKey('hotkeyBossKey') ? customSettings['hotkeyBossKey'] : settings.hotkeyBossKey,
+          bossKeyAction: customSettings.containsKey('bossKeyAction') ? customSettings['bossKeyAction'] : settings.bossKeyAction,
+          autoCheckUpdate: customSettings.containsKey('autoCheckUpdate') ? customSettings['autoCheckUpdate'] : settings.autoCheckUpdate,
+          bgmEnabled: customSettings.containsKey('bgmEnabled') ? customSettings['bgmEnabled'] : settings.bgmEnabled,
+          bgmVolume: customSettings.containsKey('bgmVolume') ? (customSettings['bgmVolume'] as num).toDouble() : settings.bgmVolume,
+          bgmLoopMode: customSettings.containsKey('bgmLoopMode') ? customSettings['bgmLoopMode'] : settings.bgmLoopMode,
+          bgmProviderId: customSettings.containsKey('bgmProviderId') ? customSettings['bgmProviderId'] : settings.bgmProviderId,
+          sortBy: customSettings.containsKey('sortBy') ? customSettings['sortBy'] : settings.sortBy,
+          developerMode: customSettings.containsKey('developerMode') ? customSettings['developerMode'] : settings.developerMode,
+          enableDebugLogs: customSettings.containsKey('enableDebugLogs') ? customSettings['enableDebugLogs'] : settings.enableDebugLogs,
+          enableWebDavDebug: customSettings.containsKey('enableWebDavDebug') ? customSettings['enableWebDavDebug'] : settings.enableWebDavDebug,
+        );
       }
 
       await db.saveSettings(settings);

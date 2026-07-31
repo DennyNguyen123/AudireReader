@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import 'package:audire_reader/models/bookmark.dart';
-import 'package:audire_reader/models/highlight.dart';
 import 'package:audire_reader/core/database/database_helper.dart';
 import 'package:audire_reader/views/reader/reader_screen.dart';
 import 'package:audire_reader/services/tts_service.dart';
@@ -42,14 +39,10 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
 
     final db = await DatabaseHelper.getInstance();
 
-    final allBookmarks = await db.isar.bookmarks
-        .where()
-        .sortByDateAddedDesc()
-        .findAll();
-    final allHighlights = await db.isar.highlights
-        .where()
-        .sortByDateAddedDesc()
-        .findAll();
+    final allBookmarks = await db.getAllBookmarks();
+    allBookmarks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    final allHighlights = await db.getAllHighlights();
+    allHighlights.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
 
     // Cache book information
     final Set<String> bookUuids = {};
@@ -109,13 +102,17 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
 
   Future<void> _deleteBookmark(Bookmark bookmark) async {
     final db = await DatabaseHelper.getInstance();
-    await db.deleteBookmark(bookmark.id);
+    if (bookmark.id != null) {
+      await db.deleteBookmark(bookmark.id!.toInt());
+    }
     _loadData();
   }
 
   Future<void> _deleteHighlight(Highlight highlight) async {
     final db = await DatabaseHelper.getInstance();
-    await db.deleteHighlight(highlight.id);
+    if (highlight.id != null) {
+      await db.deleteHighlight(highlight.id!.toInt());
+    }
     _loadData();
   }
 

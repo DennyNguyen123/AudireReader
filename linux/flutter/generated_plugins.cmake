@@ -7,7 +7,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_onnxruntime
   flutter_secure_storage_linux
   hotkey_manager_linux
-  isar_flutter_libs
   screen_retriever_linux
   tray_manager
   url_launcher_linux

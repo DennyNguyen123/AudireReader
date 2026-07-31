@@ -1,21 +1,13 @@
 import 'dart:io';
-import 'package:isar/isar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
-import '../../models/progress.dart';
-import '../../models/settings.dart';
-import '../../models/pronunciation_rule.dart';
-import '../../models/bookmark.dart';
-import '../../models/highlight.dart';
-import '../../models/bgm_track.dart';
-import '../../models/offline_tts_record.dart';
 import '../utils/device_helper.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
-  late Isar isar;
 
   DatabaseHelper._();
 
@@ -28,42 +20,7 @@ class DatabaseHelper {
   }
 
   Future<void> _init() async {
-    final dir = await PathHelper.getAppDirectory();
-    try {
-      isar = await _openIsar(dir.path);
-    } catch (e) {
-      // ignore: avoid_print
-      print(
-        '[DatabaseHelper] Error opening Isar DB: $e. Recreating database...',
-      );
-      // Xóa tất cả các file liên quan đến Isar DB cũ bị lỗi Schema
-      final directory = Directory(dir.path);
-      if (await directory.exists()) {
-        final files = directory.listSync();
-        for (final file in files) {
-          final name = p.basename(file.path);
-          if (file is File &&
-              (name.endsWith('.isar') || name.contains('isar_lock'))) {
-            try {
-              await file.delete();
-            } catch (_) {}
-          }
-        }
-      }
-      isar = await _openIsar(dir.path);
-    }
-  }
-
-  Future<Isar> _openIsar(String path) async {
-    return await Isar.open([
-      ReadingProgressSchema,
-      AppSettingsSchema,
-      PronunciationRuleSchema,
-      BookmarkSchema,
-      HighlightSchema,
-      BgmTrackSchema,
-      OfflineTtsRecordSchema,
-    ], directory: path);
+    // Rust SQLite database is initialized in main() via rust_db.initDatabase
   }
 
   // --- Book Operations ---
@@ -90,17 +47,14 @@ class DatabaseHelper {
     String sortBy = 'dateAdded',
   }) async {
     List<Book> books = await rust_db.getAllBooks();
+    final allProgress = await rust_db.getAllReadingProgress();
+    final progressMap = {for (var p in allProgress) p.bookUuid: DateTime.fromMillisecondsSinceEpoch(p.lastRead.toInt())};
 
     if (sortBy == 'title') {
       books.sort((a, b) => a.title.compareTo(b.title));
     } else if (sortBy == 'author') {
       books.sort((a, b) => a.author.compareTo(b.author));
     } else if (sortBy == 'recentlyRead') {
-      final progressList = await isar.readingProgress
-          .where()
-          .sortByLastReadDesc()
-          .findAll();
-      final progressMap = {for (var p in progressList) p.bookUuid: p.lastRead};
       books.sort((a, b) {
         final timeA = progressMap[a.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
         final timeB = progressMap[b.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -142,7 +96,7 @@ class DatabaseHelper {
             await file.delete();
           }
         } catch (e) {
-          print('[DatabaseHelper] Error deleting physical cover file: $e');
+          debugPrint('[DatabaseHelper] Error deleting physical cover file: $e');
         }
       }
 
@@ -153,21 +107,22 @@ class DatabaseHelper {
           await ttsDir.delete(recursive: true);
         }
       } catch (e) {
-        print('[DatabaseHelper] Error deleting offline TTS directory: $e');
+        debugPrint('[DatabaseHelper] Error deleting offline TTS directory: $e');
       }
 
       try {
         await rust_db.deleteBook(uuid: uuid);
       } catch (e) {
-        print('[DatabaseHelper] Rust DB deleteBook error: $e');
+        debugPrint('[DatabaseHelper] Rust DB deleteBook error: $e');
       }
+    }
+  }
 
-      await isar.writeTxn(() async {
-        await isar.readingProgress.filter().bookUuidEqualTo(uuid).deleteAll();
-        await isar.bookmarks.filter().bookUuidEqualTo(uuid).deleteAll();
-        await isar.highlights.filter().bookUuidEqualTo(uuid).deleteAll();
-        await isar.offlineTtsRecords.filter().bookUuidEqualTo(uuid).deleteAll();
-      });
+  Future<void> vacuum() async {
+    try {
+      await rust_db.vacuumDatabase();
+    } catch (e) {
+      debugPrint('[DatabaseHelper] Vacuum DB error: $e');
     }
   }
 
@@ -190,86 +145,91 @@ class DatabaseHelper {
 
   // --- Reading Progress Operations ---
   Future<void> saveProgress(ReadingProgress progress) async {
-    await isar.writeTxn(() async {
-      await isar.readingProgress.put(progress);
-    });
+    await rust_db.saveReadingProgress(progress: progress);
   }
 
   Future<ReadingProgress?> getProgress(String bookUuid) async {
-    return await isar.readingProgress
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .findFirst();
+    return await rust_db.getReadingProgress(bookUuid: bookUuid);
+  }
+
+  Future<List<ReadingProgress>> getAllReadingProgress() async {
+    return await rust_db.getAllReadingProgress();
   }
 
   // --- App Settings Operations ---
   Future<void> saveSettings(AppSettings settings) async {
-    await isar.writeTxn(() async {
-      await isar.appSettings.put(settings);
-    });
+    await rust_db.saveSettings(settings: settings);
   }
 
   Future<AppSettings> getSettings() async {
-    final settings = await isar.appSettings.get(1);
+    final settings = await rust_db.getSettings();
     if (settings != null) {
       bool needSave = false;
-      if (settings.deviceId == null || settings.deviceName == null) {
-        settings.deviceId ??= DeviceHelper.generateDeviceId();
-        settings.deviceName ??= DeviceHelper.getDefaultDeviceName();
+      String? devId = settings.deviceId;
+      String? devName = settings.deviceName;
+      int concurrency = settings.ttsDownloadConcurrency;
+
+      if (devId == null || devName == null) {
+        devId ??= DeviceHelper.generateDeviceId();
+        devName ??= DeviceHelper.getDefaultDeviceName();
         needSave = true;
       }
-      if (settings.ttsDownloadConcurrency < 1 ||
-          settings.ttsDownloadConcurrency > 100) {
-        settings.ttsDownloadConcurrency = 3;
+      if (concurrency < 1 || concurrency > 100) {
+        concurrency = 3;
         needSave = true;
       }
+
+      final updated = settings.copyWith(
+        deviceId: devId,
+        deviceName: devName,
+        ttsDownloadConcurrency: concurrency,
+      );
+
       if (needSave) {
-        await saveSettings(settings);
+        await saveSettings(updated);
       }
-      return settings;
+      return updated;
     } else {
-      final newSettings = AppSettings();
-      newSettings.deviceId = DeviceHelper.generateDeviceId();
-      newSettings.deviceName = DeviceHelper.getDefaultDeviceName();
-      await saveSettings(newSettings);
-      return newSettings;
+      final defaultSet = defaultAppSettings(
+        deviceId: DeviceHelper.generateDeviceId(),
+        deviceName: DeviceHelper.getDefaultDeviceName(),
+      );
+      await saveSettings(defaultSet);
+      return defaultSet;
     }
   }
 
   // --- Pronunciation Rule Operations ---
   Future<void> savePronunciationRule(PronunciationRule rule) async {
-    await isar.writeTxn(() async {
-      await isar.pronunciationRules.put(rule);
-    });
+    await rust_db.savePronunciationRule(rule: rule);
   }
 
   Future<List<PronunciationRule>> getAllPronunciationRules() async {
-    return await isar.pronunciationRules.where().findAll();
+    return await rust_db.getPronunciationRules();
   }
 
   Future<List<PronunciationRule>> getActivePronunciationRules() async {
-    return await isar.pronunciationRules.filter().activeEqualTo(true).findAll();
+    final rules = await rust_db.getPronunciationRules();
+    return rules.where((r) => r.active).toList();
   }
 
   Future<void> deletePronunciationRule(int id) async {
-    await isar.writeTxn(() async {
-      await isar.pronunciationRules.delete(id);
-    });
+    await rust_db.deletePronunciationRule(id: id);
   }
 
   // --- Bookmark Operations ---
   Future<void> saveBookmark(Bookmark bookmark) async {
-    await isar.writeTxn(() async {
-      await isar.bookmarks.put(bookmark);
-    });
+    await rust_db.addBookmark(bookmark: bookmark);
   }
 
   Future<List<Bookmark>> getBookmarksForBook(String bookUuid) async {
-    return await isar.bookmarks
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .sortByDateAddedDesc()
-        .findAll();
+    final bookmarks = await rust_db.getBookmarks(bookUuid: bookUuid);
+    bookmarks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    return bookmarks;
+  }
+
+  Future<List<Bookmark>> getAllBookmarks() async {
+    return await rust_db.getAllBookmarks();
   }
 
   Future<Bookmark?> getBookmarkAt(
@@ -277,20 +237,17 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    return await isar.bookmarks
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .and()
-        .chapterIndexEqualTo(chapterIndex)
-        .and()
-        .paragraphIndexEqualTo(paragraphIndex)
-        .findFirst();
+    final bookmarks = await rust_db.getBookmarks(bookUuid: bookUuid);
+    for (var b in bookmarks) {
+      if (b.chapterIndex == chapterIndex && b.paragraphIndex == paragraphIndex) {
+        return b;
+      }
+    }
+    return null;
   }
 
   Future<void> deleteBookmark(int id) async {
-    await isar.writeTxn(() async {
-      await isar.bookmarks.delete(id);
-    });
+    await rust_db.deleteBookmark(id: id);
   }
 
   Future<void> deleteBookmarkAt(
@@ -298,31 +255,25 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    await isar.writeTxn(() async {
-      await isar.bookmarks
-          .filter()
-          .bookUuidEqualTo(bookUuid)
-          .and()
-          .chapterIndexEqualTo(chapterIndex)
-          .and()
-          .paragraphIndexEqualTo(paragraphIndex)
-          .deleteAll();
-    });
+    final b = await getBookmarkAt(bookUuid, chapterIndex, paragraphIndex);
+    if (b != null && b.id != null) {
+      await rust_db.deleteBookmark(id: b.id!.toInt());
+    }
   }
 
   // --- Highlight Operations ---
   Future<void> saveHighlight(Highlight highlight) async {
-    await isar.writeTxn(() async {
-      await isar.highlights.put(highlight);
-    });
+    await rust_db.addHighlight(highlight: highlight);
   }
 
   Future<List<Highlight>> getHighlightsForBook(String bookUuid) async {
-    return await isar.highlights
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .sortByDateAddedDesc()
-        .findAll();
+    final highlights = await rust_db.getHighlights(bookUuid: bookUuid);
+    highlights.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    return highlights;
+  }
+
+  Future<List<Highlight>> getAllHighlights() async {
+    return await rust_db.getAllHighlights();
   }
 
   Future<Highlight?> getHighlightAt(
@@ -330,20 +281,17 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    return await isar.highlights
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .and()
-        .chapterIndexEqualTo(chapterIndex)
-        .and()
-        .paragraphIndexEqualTo(paragraphIndex)
-        .findFirst();
+    final list = await rust_db.getHighlights(bookUuid: bookUuid);
+    for (var h in list) {
+      if (h.chapterIndex == chapterIndex && h.paragraphIndex == paragraphIndex) {
+        return h;
+      }
+    }
+    return null;
   }
 
   Future<void> deleteHighlight(int id) async {
-    await isar.writeTxn(() async {
-      await isar.highlights.delete(id);
-    });
+    await rust_db.deleteHighlight(id: id);
   }
 
   Future<void> deleteHighlightAt(
@@ -351,83 +299,125 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    await isar.writeTxn(() async {
-      await isar.highlights
-          .filter()
-          .bookUuidEqualTo(bookUuid)
-          .and()
-          .chapterIndexEqualTo(chapterIndex)
-          .and()
-          .paragraphIndexEqualTo(paragraphIndex)
-          .deleteAll();
-    });
+    final h = await getHighlightAt(bookUuid, chapterIndex, paragraphIndex);
+    if (h != null && h.id != null) {
+      await rust_db.deleteHighlight(id: h.id!.toInt());
+    }
   }
 
   // --- Background Music (BGM) Track Operations ---
   Future<void> saveBgmTrack(BgmTrack track) async {
-    await isar.writeTxn(() async {
-      await isar.bgmTracks.put(track);
-    });
+    await rust_db.addBgmTrack(track: track);
   }
 
   Future<List<BgmTrack>> getAllBgmTracks() async {
-    return await isar.bgmTracks.where().sortByDateAddedDesc().findAll();
+    final tracks = await rust_db.getBgmTracks();
+    tracks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    return tracks;
   }
 
   Future<BgmTrack?> getBgmTrack(int id) async {
-    return await isar.bgmTracks.get(id);
+    final tracks = await rust_db.getBgmTracks();
+    for (var t in tracks) {
+      if (t.id != null && t.id == id) return t;
+    }
+    return null;
   }
 
   Future<void> deleteBgmTrack(int id) async {
-    await isar.writeTxn(() async {
-      await isar.bgmTracks.delete(id);
-    });
+    await rust_db.deleteBgmTrack(id: id);
   }
 
   // --- Offline TTS Record Operations ---
   Future<void> saveOfflineTtsRecord(OfflineTtsRecord record) async {
-    await isar.writeTxn(() async {
-      await isar.offlineTtsRecords.put(record);
-    });
+    await rust_db.saveOfflineTtsRecord(record: record);
   }
 
   Future<OfflineTtsRecord?> getOfflineTtsRecord(
     String bookUuid,
     int chapterIndex,
   ) async {
-    final key = '${bookUuid}_$chapterIndex';
-    return await isar.offlineTtsRecords
-        .filter()
-        .bookChapterKeyEqualTo(key)
-        .findFirst();
+    return await rust_db.getOfflineTtsRecord(bookUuid: bookUuid, chapterIndex: chapterIndex);
   }
 
   Future<List<OfflineTtsRecord>> getOfflineTtsRecordsForBook(
     String bookUuid,
   ) async {
-    return await isar.offlineTtsRecords
-        .filter()
-        .bookUuidEqualTo(bookUuid)
-        .sortByChapterIndex()
-        .findAll();
+    final records = await rust_db.getOfflineTtsRecords(bookUuid: bookUuid);
+    records.sort((a, b) => a.chapterIndex.compareTo(b.chapterIndex));
+    return records;
   }
 
   Future<void> deleteOfflineTtsRecord(String bookUuid, int chapterIndex) async {
-    final key = '${bookUuid}_$chapterIndex';
-    await isar.writeTxn(() async {
-      await isar.offlineTtsRecords
-          .filter()
-          .bookChapterKeyEqualTo(key)
-          .deleteAll();
-    });
+    await rust_db.deleteOfflineTtsRecord(bookUuid: bookUuid, chapterIndex: chapterIndex);
   }
 
   Future<void> deleteOfflineTtsRecordsForBook(String bookUuid) async {
-    await isar.writeTxn(() async {
-      await isar.offlineTtsRecords
-          .filter()
-          .bookUuidEqualTo(bookUuid)
-          .deleteAll();
-    });
+    await rust_db.deleteOfflineTtsRecordsForBook(bookUuid: bookUuid);
   }
 }
+
+AppSettings defaultAppSettings({String? deviceId, String? deviceName}) {
+  return AppSettings(
+    id: 1,
+    fontSize: 18.0,
+    speechRate: 0.5,
+    selectedVoiceName: null,
+    selectedVoiceLocale: null,
+    ttsProvider: 'system',
+    openAiTtsEndpoint: 'https://api.openai.com/v1',
+    openAiTtsApiKey: '',
+    openAiTtsModel: 'tts-1',
+    ttsDownloadConcurrency: 3,
+    fontFamily: 'System',
+    themeMode: 'System',
+    appLocale: 'en',
+    lineHeight: 1.6,
+    paragraphSpacing: 14.0,
+    textAlignment: 'left',
+    sideMargin: 20.0,
+    customBackgroundColor: null,
+    customTextColor: null,
+    primaryColorHex: null,
+    webDavEnabled: false,
+    webDavUrl: '',
+    webDavUsername: '',
+    webDavLastSync: null,
+    deviceId: deviceId,
+    deviceName: deviceName,
+    openLastReadOnLaunch: false,
+    hotkeyNextParagraph: 'Arrow Down',
+    hotkeyPrevParagraph: 'Arrow Up',
+    hotkeyNextChapter: 'Control+Arrow Right',
+    hotkeyPrevChapter: 'Control+Arrow Left',
+    hotkeyPlayPauseTts: 'Space',
+    hotkeyOpenChapter: 'Control+o',
+    hotkeyOpenSetting: 'Control+comma',
+    hotkeyBossKey: 'Control+b',
+    bossKeyAction: 'minimize',
+    autoCheckUpdate: true,
+    bgmEnabled: false,
+    bgmVolume: 0.15,
+    currentBgmTrackId: null,
+    currentBgmTrackUrl: null,
+    currentBgmTrackName: null,
+    bgmLoopMode: 'all',
+    bgmProviderId: 'local',
+    lastLocalTrackUrl: null,
+    lastRadioTrackUrl: null,
+    lastRadioTrackName: null,
+    lastLofiTrackUrl: null,
+    lastLofiTrackName: null,
+    sortBy: 'dateAdded',
+    showAssistiveButton: false,
+    assistiveButtonX: -1.0,
+    assistiveButtonY: -1.0,
+    assistiveSingleTapAction: 'nextParagraph',
+    assistiveDoubleTapAction: 'prevParagraph',
+    assistiveLongPressAction: 'playPause',
+    developerMode: false,
+    enableDebugLogs: false,
+    enableWebDavDebug: false,
+  );
+}
+

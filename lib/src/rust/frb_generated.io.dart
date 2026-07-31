@@ -50,19 +50,52 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AppSettings dco_decode_app_settings(dynamic raw);
+
+  @protected
+  BgmTrack dco_decode_bgm_track(dynamic raw);
+
+  @protected
   Book dco_decode_book(dynamic raw);
 
   @protected
   BookStorageInfo dco_decode_book_storage_info(dynamic raw);
 
   @protected
+  Bookmark dco_decode_bookmark(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  AppSettings dco_decode_box_autoadd_app_settings(dynamic raw);
+
+  @protected
+  BgmTrack dco_decode_box_autoadd_bgm_track(dynamic raw);
 
   @protected
   Book dco_decode_box_autoadd_book(dynamic raw);
 
   @protected
+  Bookmark dco_decode_box_autoadd_bookmark(dynamic raw);
+
+  @protected
+  Highlight dco_decode_box_autoadd_highlight(dynamic raw);
+
+  @protected
+  int dco_decode_box_autoadd_i_32(dynamic raw);
+
+  @protected
   PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
+  OfflineTtsRecord dco_decode_box_autoadd_offline_tts_record(dynamic raw);
+
+  @protected
+  PronunciationRule dco_decode_box_autoadd_pronunciation_rule(dynamic raw);
+
+  @protected
+  ReadingProgress dco_decode_box_autoadd_reading_progress(dynamic raw);
 
   @protected
   Chapter dco_decode_chapter(dynamic raw);
@@ -83,6 +116,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   double dco_decode_f_64(dynamic raw);
 
   @protected
+  Highlight dco_decode_highlight(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
@@ -92,7 +128,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<BgmTrack> dco_decode_list_bgm_track(dynamic raw);
+
+  @protected
   List<Book> dco_decode_list_book(dynamic raw);
+
+  @protected
+  List<Bookmark> dco_decode_list_bookmark(dynamic raw);
 
   @protected
   List<Chapter> dco_decode_list_chapter(dynamic raw);
@@ -102,6 +144,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EdgeVoice> dco_decode_list_edge_voice(dynamic raw);
+
+  @protected
+  List<Highlight> dco_decode_list_highlight(dynamic raw);
+
+  @protected
+  List<OfflineTtsRecord> dco_decode_list_offline_tts_record(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_i_32_loose(dynamic raw);
@@ -116,13 +164,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<PronunciationRule> dco_decode_list_pronunciation_rule(dynamic raw);
+
+  @protected
+  List<ReadingProgress> dco_decode_list_reading_progress(dynamic raw);
+
+  @protected
+  OfflineTtsRecord dco_decode_offline_tts_record(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  AppSettings? dco_decode_opt_box_autoadd_app_settings(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
   @protected
   PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
 
   @protected
+  OfflineTtsRecord? dco_decode_opt_box_autoadd_offline_tts_record(dynamic raw);
+
+  @protected
+  ReadingProgress? dco_decode_opt_box_autoadd_reading_progress(dynamic raw);
+
+  @protected
   ParsedBookData dco_decode_parsed_book_data(dynamic raw);
+
+  @protected
+  PronunciationRule dco_decode_pronunciation_rule(dynamic raw);
+
+  @protected
+  ReadingProgress dco_decode_reading_progress(dynamic raw);
 
   @protected
   BigInt dco_decode_u_64(dynamic raw);
@@ -158,19 +233,58 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AppSettings sse_decode_app_settings(SseDeserializer deserializer);
+
+  @protected
+  BgmTrack sse_decode_bgm_track(SseDeserializer deserializer);
+
+  @protected
   Book sse_decode_book(SseDeserializer deserializer);
 
   @protected
   BookStorageInfo sse_decode_book_storage_info(SseDeserializer deserializer);
 
   @protected
+  Bookmark sse_decode_bookmark(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  AppSettings sse_decode_box_autoadd_app_settings(SseDeserializer deserializer);
+
+  @protected
+  BgmTrack sse_decode_box_autoadd_bgm_track(SseDeserializer deserializer);
 
   @protected
   Book sse_decode_box_autoadd_book(SseDeserializer deserializer);
 
   @protected
+  Bookmark sse_decode_box_autoadd_bookmark(SseDeserializer deserializer);
+
+  @protected
+  Highlight sse_decode_box_autoadd_highlight(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
+
+  @protected
   PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
+  OfflineTtsRecord sse_decode_box_autoadd_offline_tts_record(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PronunciationRule sse_decode_box_autoadd_pronunciation_rule(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ReadingProgress sse_decode_box_autoadd_reading_progress(
+    SseDeserializer deserializer,
+  );
 
   @protected
   Chapter sse_decode_chapter(SseDeserializer deserializer);
@@ -195,6 +309,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
+  Highlight sse_decode_highlight(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
@@ -204,7 +321,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
+  List<BgmTrack> sse_decode_list_bgm_track(SseDeserializer deserializer);
+
+  @protected
   List<Book> sse_decode_list_book(SseDeserializer deserializer);
+
+  @protected
+  List<Bookmark> sse_decode_list_bookmark(SseDeserializer deserializer);
 
   @protected
   List<Chapter> sse_decode_list_chapter(SseDeserializer deserializer);
@@ -216,6 +339,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<EdgeVoice> sse_decode_list_edge_voice(SseDeserializer deserializer);
+
+  @protected
+  List<Highlight> sse_decode_list_highlight(SseDeserializer deserializer);
+
+  @protected
+  List<OfflineTtsRecord> sse_decode_list_offline_tts_record(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<int> sse_decode_list_prim_i_32_loose(SseDeserializer deserializer);
@@ -230,13 +361,50 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<PronunciationRule> sse_decode_list_pronunciation_rule(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<ReadingProgress> sse_decode_list_reading_progress(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OfflineTtsRecord sse_decode_offline_tts_record(SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  AppSettings? sse_decode_opt_box_autoadd_app_settings(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
   PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
+  OfflineTtsRecord? sse_decode_opt_box_autoadd_offline_tts_record(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ReadingProgress? sse_decode_opt_box_autoadd_reading_progress(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ParsedBookData sse_decode_parsed_book_data(SseDeserializer deserializer);
+
+  @protected
+  PronunciationRule sse_decode_pronunciation_rule(SseDeserializer deserializer);
+
+  @protected
+  ReadingProgress sse_decode_reading_progress(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_u_64(SseDeserializer deserializer);
@@ -275,6 +443,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_app_settings(AppSettings self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bgm_track(BgmTrack self, SseSerializer serializer);
+
+  @protected
   void sse_encode_book(Book self, SseSerializer serializer);
 
   @protected
@@ -284,14 +458,59 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_bookmark(Bookmark self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_app_settings(
+    AppSettings self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_bgm_track(
+    BgmTrack self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_book(Book self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_bookmark(Bookmark self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_highlight(
+    Highlight self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_i_64(
     PlatformInt64 self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_offline_tts_record(
+    OfflineTtsRecord self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_pronunciation_rule(
+    PronunciationRule self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_reading_progress(
+    ReadingProgress self,
     SseSerializer serializer,
   );
 
@@ -320,6 +539,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
+  void sse_encode_highlight(Highlight self, SseSerializer serializer);
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
@@ -329,7 +551,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_bgm_track(List<BgmTrack> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_book(List<Book> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_bookmark(List<Bookmark> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_chapter(List<Chapter> self, SseSerializer serializer);
@@ -343,6 +571,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_edge_voice(
     List<EdgeVoice> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_highlight(
+    List<Highlight> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_offline_tts_record(
+    List<OfflineTtsRecord> self,
     SseSerializer serializer,
   );
 
@@ -368,7 +608,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_pronunciation_rule(
+    List<PronunciationRule> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_reading_progress(
+    List<ReadingProgress> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_offline_tts_record(
+    OfflineTtsRecord self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_app_settings(
+    AppSettings? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_i_64(
@@ -377,8 +644,32 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_offline_tts_record(
+    OfflineTtsRecord? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_reading_progress(
+    ReadingProgress? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_parsed_book_data(
     ParsedBookData self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_pronunciation_rule(
+    PronunciationRule self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_reading_progress(
+    ReadingProgress self,
     SseSerializer serializer,
   );
 

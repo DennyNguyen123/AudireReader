@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../models/settings.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';
 import 'reader_tts_settings_sheet.dart';
 import 'bgm_player_sheet.dart';

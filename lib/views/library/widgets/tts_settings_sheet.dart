@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../services/tts_service.dart';
-import '../../../../models/settings.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../pronunciation_dictionary_screen.dart';
 import 'settings/tts_settings_section.dart';

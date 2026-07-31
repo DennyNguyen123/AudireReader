@@ -2,11 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:isar/isar.dart';
 import '../core/database/database_helper.dart';
 import '../core/utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../models/progress.dart';
 import 'webdav_service.dart';
 import 'logger_service.dart';
 import 'package:flutter/foundation.dart';
@@ -705,8 +703,8 @@ class SyncService {
       }
 
       // 7. CẬP NHẬT CẤU HÌNH CỤC BỘ
-      settings.webDavLastSync = DateTime.now();
-      await db.saveSettings(settings);
+      final updatedSettings = settings.copyWith(webDavLastSync: DateTime.now().millisecondsSinceEpoch);
+      await db.saveSettings(updatedSettings);
 
       return SyncResult(
         success: true,
@@ -898,7 +896,7 @@ class SyncService {
       'currentChapterIndex': localProg.currentChapterIndex,
       'currentParagraphIndex': localProg.currentParagraphIndex,
       'currentCharacterOffset': localProg.currentCharacterOffset,
-      'lastRead': localProg.lastRead.toIso8601String(),
+      'lastRead': DateTime.fromMillisecondsSinceEpoch(localProg.lastRead.toInt()).toIso8601String(),
     };
     final jsonBytes = utf8.encode(json.encode(localJson));
     await _webdav.uploadBytes(remotePath, jsonBytes);
@@ -944,14 +942,20 @@ class SyncService {
     ReadingProgress? localProg,
     DatabaseHelper db,
   ) async {
-    final DateTime cloudLastRead =
-        DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now();
-    final targetProg = localProg ?? (ReadingProgress()..bookUuid = bookUuid);
-    targetProg.currentChapterIndex = cloudProg['currentChapterIndex'] ?? 0;
-    targetProg.currentParagraphIndex = cloudProg['currentParagraphIndex'] ?? 0;
-    targetProg.currentCharacterOffset =
-        cloudProg['currentCharacterOffset'] ?? 0;
-    targetProg.lastRead = cloudLastRead;
+    final int cloudLastRead = (DateTime.tryParse(cloudProg['lastRead'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch;
+    final targetProg = localProg?.copyWith(
+          currentChapterIndex: cloudProg['currentChapterIndex'] ?? 0,
+          currentParagraphIndex: cloudProg['currentParagraphIndex'] ?? 0,
+          currentCharacterOffset: cloudProg['currentCharacterOffset'] ?? 0,
+          lastRead: cloudLastRead,
+        ) ??
+        ReadingProgress(
+          bookUuid: bookUuid,
+          currentChapterIndex: cloudProg['currentChapterIndex'] ?? 0,
+          currentParagraphIndex: cloudProg['currentParagraphIndex'] ?? 0,
+          currentCharacterOffset: cloudProg['currentCharacterOffset'] ?? 0,
+          lastRead: cloudLastRead,
+        );
     await db.saveProgress(targetProg);
 
     await _addSyncHistoryEntry(
@@ -977,7 +981,7 @@ class SyncService {
 
     final int localCh = localProg.currentChapterIndex;
     final int localPara = localProg.currentParagraphIndex;
-    final DateTime localTime = localProg.lastRead;
+    final DateTime localTime = DateTime.fromMillisecondsSinceEpoch(localProg.lastRead.toInt());
 
     if (localCh > cloudCh) return true;
     if (localCh < cloudCh) return false;
@@ -1002,7 +1006,7 @@ class SyncService {
 
     final int localCh = localProg.currentChapterIndex;
     final int localPara = localProg.currentParagraphIndex;
-    final DateTime localTime = localProg.lastRead;
+    final DateTime localTime = DateTime.fromMillisecondsSinceEpoch(localProg.lastRead.toInt());
 
     // 1. So sánh vị trí đọc (Chương)
     if (cloudCh > localCh) return true;
@@ -1266,8 +1270,8 @@ class SyncService {
       }
 
       // 3. Update local settings
-      settings.webDavLastSync = DateTime.now();
-      await db.saveSettings(settings);
+      final updatedSettings = settings.copyWith(webDavLastSync: DateTime.now().millisecondsSinceEpoch);
+      await db.saveSettings(updatedSettings);
 
       _isSyncing = false;
       return SyncResult(
@@ -1494,10 +1498,7 @@ class SyncService {
                   tags: existingBook.tags,
                 );
 
-                // Clear old chapters
-                await db.isar.writeTxn(() async {
-                  // (handled by rust_db.insertChapters)
-                });
+                // Clear old chapters (handled by rust_db.insertChapters)
 
                 // Save new Chapters
                 final List<Chapter> newChapters = [];
@@ -1554,8 +1555,8 @@ class SyncService {
       }
 
       // Update local settings
-      settings.webDavLastSync = DateTime.now();
-      await db.saveSettings(settings);
+      final updatedSettings = settings.copyWith(webDavLastSync: DateTime.now().millisecondsSinceEpoch);
+      await db.saveSettings(updatedSettings);
 
       _isSyncing = false;
       return SyncResult(
@@ -1651,8 +1652,8 @@ class SyncService {
       }
 
       // Update local settings lastSync
-      settings.webDavLastSync = DateTime.now();
-      await db.saveSettings(settings);
+      final updatedSettings = settings.copyWith(webDavLastSync: DateTime.now().millisecondsSinceEpoch);
+      await db.saveSettings(updatedSettings);
 
       _isSyncing = false;
       return SyncResult(
@@ -1757,8 +1758,8 @@ class SyncService {
       }
 
       // Update local settings lastSync
-      settings.webDavLastSync = DateTime.now();
-      await db.saveSettings(settings);
+      final updatedSettings = settings.copyWith(webDavLastSync: DateTime.now().millisecondsSinceEpoch);
+      await db.saveSettings(updatedSettings);
 
       _isSyncing = false;
       return SyncResult(

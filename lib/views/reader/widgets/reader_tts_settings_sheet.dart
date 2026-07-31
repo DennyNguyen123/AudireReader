@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
-import '../../../models/settings.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../library/widgets/settings/tts_settings_section.dart';
 import '../../library/pronunciation_dictionary_screen.dart';
 import '../../../core/database/database_helper.dart';

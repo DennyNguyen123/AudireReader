@@ -10,10 +10,6 @@ import '../../services/sync_service.dart' hide print;
 import '../../services/logger_service.dart';
 import '../../core/database/database_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../../models/settings.dart';
-
-import '../../models/bookmark.dart';
-import '../../models/highlight.dart';
 import 'widgets/paragraph_widget.dart';
 import 'widgets/book_search_dialog.dart';
 import 'widgets/reader_settings_sheet.dart';
@@ -588,15 +584,16 @@ class _ReaderScreenState extends State<ReaderScreen>
       } else {
         final chapter = _ttsService.chapters[_ttsService.currentChapterIndex];
         final snippet = chapter.paragraphs[_ttsService.currentParagraphIndex];
-        final bookmark = Bookmark()
-          ..bookUuid = book.uuid
-          ..chapterIndex = _ttsService.currentChapterIndex
-          ..paragraphIndex = _ttsService.currentParagraphIndex
-          ..contentSnippet = snippet.substring(
+        final bookmark = Bookmark(
+          bookUuid: book.uuid,
+          chapterIndex: _ttsService.currentChapterIndex,
+          paragraphIndex: _ttsService.currentParagraphIndex,
+          contentSnippet: snippet.substring(
             0,
             snippet.length > 60 ? 60 : snippet.length,
-          )
-          ..dateAdded = DateTime.now();
+          ),
+          dateAdded: DateTime.now().millisecondsSinceEpoch,
+        );
         await db.saveBookmark(bookmark);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -740,10 +737,10 @@ class _ReaderScreenState extends State<ReaderScreen>
                     onTap: () {
                       Navigator.pop(context);
                       _showAddNoteDialog(
-                        chapterIndex,
-                        paragraphIndex,
-                        paragraphText,
-                        existingHighlight,
+                        chapterIndex: chapterIndex,
+                        paragraphIndex: paragraphIndex,
+                        text: paragraphText,
+                        existing: existingHighlight,
                       );
                     },
                   ),
@@ -779,7 +776,9 @@ class _ReaderScreenState extends State<ReaderScreen>
                       onTap: () async {
                         Navigator.pop(context);
                         final db = await DatabaseHelper.getInstance();
-                        await db.deleteHighlight(existingHighlight.id);
+                        if (existingHighlight.id != null) {
+                          await db.deleteHighlight(existingHighlight.id!.toInt());
+                        }
                         await _loadBookmarksAndHighlights();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -818,21 +817,23 @@ class _ReaderScreenState extends State<ReaderScreen>
         final book = _ttsService.activeBook;
         if (book == null) return;
 
-        final highlight = existing ?? Highlight()
-          ..bookUuid = book.uuid
-          ..chapterIndex = chapterIndex
-          ..paragraphIndex = paragraphIndex
-          ..text = text
-          ..dateAdded = DateTime.now();
+        final highlight = existing?.copyWith(colorHex: hex) ??
+            Highlight(
+              bookUuid: book.uuid,
+              chapterIndex: chapterIndex,
+              paragraphIndex: paragraphIndex,
+              text: text,
+              colorHex: hex,
+              dateAdded: DateTime.now().millisecondsSinceEpoch,
+            );
 
-        highlight.colorHex = hex;
         await db.saveHighlight(highlight);
         await _loadBookmarksAndHighlights();
         if (context.mounted) {
           final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(l10n.highlightSaved),
+              content: Text(l10n.addNote),
               duration: const Duration(seconds: 1),
             ),
           );
@@ -856,14 +857,14 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
   }
 
-  void _showAddNoteDialog(
-    int chapterIndex,
-    int paragraphIndex,
-    String text,
+  void _showAddNoteDialog({
+    required int chapterIndex,
+    required int paragraphIndex,
+    required String text,
     Highlight? existing,
-  ) {
+  }) {
     final isDark = _getIsDark(context);
-    final controller = TextEditingController(text: existing?.note);
+    final controller = TextEditingController(text: existing?.note ?? '');
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
@@ -895,15 +896,17 @@ class _ReaderScreenState extends State<ReaderScreen>
               final book = _ttsService.activeBook;
               if (book == null) return;
 
-              final highlight = existing ?? Highlight()
-                ..bookUuid = book.uuid
-                ..chapterIndex = chapterIndex
-                ..paragraphIndex = paragraphIndex
-                ..text = text
-                ..colorHex = '#FFFFEB3B'
-                ..dateAdded = DateTime.now();
+              final highlight = existing?.copyWith(note: noteText) ??
+                  Highlight(
+                    bookUuid: book.uuid,
+                    chapterIndex: chapterIndex,
+                    paragraphIndex: paragraphIndex,
+                    text: text,
+                    colorHex: '#FFFFEB3B',
+                    note: noteText,
+                    dateAdded: DateTime.now().millisecondsSinceEpoch,
+                  );
 
-              highlight.note = noteText;
               await db.saveHighlight(highlight);
               await _loadBookmarksAndHighlights();
               if (context.mounted) {

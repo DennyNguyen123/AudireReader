@@ -1,4 +1,4 @@
-use crate::api::models::{Book, Chapter, Bookmark, Highlight, ReadingProgress, AppSettings};
+use crate::api::models::{Book, Chapter, Bookmark, Highlight, ReadingProgress, AppSettings, PronunciationRule, BgmTrack, OfflineTtsRecord};
 use once_cell::sync::OnceCell;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -39,6 +39,11 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
     
     conn.execute_batch(
         "
+        PRAGMA auto_vacuum = FULL;
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = NORMAL;
+        PRAGMA foreign_keys = ON;
+
         CREATE TABLE IF NOT EXISTS books (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT UNIQUE NOT NULL,
@@ -101,13 +106,46 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
             id INTEGER PRIMARY KEY DEFAULT 1,
             settings_json TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS pronunciation_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            target TEXT UNIQUE NOT NULL,
+            replacement TEXT NOT NULL,
+            is_regex INTEGER NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS bgm_tracks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            source_path TEXT NOT NULL,
+            date_added INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS offline_tts_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_uuid TEXT NOT NULL,
+            chapter_index INTEGER NOT NULL,
+            tts_provider TEXT NOT NULL,
+            voice_name TEXT NOT NULL,
+            speech_rate REAL NOT NULL,
+            is_completed INTEGER NOT NULL DEFAULT 0,
+            total_paragraphs INTEGER NOT NULL DEFAULT 0,
+            downloaded_paragraphs INTEGER NOT NULL DEFAULT 0,
+            total_size_bytes INTEGER NOT NULL DEFAULT 0,
+            downloaded_at INTEGER NOT NULL,
+            UNIQUE(book_uuid, chapter_index)
+        );
+        CREATE INDEX IF NOT EXISTS idx_offline_tts_book_uuid ON offline_tts_records(book_uuid);
         "
     )?;
 
     Ok(())
 }
 
-// Basic Book CRUD example
+// --- Book CRUD ---
+
 pub fn get_all_books() -> Result<Vec<Book>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT id, uuid, title, author, cover_path, total_chapters, date_added, status FROM books")
@@ -123,14 +161,13 @@ pub fn get_all_books() -> Result<Vec<Book>, String> {
             total_chapters: row.get(5)?,
             date_added: row.get(6)?,
             status: row.get(7)?,
-            tags: vec![], // Tags would be fetched separately or via JOIN
+            tags: vec![],
         })
     }).map_err(|e| format!("Query map error: {}", e))?;
 
     let mut books = Vec::new();
     for book in book_iter {
         let mut b = book.map_err(|e| format!("Row error: {}", e))?;
-        // Fetch tags
         let mut tag_stmt = conn.prepare("SELECT tag FROM book_tags WHERE book_id = ?").unwrap();
         let tags_iter = tag_stmt.query_map(params![b.id], |row| row.get::<_, String>(0)).unwrap();
         for tag in tags_iter {
@@ -164,32 +201,42 @@ pub fn insert_book(book: Book) -> Result<i64, String> {
     tx.commit().map_err(|e| e.to_string())?;
     Ok(book_id)
 }
-use std::fs;
-use std::path::PathBuf;
 
 pub fn delete_book(uuid: String) -> Result<(), String> {
     let mut conn = get_conn()?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    // Delete chapters first
-    tx.execute(
-        "DELETE FROM chapters WHERE book_uuid = ?1",
-        params![uuid],
-    ).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM chapters WHERE book_uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM reading_progress WHERE book_uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM bookmarks WHERE book_uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM highlights WHERE book_uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM offline_tts_records WHERE book_uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
 
-    // Delete from books
-    let deleted = tx.execute(
-        "DELETE FROM books WHERE uuid = ?1",
-        params![uuid],
-    ).map_err(|e| e.to_string())?;
+    let deleted = tx.execute("DELETE FROM books WHERE uuid = ?1", params![uuid]).map_err(|e| e.to_string())?;
 
     if deleted == 0 {
         return Err("Book not found".into());
     }
 
     tx.commit().map_err(|e| e.to_string())?;
+
+    // Instantly reclaim disk space by running WAL checkpoint + VACUUM + WAL checkpoint
+    let _ = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []);
+    let _ = conn.execute("VACUUM", []);
+    let _ = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []);
+
     Ok(())
 }
+
+pub fn vacuum_database() -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []).map_err(|e| e.to_string())?;
+    conn.execute("VACUUM", []).map_err(|e| e.to_string())?;
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- Chapter CRUD ---
 
 pub fn get_chapters(book_uuid: String) -> Result<Vec<Chapter>, String> {
     let conn = get_conn()?;
@@ -235,3 +282,462 @@ pub fn insert_chapters(chapters: Vec<Chapter>) -> Result<(), String> {
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
+
+// --- AppSettings CRUD ---
+
+pub fn get_settings() -> Result<Option<AppSettings>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT settings_json FROM app_settings WHERE id = 1")
+        .map_err(|e| e.to_string())?;
+
+    let settings_json: Option<String> = stmt.query_row([], |row| row.get(0))
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    if let Some(json_str) = settings_json {
+        let settings: AppSettings = serde_json::from_str(&json_str)
+            .map_err(|e| format!("JSON parse error: {}", e))?;
+        Ok(Some(settings))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn save_settings(settings: AppSettings) -> Result<(), String> {
+    let conn = get_conn()?;
+    let json_str = serde_json::to_string(&settings).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "INSERT OR REPLACE INTO app_settings (id, settings_json) VALUES (1, ?1)",
+        params![json_str],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+// --- ReadingProgress CRUD ---
+
+pub fn get_reading_progress(book_uuid: String) -> Result<Option<ReadingProgress>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, current_chapter_index, current_paragraph_index, current_character_offset, last_read FROM reading_progress WHERE book_uuid = ?1")
+        .map_err(|e| e.to_string())?;
+
+    let progress = stmt.query_row(params![book_uuid], |row| {
+        Ok(ReadingProgress {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            current_chapter_index: row.get(2)?,
+            current_paragraph_index: row.get(3)?,
+            current_character_offset: row.get(4)?,
+            last_read: row.get(5)?,
+        })
+    }).optional().map_err(|e| e.to_string())?;
+
+    Ok(progress)
+}
+
+pub fn get_all_reading_progress() -> Result<Vec<ReadingProgress>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, current_chapter_index, current_paragraph_index, current_character_offset, last_read FROM reading_progress")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(ReadingProgress {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            current_chapter_index: row.get(2)?,
+            current_paragraph_index: row.get(3)?,
+            current_character_offset: row.get(4)?,
+            last_read: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(result)
+}
+
+pub fn save_reading_progress(progress: ReadingProgress) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT OR REPLACE INTO reading_progress (book_uuid, current_chapter_index, current_paragraph_index, current_character_offset, last_read)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            progress.book_uuid,
+            progress.current_chapter_index,
+            progress.current_paragraph_index,
+            progress.current_character_offset,
+            progress.last_read
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+pub fn delete_reading_progress(book_uuid: String) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM reading_progress WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- Bookmark CRUD ---
+
+pub fn get_bookmarks(book_uuid: String) -> Result<Vec<Bookmark>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, content_snippet, date_added FROM bookmarks WHERE book_uuid = ?1 ORDER BY chapter_index ASC, paragraph_index ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![book_uuid], |row| {
+        Ok(Bookmark {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            content_snippet: row.get(4)?,
+            date_added: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn get_all_bookmarks() -> Result<Vec<Bookmark>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, content_snippet, date_added FROM bookmarks ORDER BY date_added DESC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(Bookmark {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            content_snippet: row.get(4)?,
+            date_added: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn add_bookmark(bookmark: Bookmark) -> Result<i64, String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO bookmarks (book_uuid, chapter_index, paragraph_index, content_snippet, date_added)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            bookmark.book_uuid,
+            bookmark.chapter_index,
+            bookmark.paragraph_index,
+            bookmark.content_snippet,
+            bookmark.date_added
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn delete_bookmark(id: i64) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM bookmarks WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_bookmarks_for_book(book_uuid: String) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM bookmarks WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- Highlight CRUD ---
+
+pub fn get_highlights(book_uuid: String) -> Result<Vec<Highlight>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, start_offset, end_offset, text, color_hex, note, date_added FROM highlights WHERE book_uuid = ?1 ORDER BY chapter_index ASC, paragraph_index ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![book_uuid], |row| {
+        Ok(Highlight {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            start_offset: row.get(4)?,
+            end_offset: row.get(5)?,
+            text: row.get(6)?,
+            color_hex: row.get(7)?,
+            note: row.get(8)?,
+            date_added: row.get(9)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn get_all_highlights() -> Result<Vec<Highlight>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, start_offset, end_offset, text, color_hex, note, date_added FROM highlights ORDER BY date_added DESC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(Highlight {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            start_offset: row.get(4)?,
+            end_offset: row.get(5)?,
+            text: row.get(6)?,
+            color_hex: row.get(7)?,
+            note: row.get(8)?,
+            date_added: row.get(9)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn add_highlight(highlight: Highlight) -> Result<i64, String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO highlights (book_uuid, chapter_index, paragraph_index, start_offset, end_offset, text, color_hex, note, date_added)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            highlight.book_uuid,
+            highlight.chapter_index,
+            highlight.paragraph_index,
+            highlight.start_offset,
+            highlight.end_offset,
+            highlight.text,
+            highlight.color_hex,
+            highlight.note,
+            highlight.date_added
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn delete_highlight(id: i64) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM highlights WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_highlights_for_book(book_uuid: String) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM highlights WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- PronunciationRule CRUD ---
+
+pub fn get_pronunciation_rules() -> Result<Vec<PronunciationRule>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, target, replacement, is_regex, active FROM pronunciation_rules ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        let is_regex_int: i32 = row.get(3)?;
+        let active_int: i32 = row.get(4)?;
+        Ok(PronunciationRule {
+            id: row.get(0)?,
+            target: row.get(1)?,
+            replacement: row.get(2)?,
+            is_regex: is_regex_int != 0,
+            active: active_int != 0,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn save_pronunciation_rule(rule: PronunciationRule) -> Result<i64, String> {
+    let conn = get_conn()?;
+    let is_regex_int = if rule.is_regex { 1 } else { 0 };
+    let active_int = if rule.active { 1 } else { 0 };
+
+    if let Some(id) = rule.id {
+        conn.execute(
+            "UPDATE pronunciation_rules SET target = ?1, replacement = ?2, is_regex = ?3, active = ?4 WHERE id = ?5",
+            params![rule.target, rule.replacement, is_regex_int, active_int, id],
+        ).map_err(|e| e.to_string())?;
+        Ok(id)
+    } else {
+        conn.execute(
+            "INSERT INTO pronunciation_rules (target, replacement, is_regex, active) VALUES (?1, ?2, ?3, ?4)",
+            params![rule.target, rule.replacement, is_regex_int, active_int],
+        ).map_err(|e| e.to_string())?;
+        Ok(conn.last_insert_rowid())
+    }
+}
+
+pub fn delete_pronunciation_rule(id: i64) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM pronunciation_rules WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- BgmTrack CRUD ---
+
+pub fn get_bgm_tracks() -> Result<Vec<BgmTrack>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, name, source_type, source_path, date_added FROM bgm_tracks ORDER BY id ASC")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(BgmTrack {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            source_type: row.get(2)?,
+            source_path: row.get(3)?,
+            date_added: row.get(4)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn add_bgm_track(track: BgmTrack) -> Result<i64, String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO bgm_tracks (name, source_type, source_path, date_added) VALUES (?1, ?2, ?3, ?4)",
+        params![track.name, track.source_type, track.source_path, track.date_added],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn delete_bgm_track(id: i64) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM bgm_tracks WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- OfflineTtsRecord CRUD ---
+
+pub fn get_offline_tts_records(book_uuid: String) -> Result<Vec<OfflineTtsRecord>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, tts_provider, voice_name, speech_rate, is_completed, total_paragraphs, downloaded_paragraphs, total_size_bytes, downloaded_at FROM offline_tts_records WHERE book_uuid = ?1")
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![book_uuid], |row| {
+        let is_completed_int: i32 = row.get(6)?;
+        Ok(OfflineTtsRecord {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            tts_provider: row.get(3)?,
+            voice_name: row.get(4)?,
+            speech_rate: row.get(5)?,
+            is_completed: is_completed_int != 0,
+            total_paragraphs: row.get(7)?,
+            downloaded_paragraphs: row.get(8)?,
+            total_size_bytes: row.get(9)?,
+            downloaded_at: row.get(10)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        list.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn get_offline_tts_record(book_uuid: String, chapter_index: i32) -> Result<Option<OfflineTtsRecord>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, tts_provider, voice_name, speech_rate, is_completed, total_paragraphs, downloaded_paragraphs, total_size_bytes, downloaded_at FROM offline_tts_records WHERE book_uuid = ?1 AND chapter_index = ?2")
+        .map_err(|e| e.to_string())?;
+
+    let record = stmt.query_row(params![book_uuid, chapter_index], |row| {
+        let is_completed_int: i32 = row.get(6)?;
+        Ok(OfflineTtsRecord {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            tts_provider: row.get(3)?,
+            voice_name: row.get(4)?,
+            speech_rate: row.get(5)?,
+            is_completed: is_completed_int != 0,
+            total_paragraphs: row.get(7)?,
+            downloaded_paragraphs: row.get(8)?,
+            total_size_bytes: row.get(9)?,
+            downloaded_at: row.get(10)?,
+        })
+    }).optional().map_err(|e| e.to_string())?;
+
+    Ok(record)
+}
+
+pub fn save_offline_tts_record(record: OfflineTtsRecord) -> Result<(), String> {
+    let conn = get_conn()?;
+    let is_completed_int = if record.is_completed { 1 } else { 0 };
+
+    conn.execute(
+        "INSERT OR REPLACE INTO offline_tts_records (book_uuid, chapter_index, tts_provider, voice_name, speech_rate, is_completed, total_paragraphs, downloaded_paragraphs, total_size_bytes, downloaded_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        params![
+            record.book_uuid,
+            record.chapter_index,
+            record.tts_provider,
+            record.voice_name,
+            record.speech_rate,
+            is_completed_int,
+            record.total_paragraphs,
+            record.downloaded_paragraphs,
+            record.total_size_bytes,
+            record.downloaded_at
+        ],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+pub fn delete_offline_tts_record(book_uuid: String, chapter_index: i32) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM offline_tts_records WHERE book_uuid = ?1 AND chapter_index = ?2", params![book_uuid, chapter_index])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_offline_tts_records_for_book(book_uuid: String) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM offline_tts_records WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+

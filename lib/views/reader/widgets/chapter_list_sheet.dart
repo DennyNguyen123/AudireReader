@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../models/bookmark.dart';
-import '../../../models/highlight.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/offline_tts_service.dart';
 import '../../../core/database/database_helper.dart';
@@ -449,7 +448,9 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     onPressed: () async {
                                       final db =
                                           await DatabaseHelper.getInstance();
-                                      await db.deleteBookmark(b.id);
+                                      if (b.id != null) {
+                                        await db.deleteBookmark(b.id!.toInt());
+                                      }
                                       await widget.onRefreshData();
                                       await widget.onUpdateBookmarkState();
                                       if (mounted) {
@@ -624,7 +625,9 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
                                     onPressed: () async {
                                       final db =
                                           await DatabaseHelper.getInstance();
-                                      await db.deleteHighlight(h.id);
+                                      if (h.id != null) {
+                                        await db.deleteHighlight(h.id!.toInt());
+                                      }
                                       await widget.onRefreshData();
                                       if (mounted) {
                                         setState(() {

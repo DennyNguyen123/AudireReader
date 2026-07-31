@@ -1,4 +1,4 @@
-import '../../models/bgm_track.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../core/database/database_helper.dart';
 import 'bgm_provider.dart';
 

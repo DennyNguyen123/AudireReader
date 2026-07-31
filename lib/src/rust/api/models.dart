@@ -8,8 +8,83 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'models.freezed.dart';
 
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `AppSettings`, `Bookmark`, `Highlight`, `ReadingProgress`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
+
+@freezed
+sealed class AppSettings with _$AppSettings {
+  const factory AppSettings({
+    required PlatformInt64 id,
+    required double fontSize,
+    required double speechRate,
+    String? selectedVoiceName,
+    String? selectedVoiceLocale,
+    required String ttsProvider,
+    required String openAiTtsEndpoint,
+    required String openAiTtsApiKey,
+    required String openAiTtsModel,
+    required int ttsDownloadConcurrency,
+    required String fontFamily,
+    required String themeMode,
+    required String appLocale,
+    required double lineHeight,
+    required double paragraphSpacing,
+    required String textAlignment,
+    required double sideMargin,
+    String? customBackgroundColor,
+    String? customTextColor,
+    String? primaryColorHex,
+    required bool webDavEnabled,
+    required String webDavUrl,
+    required String webDavUsername,
+    PlatformInt64? webDavLastSync,
+    String? deviceId,
+    String? deviceName,
+    required bool openLastReadOnLaunch,
+    required String hotkeyNextParagraph,
+    required String hotkeyPrevParagraph,
+    required String hotkeyNextChapter,
+    required String hotkeyPrevChapter,
+    required String hotkeyPlayPauseTts,
+    required String hotkeyOpenChapter,
+    required String hotkeyOpenSetting,
+    required String hotkeyBossKey,
+    required String bossKeyAction,
+    required bool autoCheckUpdate,
+    required bool bgmEnabled,
+    required double bgmVolume,
+    int? currentBgmTrackId,
+    String? currentBgmTrackUrl,
+    String? currentBgmTrackName,
+    required String bgmLoopMode,
+    required String bgmProviderId,
+    String? lastLocalTrackUrl,
+    String? lastRadioTrackUrl,
+    String? lastRadioTrackName,
+    String? lastLofiTrackUrl,
+    String? lastLofiTrackName,
+    required String sortBy,
+    required bool showAssistiveButton,
+    required double assistiveButtonX,
+    required double assistiveButtonY,
+    required String assistiveSingleTapAction,
+    required String assistiveDoubleTapAction,
+    required String assistiveLongPressAction,
+    required bool developerMode,
+    required bool enableDebugLogs,
+    required bool enableWebDavDebug,
+  }) = _AppSettings;
+}
+
+@freezed
+sealed class BgmTrack with _$BgmTrack {
+  const factory BgmTrack({
+    PlatformInt64? id,
+    required String name,
+    required String sourceType,
+    required String sourcePath,
+    required PlatformInt64 dateAdded,
+  }) = _BgmTrack;
+}
 
 @freezed
 sealed class Book with _$Book {
@@ -27,6 +102,18 @@ sealed class Book with _$Book {
 }
 
 @freezed
+sealed class Bookmark with _$Bookmark {
+  const factory Bookmark({
+    PlatformInt64? id,
+    required String bookUuid,
+    required int chapterIndex,
+    required int paragraphIndex,
+    required String contentSnippet,
+    required PlatformInt64 dateAdded,
+  }) = _Bookmark;
+}
+
+@freezed
 sealed class Chapter with _$Chapter {
   const factory Chapter({
     PlatformInt64? id,
@@ -35,4 +122,60 @@ sealed class Chapter with _$Chapter {
     required String title,
     required List<String> paragraphs,
   }) = _Chapter;
+}
+
+@freezed
+sealed class Highlight with _$Highlight {
+  const factory Highlight({
+    PlatformInt64? id,
+    required String bookUuid,
+    required int chapterIndex,
+    required int paragraphIndex,
+    int? startOffset,
+    int? endOffset,
+    required String text,
+    required String colorHex,
+    String? note,
+    required PlatformInt64 dateAdded,
+  }) = _Highlight;
+}
+
+@freezed
+sealed class OfflineTtsRecord with _$OfflineTtsRecord {
+  const factory OfflineTtsRecord({
+    PlatformInt64? id,
+    required String bookUuid,
+    required int chapterIndex,
+    required String ttsProvider,
+    required String voiceName,
+    required double speechRate,
+    required bool isCompleted,
+    required int totalParagraphs,
+    required int downloadedParagraphs,
+    required PlatformInt64 totalSizeBytes,
+    required PlatformInt64 downloadedAt,
+  }) = _OfflineTtsRecord;
+}
+
+@freezed
+sealed class PronunciationRule with _$PronunciationRule {
+  const factory PronunciationRule({
+    PlatformInt64? id,
+    required String target,
+    required String replacement,
+    required bool isRegex,
+    required bool active,
+  }) = _PronunciationRule;
+}
+
+@freezed
+sealed class ReadingProgress with _$ReadingProgress {
+  const factory ReadingProgress({
+    PlatformInt64? id,
+    required String bookUuid,
+    required int currentChapterIndex,
+    required int currentParagraphIndex,
+    required int currentCharacterOffset,
+    required PlatformInt64 lastRead,
+  }) = _ReadingProgress;
 }

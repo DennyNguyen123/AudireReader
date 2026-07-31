@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import '../../../services/bgm_service.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/bgm_track.dart';
+import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/bgm/radio_browser_provider.dart';
 import '../../../services/bgm/open_lofi_provider.dart';
 
