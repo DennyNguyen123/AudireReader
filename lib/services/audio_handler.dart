@@ -602,8 +602,25 @@ try {
     if (_currentBookUuid.isNotEmpty) {
       try {
         final appDir = await PathHelper.getAppDirectory();
-        final offlineAudioFile = File('${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.wav');
-        final offlineMetaFile = File('${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.json');
+        File offlineAudioFile = File(
+          '${appDir.path}/tts_offline/$_currentBookUuid/$_currentChapterIndex/p_$_currentParagraphIndex.wav',
+        );
+        File offlineMetaFile = File(
+          '${appDir.path}/tts_offline/$_currentBookUuid/$_currentChapterIndex/p_$_currentParagraphIndex.json',
+        );
+
+        // Hỗ trợ tương thích ngược cho cấu hình thư mục cũ (có tiền tố ch_)
+        if (!offlineAudioFile.existsSync()) {
+          final legacyAudioFile = File(
+            '${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.wav',
+          );
+          if (legacyAudioFile.existsSync()) {
+            offlineAudioFile = legacyAudioFile;
+            offlineMetaFile = File(
+              '${appDir.path}/tts_offline/$_currentBookUuid/ch_$_currentChapterIndex/p_$_currentParagraphIndex.json',
+            );
+          }
+        }
 
         if (offlineAudioFile.existsSync() && offlineAudioFile.lengthSync() > 0) {
           debugPrint('[AudioHandler] Playing from OFFLINE TTS file: ${offlineAudioFile.path}');
