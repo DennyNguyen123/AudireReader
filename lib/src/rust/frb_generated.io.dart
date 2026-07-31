@@ -170,6 +170,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ReadingProgress> dco_decode_list_reading_progress(dynamic raw);
 
   @protected
+  List<WebDavFile> dco_decode_list_web_dav_file(dynamic raw);
+
+  @protected
   OfflineTtsRecord dco_decode_offline_tts_record(dynamic raw);
 
   @protected
@@ -210,6 +213,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  WebDavFile dco_decode_web_dav_file(dynamic raw);
 
   @protected
   WebDavClient
@@ -371,6 +377,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<WebDavFile> sse_decode_list_web_dav_file(SseDeserializer deserializer);
+
+  @protected
   OfflineTtsRecord sse_decode_offline_tts_record(SseDeserializer deserializer);
 
   @protected
@@ -417,6 +426,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  WebDavFile sse_decode_web_dav_file(SseDeserializer deserializer);
 
   @protected
   void
@@ -620,6 +632,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_web_dav_file(
+    List<WebDavFile> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_offline_tts_record(
     OfflineTtsRecord self,
     SseSerializer serializer,
@@ -684,6 +702,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_web_dav_file(WebDavFile self, SseSerializer serializer);
 }
 
 // Section: wire_class

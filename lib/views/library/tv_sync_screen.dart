@@ -130,7 +130,7 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
 
       // 3. Khởi tạo WebDAV và test connection
       final webdav = WebDavService.getInstance();
-      webdav.init(webDavUrl, webDavUsername, webDavPassword);
+      await webdav.init(webDavUrl, webDavUsername, webDavPassword);
       final connected = await webdav.testConnection();
 
       if (mounted) {

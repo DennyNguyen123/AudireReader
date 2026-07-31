@@ -103,7 +103,7 @@ class SyncService {
         return;
       }
 
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) return;
 
@@ -287,7 +287,7 @@ class SyncService {
       }
 
       // 1. Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -757,7 +757,7 @@ class SyncService {
       final deviceName = settings.deviceName ?? 'Unknown Device';
 
       // Đảm bảo client đã khởi tạo
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
 
       final localProg = await db.getProgress(bookUuid);
       final String remotePath = '/AudireReader/progress/$bookUuid.json';
@@ -1066,7 +1066,7 @@ class SyncService {
       }
 
       // 1. Init WebDAV client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -1317,7 +1317,7 @@ class SyncService {
       }
 
       // 1. Init WebDAV client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -1604,7 +1604,7 @@ class SyncService {
       }
 
       // 1. Init WebDAV client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -1704,7 +1704,7 @@ class SyncService {
       }
 
       // 1. Init WebDAV client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -1799,7 +1799,7 @@ class SyncService {
       }
 
       // 1. Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         return SyncResult(
@@ -1946,7 +1946,7 @@ class SyncService {
       }
 
       // Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -2196,7 +2196,7 @@ class SyncService {
       }
 
       // Khởi tạo WebDAV Client
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
       final connected = await _webdav.testConnection();
       if (!connected) {
         _isSyncing = false;
@@ -2377,7 +2377,7 @@ class SyncService {
       final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
 
       // Đảm bảo client đã khởi tạo
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
 
       // 1. Tải lịch sử hiện tại về
       final bytes = await _webdav.downloadBytes(historyPath);
@@ -2423,7 +2423,7 @@ class SyncService {
       final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
 
       // Đảm bảo client đã khởi tạo
-      _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
+      await _webdav.init(settings.webDavUrl, settings.webDavUsername, webDavPassword);
 
       final String historyPath = '/AudireReader/sync_history.json';
       final bytes = await _webdav.downloadBytes(historyPath);

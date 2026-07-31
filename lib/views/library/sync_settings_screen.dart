@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/utils/path_helper.dart';
@@ -221,6 +222,20 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       final allProgress = await db.getAllReadingProgress();
       final progressCount = allProgress.length;
 
+      // Lấy kích thước file database
+      final dbFile = File(p.join(docDir.path, 'audire_reader.db'));
+      String dbSizeStr = 'N/A';
+      if (await dbFile.exists()) {
+        final sizeBytes = await dbFile.length();
+        if (sizeBytes < 1024) {
+          dbSizeStr = '$sizeBytes B';
+        } else if (sizeBytes < 1024 * 1024) {
+          dbSizeStr = '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+        } else {
+          dbSizeStr = '${(sizeBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+        }
+      }
+
       if (mounted) {
         showDialog(
           context: context,
@@ -240,7 +255,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Database Type: Isar NoSQL',
+                    'Database Type: Rust SQLite',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -254,6 +269,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                       fontSize: 11,
                       fontFamily: 'monospace',
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Database Size: $dbSizeStr',
+                    style: const TextStyle(fontSize: 12),
                   ),
                   const Divider(height: 24),
                   Row(
@@ -396,14 +416,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     }
   }
 
-  Future<void> _forceSyncNow() async {
-    LoggerService().log(
-      'Force sync triggered by developer',
-      tag: 'SYNC',
-      level: LogLevel.warning,
-    );
-    await _triggerManualSync();
-  }
 
   Future<void> _forcePush() async {
     await _saveWebDavTextSettings();
@@ -808,7 +820,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
     // Tạo WebDAV client tạm thời để kiểm thử
     final tempService = WebDavService.getInstance();
-    tempService.init(
+    await tempService.init(
       _urlController.text.trim(),
       _usernameController.text.trim(),
       _passwordController.text,
@@ -1199,7 +1211,6 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           },
                           onShowDatabaseInspector: _showDatabaseInspector,
                           onClearCacheAndResetSync: _clearCacheAndResetSync,
-                          onForceSyncNow: _forceSyncNow,
                         ),
                         const SizedBox(height: 20),
                         if (_appVersion.isNotEmpty)

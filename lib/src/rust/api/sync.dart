@@ -6,8 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `headers`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WebDavFile`
+// These functions are ignored because they are not marked as `pub`: `headers`, `parse_webdav_xml`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
 
 Future<void> webdavInit({
@@ -34,10 +33,29 @@ Future<bool> webdavUploadBytes({
   bytes: bytes,
 );
 
+Future<bool> webdavUploadFile({
+  required String remotePath,
+  required String localPath,
+}) => RustLib.instance.api.crateApiSyncWebdavUploadFile(
+  remotePath: remotePath,
+  localPath: localPath,
+);
+
 Future<Uint8List> webdavDownloadBytes({required String remotePath}) => RustLib
     .instance
     .api
     .crateApiSyncWebdavDownloadBytes(remotePath: remotePath);
+
+Future<bool> webdavDownloadFile({
+  required String remotePath,
+  required String localPath,
+}) => RustLib.instance.api.crateApiSyncWebdavDownloadFile(
+  remotePath: remotePath,
+  localPath: localPath,
+);
+
+Future<List<WebDavFile>> webdavListFiles({required String remotePath}) =>
+    RustLib.instance.api.crateApiSyncWebdavListFiles(remotePath: remotePath);
 
 Future<bool> webdavRemove({required String remotePath}) =>
     RustLib.instance.api.crateApiSyncWebdavRemove(remotePath: remotePath);
@@ -49,7 +67,14 @@ Future<bool> webdavFileExists({required String remotePath}) =>
 abstract class WebDavClient implements RustOpaqueInterface {
   Future<Uint8List> downloadBytes({required String remotePath});
 
+  Future<bool> downloadFile({
+    required String remotePath,
+    required String localPath,
+  });
+
   Future<bool> fileExists({required String remotePath});
+
+  Future<List<WebDavFile>> listFiles({required String remotePath});
 
   Future<bool> mkdir({required String remotePath});
 
@@ -72,4 +97,44 @@ abstract class WebDavClient implements RustOpaqueInterface {
     required String remotePath,
     required List<int> bytes,
   });
+
+  Future<bool> uploadFile({
+    required String remotePath,
+    required String localPath,
+  });
+}
+
+class WebDavFile {
+  final String name;
+  final String path;
+  final bool isDir;
+  final PlatformInt64 size;
+  final String lastModified;
+
+  const WebDavFile({
+    required this.name,
+    required this.path,
+    required this.isDir,
+    required this.size,
+    required this.lastModified,
+  });
+
+  @override
+  int get hashCode =>
+      name.hashCode ^
+      path.hashCode ^
+      isDir.hashCode ^
+      size.hashCode ^
+      lastModified.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WebDavFile &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          path == other.path &&
+          isDir == other.isDir &&
+          size == other.size &&
+          lastModified == other.lastModified;
 }

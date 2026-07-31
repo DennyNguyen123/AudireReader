@@ -8,7 +8,6 @@ class DeveloperSettingsSection extends StatelessWidget {
   final VoidCallback onOpenDebugConsole;
   final VoidCallback onShowDatabaseInspector;
   final VoidCallback onClearCacheAndResetSync;
-  final VoidCallback onForceSyncNow;
 
   const DeveloperSettingsSection({
     super.key,
@@ -17,7 +16,6 @@ class DeveloperSettingsSection extends StatelessWidget {
     required this.onOpenDebugConsole,
     required this.onShowDatabaseInspector,
     required this.onClearCacheAndResetSync,
-    required this.onForceSyncNow,
   });
 
   @override
@@ -125,33 +123,6 @@ class DeveloperSettingsSection extends StatelessWidget {
                     label: Text(
                       AppLocalizations.of(context)?.clearCache ??
                           'Clear Cache & Reset Sync',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 1.5,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onForceSyncNow,
-                    icon: const Icon(Icons.sync_problem_rounded),
-                    label: Text(
-                      AppLocalizations.of(context)?.forceSyncNow ??
-                          'Force Sync Now',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(

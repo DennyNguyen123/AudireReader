@@ -27,7 +27,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'widgets/mini_player.dart';
 import 'widgets/edit_book_dialog.dart';
 import 'global_notes_screen.dart';
-import 'widgets/tts_settings_sheet.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -93,6 +92,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     _loadBooks().then((_) {
+      _fetchCloudBooksOnLaunch();
       _triggerAutoSync();
       // Tự động mở sách đọc gần nhất sau khi dựng xong frame đầu tiên để tránh lỗi thread điều hướng
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1121,6 +1121,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  Future<void> _fetchCloudBooksOnLaunch() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (settings.webDavEnabled) {
+      SyncService.getInstance().fetchCloudBooks();
+    }
+  }
+
   Future<void> _triggerAutoSync() async {
     const storage = FlutterSecureStorage();
     final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
@@ -1598,13 +1606,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               });
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.headphones_rounded),
-            tooltip: 'TTS Settings',
-            onPressed: () {
-              showTtsSettingsBottomSheet(context);
-            },
-          ),
+
           IconButton(
             icon: const Icon(Icons.settings_rounded),
             onPressed: () {

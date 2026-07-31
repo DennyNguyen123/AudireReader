@@ -1,7 +1,4 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 import 'logger_service.dart';
 
@@ -165,18 +162,13 @@ class WebDavService {
     }
   }
 
-  /// Upload file cục bộ lên máy chủ WebDAV
+  /// Upload file cục bộ lên máy chủ WebDAV (Rust stream trực tiếp)
   Future<bool> uploadFile(String remotePath, String localPath) async {
     if (!_isInitialized) return false;
     try {
-      final file = File(localPath);
-      if (!file.existsSync()) {
-        throw Exception("Local file does not exist");
-      }
-      final bytes = await file.readAsBytes();
-      final success = await rust_sync.webdavUploadBytes(
+      final success = await rust_sync.webdavUploadFile(
         remotePath: remotePath,
-        bytes: bytes,
+        localPath: localPath,
       );
       LoggerService().log(
         'Uploaded file from $localPath to $remotePath',
@@ -195,26 +187,20 @@ class WebDavService {
     }
   }
 
-  /// Download file từ máy chủ WebDAV về bộ nhớ cục bộ
+  /// Download file từ máy chủ WebDAV về bộ nhớ cục bộ (Rust stream trực tiếp)
   Future<bool> downloadFile(String remotePath, String localPath) async {
     if (!_isInitialized) return false;
     try {
-      final bytes = await rust_sync.webdavDownloadBytes(remotePath: remotePath);
-      final file = File(localPath);
-      
-      // Ensure the parent directory exists
-      final dir = file.parent;
-      if (!dir.existsSync()) {
-        dir.createSync(recursive: true);
-      }
-      
-      await file.writeAsBytes(bytes);
+      final success = await rust_sync.webdavDownloadFile(
+        remotePath: remotePath,
+        localPath: localPath,
+      );
       LoggerService().log(
         'Downloaded file from $remotePath to $localPath',
         tag: 'WEBDAV',
         level: LogLevel.info,
       );
-      return true;
+      return success;
     } catch (e) {
       LoggerService().log(
         'Failed to download file from $remotePath',
@@ -303,6 +289,22 @@ class WebDavService {
       return await rust_sync.webdavFileExists(remotePath: remotePath);
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Lấy danh sách tệp/thư mục trong remotePath bằng Rust PROPFIND XML parser
+  Future<dynamic> listFiles(String remotePath) async {
+    if (!_isInitialized) return [];
+    try {
+      return await rust_sync.webdavListFiles(remotePath: remotePath);
+    } catch (e) {
+      LoggerService().log(
+        'Failed to list files at $remotePath',
+        tag: 'WEBDAV',
+        level: LogLevel.error,
+        error: e.toString(),
+      );
+      return [];
     }
   }
 
