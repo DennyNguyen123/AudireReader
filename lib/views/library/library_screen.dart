@@ -2160,18 +2160,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: [
                 Builder(
                   builder: (context) {
-                    final hasPath =
-                        book.coverPath != null && book.coverPath!.isNotEmpty;
-                    final fileExists = hasPath
-                        ? File(book.coverPath!).existsSync()
-                        : false;
-                    print(
-                      '[LibraryScreen] Card "${book.title}" -> hasPath: $hasPath, exists: $fileExists, path: ${book.coverPath}',
+                    final resolvedPath = PathHelper.resolveCoverPathSync(
+                      book.coverPath,
+                      uuid: book.uuid,
                     );
+                    final hasPath =
+                        resolvedPath != null && resolvedPath.isNotEmpty;
+                    final fileExists = hasPath
+                        ? File(resolvedPath).existsSync()
+                        : false;
 
                     if (hasPath && fileExists) {
                       return Image.file(
-                        File(book.coverPath!),
+                        File(resolvedPath),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           print(
@@ -2872,15 +2873,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     children: [
                       Builder(
                         builder: (context) {
+                          final resolvedPath = PathHelper.resolveCoverPathSync(
+                            book.coverPath,
+                            uuid: book.uuid,
+                          );
                           final hasPath =
-                              book.coverPath != null &&
-                              book.coverPath!.isNotEmpty;
+                              resolvedPath != null &&
+                              resolvedPath.isNotEmpty;
                           final fileExists = hasPath
-                              ? File(book.coverPath!).existsSync()
+                              ? File(resolvedPath).existsSync()
                               : false;
                           if (hasPath && fileExists) {
                             return Image.file(
-                              File(book.coverPath!),
+                              File(resolvedPath),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(

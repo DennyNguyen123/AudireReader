@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'dart:io';
 import 'package:audire_reader/services/tts_service.dart';
 import 'package:audire_reader/views/reader/reader_screen.dart';
+import 'package:audire_reader/core/utils/path_helper.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -100,36 +101,48 @@ class _MiniPlayerState extends State<MiniPlayer> {
                       child: Row(
                         children: [
                           // Cover image
-                          Container(
-                            width: 48,
-                            height: 48,
-                            margin: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: isDark
-                                  ? Colors.grey[850]
-                                  : Colors.grey[300],
-                              image:
-                                  (mediaItem.artUri != null &&
-                                      File(mediaItem.artUri!.path).existsSync())
-                                  ? DecorationImage(
-                                      image: FileImage(
-                                        File(mediaItem.artUri!.path),
-                                      ),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child:
-                                (mediaItem.artUri == null ||
-                                    !File(mediaItem.artUri!.path).existsSync())
-                                ? Icon(
-                                    Icons.music_note_rounded,
-                                    color: isDark
-                                        ? Colors.white30
-                                        : Colors.black38,
-                                  )
-                                : null,
+                          Builder(
+                            builder: (context) {
+                              final rawPath = mediaItem.artUri != null
+                                  ? (mediaItem.artUri!.isScheme('file')
+                                      ? mediaItem.artUri!.toFilePath()
+                                      : mediaItem.artUri!.path)
+                                  : null;
+                              final resolvedPath = PathHelper.resolveCoverPathSync(
+                                rawPath,
+                                uuid: _ttsService?.activeBook?.uuid,
+                              );
+                              final hasValidImage = resolvedPath != null &&
+                                  File(resolvedPath).existsSync();
+
+                              return Container(
+                                width: 48,
+                                height: 48,
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: isDark
+                                      ? Colors.grey[850]
+                                      : Colors.grey[300],
+                                  image: hasValidImage
+                                      ? DecorationImage(
+                                          image: FileImage(
+                                            File(resolvedPath),
+                                          ),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                ),
+                                child: !hasValidImage
+                                    ? Icon(
+                                        Icons.music_note_rounded,
+                                        color: isDark
+                                            ? Colors.white30
+                                            : Colors.black38,
+                                      )
+                                    : null,
+                              );
+                            },
                           ),
 
                           // Info

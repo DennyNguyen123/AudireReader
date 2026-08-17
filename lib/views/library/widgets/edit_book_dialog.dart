@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:audire_reader/core/database/database_helper.dart';
+import 'package:audire_reader/core/utils/path_helper.dart';
 import 'package:audire_reader/l10n/app_localizations.dart';
 
 class EditBookDialog extends StatefulWidget {
@@ -24,7 +25,11 @@ class _EditBookDialogState extends State<EditBookDialog> {
     super.initState();
     _titleController = TextEditingController(text: widget.book.title);
     _authorController = TextEditingController(text: widget.book.author);
-    _newCoverPath = widget.book.coverPath;
+    _newCoverPath = PathHelper.resolveCoverPathSync(
+          widget.book.coverPath,
+          uuid: widget.book.uuid,
+        ) ??
+        widget.book.coverPath;
   }
 
   @override
@@ -79,11 +84,12 @@ class _EditBookDialogState extends State<EditBookDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Edit Book'),
+      title: Text(l10n?.changeCover ?? 'Edit Book'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -93,70 +99,87 @@ class _EditBookDialogState extends State<EditBookDialog> {
             Center(
               child: GestureDetector(
                 onTap: _pickNewCover,
-                child: Container(
-                  width: 120,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[850] : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(8),
-                    image:
-                        _newCoverPath != null &&
-                            File(_newCoverPath!).existsSync()
-                        ? DecorationImage(
-                            image: FileImage(File(_newCoverPath!)),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    border: Border.all(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      width: 1,
-                    ),
-                  ),
-                  child:
-                      (_newCoverPath == null ||
-                          !File(_newCoverPath!).existsSync())
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_rounded,
-                              size: 40,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Change Cover',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? Colors.white54 : Colors.black54,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Container(
-                          alignment: Alignment.bottomCenter,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.7),
-                                Colors.transparent,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Tap to change',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
+                child: Builder(
+                  builder: (context) {
+                    final resolvedCover = PathHelper.resolveCoverPathSync(
+                      _newCoverPath,
+                      uuid: widget.book.uuid,
+                    );
+                    final hasValidCover = resolvedCover != null &&
+                        File(resolvedCover).existsSync();
+
+                    return Container(
+                      width: 120,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[850] : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(8),
+                        image: hasValidCover
+                            ? DecorationImage(
+                                image: FileImage(File(resolvedCover)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        border: Border.all(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          width: 1,
                         ),
+                      ),
+                      child: !hasValidCover
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_rounded,
+                                  size: 40,
+                                  color: isDark ? Colors.white54 : Colors.black54,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n?.changeCover ?? 'Change Cover',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white54 : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Container(
+                              alignment: Alignment.bottomCenter,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black87,
+                                    Colors.transparent,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n?.tapToChange ?? 'Change',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    );
+                  },
                 ),
               ),
             ),

@@ -466,11 +466,16 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     _currentParagraphIndex = paragraphIndex;
 
     Uri? artUri;
-    if (coverPath != null && coverPath.isNotEmpty) {
-      if (coverPath.startsWith('http://') || coverPath.startsWith('https://')) {
-        artUri = Uri.parse(coverPath);
+    final resolvedCover = await PathHelper.resolveCoverPath(
+      coverPath,
+      uuid: _currentBookUuid.isNotEmpty ? _currentBookUuid : null,
+    );
+    if (resolvedCover != null && resolvedCover.isNotEmpty) {
+      if (resolvedCover.startsWith('http://') ||
+          resolvedCover.startsWith('https://')) {
+        artUri = Uri.parse(resolvedCover);
       } else {
-        artUri = Uri.file(coverPath);
+        artUri = Uri.file(resolvedCover);
       }
     }
 

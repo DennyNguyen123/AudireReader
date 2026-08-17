@@ -692,5 +692,16 @@
   "selectFromCurrentToEnd": "From Current to End",
   "filterAll": "All",
   "filterDownloaded": "Downloaded",
-  "filterNotDownloaded": "Not Downloaded"
+  "filterNotDownloaded": "Not Downloaded",
+  "ttsVoiceLabel": "TTS Voice",
+  "sleepTimerLabel": "Sleep Timer",
+  "sleepTimerActiveLabel": "Timer Active",
+  "bgmLabel": "BGM",
+  "bgmActiveLabel": "BGM • On",
+  "prevChapterTooltip": "Previous Chapter",
+  "nextChapterTooltip": "Next Chapter",
+  "rewindParagraphTooltip": "Rewind Paragraph",
+  "forwardParagraphTooltip": "Forward Paragraph",
+  "changeCover": "Change Cover",
+  "tapToChange": "Tap to change"
 }

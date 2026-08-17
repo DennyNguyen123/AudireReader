@@ -1277,4 +1277,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterNotDownloaded => 'Not Downloaded';
+
+  @override
+  String get ttsVoiceLabel => 'TTS Voice';
+
+  @override
+  String get sleepTimerLabel => 'Sleep Timer';
+
+  @override
+  String get sleepTimerActiveLabel => 'Timer Active';
+
+  @override
+  String get bgmLabel => 'BGM';
+
+  @override
+  String get bgmActiveLabel => 'BGM • On';
+
+  @override
+  String get prevChapterTooltip => 'Previous Chapter';
+
+  @override
+  String get nextChapterTooltip => 'Next Chapter';
+
+  @override
+  String get rewindParagraphTooltip => 'Rewind Paragraph';
+
+  @override
+  String get forwardParagraphTooltip => 'Forward Paragraph';
+
+  @override
+  String get changeCover => 'Change Cover';
+
+  @override
+  String get tapToChange => 'Tap to change';
 }

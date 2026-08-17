@@ -2376,6 +2376,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not Downloaded'**
   String get filterNotDownloaded;
+
+  /// No description provided for @ttsVoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS Voice'**
+  String get ttsVoiceLabel;
+
+  /// No description provided for @sleepTimerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Timer'**
+  String get sleepTimerLabel;
+
+  /// No description provided for @sleepTimerActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer Active'**
+  String get sleepTimerActiveLabel;
+
+  /// No description provided for @bgmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'BGM'**
+  String get bgmLabel;
+
+  /// No description provided for @bgmActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'BGM • On'**
+  String get bgmActiveLabel;
+
+  /// No description provided for @prevChapterTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Chapter'**
+  String get prevChapterTooltip;
+
+  /// No description provided for @nextChapterTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Chapter'**
+  String get nextChapterTooltip;
+
+  /// No description provided for @rewindParagraphTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewind Paragraph'**
+  String get rewindParagraphTooltip;
+
+  /// No description provided for @forwardParagraphTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward Paragraph'**
+  String get forwardParagraphTooltip;
+
+  /// No description provided for @changeCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Cover'**
+  String get changeCover;
+
+  /// No description provided for @tapToChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change'**
+  String get tapToChange;
 }
 
 class _AppLocalizationsDelegate

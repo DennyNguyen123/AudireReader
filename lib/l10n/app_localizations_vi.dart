@@ -1278,4 +1278,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get filterNotDownloaded => 'Chưa tải';
+
+  @override
+  String get ttsVoiceLabel => 'Giọng đọc';
+
+  @override
+  String get sleepTimerLabel => 'Hẹn giờ';
+
+  @override
+  String get sleepTimerActiveLabel => 'Đang hẹn giờ';
+
+  @override
+  String get bgmLabel => 'Nhạc nền';
+
+  @override
+  String get bgmActiveLabel => 'Nhạc nền • Bật';
+
+  @override
+  String get prevChapterTooltip => 'Chương trước';
+
+  @override
+  String get nextChapterTooltip => 'Chương sau';
+
+  @override
+  String get rewindParagraphTooltip => 'Lùi đoạn';
+
+  @override
+  String get forwardParagraphTooltip => 'Tới đoạn';
+
+  @override
+  String get changeCover => 'Đổi ảnh bìa';
+
+  @override
+  String get tapToChange => 'Chạm để đổi';
 }

@@ -446,5 +446,16 @@
   "selectFromCurrentToEnd": "Từ hiện tại đến hết",
   "filterAll": "Tất cả",
   "filterDownloaded": "Đã tải",
-  "filterNotDownloaded": "Chưa tải"
+  "filterNotDownloaded": "Chưa tải",
+  "ttsVoiceLabel": "Giọng đọc",
+  "sleepTimerLabel": "Hẹn giờ",
+  "sleepTimerActiveLabel": "Đang hẹn giờ",
+  "bgmLabel": "Nhạc nền",
+  "bgmActiveLabel": "Nhạc nền • Bật",
+  "prevChapterTooltip": "Chương trước",
+  "nextChapterTooltip": "Chương sau",
+  "rewindParagraphTooltip": "Lùi đoạn",
+  "forwardParagraphTooltip": "Tới đoạn",
+  "changeCover": "Đổi ảnh bìa",
+  "tapToChange": "Chạm để đổi"
 }

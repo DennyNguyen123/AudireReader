@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/bgm_service.dart';
 import 'bgm_player_sheet.dart';
 import 'reader_tts_settings_sheet.dart';
 import 'sleep_timer_sheet.dart';
@@ -46,7 +48,7 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: textColor.withValues(alpha: 0.6)),
+        Icon(icon, size: 13, color: textColor.withValues(alpha: 0.6)),
         const SizedBox(width: 4),
         Text(
           value,
@@ -59,7 +61,7 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
         if (percent != null) ...[
           const SizedBox(width: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
@@ -86,7 +88,7 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     required VoidCallback? onPressed,
     required String tooltip,
     required Color textColor,
-    EdgeInsetsGeometry padding = const EdgeInsets.all(10),
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8),
   }) {
     final isEnabled = onPressed != null;
     return Tooltip(
@@ -109,8 +111,70 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
     );
   }
 
+  Widget _buildUtilityButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required Color textColor,
+    bool isActive = false,
+  }) {
+    final activeColor = Theme.of(context).colorScheme.primary;
+    return Tooltip(
+      message: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? activeColor.withValues(alpha: 0.15)
+                  : (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.04)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActive
+                    ? activeColor.withValues(alpha: 0.4)
+                    : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06)),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
+                  color:
+                      isActive ? activeColor : textColor.withValues(alpha: 0.8),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                    color: isActive
+                        ? activeColor
+                        : textColor.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     Color panelBg = widget.isDark ? const Color(0xFF1E1E1E) : Colors.white;
     if (widget.themeMode == 'Sepia') {
       panelBg = const Color(0xFFEAD8B1);
@@ -176,12 +240,14 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                   final position = snapshot.data ?? Duration.zero;
                   final currentPositionSec = position.inSeconds.toDouble();
 
-                  double sliderValue = _isDragging
-                      ? _dragValue
-                      : currentPositionSec;
-                  if (sliderValue < 0) sliderValue = 0.0;
-                  if (sliderValue > chapterDuration)
+                  double sliderValue =
+                      _isDragging ? _dragValue : currentPositionSec;
+                  if (sliderValue < 0) {
+                    sliderValue = 0.0;
+                  }
+                  if (sliderValue > chapterDuration) {
                     sliderValue = chapterDuration;
+                  }
 
                   final currentPositionStr = _formatDuration(
                     Duration(seconds: sliderValue.toInt()),
@@ -201,9 +267,8 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                           overlayShape: const RoundSliderOverlayShape(
                             overlayRadius: 10,
                           ),
-                          activeTrackColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
+                          activeTrackColor:
+                              Theme.of(context).colorScheme.primary,
                           inactiveTrackColor: widget.textColor.withValues(
                             alpha: 0.2,
                           ),
@@ -280,19 +345,110 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                   );
                 },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
-              // 2. Các nút bấm điều khiển
-              const SizedBox(height: 8),
+              // 2. Hàng 1: Các nút điều khiển phát chính (Căn giữa tuyệt đối & Cân đối)
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  _buildControlButton(
+                    icon: Icons.skip_previous_rounded,
+                    iconSize: 24,
+                    onPressed: tts.currentChapterIndex > 0
+                        ? tts.previousChapter
+                        : null,
+                    tooltip: l10n?.prevChapterTooltip ?? "Previous Chapter",
+                    textColor: widget.textColor,
+                  ),
+                  _buildControlButton(
+                    icon: Icons.fast_rewind_rounded,
+                    iconSize: 30,
+                    padding: const EdgeInsets.all(8),
+                    onPressed: tts.previousParagraph,
+                    tooltip: l10n?.rewindParagraphTooltip ?? "Rewind Paragraph",
+                    textColor: widget.textColor,
+                  ),
+                  GestureDetector(
+                    onTap: tts.togglePlayPause,
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.9),
+                            Theme.of(context).colorScheme.primary,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.4),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: tts.isPlaying ? 0 : 2.5,
+                          ),
+                          child: Icon(
+                            tts.isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            size: 34,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _buildControlButton(
+                    icon: Icons.fast_forward_rounded,
+                    iconSize: 30,
+                    padding: const EdgeInsets.all(8),
+                    onPressed: tts.nextParagraph,
+                    tooltip:
+                        l10n?.forwardParagraphTooltip ?? "Forward Paragraph",
+                    textColor: widget.textColor,
+                  ),
+                  _buildControlButton(
+                    icon: Icons.skip_next_rounded,
+                    iconSize: 24,
+                    onPressed:
+                        tts.currentChapterIndex < tts.chapters.length - 1
+                        ? tts.nextChapter
+                        : null,
+                    tooltip: l10n?.nextChapterTooltip ?? "Next Chapter",
+                    textColor: widget.textColor,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // 3. Hàng 2: Các nút tiện ích phụ (TTS Settings, Sleep Timer, BGM)
+              ListenableBuilder(
+                listenable: BgmService.getInstance(),
+                builder: (context, _) {
+                  final bgm = BgmService.getInstance();
+                  final isBgmPlaying = bgm.isPlaying || bgm.bgmEnabled;
+                  final isSleepActive = tts.isSleepTimerActive;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildControlButton(
+                      _buildUtilityButton(
                         icon: Icons.headphones_rounded,
-                        iconSize: 22,
+                        label: l10n?.ttsVoiceLabel ?? "TTS Voice",
                         onPressed: () {
                           showModalBottomSheet(
                             context: context,
@@ -303,12 +459,16 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                             ),
                           );
                         },
-                        tooltip: "TTS Settings",
                         textColor: widget.textColor,
                       ),
-                      _buildControlButton(
-                        icon: Icons.snooze_rounded,
-                        iconSize: 22,
+                      _buildUtilityButton(
+                        icon: isSleepActive
+                            ? Icons.alarm_on_rounded
+                            : Icons.snooze_rounded,
+                        label: isSleepActive
+                            ? (l10n?.sleepTimerActiveLabel ?? "Timer Active")
+                            : (l10n?.sleepTimerLabel ?? "Sleep Timer"),
+                        isActive: isSleepActive,
                         onPressed: () {
                           showModalBottomSheet(
                             context: context,
@@ -318,114 +478,34 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
                                 SleepTimerSheet(ttsService: widget.ttsService),
                           );
                         },
-                        tooltip: "Sleep Timer",
+                        textColor: widget.textColor,
+                      ),
+                      _buildUtilityButton(
+                        icon: Icons.music_note_rounded,
+                        label: isBgmPlaying
+                            ? (l10n?.bgmActiveLabel ?? "BGM • On")
+                            : (l10n?.bgmLabel ?? "BGM"),
+                        isActive: isBgmPlaying,
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (context) => const BgmPlayerSheet(),
+                          );
+                        },
                         textColor: widget.textColor,
                       ),
                     ],
-                  ),
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildControlButton(
-                            icon: Icons.skip_previous_rounded,
-                            iconSize: 18,
-                            onPressed: tts.currentChapterIndex > 0
-                                ? tts.previousChapter
-                                : null,
-                            tooltip: "Previous Chapter",
-                            textColor: widget.textColor,
-                          ),
-                          _buildControlButton(
-                            icon: Icons.fast_rewind_rounded,
-                            iconSize: 26,
-                            padding: const EdgeInsets.all(6),
-                            onPressed: tts.previousParagraph,
-                            tooltip: "Rewind Paragraph",
-                            textColor: widget.textColor,
-                          ),
-                          GestureDetector(
-                            onTap: tts.togglePlayPause,
-                            child: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Theme.of(context).colorScheme.primary
-                                        .withValues(alpha: 0.85),
-                                    Theme.of(context).colorScheme.primary,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(context).colorScheme.primary
-                                        .withValues(alpha: 0.45),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                tts.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                size: 30,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          _buildControlButton(
-                            icon: Icons.fast_forward_rounded,
-                            iconSize: 26,
-                            padding: const EdgeInsets.all(6),
-                            onPressed: tts.nextParagraph,
-                            tooltip: "Forward Paragraph",
-                            textColor: widget.textColor,
-                          ),
-                          _buildControlButton(
-                            icon: Icons.skip_next_rounded,
-                            iconSize: 18,
-                            onPressed:
-                                tts.currentChapterIndex <
-                                    tts.chapters.length - 1
-                                ? tts.nextChapter
-                                : null,
-                            tooltip: "Next Chapter",
-                            textColor: widget.textColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // BGM Player Button moved here
-                  _buildControlButton(
-                    icon: Icons.music_note_rounded,
-                    iconSize: 22,
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        isScrollControlled: true,
-                        builder: (context) => const BgmPlayerSheet(),
-                      );
-                    },
-                    tooltip: "BGM Player",
-                    textColor: widget.textColor,
-                  ),
-                ],
+                  );
+                },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
-              // 3. Compact Stats
+              // 4. Compact Stats
               Container(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 8,
+                  vertical: 6,
                   horizontal: 12,
                 ),
                 decoration: BoxDecoration(
