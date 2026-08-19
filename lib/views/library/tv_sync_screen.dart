@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../services/tunnel_service.dart';
 import '../../services/sync_service.dart';
-import '../../services/webdav_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 
 class TvSyncScreen extends StatefulWidget {
   const TvSyncScreen({super.key});
@@ -79,8 +78,9 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
         webDavEnabled: true,
       );
 
-      const storage = FlutterSecureStorage();
-      await storage.write(key: 'webdav_password', value: webDavPassword);
+      if (webDavPassword.isNotEmpty) {
+        await rust_sync.saveWebdavPassword(password: webDavPassword);
+      }
 
       // 2. Áp dụng các settings khác (nếu có)
       if (data.containsKey('settings')) {
@@ -128,10 +128,16 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
 
       await db.saveSettings(settings);
 
-      // 3. Khởi tạo WebDAV và test connection
-      final webdav = WebDavService.getInstance();
-      await webdav.init(webDavUrl, webDavUsername, webDavPassword);
-      final connected = await webdav.testConnection();
+      await rust_sync.saveWebdavConfig(
+        url: webDavUrl,
+        username: webDavUsername,
+        password: webDavPassword,
+      );
+      final connected = await rust_sync.testWebdavConnection(
+        url: webDavUrl,
+        username: webDavUsername,
+        password: webDavPassword,
+      );
 
       if (mounted) {
         if (connected) {

@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/database/database_helper.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 
 class MobileSyncScreen extends StatefulWidget {
   const MobileSyncScreen({super.key});
@@ -67,8 +67,7 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
-      const storage = FlutterSecureStorage();
-      final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
+      final webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
 
       // Đóng gói cấu hình hiện tại
       final payload = {

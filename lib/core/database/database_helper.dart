@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
 import '../utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
@@ -46,36 +44,11 @@ class DatabaseHelper {
     String? status,
     String sortBy = 'dateAdded',
   }) async {
-    List<Book> books = await rust_db.getAllBooks();
-    final allProgress = await rust_db.getAllReadingProgress();
-    final progressMap = {for (var p in allProgress) p.bookUuid: DateTime.fromMillisecondsSinceEpoch(p.lastRead.toInt())};
-
-    if (sortBy == 'title') {
-      books.sort((a, b) => a.title.compareTo(b.title));
-    } else if (sortBy == 'author') {
-      books.sort((a, b) => a.author.compareTo(b.author));
-    } else if (sortBy == 'recentlyRead') {
-      books.sort((a, b) {
-        final timeA = progressMap[a.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final timeB = progressMap[b.uuid] ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return timeB.compareTo(timeA);
-      });
-    } else {
-      books.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
-    }
-
-    if (tag != null && tag != 'All') {
-      books = books.where((b) => b.tags.contains(tag)).toList();
-    }
-
-    if (status != null && status != 'All') {
-      books = books.where((b) {
-        final bStatus = b.status.trim().isEmpty ? 'unread' : b.status;
-        return bStatus.toLowerCase() == status.toLowerCase();
-      }).toList();
-    }
-
-    return books;
+    return await rust_db.getBooksFiltered(
+      tag: tag,
+      status: status,
+      sortBy: sortBy,
+    );
   }
 
   Future<Book?> getBookByUuid(String uuid) async {
@@ -83,34 +56,11 @@ class DatabaseHelper {
   }
 
   Future<void> deleteBook(String uuid) async {
-    final book = await getBookByUuid(uuid);
-    if (book != null) {
-      if (book.coverPath != null && book.coverPath!.isNotEmpty) {
-        try {
-          final file = File(book.coverPath!);
-          if (await file.exists()) {
-            await file.delete();
-          }
-        } catch (e) {
-          debugPrint('[DatabaseHelper] Error deleting physical cover file: $e');
-        }
-      }
-
-      try {
-        final appDir = await PathHelper.getAppDirectory();
-        final ttsDir = Directory(p.join(appDir.path, 'tts_offline', uuid));
-        if (await ttsDir.exists()) {
-          await ttsDir.delete(recursive: true);
-        }
-      } catch (e) {
-        debugPrint('[DatabaseHelper] Error deleting offline TTS directory: $e');
-      }
-
-      try {
-        await rust_db.deleteBook(uuid: uuid);
-      } catch (e) {
-        debugPrint('[DatabaseHelper] Rust DB deleteBook error: $e');
-      }
+    try {
+      final appDir = await PathHelper.getAppDirectory();
+      await rust_db.deleteBookCascade(uuid: uuid, baseDir: appDir.path);
+    } catch (e) {
+      debugPrint('[DatabaseHelper] Error deleting book cascade: $e');
     }
   }
 
@@ -370,12 +320,14 @@ AppSettings defaultAppSettings({String? deviceId, String? deviceName}) {
     appLocale: 'en',
     lineHeight: 1.6,
     paragraphSpacing: 14.0,
+    paragraphIndent: 0.0,
     textAlignment: 'left',
     sideMargin: 20.0,
     customBackgroundColor: null,
     customTextColor: null,
     primaryColorHex: null,
     webDavEnabled: false,
+    webDavAutoSync: true,
     webDavUrl: '',
     webDavUsername: '',
     webDavLastSync: null,
@@ -414,6 +366,9 @@ AppSettings defaultAppSettings({String? deviceId, String? deviceName}) {
     developerMode: false,
     enableDebugLogs: false,
     enableWebDavDebug: false,
+    audioPanelCollapsed: false,
+    libraryViewMode: 'grid',
+    searchHistory: const [],
   );
 }
 

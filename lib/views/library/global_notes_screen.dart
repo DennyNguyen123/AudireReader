@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
+import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 import 'package:audire_reader/core/database/database_helper.dart';
 import 'package:audire_reader/views/reader/reader_screen.dart';
 import 'package:audire_reader/services/tts_service.dart';
+import 'package:audire_reader/services/sync_service.dart';
 
 class GlobalNotesScreen extends StatefulWidget {
   const GlobalNotesScreen({super.key});
@@ -100,11 +102,22 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
     }
   }
 
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await SyncService.getInstance().sync();
+    } catch (_) {}
+    await _loadData();
+  }
+
   Future<void> _deleteBookmark(Bookmark bookmark) async {
     final db = await DatabaseHelper.getInstance();
     if (bookmark.id != null) {
       await db.deleteBookmark(bookmark.id!.toInt());
     }
+    rust_sync.syncBookBookmarks(bookUuid: bookmark.bookUuid);
     _loadData();
   }
 
@@ -113,6 +126,7 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
     if (highlight.id != null) {
       await db.deleteHighlight(highlight.id!.toInt());
     }
+    rust_sync.syncBookHighlights(bookUuid: highlight.bookUuid);
     _loadData();
   }
 
@@ -127,6 +141,12 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
           'Notes & Bookmarks',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _handleRefresh,
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: isDark ? Colors.white : Colors.black87,
@@ -161,18 +181,30 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
 
   Widget _buildBookmarksTab(bool isDark) {
     if (_bookmarks.isEmpty) {
-      return Center(
-        child: Text(
-          'No bookmarks yet',
-          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+      return RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Text(
+                  'No bookmarks yet',
+                  style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _bookmarks.length,
-      itemBuilder: (context, index) {
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _bookmarks.length,
+        itemBuilder: (context, index) {
         final b = _bookmarks[index];
         final book = _bookCache[b.bookUuid];
         final bookTitle = book?.title ?? 'Unknown Book';
@@ -222,23 +254,36 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildHighlightsTab(bool isDark) {
     if (_highlights.isEmpty) {
-      return Center(
-        child: Text(
-          'No highlights yet',
-          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+      return RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Text(
+                  'No highlights yet',
+                  style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _highlights.length,
-      itemBuilder: (context, index) {
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _highlights.length,
+        itemBuilder: (context, index) {
         final h = _highlights[index];
         final book = _bookCache[h.bookUuid];
         final bookTitle = book?.title ?? 'Unknown Book';
@@ -328,6 +373,7 @@ class _GlobalNotesScreenState extends State<GlobalNotesScreen>
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 }

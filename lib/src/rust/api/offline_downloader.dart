@@ -59,6 +59,34 @@ Future<void> startOfflineDownloadJob({
   openaiApiKey: openaiApiKey,
 );
 
+Future<void> deleteOfflineTtsChapter({
+  required String baseDir,
+  required String bookUuid,
+  required int chapterIndex,
+}) => RustLib.instance.api.crateApiOfflineDownloaderDeleteOfflineTtsChapter(
+  baseDir: baseDir,
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+);
+
+Future<void> deleteOfflineTtsBook({
+  required String baseDir,
+  required String bookUuid,
+}) => RustLib.instance.api.crateApiOfflineDownloaderDeleteOfflineTtsBook(
+  baseDir: baseDir,
+  bookUuid: bookUuid,
+);
+
+Future<bool> isChapterOfflineReady({
+  required String baseDir,
+  required String bookUuid,
+  required int chapterIndex,
+}) => RustLib.instance.api.crateApiOfflineDownloaderIsChapterOfflineReady(
+  baseDir: baseDir,
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+);
+
 class BookStorageInfo {
   final BigInt totalBytes;
   final Int32List chapterIndices;

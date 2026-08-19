@@ -2,11 +2,10 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/shortcut_helper.dart';
 import '../../services/tts_service.dart' hide print;
-import '../../services/sync_service.dart' hide print;
+import '../../services/sync_service.dart';
 import '../../services/logger_service.dart';
 import '../../core/database/database_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
@@ -125,6 +124,14 @@ class _ReaderScreenState extends State<ReaderScreen>
         book.uuid,
       );
 
+      final bmChanged = await SyncService.getInstance().syncBookBookmarks(book.uuid);
+      final hlChanged = await SyncService.getInstance().syncBookHighlights(book.uuid);
+
+      if ((bmChanged || hlChanged) && mounted) {
+        await _loadBookmarksAndHighlights();
+        await _updateBookmarkState();
+      }
+
       // Khởi tạo vị trí đã sync gần nhất
       final db = await DatabaseHelper.getInstance();
       final progress = await db.getProgress(book.uuid);
@@ -133,7 +140,7 @@ class _ReaderScreenState extends State<ReaderScreen>
         _lastSyncedParagraphIndex = progress.currentParagraphIndex;
       }
 
-      if (syncResult.status == ProgressSyncStatus.updatedLocal && mounted) {
+      if (syncResult.status == 'updatedLocal' && mounted) {
         LoggerService().log(
           '[ReaderScreen] Local progress was updated from cloud. Reloading active book in TTS...',
           tag: 'SYNC',
@@ -147,11 +154,6 @@ class _ReaderScreenState extends State<ReaderScreen>
             startParagraph: progress.currentParagraphIndex,
           );
         }
-      } else if (syncResult.status == ProgressSyncStatus.conflict &&
-          mounted &&
-          syncResult.cloudProgress != null) {
-        // SHOW CONFLICT DIALOG
-        _showConflictDialog(book, syncResult.cloudProgress!);
       }
     }
   }
@@ -184,8 +186,8 @@ class _ReaderScreenState extends State<ReaderScreen>
       final result = await SyncService.getInstance().syncBookProgress(
         book.uuid,
       );
-      if (result.status == ProgressSyncStatus.uploadedToCloud ||
-          result.status == ProgressSyncStatus.upToDate) {
+      if (result.status == 'updatedCloud' ||
+          result.status == 'noChange') {
         _lastSyncedChapterIndex = chapter;
         _lastSyncedParagraphIndex = paragraph;
       }
@@ -203,81 +205,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     _wasPlaying = isPlayingNow;
   }
 
-  void _showConflictDialog(Book book, Map<String, dynamic> cloudProgress) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            AppLocalizations.of(context)?.syncConflictTitle ??
-                'Sync Conflict Detected',
-          ),
-          content: Text(
-            AppLocalizations.of(context)?.syncConflictDesc(
-                  cloudProgress['deviceName'] ?? 'Unknown Device',
-                  (cloudProgress['currentChapterIndex'] ?? 0).toString(),
-                  _ttsService.currentChapterIndex.toString(),
-                ) ??
-                'Your current reading progress conflicts with data from "${cloudProgress['deviceName']}".\n\n'
-                    'Cloud: Chapter ${cloudProgress['currentChapterIndex']}\n'
-                    'Local: Chapter ${_ttsService.currentChapterIndex}\n\n'
-                    'Which progress would you like to keep?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                // Keep Local: Upload local to cloud to overwrite
-                final db = await DatabaseHelper.getInstance();
-                final localProg = await db.getProgress(book.uuid);
-                final settings = await db.getSettings();
-                if (localProg != null) {
-                  // Bypass conflict and force upload
-                  SyncService.getInstance().forceUploadLocalProgress(
-                    book.uuid,
-                    localProg,
-                    settings.deviceId ?? '',
-                    settings.deviceName ?? '',
-                  );
-                }
-              },
-              child: Text(
-                AppLocalizations.of(context)?.keepLocal ?? 'Keep Local',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                // Keep Cloud: Overwrite local
-                final db = await DatabaseHelper.getInstance();
-                await SyncService.getInstance().forceUpdateLocalFromCloud(
-                  book.uuid,
-                  cloudProgress,
-                  await db.getProgress(book.uuid),
-                  db,
-                );
-                final updatedProg = await db.getProgress(book.uuid);
-                if (updatedProg != null && mounted) {
-                  await _ttsService.loadBook(
-                    book,
-                    _ttsService.chapters,
-                    startChapter: updatedProg.currentChapterIndex,
-                    startParagraph: updatedProg.currentParagraphIndex,
-                  );
-                }
-              },
-              child: Text(
-                AppLocalizations.of(context)?.useCloud ?? 'Use Cloud',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Future<void> _showSyncBottomSheet(BuildContext context) async {
     final book = _ttsService.activeBook;
@@ -354,7 +281,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                         });
                         try {
                           final result = await SyncService.getInstance()
-                              .forcePushBook(book.uuid, progressOnly: true);
+                              .forcePushBook(book.uuid);
                           if (context.mounted) {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -427,7 +354,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                         });
                         try {
                           final result = await SyncService.getInstance()
-                              .forcePullBook(book.uuid, progressOnly: true);
+                              .forcePullBook(book.uuid);
                           if (result.success) {
                             // Tự động reload lại sách với tiến trình mới
                             final db = await DatabaseHelper.getInstance();
@@ -594,6 +521,9 @@ class _ReaderScreenState extends State<ReaderScreen>
       }
       await _updateBookmarkState();
       await _loadBookmarksAndHighlights();
+      if (_webDavEnabled) {
+        SyncService.getInstance().syncBookBookmarks(book.uuid);
+      }
     } catch (e) {
       LoggerService().log(
         'Failed to toggle bookmark',
@@ -771,6 +701,10 @@ class _ReaderScreenState extends State<ReaderScreen>
                           await db.deleteHighlight(existingHighlight.id!.toInt());
                         }
                         await _loadBookmarksAndHighlights();
+                        final book = _ttsService.activeBook;
+                        if (book != null && _webDavEnabled) {
+                          SyncService.getInstance().syncBookHighlights(book.uuid);
+                        }
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -820,6 +754,9 @@ class _ReaderScreenState extends State<ReaderScreen>
 
         await db.saveHighlight(highlight);
         await _loadBookmarksAndHighlights();
+        if (_webDavEnabled) {
+          SyncService.getInstance().syncBookHighlights(book.uuid);
+        }
         if (context.mounted) {
           final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -900,6 +837,9 @@ class _ReaderScreenState extends State<ReaderScreen>
 
               await db.saveHighlight(highlight);
               await _loadBookmarksAndHighlights();
+              if (_webDavEnabled) {
+                SyncService.getInstance().syncBookHighlights(book.uuid);
+              }
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -942,11 +882,6 @@ class _ReaderScreenState extends State<ReaderScreen>
 
     final settings = await _ttsService.getSettings();
 
-    const storage = FlutterSecureStorage();
-    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
-    final indentStr =
-        await storage.read(key: 'reader_paragraph_indent') ?? '0.0';
-
     setState(() {
       _settings = settings;
       _fontSize = settings.fontSize;
@@ -967,13 +902,13 @@ class _ReaderScreenState extends State<ReaderScreen>
       _paragraphSpacing = settings.paragraphSpacing.isNaN
           ? 14.0
           : settings.paragraphSpacing;
-      _paragraphIndent = double.tryParse(indentStr) ?? 0.0;
+      _paragraphIndent = settings.paragraphIndent.isNaN ? 0.0 : settings.paragraphIndent;
       _textAlignment = settings.textAlignment;
       _sideMargin = settings.sideMargin.isNaN ? 20.0 : settings.sideMargin;
       _customBackgroundColor = settings.customBackgroundColor;
       _customTextColor = settings.customTextColor;
       _webDavEnabled = settings.webDavEnabled;
-      _autoSyncEnabled = autoSyncStr == 'true';
+      _autoSyncEnabled = settings.webDavAutoSync;
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
@@ -1129,12 +1064,13 @@ class _ReaderScreenState extends State<ReaderScreen>
             _paragraphSpacing = val;
           });
         },
-        onParagraphIndentChanged: (val) {
+        onParagraphIndentChanged: (val) async {
           setState(() {
             _paragraphIndent = val;
           });
-          const storage = FlutterSecureStorage();
-          storage.write(key: 'reader_paragraph_indent', value: val.toString());
+          final db = await DatabaseHelper.getInstance();
+          final settings = await db.getSettings();
+          await db.saveSettings(settings.copyWith(paragraphIndent: val));
         },
         onTextAlignmentChanged: (val) {
           setState(() {

@@ -15,6 +15,16 @@ void initDatabase({required String dbPath}) =>
 Future<List<Book>> getAllBooks() =>
     RustLib.instance.api.crateApiDatabaseGetAllBooks();
 
+Future<List<Book>> getBooksFiltered({
+  String? tag,
+  String? status,
+  String? sortBy,
+}) => RustLib.instance.api.crateApiDatabaseGetBooksFiltered(
+  tag: tag,
+  status: status,
+  sortBy: sortBy,
+);
+
 Future<Book?> getBookByUuid({required String uuid}) =>
     RustLib.instance.api.crateApiDatabaseGetBookByUuid(uuid: uuid);
 
@@ -23,6 +33,12 @@ Future<PlatformInt64> insertBook({required Book book}) =>
 
 Future<void> deleteBook({required String uuid}) =>
     RustLib.instance.api.crateApiDatabaseDeleteBook(uuid: uuid);
+
+Future<void> deleteBookCascade({required String uuid, String? baseDir}) =>
+    RustLib.instance.api.crateApiDatabaseDeleteBookCascade(
+      uuid: uuid,
+      baseDir: baseDir,
+    );
 
 Future<void> vacuumDatabase() =>
     RustLib.instance.api.crateApiDatabaseVacuumDatabase();
@@ -91,6 +107,14 @@ Future<void> deleteBookmarksForBook({required String bookUuid}) => RustLib
     .api
     .crateApiDatabaseDeleteBookmarksForBook(bookUuid: bookUuid);
 
+Future<void> replaceAllBookmarks({
+  required String bookUuid,
+  required List<Bookmark> bookmarks,
+}) => RustLib.instance.api.crateApiDatabaseReplaceAllBookmarks(
+  bookUuid: bookUuid,
+  bookmarks: bookmarks,
+);
+
 Future<List<Highlight>> getHighlights({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseGetHighlights(bookUuid: bookUuid);
 
@@ -107,6 +131,14 @@ Future<void> deleteHighlightsForBook({required String bookUuid}) => RustLib
     .instance
     .api
     .crateApiDatabaseDeleteHighlightsForBook(bookUuid: bookUuid);
+
+Future<void> replaceAllHighlights({
+  required String bookUuid,
+  required List<Highlight> highlights,
+}) => RustLib.instance.api.crateApiDatabaseReplaceAllHighlights(
+  bookUuid: bookUuid,
+  highlights: highlights,
+);
 
 Future<List<PronunciationRule>> getPronunciationRules() =>
     RustLib.instance.api.crateApiDatabaseGetPronunciationRules();
@@ -156,6 +188,15 @@ Future<void> deleteOfflineTtsRecordsForBook({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseDeleteOfflineTtsRecordsForBook(
       bookUuid: bookUuid,
     );
+
+Future<PlatformInt64> insertSyncHistory({required SyncHistoryEntry entry}) =>
+    RustLib.instance.api.crateApiDatabaseInsertSyncHistory(entry: entry);
+
+Future<List<SyncHistoryEntry>> getSyncHistory({PlatformInt64? limit}) =>
+    RustLib.instance.api.crateApiDatabaseGetSyncHistory(limit: limit);
+
+Future<void> clearSyncHistory() =>
+    RustLib.instance.api.crateApiDatabaseClearSyncHistory();
 
 class SearchResultItem {
   final int chapterIndex;

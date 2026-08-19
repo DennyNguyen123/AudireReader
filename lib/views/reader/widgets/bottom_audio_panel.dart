@@ -1,7 +1,7 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
+import '../../../core/database/database_helper.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/bgm_service.dart';
@@ -37,28 +37,27 @@ class _BottomAudioPanelState extends State<BottomAudioPanel> {
   @override
   void initState() {
     super.initState();
-    _loadCollapsedState();
+    _loadState();
   }
 
-  Future<void> _loadCollapsedState() async {
-    const storage = FlutterSecureStorage();
-    final val = await storage.read(key: 'audio_panel_collapsed');
-    if (mounted) {
+  Future<void> _loadState() async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (mounted && _isCollapsed != settings.audioPanelCollapsed) {
       setState(() {
-        _isCollapsed = val == 'true';
+        _isCollapsed = settings.audioPanelCollapsed;
       });
     }
   }
 
-  Future<void> _toggleCollapsed() async {
-    const storage = FlutterSecureStorage();
-    final newState = !_isCollapsed;
-    await storage.write(key: 'audio_panel_collapsed', value: newState.toString());
-    if (mounted) {
-      setState(() {
-        _isCollapsed = newState;
-      });
-    }
+  void _toggleCollapsed() async {
+    final nextState = !_isCollapsed;
+    setState(() {
+      _isCollapsed = nextState;
+    });
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    await db.saveSettings(settings.copyWith(audioPanelCollapsed: nextState));
   }
 
   String _formatDuration(Duration duration) {

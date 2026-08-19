@@ -36,6 +36,13 @@ pub struct Bookmark {
     pub date_added: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BookBookmarksFile {
+    pub book_uuid: String,
+    pub updated_at: i64,
+    pub bookmarks: Vec<Bookmark>,
+}
+
 #[frb(dart_metadata = ("freezed"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Highlight {
@@ -49,6 +56,13 @@ pub struct Highlight {
     pub color_hex: String,
     pub note: Option<String>,
     pub date_added: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BookHighlightsFile {
+    pub book_uuid: String,
+    pub updated_at: i64,
+    pub highlights: Vec<Highlight>,
 }
 
 #[frb(dart_metadata = ("freezed"))]
@@ -98,6 +112,14 @@ pub struct OfflineTtsRecord {
     pub downloaded_at: i64,
 }
 
+fn default_true() -> bool {
+    true
+}
+
+fn default_grid() -> String {
+    "grid".to_string()
+}
+
 #[frb(dart_metadata = ("freezed"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -116,12 +138,16 @@ pub struct AppSettings {
     pub app_locale: String,
     pub line_height: f64,
     pub paragraph_spacing: f64,
+    #[serde(default)]
+    pub paragraph_indent: f64,
     pub text_alignment: String,
     pub side_margin: f64,
     pub custom_background_color: Option<String>,
     pub custom_text_color: Option<String>,
     pub primary_color_hex: Option<String>,
     pub web_dav_enabled: bool,
+    #[serde(default = "default_true")]
+    pub web_dav_auto_sync: bool,
     pub web_dav_url: String,
     pub web_dav_username: String,
     pub web_dav_last_sync: Option<i64>,
@@ -160,5 +186,63 @@ pub struct AppSettings {
     pub developer_mode: bool,
     pub enable_debug_logs: bool,
     pub enable_web_dav_debug: bool,
+    #[serde(default)]
+    pub audio_panel_collapsed: bool,
+    #[serde(default = "default_grid")]
+    pub library_view_mode: String,
+    #[serde(default)]
+    pub search_history: Vec<String>,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CloudBook {
+    pub uuid: String,
+    pub title: String,
+    pub author: String,
+    pub total_chapters: i32,
+    pub cover_extension: Option<String>,
+    pub has_cover: bool,
+    pub date_added: String,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncResult {
+    pub success: bool,
+    pub message: String,
+    pub local_changed: bool,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProgressSyncResult {
+    pub status: String,
+    pub cloud_chapter_index: Option<i32>,
+    pub cloud_paragraph_index: Option<i32>,
+    pub cloud_character_offset: Option<i32>,
+    pub cloud_last_read: Option<i64>,
+    pub message: Option<String>,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncProgressEvent {
+    pub event_type: String,
+    pub book_uuid: Option<String>,
+    pub status: Option<String>,
+    pub current: i32,
+    pub total: i32,
+    pub message: Option<String>,
+}
+
+#[frb(dart_metadata = ("freezed"))]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncHistoryEntry {
+    pub id: Option<i64>,
+    pub timestamp: i64,
+    pub action: String,
+    pub status: String,
+    pub details: String,
 }
 

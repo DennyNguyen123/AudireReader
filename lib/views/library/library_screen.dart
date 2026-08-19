@@ -12,16 +12,16 @@ import '../../core/utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
 import 'package:audire_reader/src/rust/api/parsers.dart' as rust_parsers;
+import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 import '../../services/tts_service.dart' hide print;
 import '../reader/reader_screen.dart';
-import '../../services/sync_service.dart' hide print;
+import '../../services/sync_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/update_service.dart';
 import 'sync_settings_screen.dart';
 import 'sync_history_screen.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'widgets/mini_player.dart';
 import 'widgets/edit_book_dialog.dart';
 import 'global_notes_screen.dart';
@@ -78,6 +78,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     });
 
+    _loadViewMode();
+    _loadSearchHistory();
+
     TtsService.getInstance().then((instance) {
       if (mounted) {
         setState(() {
@@ -119,64 +122,65 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _loadSearchHistory() async {
-    const storage = FlutterSecureStorage();
-    final historyStr = await storage.read(key: 'search_history');
-    if (historyStr != null && historyStr.isNotEmpty) {
-      if (mounted) {
-        setState(() {
-          _searchHistory = historyStr.split('|||');
-        });
-      }
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    if (mounted) {
+      setState(() {
+        _searchHistory = settings.searchHistory;
+      });
     }
   }
 
   Future<void> _addToSearchHistory(String query) async {
     final q = query.trim();
     if (q.isEmpty) return;
-    setState(() {
-      _searchHistory.remove(q);
-      _searchHistory.insert(0, q);
-      if (_searchHistory.length > 10) {
-        _searchHistory = _searchHistory.sublist(0, 10);
-      }
-    });
-    const storage = FlutterSecureStorage();
-    await storage.write(
-      key: 'search_history',
-      value: _searchHistory.join('|||'),
-    );
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final history = List<String>.from(settings.searchHistory);
+    history.remove(q);
+    history.insert(0, q);
+    if (history.length > 10) {
+      history.removeRange(10, history.length);
+    }
+    await db.saveSettings(settings.copyWith(searchHistory: history));
+    if (mounted) {
+      setState(() {
+        _searchHistory = history;
+      });
+    }
   }
 
   Future<void> _removeSearchHistory(String query) async {
-    setState(() {
-      _searchHistory.remove(query);
-    });
-    const storage = FlutterSecureStorage();
-    await storage.write(
-      key: 'search_history',
-      value: _searchHistory.join('|||'),
-    );
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final history = List<String>.from(settings.searchHistory);
+    history.remove(query);
+    await db.saveSettings(settings.copyWith(searchHistory: history));
+    if (mounted) {
+      setState(() {
+        _searchHistory = history;
+      });
+    }
   }
 
   Future<void> _loadViewMode() async {
-    const storage = FlutterSecureStorage();
-    final viewMode = await storage.read(key: 'library_view_mode') ?? 'grid';
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
     if (mounted) {
       setState(() {
-        _isGridView = viewMode == 'grid';
+        _isGridView = settings.libraryViewMode == 'grid';
       });
     }
   }
 
   Future<void> _toggleViewMode() async {
+    final newGrid = !_isGridView;
     setState(() {
-      _isGridView = !_isGridView;
+      _isGridView = newGrid;
     });
-    const storage = FlutterSecureStorage();
-    await storage.write(
-      key: 'library_view_mode',
-      value: _isGridView ? 'grid' : 'list',
-    );
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    await db.saveSettings(settings.copyWith(libraryViewMode: newGrid ? 'grid' : 'list'));
   }
 
   Future<void> _loadAppVersion() async {
@@ -193,8 +197,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _loadSyncStatus() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    const storage = FlutterSecureStorage();
-    final password = await storage.read(key: 'webdav_password') ?? '';
+    final password = (await rust_sync.getWebdavPassword()) ?? '';
     if (mounted) {
       setState(() {
         _lastSyncTime = settings.webDavLastSync != null
@@ -766,7 +769,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     try {
       final result = await SyncService.getInstance().forcePushBook(
         book.uuid,
-        progressOnly: true,
       );
       if (mounted) {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
@@ -844,7 +846,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     try {
       final result = await SyncService.getInstance().forcePullBook(
         book.uuid,
-        progressOnly: true,
       );
       if (mounted) {
         final isVi = Localizations.localeOf(context).languageCode == 'vi';
@@ -1130,19 +1131,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _triggerAutoSync() async {
-    const storage = FlutterSecureStorage();
-    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
-    if (autoSyncStr != 'true') {
-      LoggerService().log(
-        '[AutoSync] Disabled by user configuration.',
-        tag: 'SYNC',
-        level: LogLevel.info,
-      );
-      return;
-    }
-
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
+    if (!settings.webDavAutoSync) {
+      return;
+    }
     if (settings.webDavEnabled) {
       setState(() {
         _isSyncing = true;

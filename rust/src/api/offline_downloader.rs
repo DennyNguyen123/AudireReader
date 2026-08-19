@@ -465,3 +465,49 @@ pub async fn start_offline_download_job(
 
     Ok(())
 }
+
+pub fn delete_offline_tts_chapter(base_dir: String, book_uuid: String, chapter_index: i32) -> Result<(), String> {
+    let dir = Path::new(&base_dir)
+        .join("tts_offline")
+        .join(&book_uuid)
+        .join(chapter_index.to_string());
+    if dir.exists() {
+        let _ = fs::remove_dir_all(dir);
+    }
+    let _ = crate::api::database::delete_offline_tts_record(book_uuid, chapter_index);
+    Ok(())
+}
+
+pub fn delete_offline_tts_book(base_dir: String, book_uuid: String) -> Result<(), String> {
+    let dir = Path::new(&base_dir)
+        .join("tts_offline")
+        .join(&book_uuid);
+    if dir.exists() {
+        let _ = fs::remove_dir_all(dir);
+    }
+    let _ = crate::api::database::delete_offline_tts_records_for_book(book_uuid);
+    Ok(())
+}
+
+pub fn is_chapter_offline_ready(base_dir: String, book_uuid: String, chapter_index: i32) -> bool {
+    let dir = Path::new(&base_dir)
+        .join("tts_offline")
+        .join(&book_uuid)
+        .join(chapter_index.to_string());
+    if !dir.exists() {
+        return false;
+    }
+    if dir.join(".done").exists() {
+        return true;
+    }
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            if let Some(ext) = entry.path().extension().and_then(|s| s.to_str()) {
+                if ext == "wav" || ext == "mp3" {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}

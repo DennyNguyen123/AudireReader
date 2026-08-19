@@ -5,6 +5,63 @@ use quick_xml::events::Event;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose::STANDARD as b64};
+use parking_lot::Mutex;
+use flate2::write::GzEncoder;
+use flate2::read::GzDecoder;
+use flate2::Compression;
+use std::io::Write;
+use keyring::Entry;
+use chrono::Utc;
+
+use crate::api::models::{CloudBook, SyncResult, ProgressSyncResult, SyncProgressEvent, SyncHistoryEntry, Book, Chapter, ReadingProgress, Bookmark, Highlight, BookBookmarksFile, BookHighlightsFile};
+
+const KEYRING_SERVICE: &str = "AudireReader";
+const KEYRING_USER: &str = "webdav_password";
+
+// --- Keyring Storage ---
+
+pub fn save_webdav_password(password: String) -> Result<(), String> {
+    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
+    entry.set_password(&password).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn get_webdav_password() -> Result<Option<String>, String> {
+    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
+    match entry.get_password() {
+        Ok(p) => Ok(Some(p)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+pub fn delete_webdav_password() -> Result<(), String> {
+    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
+    let _ = entry.delete_credential();
+    Ok(())
+}
+
+use crate::frb_generated::StreamSink;
+
+// --- Stream Events ---
+
+static SYNC_EVENT_SINK: Lazy<Mutex<Option<StreamSink<SyncProgressEvent>>>> =
+    Lazy::new(|| Mutex::new(None));
+
+pub fn subscribe_sync_events(sink: StreamSink<SyncProgressEvent>) -> Result<(), String> {
+    let mut lock = SYNC_EVENT_SINK.lock();
+    *lock = Some(sink);
+    Ok(())
+}
+
+fn emit_sync_event(event: SyncProgressEvent) {
+    let lock = SYNC_EVENT_SINK.lock();
+    if let Some(ref sink) = *lock {
+        let _ = sink.add(event);
+    }
+}
+
+// --- WebDAV Client & XML ---
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WebDavFile {
@@ -34,7 +91,7 @@ impl WebDavClient {
         let auth_header = format!("Basic {}", auth_b64);
         
         Ok(WebDavClient {
-            client: Client::new(),
+            client: Client::builder().build().map_err(|e| e.to_string())?,
             base_url: formatted_url,
             auth_header,
         })
@@ -47,7 +104,6 @@ impl WebDavClient {
     }
 
     pub async fn test_connection(&self) -> Result<bool, String> {
-        // Simple PROPFIND to root
         let propfind = Method::from_bytes(b"PROPFIND").unwrap();
         let mut h = self.headers();
         h.insert("Depth", HeaderValue::from_static("0"));
@@ -71,7 +127,6 @@ impl WebDavClient {
             .await
             .map_err(|e| e.to_string())?;
             
-        // 201 Created or 405 Method Not Allowed (Already exists)
         Ok(res.status().is_success() || res.status().as_u16() == 405)
     }
 
@@ -98,7 +153,7 @@ impl WebDavClient {
             .map_err(|e| e.to_string())?;
             
         if !res.status().is_success() {
-            return Err(format!("Download failed: {}", res.status()));
+            return Err(format!("Download failed with status: {}", res.status()));
         }
         
         let bytes = res.bytes().await.map_err(|e| e.to_string())?;
@@ -258,126 +313,56 @@ fn parse_webdav_xml(xml: &str) -> Result<Vec<WebDavFile>, String> {
     Ok(files)
 }
 
-use parking_lot::Mutex;
-
 static WEBDAV_CLIENT: Lazy<Mutex<Option<WebDavClient>>> = Lazy::new(|| Mutex::new(None));
 
-pub fn webdav_init(url: String, username: String, password: String) -> Result<(), String> {
-    let client = WebDavClient::new(&url, &username, &password)?;
-    let mut cache = WEBDAV_CLIENT.lock();
-    *cache = Some(client);
+// --- Config Helpers ---
+
+pub fn save_webdav_config(url: String, username: String, password: Option<String>) -> Result<(), String> {
+    if let Some(mut settings) = crate::api::database::get_settings()? {
+        settings.web_dav_url = url.trim().to_string();
+        settings.web_dav_username = username.trim().to_string();
+        settings.web_dav_enabled = !settings.web_dav_url.is_empty() && !settings.web_dav_username.is_empty();
+        crate::api::database::save_settings(settings)?;
+    }
+
+    if let Some(pass) = password {
+        save_webdav_password(pass)?;
+    }
     Ok(())
 }
 
-pub async fn webdav_test_connection() -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.test_connection().await
-    } else {
-        Err("Client not initialized".to_string())
+pub async fn get_or_init_client() -> Result<WebDavClient, String> {
+    let settings_opt = crate::api::database::get_settings()?;
+    let settings = settings_opt.ok_or_else(|| "App settings not initialized".to_string())?;
+    if !settings.web_dav_enabled || settings.web_dav_url.is_empty() || settings.web_dav_username.is_empty() {
+        return Err("WebDAV is not configured or disabled".to_string());
     }
+    let password = get_webdav_password()?.unwrap_or_default();
+    if password.is_empty() {
+        return Err("WebDAV password is not set".to_string());
+    }
+    let client = WebDavClient::new(&settings.web_dav_url, &settings.web_dav_username, &password)?;
+    let mut cache = WEBDAV_CLIENT.lock();
+    *cache = Some(client.clone());
+    Ok(client)
 }
 
-pub async fn webdav_mkdir(remote_path: String) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.mkdir(&remote_path).await
+pub async fn test_webdav_connection(
+    url: Option<String>,
+    username: Option<String>,
+    password: Option<String>,
+) -> Result<bool, String> {
+    let client = if let (Some(u), Some(user), Some(pass)) = (url, username, password) {
+        WebDavClient::new(&u, &user, &pass)?
     } else {
-        Err("Client not initialized".to_string())
-    }
+        get_or_init_client().await?
+    };
+    client.test_connection().await
 }
 
-pub async fn webdav_upload_bytes(remote_path: String, bytes: Vec<u8>) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.upload_bytes(&remote_path, bytes).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
+// --- Sync Payloads & JSON Structs ---
 
-pub async fn webdav_upload_file(remote_path: String, local_path: String) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.upload_file(&remote_path, &local_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-pub async fn webdav_download_bytes(remote_path: String) -> Result<Vec<u8>, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.download_bytes(&remote_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-pub async fn webdav_download_file(remote_path: String, local_path: String) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.download_file(&remote_path, &local_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-pub async fn webdav_list_files(remote_path: String) -> Result<Vec<WebDavFile>, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.list_files(&remote_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-pub async fn webdav_remove(remote_path: String) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.remove(&remote_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-pub async fn webdav_file_exists(remote_path: String) -> Result<bool, String> {
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    if let Some(c) = client {
-        c.file_exists(&remote_path).await
-    } else {
-        Err("Client not initialized".to_string())
-    }
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SyncBookPayload {
     uuid: String,
     title: String,
@@ -391,7 +376,7 @@ struct SyncBookPayload {
     chapters: Vec<SyncChapterPayload>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SyncChapterPayload {
     #[serde(rename = "chapterIndex")]
     chapter_index: i32,
@@ -399,21 +384,79 @@ struct SyncChapterPayload {
     paragraphs: Vec<String>,
 }
 
-pub async fn export_and_upload_book(book_uuid: String) -> Result<bool, String> {
-    use std::io::Write;
-    use flate2::write::GzEncoder;
-    use flate2::Compression;
+#[derive(Debug, Serialize, Deserialize)]
+struct SyncProgressPayload {
+    #[serde(rename = "bookUuid")]
+    book_uuid: String,
+    #[serde(rename = "chapterIndex")]
+    chapter_index: i32,
+    #[serde(rename = "paragraphIndex")]
+    paragraph_index: i32,
+    #[serde(rename = "characterOffset")]
+    character_offset: i32,
+    #[serde(rename = "lastRead")]
+    last_read: i64,
+    #[serde(rename = "deviceId")]
+    device_id: Option<String>,
+    #[serde(rename = "deviceName")]
+    device_name: Option<String>,
+}
 
-    // 1. Get book and chapters from SQLite
+#[derive(Debug, Serialize, Deserialize)]
+struct SyncDataFile {
+    version: i32,
+    #[serde(rename = "lastSyncTime")]
+    last_sync_time: String,
+    books: Vec<SyncDataBookItem>,
+    #[serde(default)]
+    deleted: Vec<SyncDeletedItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SyncDataBookItem {
+    uuid: String,
+    title: String,
+    author: String,
+    #[serde(rename = "totalChapters")]
+    total_chapters: i32,
+    #[serde(rename = "dateAdded")]
+    date_added: String,
+    #[serde(rename = "coverExtension")]
+    cover_extension: Option<String>,
+    #[serde(rename = "hasCover")]
+    has_cover: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum SyncDeletedItem {
+    Simple(String),
+    Detailed {
+        uuid: String,
+        #[serde(rename = "deletedAt")]
+        deleted_at: String,
+    },
+}
+
+impl SyncDeletedItem {
+    fn uuid(&self) -> &str {
+        match self {
+            SyncDeletedItem::Simple(u) => u,
+            SyncDeletedItem::Detailed { uuid, .. } => uuid,
+        }
+    }
+}
+
+// --- High-Level Sync APIs ---
+
+pub async fn export_and_upload_book(book_uuid: String) -> Result<bool, String> {
     let book = crate::api::database::get_book_by_uuid(book_uuid.clone())?
         .ok_or_else(|| format!("Book not found: {}", book_uuid))?;
-    
     let chapters = crate::api::database::get_chapters(book_uuid.clone())?;
 
-    // 2. Build payload
     let date_added_iso = chrono::DateTime::from_timestamp_millis(book.date_added)
         .map(|dt| dt.to_rfc3339())
-        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+        .unwrap_or_else(|| Utc::now().to_rfc3339());
 
     let cover_extension = book.cover_path.as_ref().map(|p| {
         Path::new(p)
@@ -439,83 +482,62 @@ pub async fn export_and_upload_book(book_uuid: String) -> Result<bool, String> {
         chapters: sync_chapters,
     };
 
-    // 3. Serialize and Compress Gzip
     let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
-    
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(&json_bytes).map_err(|e| e.to_string())?;
     let compressed_bytes = encoder.finish().map_err(|e| e.to_string())?;
 
-    // 4. Upload book to WebDAV
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    let c = client.ok_or_else(|| "WebDAV client not initialized".to_string())?;
-    
+    let client = get_or_init_client().await?;
     let remote_path = format!("/AudireReader/books/{}.json.gz", book_uuid);
-    c.upload_bytes(&remote_path, compressed_bytes).await?;
+    client.upload_bytes(&remote_path, compressed_bytes).await?;
 
-    // 5. Upload cover if exists
     if let Some(ref cover_path_str) = book.cover_path {
         let cover_path = Path::new(cover_path_str);
         if cover_path.exists() {
             let ext = cover_path.extension().and_then(|s| s.to_str()).unwrap_or("jpg");
             let remote_cover = format!("/AudireReader/covers/{}.{}", book_uuid, ext);
-            let _ = c.upload_file(&remote_cover, cover_path_str).await;
+            let _ = client.upload_file(&remote_cover, cover_path_str).await;
         }
     }
 
     Ok(true)
 }
 
-pub async fn download_and_import_book(book_uuid: String, documents_dir: String) -> Result<crate::api::models::Book, String> {
-    use flate2::read::GzDecoder;
-    use std::fs;
+pub async fn download_and_import_book(book_uuid: String, documents_dir: String) -> Result<Book, String> {
+    let client = get_or_init_client().await?;
 
-    let client = {
-        let opt = WEBDAV_CLIENT.lock();
-        opt.clone()
-    };
-    let c = client.ok_or_else(|| "WebDAV client not initialized".to_string())?;
-
-    // 1. Download bytes from WebDAV
     let remote_path = format!("/AudireReader/books/{}.json.gz", book_uuid);
-    let compressed_bytes = c.download_bytes(&remote_path).await?;
+    let compressed_bytes = client.download_bytes(&remote_path).await?;
 
-    // 2. Decompress Gzip
     let mut decoder = GzDecoder::new(&compressed_bytes[..]);
     let mut json_bytes = Vec::new();
     std::io::Read::read_to_end(&mut decoder, &mut json_bytes).map_err(|e| e.to_string())?;
 
-    // 3. Deserialize JSON
     let payload: SyncBookPayload = serde_json::from_slice(&json_bytes).map_err(|e| e.to_string())?;
 
-    // 4. Save Cover if exists on WebDAV
     let mut cover_path = None;
     if let Some(ref ext) = payload.cover_extension {
         let remote_cover = format!("/AudireReader/covers/{}{}", book_uuid, ext);
-        if let Ok(exists) = c.file_exists(&remote_cover).await {
+        if let Ok(exists) = client.file_exists(&remote_cover).await {
             if exists {
                 let local_cover_dir = Path::new(&documents_dir).join("covers");
                 if !local_cover_dir.exists() {
-                    let _ = fs::create_dir_all(&local_cover_dir);
+                    let _ = std::fs::create_dir_all(&local_cover_dir);
                 }
                 let local_cover_path = local_cover_dir.join(format!("{}{}", book_uuid, ext));
                 let local_cover_str = local_cover_path.to_string_lossy().to_string();
-                if c.download_file(&remote_cover, &local_cover_str).await.is_ok() {
+                if client.download_file(&remote_cover, &local_cover_str).await.is_ok() {
                     cover_path = Some(local_cover_str);
                 }
             }
         }
     }
 
-    // 5. Convert to models & Insert into SQLite
     let date_added_millis = chrono::DateTime::parse_from_rfc3339(&payload.date_added)
         .map(|dt| dt.timestamp_millis())
-        .unwrap_or_else(|_| chrono::Utc::now().timestamp_millis());
+        .unwrap_or_else(|_| Utc::now().timestamp_millis());
 
-    let book = crate::api::models::Book {
+    let book = Book {
         id: None,
         uuid: payload.uuid.clone(),
         title: payload.title,
@@ -527,7 +549,7 @@ pub async fn download_and_import_book(book_uuid: String, documents_dir: String) 
         tags: vec![],
     };
 
-    let chapters: Vec<crate::api::models::Chapter> = payload.chapters.into_iter().map(|c| crate::api::models::Chapter {
+    let chapters: Vec<Chapter> = payload.chapters.into_iter().map(|c| Chapter {
         id: None,
         book_uuid: payload.uuid.clone(),
         chapter_index: c.chapter_index,
@@ -535,7 +557,6 @@ pub async fn download_and_import_book(book_uuid: String, documents_dir: String) 
         paragraphs: c.paragraphs,
     }).collect();
 
-    // 6. DB operations
     crate::api::database::insert_book(book.clone())?;
     crate::api::database::insert_chapters(chapters)?;
 
@@ -546,3 +567,733 @@ pub async fn download_and_import_book(book_uuid: String, documents_dir: String) 
     Ok(book)
 }
 
+pub async fn fetch_cloud_books(documents_dir: Option<String>) -> Result<Vec<CloudBook>, String> {
+    let client = get_or_init_client().await?;
+    
+    if !client.file_exists("/AudireReader/sync_data.json").await.unwrap_or(false) {
+        return Ok(Vec::new());
+    }
+
+    let bytes = client.download_bytes("/AudireReader/sync_data.json").await?;
+    let sync_data: SyncDataFile = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+
+    let cloud_books: Vec<CloudBook> = sync_data.books.into_iter().map(|b| CloudBook {
+        uuid: b.uuid,
+        title: b.title,
+        author: b.author,
+        total_chapters: b.total_chapters,
+        cover_extension: b.cover_extension,
+        has_cover: b.has_cover,
+        date_added: b.date_added,
+    }).collect();
+
+    // Background download missing covers if documents_dir provided
+    if let Some(doc_dir) = documents_dir {
+        let books_clone = cloud_books.clone();
+        let client_clone = client.clone();
+        tokio::spawn(async move {
+            for cb in books_clone {
+                if cb.has_cover {
+                    let ext = cb.cover_extension.unwrap_or_else(|| ".jpg".to_string());
+                    let local_path = Path::new(&doc_dir).join("covers").join(format!("{}{}", cb.uuid, ext));
+                    if !local_path.exists() {
+                        let remote_cover = format!("/AudireReader/covers/{}{}", cb.uuid, ext);
+                        let _ = client_clone.download_file(&remote_cover, &local_path.to_string_lossy()).await;
+                    }
+                }
+            }
+        });
+    }
+
+    Ok(cloud_books)
+}
+
+fn record_book_progress_sync(book_uuid: &str, action: &str, chapter_idx: i32, para_idx: i32, device: Option<String>) {
+    let book_title = crate::api::database::get_book_by_uuid(book_uuid.to_string())
+        .ok()
+        .flatten()
+        .map(|b| b.title)
+        .unwrap_or_else(|| "Unknown Book".to_string());
+
+    let details_json = serde_json::json!({
+        "bookTitle": book_title,
+        "chapterIndex": chapter_idx,
+        "paragraphIndex": para_idx,
+        "deviceName": device.unwrap_or_else(|| "This Device".to_string()),
+    }).to_string();
+
+    let _ = crate::api::database::insert_sync_history(SyncHistoryEntry {
+        id: None,
+        timestamp: Utc::now().timestamp_millis(),
+        action: action.to_string(),
+        status: "success".to_string(),
+        details: details_json,
+    });
+}
+
+pub async fn sync_book_progress(book_uuid: String) -> Result<ProgressSyncResult, String> {
+    let client = get_or_init_client().await?;
+    let remote_path = format!("/AudireReader/progress/{}.json", book_uuid);
+
+    let local_prog = crate::api::database::get_reading_progress(book_uuid.clone())?;
+
+    let cloud_prog_opt: Option<SyncProgressPayload> = if client.file_exists(&remote_path).await.unwrap_or(false) {
+        if let Ok(bytes) = client.download_bytes(&remote_path).await {
+            serde_json::from_slice(&bytes).ok()
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    match (local_prog, cloud_prog_opt) {
+        (None, None) => Ok(ProgressSyncResult {
+            status: "noChange".to_string(),
+            cloud_chapter_index: None,
+            cloud_paragraph_index: None,
+            cloud_character_offset: None,
+            cloud_last_read: None,
+            message: None,
+        }),
+        (Some(local), None) => {
+            let payload = SyncProgressPayload {
+                book_uuid: book_uuid.clone(),
+                chapter_index: local.current_chapter_index,
+                paragraph_index: local.current_paragraph_index,
+                character_offset: local.current_character_offset,
+                last_read: local.last_read,
+                device_id: None,
+                device_name: None,
+            };
+            let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+            let _ = client.upload_bytes(&remote_path, json_bytes).await;
+            record_book_progress_sync(&book_uuid, "push", local.current_chapter_index, local.current_paragraph_index, None);
+            Ok(ProgressSyncResult {
+                status: "updatedCloud".to_string(),
+                cloud_chapter_index: Some(local.current_chapter_index),
+                cloud_paragraph_index: Some(local.current_paragraph_index),
+                cloud_character_offset: Some(local.current_character_offset),
+                cloud_last_read: Some(local.last_read),
+                message: Some("Uploaded local progress to cloud".to_string()),
+            })
+        }
+        (None, Some(cloud)) => {
+            let prog = ReadingProgress {
+                id: None,
+                book_uuid: book_uuid.clone(),
+                current_chapter_index: cloud.chapter_index,
+                current_paragraph_index: cloud.paragraph_index,
+                current_character_offset: cloud.character_offset,
+                last_read: cloud.last_read,
+            };
+            crate::api::database::save_reading_progress(prog)?;
+            record_book_progress_sync(&book_uuid, "pull", cloud.chapter_index, cloud.paragraph_index, cloud.device_name.clone());
+            Ok(ProgressSyncResult {
+                status: "updatedLocal".to_string(),
+                cloud_chapter_index: Some(cloud.chapter_index),
+                cloud_paragraph_index: Some(cloud.paragraph_index),
+                cloud_character_offset: Some(cloud.character_offset),
+                cloud_last_read: Some(cloud.last_read),
+                message: Some("Updated local progress from cloud".to_string()),
+            })
+        }
+        (Some(local), Some(cloud)) => {
+            if local.last_read > cloud.last_read {
+                let payload = SyncProgressPayload {
+                    book_uuid: book_uuid.clone(),
+                    chapter_index: local.current_chapter_index,
+                    paragraph_index: local.current_paragraph_index,
+                    character_offset: local.current_character_offset,
+                    last_read: local.last_read,
+                    device_id: None,
+                    device_name: None,
+                };
+                let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+                let _ = client.upload_bytes(&remote_path, json_bytes).await;
+                record_book_progress_sync(&book_uuid, "push", local.current_chapter_index, local.current_paragraph_index, None);
+                Ok(ProgressSyncResult {
+                    status: "updatedCloud".to_string(),
+                    cloud_chapter_index: Some(local.current_chapter_index),
+                    cloud_paragraph_index: Some(local.current_paragraph_index),
+                    cloud_character_offset: Some(local.current_character_offset),
+                    cloud_last_read: Some(local.last_read),
+                    message: Some("Local is newer, updated cloud".to_string()),
+                })
+            } else if cloud.last_read > local.last_read {
+                let prog = ReadingProgress {
+                    id: None,
+                    book_uuid: book_uuid.clone(),
+                    current_chapter_index: cloud.chapter_index,
+                    current_paragraph_index: cloud.paragraph_index,
+                    current_character_offset: cloud.character_offset,
+                    last_read: cloud.last_read,
+                };
+                crate::api::database::save_reading_progress(prog)?;
+                record_book_progress_sync(&book_uuid, "pull", cloud.chapter_index, cloud.paragraph_index, cloud.device_name.clone());
+                Ok(ProgressSyncResult {
+                    status: "updatedLocal".to_string(),
+                    cloud_chapter_index: Some(cloud.chapter_index),
+                    cloud_paragraph_index: Some(cloud.paragraph_index),
+                    cloud_character_offset: Some(cloud.character_offset),
+                    cloud_last_read: Some(cloud.last_read),
+                    message: Some("Cloud is newer, updated local".to_string()),
+                })
+            } else {
+                Ok(ProgressSyncResult {
+                    status: "noChange".to_string(),
+                    cloud_chapter_index: Some(cloud.chapter_index),
+                    cloud_paragraph_index: Some(cloud.paragraph_index),
+                    cloud_character_offset: Some(cloud.character_offset),
+                    cloud_last_read: Some(cloud.last_read),
+                    message: None,
+                })
+            }
+        }
+    }
+}
+
+pub async fn sync_book_bookmarks(book_uuid: String) -> Result<bool, String> {
+    let client = get_or_init_client().await?;
+    let _ = client.mkdir("/AudireReader/bookmarks").await;
+    let remote_path = format!("/AudireReader/bookmarks/{}.json", book_uuid);
+
+    let local_bookmarks = crate::api::database::get_bookmarks(book_uuid.clone())?;
+
+    let cloud_file_opt: Option<BookBookmarksFile> = if client.file_exists(&remote_path).await.unwrap_or(false) {
+        if let Ok(bytes) = client.download_bytes(&remote_path).await {
+            serde_json::from_slice(&bytes).ok()
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let mut merged_map: std::collections::HashMap<(i32, i32), Bookmark> = std::collections::HashMap::new();
+
+    // 1. Add all local bookmarks
+    for b in local_bookmarks {
+        merged_map.insert((b.chapter_index, b.paragraph_index), b);
+    }
+
+    let mut local_updated = false;
+
+    // 2. Merge cloud bookmarks
+    if let Some(cloud_file) = cloud_file_opt {
+        for cb in cloud_file.bookmarks {
+            let key = (cb.chapter_index, cb.paragraph_index);
+            if let Some(existing) = merged_map.get_mut(&key) {
+                if cb.date_added > existing.date_added {
+                    *existing = cb;
+                    local_updated = true;
+                }
+            } else {
+                merged_map.insert(key, cb);
+                local_updated = true;
+            }
+        }
+    }
+
+    let mut final_bookmarks: Vec<Bookmark> = merged_map.into_values().collect();
+    final_bookmarks.sort_by(|a, b| {
+        a.chapter_index.cmp(&b.chapter_index).then(a.paragraph_index.cmp(&b.paragraph_index))
+    });
+
+    if local_updated {
+        crate::api::database::replace_all_bookmarks(book_uuid.clone(), final_bookmarks.clone())?;
+    }
+
+    // Upload merged result to cloud
+    let payload = BookBookmarksFile {
+        book_uuid: book_uuid.clone(),
+        updated_at: Utc::now().timestamp_millis(),
+        bookmarks: final_bookmarks,
+    };
+    let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+    let _ = client.upload_bytes(&remote_path, json_bytes).await;
+
+    Ok(local_updated)
+}
+
+pub async fn sync_book_highlights(book_uuid: String) -> Result<bool, String> {
+    let client = get_or_init_client().await?;
+    let _ = client.mkdir("/AudireReader/highlights").await;
+    let remote_path = format!("/AudireReader/highlights/{}.json", book_uuid);
+
+    let local_highlights = crate::api::database::get_highlights(book_uuid.clone())?;
+
+    let cloud_file_opt: Option<BookHighlightsFile> = if client.file_exists(&remote_path).await.unwrap_or(false) {
+        if let Ok(bytes) = client.download_bytes(&remote_path).await {
+            serde_json::from_slice(&bytes).ok()
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let mut merged_map: std::collections::HashMap<(i32, i32, Option<i32>, Option<i32>), Highlight> = std::collections::HashMap::new();
+
+    // 1. Add all local highlights
+    for h in local_highlights {
+        merged_map.insert((h.chapter_index, h.paragraph_index, h.start_offset, h.end_offset), h);
+    }
+
+    let mut local_updated = false;
+
+    // 2. Merge cloud highlights
+    if let Some(cloud_file) = cloud_file_opt {
+        for ch in cloud_file.highlights {
+            let key = (ch.chapter_index, ch.paragraph_index, ch.start_offset, ch.end_offset);
+            if let Some(existing) = merged_map.get_mut(&key) {
+                if ch.date_added > existing.date_added {
+                    *existing = ch;
+                    local_updated = true;
+                }
+            } else {
+                merged_map.insert(key, ch);
+                local_updated = true;
+            }
+        }
+    }
+
+    let mut final_highlights: Vec<Highlight> = merged_map.into_values().collect();
+    final_highlights.sort_by(|a, b| {
+        a.chapter_index.cmp(&b.chapter_index)
+            .then(a.paragraph_index.cmp(&b.paragraph_index))
+            .then(a.start_offset.cmp(&b.start_offset))
+    });
+
+    if local_updated {
+        crate::api::database::replace_all_highlights(book_uuid.clone(), final_highlights.clone())?;
+    }
+
+    // Upload merged result to cloud
+    let payload = BookHighlightsFile {
+        book_uuid: book_uuid.clone(),
+        updated_at: Utc::now().timestamp_millis(),
+        highlights: final_highlights,
+    };
+    let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+    let _ = client.upload_bytes(&remote_path, json_bytes).await;
+
+    Ok(local_updated)
+}
+
+pub async fn sync_library(documents_dir: Option<String>) -> Result<SyncResult, String> {
+    emit_sync_event(SyncProgressEvent {
+        event_type: "syncStarted".to_string(),
+        book_uuid: None,
+        status: Some("syncing".to_string()),
+        current: 0,
+        total: 100,
+        message: Some("Initializing WebDAV sync...".to_string()),
+    });
+
+    let client = get_or_init_client().await?;
+    
+    // Ensure remote folders
+    let _ = client.mkdir("/AudireReader").await;
+    let _ = client.mkdir("/AudireReader/covers").await;
+    let _ = client.mkdir("/AudireReader/books").await;
+    let _ = client.mkdir("/AudireReader/progress").await;
+    let _ = client.mkdir("/AudireReader/bookmarks").await;
+    let _ = client.mkdir("/AudireReader/highlights").await;
+
+    // Migrate from legacy NovelReader schema if needed
+    if client.file_exists("/NovelReader/sync_data.json").await.unwrap_or(false) 
+        && !client.file_exists("/AudireReader/sync_data.json").await.unwrap_or(false) {
+        if let Ok(old_bytes) = client.download_bytes("/NovelReader/sync_data.json").await {
+            let _ = client.upload_bytes("/AudireReader/sync_data.json", old_bytes).await;
+        }
+    }
+
+    let local_books = crate::api::database::get_all_books()?;
+    let mut local_changed = false;
+
+    // Retry loop for optimistic locking
+    for attempt in 1..=3 {
+        let mut cloud_sync_data = if client.file_exists("/AudireReader/sync_data.json").await.unwrap_or(false) {
+            if let Ok(bytes) = client.download_bytes("/AudireReader/sync_data.json").await {
+                serde_json::from_slice::<SyncDataFile>(&bytes).unwrap_or_else(|_| SyncDataFile {
+                    version: 1,
+                    last_sync_time: Utc::now().to_rfc3339(),
+                    books: vec![],
+                    deleted: vec![],
+                })
+            } else {
+                SyncDataFile {
+                    version: 1,
+                    last_sync_time: Utc::now().to_rfc3339(),
+                    books: vec![],
+                    deleted: vec![],
+                }
+            }
+        } else {
+            SyncDataFile {
+                version: 1,
+                last_sync_time: Utc::now().to_rfc3339(),
+                books: vec![],
+                deleted: vec![],
+            }
+        };
+
+        // Filter out tombstone books (>30 days deleted)
+        let now = Utc::now();
+        cloud_sync_data.deleted.retain(|item| {
+            if let SyncDeletedItem::Detailed { deleted_at, .. } = item {
+                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(deleted_at) {
+                    return (now.naive_utc() - dt.naive_utc()).num_days() < 30;
+                }
+            }
+            true
+        });
+
+        let deleted_uuids: std::collections::HashSet<String> = cloud_sync_data.deleted.iter().map(|d| d.uuid().to_string()).collect();
+
+        // 1. Upload local books not present on cloud
+        let mut cloud_uuids: std::collections::HashSet<String> = cloud_sync_data.books.iter().map(|b| b.uuid.clone()).collect();
+
+        for (idx, local_book) in local_books.iter().enumerate() {
+            if deleted_uuids.contains(&local_book.uuid) {
+                // Book was deleted on cloud, delete locally
+                let _ = crate::api::database::delete_book(local_book.uuid.clone());
+                local_changed = true;
+                continue;
+            }
+
+            if !cloud_uuids.contains(&local_book.uuid) {
+                emit_sync_event(SyncProgressEvent {
+                    event_type: "bookStatus".to_string(),
+                    book_uuid: Some(local_book.uuid.clone()),
+                    status: Some("syncing".to_string()),
+                    current: idx as i32 + 1,
+                    total: local_books.len() as i32,
+                    message: Some(format!("Uploading book: {}", local_book.title)),
+                });
+
+                if export_and_upload_book(local_book.uuid.clone()).await.unwrap_or(false) {
+                    let ext = local_book.cover_path.as_ref().and_then(|p| Path::new(p).extension().and_then(|e| e.to_str()).map(|e| format!(".{}", e)));
+                    cloud_sync_data.books.push(SyncDataBookItem {
+                        uuid: local_book.uuid.clone(),
+                        title: local_book.title.clone(),
+                        author: local_book.author.clone(),
+                        total_chapters: local_book.total_chapters,
+                        date_added: chrono::DateTime::from_timestamp_millis(local_book.date_added).map(|dt| dt.to_rfc3339()).unwrap_or_else(|| Utc::now().to_rfc3339()),
+                        cover_extension: ext,
+                        has_cover: local_book.cover_path.is_some(),
+                    });
+                    cloud_uuids.insert(local_book.uuid.clone());
+                }
+            }
+        }
+
+        // 2. Upload updated sync_data.json
+        cloud_sync_data.last_sync_time = Utc::now().to_rfc3339();
+        let sync_bytes = serde_json::to_vec(&cloud_sync_data).map_err(|e| e.to_string())?;
+
+        if client.upload_bytes("/AudireReader/sync_data.json", sync_bytes).await.unwrap_or(false) {
+            break;
+        } else if attempt == 3 {
+            return Err("Failed to save sync index on WebDAV after 3 attempts".to_string());
+        }
+    }
+
+    // 3. Sync all progress, bookmarks, and highlights
+    for local_book in &local_books {
+        let _ = sync_book_progress(local_book.uuid.clone()).await;
+        let _ = sync_book_bookmarks(local_book.uuid.clone()).await;
+        let _ = sync_book_highlights(local_book.uuid.clone()).await;
+    }
+
+    // Trigger background cover download if doc dir provided
+    if let Some(doc_dir) = documents_dir {
+        let _ = fetch_cloud_books(Some(doc_dir)).await;
+    }
+
+    let _ = crate::api::database::insert_sync_history(SyncHistoryEntry {
+        id: None,
+        timestamp: Utc::now().timestamp_millis(),
+        action: "sync_library".to_string(),
+        status: "success".to_string(),
+        details: format!("Synced {} local books successfully", local_books.len()),
+    });
+
+    emit_sync_event(SyncProgressEvent {
+        event_type: "syncFinished".to_string(),
+        book_uuid: None,
+        status: Some("success".to_string()),
+        current: 100,
+        total: 100,
+        message: Some("Sync completed successfully".to_string()),
+    });
+
+    Ok(SyncResult {
+        success: true,
+        message: "Library and progress synchronized successfully".to_string(),
+        local_changed,
+    })
+}
+
+pub async fn sync_all(documents_dir: Option<String>) -> Result<SyncResult, String> {
+    sync_library(documents_dir).await
+}
+
+pub async fn force_push(progress_only: bool) -> Result<SyncResult, String> {
+    let local_books = crate::api::database::get_all_books()?;
+    let client = get_or_init_client().await?;
+
+    let _ = client.mkdir("/AudireReader").await;
+    let _ = client.mkdir("/AudireReader/covers").await;
+    let _ = client.mkdir("/AudireReader/books").await;
+    let _ = client.mkdir("/AudireReader/progress").await;
+    let _ = client.mkdir("/AudireReader/bookmarks").await;
+    let _ = client.mkdir("/AudireReader/highlights").await;
+
+    if !progress_only {
+        let mut cloud_books = Vec::new();
+        for local_book in &local_books {
+            let _ = export_and_upload_book(local_book.uuid.clone()).await;
+            let ext = local_book.cover_path.as_ref().and_then(|p| Path::new(p).extension().and_then(|e| e.to_str()).map(|e| format!(".{}", e)));
+            cloud_books.push(SyncDataBookItem {
+                uuid: local_book.uuid.clone(),
+                title: local_book.title.clone(),
+                author: local_book.author.clone(),
+                total_chapters: local_book.total_chapters,
+                date_added: chrono::DateTime::from_timestamp_millis(local_book.date_added).map(|dt| dt.to_rfc3339()).unwrap_or_else(|| Utc::now().to_rfc3339()),
+                cover_extension: ext,
+                has_cover: local_book.cover_path.is_some(),
+            });
+        }
+        let sync_data = SyncDataFile {
+            version: 1,
+            last_sync_time: Utc::now().to_rfc3339(),
+            books: cloud_books,
+            deleted: vec![],
+        };
+        let sync_bytes = serde_json::to_vec(&sync_data).map_err(|e| e.to_string())?;
+        client.upload_bytes("/AudireReader/sync_data.json", sync_bytes).await?;
+    }
+
+    for local_book in &local_books {
+        if let Ok(Some(local_prog)) = crate::api::database::get_reading_progress(local_book.uuid.clone()) {
+            let payload = SyncProgressPayload {
+                book_uuid: local_book.uuid.clone(),
+                chapter_index: local_prog.current_chapter_index,
+                paragraph_index: local_prog.current_paragraph_index,
+                character_offset: local_prog.current_character_offset,
+                last_read: local_prog.last_read,
+                device_id: None,
+                device_name: None,
+            };
+            let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+            let remote_path = format!("/AudireReader/progress/{}.json", local_book.uuid);
+            let _ = client.upload_bytes(&remote_path, json_bytes).await;
+        }
+
+        // Upload local bookmarks & highlights
+        if let Ok(bookmarks) = crate::api::database::get_bookmarks(local_book.uuid.clone()) {
+            let payload = BookBookmarksFile {
+                book_uuid: local_book.uuid.clone(),
+                updated_at: Utc::now().timestamp_millis(),
+                bookmarks,
+            };
+            if let Ok(json_bytes) = serde_json::to_vec(&payload) {
+                let _ = client.upload_bytes(&format!("/AudireReader/bookmarks/{}.json", local_book.uuid), json_bytes).await;
+            }
+        }
+
+        if let Ok(highlights) = crate::api::database::get_highlights(local_book.uuid.clone()) {
+            let payload = BookHighlightsFile {
+                book_uuid: local_book.uuid.clone(),
+                updated_at: Utc::now().timestamp_millis(),
+                highlights,
+            };
+            if let Ok(json_bytes) = serde_json::to_vec(&payload) {
+                let _ = client.upload_bytes(&format!("/AudireReader/highlights/{}.json", local_book.uuid), json_bytes).await;
+            }
+        }
+    }
+
+    let _ = crate::api::database::insert_sync_history(SyncHistoryEntry {
+        id: None,
+        timestamp: Utc::now().timestamp_millis(),
+        action: if progress_only { "force_push_progress".to_string() } else { "force_push_all".to_string() },
+        status: "success".to_string(),
+        details: format!("Force pushed {} books to cloud", local_books.len()),
+    });
+
+    Ok(SyncResult {
+        success: true,
+        message: "Force push completed successfully".to_string(),
+        local_changed: false,
+    })
+}
+
+pub async fn force_pull(progress_only: bool, documents_dir: String) -> Result<SyncResult, String> {
+    let client = get_or_init_client().await?;
+
+    if !progress_only {
+        let cloud_books = fetch_cloud_books(Some(documents_dir.clone())).await?;
+        for cb in cloud_books {
+            let _ = download_and_import_book(cb.uuid, documents_dir.clone()).await;
+        }
+    }
+
+    let local_books = crate::api::database::get_all_books()?;
+    for local_book in &local_books {
+        let remote_path = format!("/AudireReader/progress/{}.json", local_book.uuid);
+        if let Ok(bytes) = client.download_bytes(&remote_path).await {
+            if let Ok(cloud_prog) = serde_json::from_slice::<SyncProgressPayload>(&bytes) {
+                let prog = ReadingProgress {
+                    id: None,
+                    book_uuid: local_book.uuid.clone(),
+                    current_chapter_index: cloud_prog.chapter_index,
+                    current_paragraph_index: cloud_prog.paragraph_index,
+                    current_character_offset: cloud_prog.character_offset,
+                    last_read: cloud_prog.last_read,
+                };
+                let _ = crate::api::database::save_reading_progress(prog);
+            }
+        }
+
+        // Pull cloud bookmarks & highlights
+        let remote_bm = format!("/AudireReader/bookmarks/{}.json", local_book.uuid);
+        if let Ok(bytes) = client.download_bytes(&remote_bm).await {
+            if let Ok(bm_file) = serde_json::from_slice::<BookBookmarksFile>(&bytes) {
+                let _ = crate::api::database::replace_all_bookmarks(local_book.uuid.clone(), bm_file.bookmarks);
+            }
+        }
+
+        let remote_hl = format!("/AudireReader/highlights/{}.json", local_book.uuid);
+        if let Ok(bytes) = client.download_bytes(&remote_hl).await {
+            if let Ok(hl_file) = serde_json::from_slice::<BookHighlightsFile>(&bytes) {
+                let _ = crate::api::database::replace_all_highlights(local_book.uuid.clone(), hl_file.highlights);
+            }
+        }
+    }
+
+    let _ = crate::api::database::insert_sync_history(SyncHistoryEntry {
+        id: None,
+        timestamp: Utc::now().timestamp_millis(),
+        action: if progress_only { "force_pull_progress".to_string() } else { "force_pull_all".to_string() },
+        status: "success".to_string(),
+        details: "Force pulled cloud data to local".to_string(),
+    });
+
+    Ok(SyncResult {
+        success: true,
+        message: "Force pull completed successfully".to_string(),
+        local_changed: true,
+    })
+}
+
+pub async fn force_push_book(book_uuid: String) -> Result<SyncResult, String> {
+    let ok = export_and_upload_book(book_uuid.clone()).await?;
+    let _ = sync_book_progress(book_uuid.clone()).await;
+    let _ = sync_book_bookmarks(book_uuid.clone()).await;
+    let _ = sync_book_highlights(book_uuid.clone()).await;
+    Ok(SyncResult {
+        success: ok,
+        message: format!("Pushed book {} to cloud", book_uuid),
+        local_changed: false,
+    })
+}
+
+pub async fn force_pull_book(book_uuid: String, documents_dir: String) -> Result<SyncResult, String> {
+    let _ = download_and_import_book(book_uuid.clone(), documents_dir).await?;
+    let _ = sync_book_progress(book_uuid.clone()).await;
+    let _ = sync_book_bookmarks(book_uuid.clone()).await;
+    let _ = sync_book_highlights(book_uuid.clone()).await;
+    Ok(SyncResult {
+        success: true,
+        message: format!("Pulled book {} from cloud", book_uuid),
+        local_changed: true,
+    })
+}
+
+pub async fn delete_book_from_cloud(book_uuid: String) -> Result<SyncResult, String> {
+    let client = get_or_init_client().await?;
+
+    let remote_book = format!("/AudireReader/books/{}.json.gz", book_uuid);
+    let _ = client.remove(&remote_book).await;
+
+    let remote_prog = format!("/AudireReader/progress/{}.json", book_uuid);
+    let _ = client.remove(&remote_prog).await;
+
+    let remote_bm = format!("/AudireReader/bookmarks/{}.json", book_uuid);
+    let _ = client.remove(&remote_bm).await;
+
+    let remote_hl = format!("/AudireReader/highlights/{}.json", book_uuid);
+    let _ = client.remove(&remote_hl).await;
+
+    let _ = client.remove(&format!("/AudireReader/covers/{}.jpg", book_uuid)).await;
+    let _ = client.remove(&format!("/AudireReader/covers/{}.png", book_uuid)).await;
+    let _ = client.remove(&format!("/AudireReader/covers/{}.jpeg", book_uuid)).await;
+
+    if client.file_exists("/AudireReader/sync_data.json").await.unwrap_or(false) {
+        if let Ok(bytes) = client.download_bytes("/AudireReader/sync_data.json").await {
+            if let Ok(mut sync_data) = serde_json::from_slice::<SyncDataFile>(&bytes) {
+                sync_data.books.retain(|b| b.uuid != book_uuid);
+                sync_data.deleted.push(SyncDeletedItem::Detailed {
+                    uuid: book_uuid.clone(),
+                    deleted_at: Utc::now().to_rfc3339(),
+                });
+                sync_data.last_sync_time = Utc::now().to_rfc3339();
+                if let Ok(new_bytes) = serde_json::to_vec(&sync_data) {
+                    let _ = client.upload_bytes("/AudireReader/sync_data.json", new_bytes).await;
+                }
+            }
+        }
+    }
+
+    Ok(SyncResult {
+        success: true,
+        message: format!("Deleted book {} from cloud", book_uuid),
+        local_changed: false,
+    })
+}
+
+pub async fn upload_single_book(book_uuid: String) -> Result<SyncResult, String> {
+    let ok = export_and_upload_book(book_uuid.clone()).await?;
+    if ok {
+        let _ = sync_library(None).await;
+    }
+    Ok(SyncResult {
+        success: ok,
+        message: format!("Uploaded book {} to cloud", book_uuid),
+        local_changed: false,
+    })
+}
+
+pub async fn download_virtual_book(book_uuid: String, documents_dir: String) -> Result<SyncResult, String> {
+    let book = download_and_import_book(book_uuid.clone(), documents_dir).await?;
+    let _ = sync_book_progress(book.uuid.clone()).await;
+    Ok(SyncResult {
+        success: true,
+        message: format!("Downloaded virtual book {}", book.title),
+        local_changed: true,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_keyring_save_load() {
+        let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).unwrap();
+        let set_res = entry.set_password("secret_pass_123");
+        println!("entry.set_password: {:?}", set_res);
+
+        let get_res = entry.get_password();
+        println!("entry.get_password: {:?}", get_res);
+
+        let loaded = get_webdav_password();
+        println!("get_webdav_password(): {:?}", loaded);
+        assert_eq!(loaded.unwrap(), Some("secret_pass_123".to_string()));
+
+        let _ = delete_webdav_password();
+    }
+}

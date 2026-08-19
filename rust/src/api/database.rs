@@ -1,4 +1,4 @@
-use crate::api::models::{Book, Chapter, Bookmark, Highlight, ReadingProgress, AppSettings, PronunciationRule, BgmTrack, OfflineTtsRecord};
+use crate::api::models::{Book, Chapter, Bookmark, Highlight, ReadingProgress, AppSettings, PronunciationRule, BgmTrack, OfflineTtsRecord, SyncHistoryEntry};
 use once_cell::sync::OnceCell;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -142,6 +142,15 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
             UNIQUE(book_uuid, chapter_index)
         );
         CREATE INDEX IF NOT EXISTS idx_offline_tts_book_uuid ON offline_tts_records(book_uuid);
+
+        CREATE TABLE IF NOT EXISTS sync_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            status TEXT NOT NULL,
+            details TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_sync_history_timestamp ON sync_history(timestamp DESC);
         "
     )?;
 
@@ -162,6 +171,87 @@ pub fn get_all_books() -> Result<Vec<Book>, String> {
     ).map_err(|e| format!("Query error: {}", e))?;
     
     let book_iter = stmt.query_map([], |row| {
+        let tags_str: Option<String> = row.get(8)?;
+        let tags = tags_str
+            .map(|s| s.split("|||").filter(|t| !t.is_empty()).map(|t| t.to_string()).collect())
+            .unwrap_or_default();
+
+        Ok(Book {
+            id: row.get(0)?,
+            uuid: row.get(1)?,
+            title: row.get(2)?,
+            author: row.get(3)?,
+            cover_path: row.get(4)?,
+            total_chapters: row.get(5)?,
+            date_added: row.get(6)?,
+            status: row.get(7)?,
+            tags,
+        })
+    }).map_err(|e| format!("Query map error: {}", e))?;
+
+    let mut books = Vec::new();
+    for book in book_iter {
+        books.push(book.map_err(|e| format!("Row error: {}", e))?);
+    }
+    
+    Ok(books)
+}
+
+pub fn get_books_filtered(
+    tag: Option<String>,
+    status: Option<String>,
+    sort_by: Option<String>,
+) -> Result<Vec<Book>, String> {
+    let conn = get_conn()?;
+    
+    let mut where_clauses = Vec::new();
+    let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+    if let Some(ref t) = tag {
+        let trimmed = t.trim();
+        if !trimmed.is_empty() && trimmed != "All" {
+            where_clauses.push(format!("b.id IN (SELECT book_id FROM book_tags WHERE tag = ?{})", params_vec.len() + 1));
+            params_vec.push(Box::new(trimmed.to_string()));
+        }
+    }
+
+    if let Some(ref s) = status {
+        let trimmed = s.trim();
+        if !trimmed.is_empty() && trimmed != "All" {
+            where_clauses.push(format!("LOWER(CASE WHEN TRIM(b.status) = '' THEN 'unread' ELSE b.status END) = LOWER(?{})", params_vec.len() + 1));
+            params_vec.push(Box::new(trimmed.to_string()));
+        }
+    }
+
+    let where_str = if where_clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", where_clauses.join(" AND "))
+    };
+
+    let order_clause = match sort_by.as_deref() {
+        Some("title") => "ORDER BY b.title COLLATE NOCASE ASC",
+        Some("author") => "ORDER BY b.author COLLATE NOCASE ASC",
+        Some("recentlyRead") => "ORDER BY COALESCE(rp.last_read, 0) DESC, b.date_added DESC",
+        _ => "ORDER BY b.date_added DESC",
+    };
+
+    let sql = format!(
+        "SELECT b.id, b.uuid, b.title, b.author, b.cover_path, b.total_chapters, b.date_added, b.status,
+                GROUP_CONCAT(t.tag, '|||') as tags
+         FROM books b
+         LEFT JOIN book_tags t ON b.id = t.book_id
+         LEFT JOIN reading_progress rp ON b.uuid = rp.book_uuid
+         {}
+         GROUP BY b.id
+         {}",
+        where_str, order_clause
+    );
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("Query error: {}", e))?;
+    let params_slice: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+
+    let book_iter = stmt.query_map(params_slice.as_slice(), |row| {
         let tags_str: Option<String> = row.get(8)?;
         let tags = tags_str
             .map(|s| s.split("|||").filter(|t| !t.is_empty()).map(|t| t.to_string()).collect())
@@ -261,6 +351,33 @@ pub fn delete_book(uuid: String) -> Result<(), String> {
     }
 
     tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_book_cascade(uuid: String, base_dir: Option<String>) -> Result<(), String> {
+    let book = get_book_by_uuid(uuid.clone())?;
+    
+    // Delete database records
+    let _ = delete_book(uuid.clone());
+
+    // Delete cover file
+    if let Some(b) = book {
+        if let Some(ref cover_path) = b.cover_path {
+            let p = Path::new(cover_path);
+            if p.exists() {
+                let _ = std::fs::remove_file(p);
+            }
+        }
+    }
+
+    // Delete offline TTS audio directory
+    if let Some(dir) = base_dir {
+        let tts_dir = Path::new(&dir).join("tts_offline").join(&uuid);
+        if tts_dir.exists() {
+            let _ = std::fs::remove_dir_all(tts_dir);
+        }
+    }
+
     Ok(())
 }
 
@@ -587,6 +704,30 @@ pub fn delete_bookmarks_for_book(book_uuid: String) -> Result<(), String> {
     Ok(())
 }
 
+pub fn replace_all_bookmarks(book_uuid: String, bookmarks: Vec<Bookmark>) -> Result<(), String> {
+    let mut conn = get_conn()?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM bookmarks WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+
+    for b in bookmarks {
+        tx.execute(
+            "INSERT INTO bookmarks (book_uuid, chapter_index, paragraph_index, content_snippet, date_added)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![
+                b.book_uuid,
+                b.chapter_index,
+                b.paragraph_index,
+                b.content_snippet,
+                b.date_added
+            ],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 // --- Highlight CRUD ---
 
 pub fn get_highlights(book_uuid: String) -> Result<Vec<Highlight>, String> {
@@ -675,6 +816,34 @@ pub fn delete_highlights_for_book(book_uuid: String) -> Result<(), String> {
     let conn = get_conn()?;
     conn.execute("DELETE FROM highlights WHERE book_uuid = ?1", params![book_uuid])
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn replace_all_highlights(book_uuid: String, highlights: Vec<Highlight>) -> Result<(), String> {
+    let mut conn = get_conn()?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM highlights WHERE book_uuid = ?1", params![book_uuid])
+        .map_err(|e| e.to_string())?;
+
+    for h in highlights {
+        tx.execute(
+            "INSERT INTO highlights (book_uuid, chapter_index, paragraph_index, start_offset, end_offset, text, color_hex, note, date_added)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                h.book_uuid,
+                h.chapter_index,
+                h.paragraph_index,
+                h.start_offset,
+                h.end_offset,
+                h.text,
+                h.color_hex,
+                h.note,
+                h.date_added
+            ],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -863,6 +1032,47 @@ pub fn delete_offline_tts_records_for_book(book_uuid: String) -> Result<(), Stri
     let conn = get_conn()?;
     conn.execute("DELETE FROM offline_tts_records WHERE book_uuid = ?1", params![book_uuid])
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+// --- Sync History CRUD ---
+
+pub fn insert_sync_history(entry: SyncHistoryEntry) -> Result<i64, String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO sync_history (timestamp, action, status, details) VALUES (?1, ?2, ?3, ?4)",
+        params![entry.timestamp, entry.action, entry.status, entry.details],
+    ).map_err(|e| e.to_string())?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_sync_history(limit: Option<i64>) -> Result<Vec<SyncHistoryEntry>, String> {
+    let conn = get_conn()?;
+    let limit_val = limit.unwrap_or(100);
+    let mut stmt = conn.prepare(
+        "SELECT id, timestamp, action, status, details FROM sync_history ORDER BY timestamp DESC LIMIT ?1"
+    ).map_err(|e| e.to_string())?;
+
+    let iter = stmt.query_map(params![limit_val], |row| {
+        Ok(SyncHistoryEntry {
+            id: row.get(0)?,
+            timestamp: row.get(1)?,
+            action: row.get(2)?,
+            status: row.get(3)?,
+            details: row.get(4)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut list = Vec::new();
+    for item in iter {
+        list.push(item.map_err(|e| e.to_string())?);
+    }
+    Ok(list)
+}
+
+pub fn clear_sync_history() -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute("DELETE FROM sync_history", []).map_err(|e| e.to_string())?;
     Ok(())
 }
 

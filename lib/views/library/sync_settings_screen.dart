@@ -6,8 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/utils/path_helper.dart';
-import '../../services/webdav_service.dart';
-import '../../services/sync_service.dart' hide print;
+import '../../services/sync_service.dart';
 import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
 import '../../core/global_hotkey_manager.dart';
@@ -25,7 +24,7 @@ import 'tv_sync_screen.dart';
 import 'mobile_sync_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
 
 class SyncSettingsScreen extends StatefulWidget {
   const SyncSettingsScreen({super.key});
@@ -97,13 +96,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    const storage = FlutterSecureStorage();
-    final webDavPassword = await storage.read(key: 'webdav_password') ?? '';
-    final autoSyncStr = await storage.read(key: 'webdav_auto_sync') ?? 'true';
+    final webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
 
     setState(() {
       _webDavEnabled = settings.webDavEnabled;
-      _autoSyncEnabled = autoSyncStr == 'true';
+      _autoSyncEnabled = settings.webDavAutoSync;
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
       _autoCheckUpdate = settings.autoCheckUpdate;
       _appLocaleCode =
@@ -713,10 +710,10 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     );
     await db.saveSettings(updated);
 
-    const storage = FlutterSecureStorage();
-    await storage.write(
-      key: 'webdav_password',
-      value: _passwordController.text,
+    await rust_sync.saveWebdavConfig(
+      url: _urlController.text.trim(),
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
     );
   }
 
@@ -817,15 +814,11 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _testResult = null;
     });
 
-    // Tạo WebDAV client tạm thời để kiểm thử
-    final tempService = WebDavService.getInstance();
-    await tempService.init(
-      _urlController.text.trim(),
-      _usernameController.text.trim(),
-      _passwordController.text,
+    final success = await rust_sync.testWebdavConnection(
+      url: _urlController.text.trim(),
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
     );
-
-    final success = await tempService.testConnection();
 
     if (mounted) {
       setState(() {
@@ -1182,11 +1175,9 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                             setState(() {
                               _autoSyncEnabled = val;
                             });
-                            const storage = FlutterSecureStorage();
-                            await storage.write(
-                              key: 'webdav_auto_sync',
-                              value: val ? 'true' : 'false',
-                            );
+                            final db = await DatabaseHelper.getInstance();
+                            final settings = await db.getSettings();
+                            await db.saveSettings(settings.copyWith(webDavAutoSync: val));
                           },
                           onTestConnection: _testConnection,
                           onSyncNow: _triggerManualSync,

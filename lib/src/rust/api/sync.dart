@@ -7,63 +7,44 @@ import '../frb_generated.dart';
 import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `headers`, `parse_webdav_xml`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SyncBookPayload`, `SyncChapterPayload`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+// These functions are ignored because they are not marked as `pub`: `emit_sync_event`, `headers`, `parse_webdav_xml`, `record_book_progress_sync`, `uuid`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SyncBookPayload`, `SyncChapterPayload`, `SyncDataBookItem`, `SyncDataFile`, `SyncDeletedItem`, `SyncProgressPayload`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
-Future<void> webdavInit({
+Future<void> saveWebdavPassword({required String password}) =>
+    RustLib.instance.api.crateApiSyncSaveWebdavPassword(password: password);
+
+Future<String?> getWebdavPassword() =>
+    RustLib.instance.api.crateApiSyncGetWebdavPassword();
+
+Future<void> deleteWebdavPassword() =>
+    RustLib.instance.api.crateApiSyncDeleteWebdavPassword();
+
+Stream<SyncProgressEvent> subscribeSyncEvents() =>
+    RustLib.instance.api.crateApiSyncSubscribeSyncEvents();
+
+Future<void> saveWebdavConfig({
   required String url,
   required String username,
-  required String password,
-}) => RustLib.instance.api.crateApiSyncWebdavInit(
+  String? password,
+}) => RustLib.instance.api.crateApiSyncSaveWebdavConfig(
   url: url,
   username: username,
   password: password,
 );
 
-Future<bool> webdavTestConnection() =>
-    RustLib.instance.api.crateApiSyncWebdavTestConnection();
+Future<WebDavClient> getOrInitClient() =>
+    RustLib.instance.api.crateApiSyncGetOrInitClient();
 
-Future<bool> webdavMkdir({required String remotePath}) =>
-    RustLib.instance.api.crateApiSyncWebdavMkdir(remotePath: remotePath);
-
-Future<bool> webdavUploadBytes({
-  required String remotePath,
-  required List<int> bytes,
-}) => RustLib.instance.api.crateApiSyncWebdavUploadBytes(
-  remotePath: remotePath,
-  bytes: bytes,
+Future<bool> testWebdavConnection({
+  String? url,
+  String? username,
+  String? password,
+}) => RustLib.instance.api.crateApiSyncTestWebdavConnection(
+  url: url,
+  username: username,
+  password: password,
 );
-
-Future<bool> webdavUploadFile({
-  required String remotePath,
-  required String localPath,
-}) => RustLib.instance.api.crateApiSyncWebdavUploadFile(
-  remotePath: remotePath,
-  localPath: localPath,
-);
-
-Future<Uint8List> webdavDownloadBytes({required String remotePath}) => RustLib
-    .instance
-    .api
-    .crateApiSyncWebdavDownloadBytes(remotePath: remotePath);
-
-Future<bool> webdavDownloadFile({
-  required String remotePath,
-  required String localPath,
-}) => RustLib.instance.api.crateApiSyncWebdavDownloadFile(
-  remotePath: remotePath,
-  localPath: localPath,
-);
-
-Future<List<WebDavFile>> webdavListFiles({required String remotePath}) =>
-    RustLib.instance.api.crateApiSyncWebdavListFiles(remotePath: remotePath);
-
-Future<bool> webdavRemove({required String remotePath}) =>
-    RustLib.instance.api.crateApiSyncWebdavRemove(remotePath: remotePath);
-
-Future<bool> webdavFileExists({required String remotePath}) =>
-    RustLib.instance.api.crateApiSyncWebdavFileExists(remotePath: remotePath);
 
 Future<bool> exportAndUploadBook({required String bookUuid}) =>
     RustLib.instance.api.crateApiSyncExportAndUploadBook(bookUuid: bookUuid);
@@ -72,6 +53,62 @@ Future<Book> downloadAndImportBook({
   required String bookUuid,
   required String documentsDir,
 }) => RustLib.instance.api.crateApiSyncDownloadAndImportBook(
+  bookUuid: bookUuid,
+  documentsDir: documentsDir,
+);
+
+Future<List<CloudBook>> fetchCloudBooks({String? documentsDir}) => RustLib
+    .instance
+    .api
+    .crateApiSyncFetchCloudBooks(documentsDir: documentsDir);
+
+Future<ProgressSyncResult> syncBookProgress({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncSyncBookProgress(bookUuid: bookUuid);
+
+Future<bool> syncBookBookmarks({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncSyncBookBookmarks(bookUuid: bookUuid);
+
+Future<bool> syncBookHighlights({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncSyncBookHighlights(bookUuid: bookUuid);
+
+Future<SyncResult> syncLibrary({String? documentsDir}) =>
+    RustLib.instance.api.crateApiSyncSyncLibrary(documentsDir: documentsDir);
+
+Future<SyncResult> syncAll({String? documentsDir}) =>
+    RustLib.instance.api.crateApiSyncSyncAll(documentsDir: documentsDir);
+
+Future<SyncResult> forcePush({required bool progressOnly}) =>
+    RustLib.instance.api.crateApiSyncForcePush(progressOnly: progressOnly);
+
+Future<SyncResult> forcePull({
+  required bool progressOnly,
+  required String documentsDir,
+}) => RustLib.instance.api.crateApiSyncForcePull(
+  progressOnly: progressOnly,
+  documentsDir: documentsDir,
+);
+
+Future<SyncResult> forcePushBook({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncForcePushBook(bookUuid: bookUuid);
+
+Future<SyncResult> forcePullBook({
+  required String bookUuid,
+  required String documentsDir,
+}) => RustLib.instance.api.crateApiSyncForcePullBook(
+  bookUuid: bookUuid,
+  documentsDir: documentsDir,
+);
+
+Future<SyncResult> deleteBookFromCloud({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncDeleteBookFromCloud(bookUuid: bookUuid);
+
+Future<SyncResult> uploadSingleBook({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncUploadSingleBook(bookUuid: bookUuid);
+
+Future<SyncResult> downloadVirtualBook({
+  required String bookUuid,
+  required String documentsDir,
+}) => RustLib.instance.api.crateApiSyncDownloadVirtualBook(
   bookUuid: bookUuid,
   documentsDir: documentsDir,
 );

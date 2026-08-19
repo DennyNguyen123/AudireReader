@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/sync_service.dart';
@@ -40,9 +41,23 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
     }
   }
 
-  String _formatTimestamp(BuildContext context, String timestampStr) {
+  String _formatTimestamp(BuildContext context, dynamic timestampVal) {
     try {
-      final dt = DateTime.parse(timestampStr).toLocal();
+      DateTime dt;
+      if (timestampVal is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(timestampVal).toLocal();
+      } else if (timestampVal is BigInt) {
+        dt = DateTime.fromMillisecondsSinceEpoch(timestampVal.toInt()).toLocal();
+      } else if (timestampVal is String) {
+        final parsed = int.tryParse(timestampVal);
+        if (parsed != null) {
+          dt = DateTime.fromMillisecondsSinceEpoch(parsed).toLocal();
+        } else {
+          dt = DateTime.parse(timestampVal).toLocal();
+        }
+      } else {
+        return '';
+      }
       final now = DateTime.now();
       final diff = now.difference(dt);
 
@@ -60,7 +75,7 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
       }
       return DateFormat('dd/MM/yyyy HH:mm').format(dt);
     } catch (_) {
-      return timestampStr;
+      return timestampVal?.toString() ?? '';
     }
   }
 
@@ -114,24 +129,41 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = _history[index];
-                final action = item['action'] as String? ?? 'push';
-                final isPush = action == 'push';
+                final action = item['action']?.toString() ?? 'push';
+                final isPush = action == 'push' || action == 'upload' || action == 'sync_library' || action == 'force_push';
+                final timestamp = item['timestamp'];
 
-                final timestamp = item['timestamp'] as String? ?? '';
-                final deviceName =
-                    item['deviceName'] as String? ?? 'Unknown Device';
-                final bookTitle =
-                    item['bookTitle'] as String? ?? 'Unknown Book';
-                final chapterIndex =
-                    (item['chapterIndex'] as num?)?.toInt() ?? 0;
-                final paragraphIndex =
-                    (item['paragraphIndex'] as num?)?.toInt() ?? 0;
+                String? bookTitle = item['bookTitle']?.toString();
+                String? deviceName = item['deviceName']?.toString();
+                int chapterIndex = (item['chapterIndex'] as num?)?.toInt() ?? 0;
+                int paragraphIndex = (item['paragraphIndex'] as num?)?.toInt() ?? 0;
+                bool isBookSync = false;
+
+                final detailsStr = item['details']?.toString();
+                if (detailsStr != null && detailsStr.isNotEmpty) {
+                  try {
+                    final parsed = jsonDecode(detailsStr) as Map<String, dynamic>;
+                    if (parsed.containsKey('bookTitle')) {
+                      bookTitle = parsed['bookTitle']?.toString();
+                      isBookSync = true;
+                    }
+                    if (parsed.containsKey('deviceName')) deviceName = parsed['deviceName']?.toString();
+                    if (parsed.containsKey('chapterIndex')) chapterIndex = (parsed['chapterIndex'] as num?)?.toInt() ?? 0;
+                    if (parsed.containsKey('paragraphIndex')) paragraphIndex = (parsed['paragraphIndex'] as num?)?.toInt() ?? 0;
+                  } catch (_) {
+                    bookTitle = detailsStr;
+                  }
+                }
+
+                bookTitle ??= (isPush
+                    ? (isVi ? 'Đồng bộ lên Cloud' : 'Sync to Cloud')
+                    : (isVi ? 'Đồng bộ từ Cloud' : 'Sync from Cloud'));
 
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: isPush
-                        ? Colors.green.withOpacity(0.15)
-                        : Colors.orange.withOpacity(0.15),
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.orange.withValues(alpha: 0.15),
                     child: Icon(
                       isPush
                           ? Icons.cloud_upload_rounded
@@ -151,25 +183,35 @@ class _SyncHistoryScreenState extends State<SyncHistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          isVi
-                              ? 'Thiết bị: $deviceName'
-                              : 'Device: $deviceName',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.white70 : Colors.black87,
+                        if (deviceName != null && deviceName.isNotEmpty)
+                          Text(
+                            isVi
+                                ? 'Thiết bị: $deviceName'
+                                : 'Device: $deviceName',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
                           ),
-                        ),
                         const SizedBox(height: 2),
-                        Text(
-                          isVi
-                              ? 'Tiến trình: Chương ${chapterIndex + 1}, Đoạn ${paragraphIndex + 1}'
-                              : 'Progress: Ch ${chapterIndex + 1}, Paragraph ${paragraphIndex + 1}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.white54 : Colors.black54,
+                        if (isBookSync)
+                          Text(
+                            isVi
+                                ? 'Tiến trình: Chương ${chapterIndex + 1}, Đoạn ${paragraphIndex + 1}'
+                                : 'Progress: Ch ${chapterIndex + 1}, Paragraph ${paragraphIndex + 1}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
+                          )
+                        else
+                          Text(
+                            isVi ? 'Đồng bộ thư viện sách' : 'Full Library Sync',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

@@ -8,7 +8,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'models.freezed.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
+// These functions are ignored because they are not marked as `pub`: `default_grid`, `default_true`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `BookBookmarksFile`, `BookHighlightsFile`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
 @freezed
 sealed class AppSettings with _$AppSettings {
@@ -28,12 +30,14 @@ sealed class AppSettings with _$AppSettings {
     required String appLocale,
     required double lineHeight,
     required double paragraphSpacing,
+    required double paragraphIndent,
     required String textAlignment,
     required double sideMargin,
     String? customBackgroundColor,
     String? customTextColor,
     String? primaryColorHex,
     required bool webDavEnabled,
+    required bool webDavAutoSync,
     required String webDavUrl,
     required String webDavUsername,
     PlatformInt64? webDavLastSync,
@@ -72,6 +76,9 @@ sealed class AppSettings with _$AppSettings {
     required bool developerMode,
     required bool enableDebugLogs,
     required bool enableWebDavDebug,
+    required bool audioPanelCollapsed,
+    required String libraryViewMode,
+    required List<String> searchHistory,
   }) = _AppSettings;
 }
 
@@ -125,6 +132,19 @@ sealed class Chapter with _$Chapter {
 }
 
 @freezed
+sealed class CloudBook with _$CloudBook {
+  const factory CloudBook({
+    required String uuid,
+    required String title,
+    required String author,
+    required int totalChapters,
+    String? coverExtension,
+    required bool hasCover,
+    required String dateAdded,
+  }) = _CloudBook;
+}
+
+@freezed
 sealed class Highlight with _$Highlight {
   const factory Highlight({
     PlatformInt64? id,
@@ -158,6 +178,18 @@ sealed class OfflineTtsRecord with _$OfflineTtsRecord {
 }
 
 @freezed
+sealed class ProgressSyncResult with _$ProgressSyncResult {
+  const factory ProgressSyncResult({
+    required String status,
+    int? cloudChapterIndex,
+    int? cloudParagraphIndex,
+    int? cloudCharacterOffset,
+    PlatformInt64? cloudLastRead,
+    String? message,
+  }) = _ProgressSyncResult;
+}
+
+@freezed
 sealed class PronunciationRule with _$PronunciationRule {
   const factory PronunciationRule({
     PlatformInt64? id,
@@ -178,4 +210,36 @@ sealed class ReadingProgress with _$ReadingProgress {
     required int currentCharacterOffset,
     required PlatformInt64 lastRead,
   }) = _ReadingProgress;
+}
+
+@freezed
+sealed class SyncHistoryEntry with _$SyncHistoryEntry {
+  const factory SyncHistoryEntry({
+    PlatformInt64? id,
+    required PlatformInt64 timestamp,
+    required String action,
+    required String status,
+    required String details,
+  }) = _SyncHistoryEntry;
+}
+
+@freezed
+sealed class SyncProgressEvent with _$SyncProgressEvent {
+  const factory SyncProgressEvent({
+    required String eventType,
+    String? bookUuid,
+    String? status,
+    required int current,
+    required int total,
+    String? message,
+  }) = _SyncProgressEvent;
+}
+
+@freezed
+sealed class SyncResult with _$SyncResult {
+  const factory SyncResult({
+    required bool success,
+    required String message,
+    required bool localChanged,
+  }) = _SyncResult;
 }

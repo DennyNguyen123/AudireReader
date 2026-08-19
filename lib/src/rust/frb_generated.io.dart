@@ -30,6 +30,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClientPtr;
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
   WebDavClient
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     dynamic raw,
@@ -46,6 +49,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     dynamic raw,
   );
+
+  @protected
+  RustStreamSink<SyncProgressEvent>
+  dco_decode_StreamSink_sync_progress_event_Sse(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -102,10 +109,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ReadingProgress dco_decode_box_autoadd_reading_progress(dynamic raw);
 
   @protected
+  SyncHistoryEntry dco_decode_box_autoadd_sync_history_entry(dynamic raw);
+
+  @protected
   Chapter dco_decode_chapter(dynamic raw);
 
   @protected
   ChapterStorageSize dco_decode_chapter_storage_size(dynamic raw);
+
+  @protected
+  CloudBook dco_decode_cloud_book(dynamic raw);
 
   @protected
   DownloadStatusInfo dco_decode_download_status_info(dynamic raw);
@@ -147,6 +160,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ChapterStorageSize> dco_decode_list_chapter_storage_size(dynamic raw);
 
   @protected
+  List<CloudBook> dco_decode_list_cloud_book(dynamic raw);
+
+  @protected
   List<EdgeVoice> dco_decode_list_edge_voice(dynamic raw);
 
   @protected
@@ -183,6 +199,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<SearchResultItem> dco_decode_list_search_result_item(dynamic raw);
 
   @protected
+  List<SyncHistoryEntry> dco_decode_list_sync_history_entry(dynamic raw);
+
+  @protected
   List<WebDavFile> dco_decode_list_web_dav_file(dynamic raw);
 
   @protected
@@ -216,6 +235,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ParsedBookData dco_decode_parsed_book_data(dynamic raw);
 
   @protected
+  ProgressSyncResult dco_decode_progress_sync_result(dynamic raw);
+
+  @protected
   PronunciationRule dco_decode_pronunciation_rule(dynamic raw);
 
   @protected
@@ -223,6 +245,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SearchResultItem dco_decode_search_result_item(dynamic raw);
+
+  @protected
+  SyncHistoryEntry dco_decode_sync_history_entry(dynamic raw);
+
+  @protected
+  SyncProgressEvent dco_decode_sync_progress_event(dynamic raw);
+
+  @protected
+  SyncResult dco_decode_sync_result(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -243,6 +274,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WebDavFile dco_decode_web_dav_file(dynamic raw);
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
   WebDavClient
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     SseDeserializer deserializer,
@@ -259,6 +293,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     SseDeserializer deserializer,
   );
+
+  @protected
+  RustStreamSink<SyncProgressEvent>
+  sse_decode_StreamSink_sync_progress_event_Sse(SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -321,12 +359,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SyncHistoryEntry sse_decode_box_autoadd_sync_history_entry(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Chapter sse_decode_chapter(SseDeserializer deserializer);
 
   @protected
   ChapterStorageSize sse_decode_chapter_storage_size(
     SseDeserializer deserializer,
   );
+
+  @protected
+  CloudBook sse_decode_cloud_book(SseDeserializer deserializer);
 
   @protected
   DownloadStatusInfo sse_decode_download_status_info(
@@ -370,6 +416,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ChapterStorageSize> sse_decode_list_chapter_storage_size(
     SseDeserializer deserializer,
   );
+
+  @protected
+  List<CloudBook> sse_decode_list_cloud_book(SseDeserializer deserializer);
 
   @protected
   List<EdgeVoice> sse_decode_list_edge_voice(SseDeserializer deserializer);
@@ -416,6 +465,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<SyncHistoryEntry> sse_decode_list_sync_history_entry(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WebDavFile> sse_decode_list_web_dav_file(SseDeserializer deserializer);
 
   @protected
@@ -455,6 +509,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ParsedBookData sse_decode_parsed_book_data(SseDeserializer deserializer);
 
   @protected
+  ProgressSyncResult sse_decode_progress_sync_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   PronunciationRule sse_decode_pronunciation_rule(SseDeserializer deserializer);
 
   @protected
@@ -462,6 +521,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SearchResultItem sse_decode_search_result_item(SseDeserializer deserializer);
+
+  @protected
+  SyncHistoryEntry sse_decode_sync_history_entry(SseDeserializer deserializer);
+
+  @protected
+  SyncProgressEvent sse_decode_sync_progress_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SyncResult sse_decode_sync_result(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -482,6 +552,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WebDavFile sse_decode_web_dav_file(SseDeserializer deserializer);
 
   @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     WebDavClient self,
@@ -499,6 +575,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWebDavClient(
     WebDavClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_sync_progress_event_Sse(
+    RustStreamSink<SyncProgressEvent> self,
     SseSerializer serializer,
   );
 
@@ -581,6 +663,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_sync_history_entry(
+    SyncHistoryEntry self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_chapter(Chapter self, SseSerializer serializer);
 
   @protected
@@ -588,6 +676,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ChapterStorageSize self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_cloud_book(CloudBook self, SseSerializer serializer);
 
   @protected
   void sse_encode_download_status_info(
@@ -631,6 +722,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_chapter_storage_size(
     List<ChapterStorageSize> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_cloud_book(
+    List<CloudBook> self,
     SseSerializer serializer,
   );
 
@@ -704,6 +801,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_sync_history_entry(
+    List<SyncHistoryEntry> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_web_dav_file(
     List<WebDavFile> self,
     SseSerializer serializer,
@@ -761,6 +864,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_progress_sync_result(
+    ProgressSyncResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_pronunciation_rule(
     PronunciationRule self,
     SseSerializer serializer,
@@ -777,6 +886,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     SearchResultItem self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_sync_history_entry(
+    SyncHistoryEntry self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_sync_progress_event(
+    SyncProgressEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_sync_result(SyncResult self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);

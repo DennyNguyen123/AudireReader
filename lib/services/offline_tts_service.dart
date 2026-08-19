@@ -76,14 +76,12 @@ class OfflineTtsService extends ChangeNotifier {
     int chapterIndex,
   ) async {
     try {
-      final db = await DatabaseHelper.getInstance();
-      await db.deleteOfflineTtsRecord(bookUuid, chapterIndex);
-
-      final dir = await getOfflineChapterDir(bookUuid, chapterIndex);
-      if (dir.existsSync()) {
-        await dir.delete(recursive: true);
-      }
-
+      final appDir = await PathHelper.getAppDirectory();
+      await rust_downloader.deleteOfflineTtsChapter(
+        baseDir: appDir.path,
+        bookUuid: bookUuid,
+        chapterIndex: chapterIndex,
+      );
       notifyListeners();
     } catch (e) {
       debugPrint(
@@ -98,13 +96,13 @@ class OfflineTtsService extends ChangeNotifier {
     List<int> chapterIndices,
   ) async {
     try {
-      final db = await DatabaseHelper.getInstance();
+      final appDir = await PathHelper.getAppDirectory();
       for (final chIdx in chapterIndices) {
-        await db.deleteOfflineTtsRecord(bookUuid, chIdx);
-        final dir = await getOfflineChapterDir(bookUuid, chIdx);
-        if (dir.existsSync()) {
-          await dir.delete(recursive: true);
-        }
+        await rust_downloader.deleteOfflineTtsChapter(
+          baseDir: appDir.path,
+          bookUuid: bookUuid,
+          chapterIndex: chIdx,
+        );
       }
       notifyListeners();
     } catch (e) {
@@ -117,15 +115,11 @@ class OfflineTtsService extends ChangeNotifier {
   /// Delete offline TTS audio and records for an entire book
   Future<void> deleteOfflineTtsForBook(String bookUuid) async {
     try {
-      final db = await DatabaseHelper.getInstance();
-      await db.deleteOfflineTtsRecordsForBook(bookUuid);
-
       final appDir = await PathHelper.getAppDirectory();
-      final dir = Directory(p.join(appDir.path, 'tts_offline', bookUuid));
-      if (dir.existsSync()) {
-        await dir.delete(recursive: true);
-      }
-
+      await rust_downloader.deleteOfflineTtsBook(
+        baseDir: appDir.path,
+        bookUuid: bookUuid,
+      );
       _currentBookUuid = null;
       notifyListeners();
     } catch (e) {
@@ -138,13 +132,12 @@ class OfflineTtsService extends ChangeNotifier {
   /// Check if a chapter is downloaded (has valid wav audio files)
   Future<bool> isChapterDownloaded(String bookUuid, int chapterIndex) async {
     try {
-      final dir = await getOfflineChapterDir(bookUuid, chapterIndex);
-      if (!dir.existsSync()) return false;
-
-      final audioFiles = dir.listSync().whereType<File>().where(
-        (f) => f.path.endsWith('.wav') || f.path.endsWith('.mp3'),
+      final appDir = await PathHelper.getAppDirectory();
+      return rust_downloader.isChapterOfflineReady(
+        baseDir: appDir.path,
+        bookUuid: bookUuid,
+        chapterIndex: chapterIndex,
       );
-      return audioFiles.isNotEmpty;
     } catch (e) {
       return false;
     }

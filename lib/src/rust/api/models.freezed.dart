@@ -32,12 +32,14 @@ mixin _$AppSettings {
   String get appLocale => throw _privateConstructorUsedError;
   double get lineHeight => throw _privateConstructorUsedError;
   double get paragraphSpacing => throw _privateConstructorUsedError;
+  double get paragraphIndent => throw _privateConstructorUsedError;
   String get textAlignment => throw _privateConstructorUsedError;
   double get sideMargin => throw _privateConstructorUsedError;
   String? get customBackgroundColor => throw _privateConstructorUsedError;
   String? get customTextColor => throw _privateConstructorUsedError;
   String? get primaryColorHex => throw _privateConstructorUsedError;
   bool get webDavEnabled => throw _privateConstructorUsedError;
+  bool get webDavAutoSync => throw _privateConstructorUsedError;
   String get webDavUrl => throw _privateConstructorUsedError;
   String get webDavUsername => throw _privateConstructorUsedError;
   int? get webDavLastSync => throw _privateConstructorUsedError;
@@ -76,6 +78,9 @@ mixin _$AppSettings {
   bool get developerMode => throw _privateConstructorUsedError;
   bool get enableDebugLogs => throw _privateConstructorUsedError;
   bool get enableWebDavDebug => throw _privateConstructorUsedError;
+  bool get audioPanelCollapsed => throw _privateConstructorUsedError;
+  String get libraryViewMode => throw _privateConstructorUsedError;
+  List<String> get searchHistory => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppSettingsCopyWith<AppSettings> get copyWith =>
@@ -105,12 +110,14 @@ abstract class $AppSettingsCopyWith<$Res> {
     String appLocale,
     double lineHeight,
     double paragraphSpacing,
+    double paragraphIndent,
     String textAlignment,
     double sideMargin,
     String? customBackgroundColor,
     String? customTextColor,
     String? primaryColorHex,
     bool webDavEnabled,
+    bool webDavAutoSync,
     String webDavUrl,
     String webDavUsername,
     int? webDavLastSync,
@@ -149,6 +156,9 @@ abstract class $AppSettingsCopyWith<$Res> {
     bool developerMode,
     bool enableDebugLogs,
     bool enableWebDavDebug,
+    bool audioPanelCollapsed,
+    String libraryViewMode,
+    List<String> searchHistory,
   });
 }
 
@@ -180,12 +190,14 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? appLocale = null,
     Object? lineHeight = null,
     Object? paragraphSpacing = null,
+    Object? paragraphIndent = null,
     Object? textAlignment = null,
     Object? sideMargin = null,
     Object? customBackgroundColor = freezed,
     Object? customTextColor = freezed,
     Object? primaryColorHex = freezed,
     Object? webDavEnabled = null,
+    Object? webDavAutoSync = null,
     Object? webDavUrl = null,
     Object? webDavUsername = null,
     Object? webDavLastSync = freezed,
@@ -224,6 +236,9 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? developerMode = null,
     Object? enableDebugLogs = null,
     Object? enableWebDavDebug = null,
+    Object? audioPanelCollapsed = null,
+    Object? libraryViewMode = null,
+    Object? searchHistory = null,
   }) {
     return _then(
       _value.copyWith(
@@ -287,6 +302,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
                 ? _value.paragraphSpacing
                 : paragraphSpacing // ignore: cast_nullable_to_non_nullable
                       as double,
+            paragraphIndent: null == paragraphIndent
+                ? _value.paragraphIndent
+                : paragraphIndent // ignore: cast_nullable_to_non_nullable
+                      as double,
             textAlignment: null == textAlignment
                 ? _value.textAlignment
                 : textAlignment // ignore: cast_nullable_to_non_nullable
@@ -310,6 +329,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
             webDavEnabled: null == webDavEnabled
                 ? _value.webDavEnabled
                 : webDavEnabled // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            webDavAutoSync: null == webDavAutoSync
+                ? _value.webDavAutoSync
+                : webDavAutoSync // ignore: cast_nullable_to_non_nullable
                       as bool,
             webDavUrl: null == webDavUrl
                 ? _value.webDavUrl
@@ -463,6 +486,18 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
                 ? _value.enableWebDavDebug
                 : enableWebDavDebug // ignore: cast_nullable_to_non_nullable
                       as bool,
+            audioPanelCollapsed: null == audioPanelCollapsed
+                ? _value.audioPanelCollapsed
+                : audioPanelCollapsed // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            libraryViewMode: null == libraryViewMode
+                ? _value.libraryViewMode
+                : libraryViewMode // ignore: cast_nullable_to_non_nullable
+                      as String,
+            searchHistory: null == searchHistory
+                ? _value.searchHistory
+                : searchHistory // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
           )
           as $Val,
     );
@@ -494,12 +529,14 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
     String appLocale,
     double lineHeight,
     double paragraphSpacing,
+    double paragraphIndent,
     String textAlignment,
     double sideMargin,
     String? customBackgroundColor,
     String? customTextColor,
     String? primaryColorHex,
     bool webDavEnabled,
+    bool webDavAutoSync,
     String webDavUrl,
     String webDavUsername,
     int? webDavLastSync,
@@ -538,6 +575,9 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
     bool developerMode,
     bool enableDebugLogs,
     bool enableWebDavDebug,
+    bool audioPanelCollapsed,
+    String libraryViewMode,
+    List<String> searchHistory,
   });
 }
 
@@ -568,12 +608,14 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? appLocale = null,
     Object? lineHeight = null,
     Object? paragraphSpacing = null,
+    Object? paragraphIndent = null,
     Object? textAlignment = null,
     Object? sideMargin = null,
     Object? customBackgroundColor = freezed,
     Object? customTextColor = freezed,
     Object? primaryColorHex = freezed,
     Object? webDavEnabled = null,
+    Object? webDavAutoSync = null,
     Object? webDavUrl = null,
     Object? webDavUsername = null,
     Object? webDavLastSync = freezed,
@@ -612,6 +654,9 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? developerMode = null,
     Object? enableDebugLogs = null,
     Object? enableWebDavDebug = null,
+    Object? audioPanelCollapsed = null,
+    Object? libraryViewMode = null,
+    Object? searchHistory = null,
   }) {
     return _then(
       _$AppSettingsImpl(
@@ -675,6 +720,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
             ? _value.paragraphSpacing
             : paragraphSpacing // ignore: cast_nullable_to_non_nullable
                   as double,
+        paragraphIndent: null == paragraphIndent
+            ? _value.paragraphIndent
+            : paragraphIndent // ignore: cast_nullable_to_non_nullable
+                  as double,
         textAlignment: null == textAlignment
             ? _value.textAlignment
             : textAlignment // ignore: cast_nullable_to_non_nullable
@@ -698,6 +747,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
         webDavEnabled: null == webDavEnabled
             ? _value.webDavEnabled
             : webDavEnabled // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        webDavAutoSync: null == webDavAutoSync
+            ? _value.webDavAutoSync
+            : webDavAutoSync // ignore: cast_nullable_to_non_nullable
                   as bool,
         webDavUrl: null == webDavUrl
             ? _value.webDavUrl
@@ -851,6 +904,18 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
             ? _value.enableWebDavDebug
             : enableWebDavDebug // ignore: cast_nullable_to_non_nullable
                   as bool,
+        audioPanelCollapsed: null == audioPanelCollapsed
+            ? _value.audioPanelCollapsed
+            : audioPanelCollapsed // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        libraryViewMode: null == libraryViewMode
+            ? _value.libraryViewMode
+            : libraryViewMode // ignore: cast_nullable_to_non_nullable
+                  as String,
+        searchHistory: null == searchHistory
+            ? _value._searchHistory
+            : searchHistory // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
       ),
     );
   }
@@ -875,12 +940,14 @@ class _$AppSettingsImpl implements _AppSettings {
     required this.appLocale,
     required this.lineHeight,
     required this.paragraphSpacing,
+    required this.paragraphIndent,
     required this.textAlignment,
     required this.sideMargin,
     this.customBackgroundColor,
     this.customTextColor,
     this.primaryColorHex,
     required this.webDavEnabled,
+    required this.webDavAutoSync,
     required this.webDavUrl,
     required this.webDavUsername,
     this.webDavLastSync,
@@ -919,7 +986,10 @@ class _$AppSettingsImpl implements _AppSettings {
     required this.developerMode,
     required this.enableDebugLogs,
     required this.enableWebDavDebug,
-  });
+    required this.audioPanelCollapsed,
+    required this.libraryViewMode,
+    required final List<String> searchHistory,
+  }) : _searchHistory = searchHistory;
 
   @override
   final int id;
@@ -952,6 +1022,8 @@ class _$AppSettingsImpl implements _AppSettings {
   @override
   final double paragraphSpacing;
   @override
+  final double paragraphIndent;
+  @override
   final String textAlignment;
   @override
   final double sideMargin;
@@ -963,6 +1035,8 @@ class _$AppSettingsImpl implements _AppSettings {
   final String? primaryColorHex;
   @override
   final bool webDavEnabled;
+  @override
+  final bool webDavAutoSync;
   @override
   final String webDavUrl;
   @override
@@ -1039,10 +1113,21 @@ class _$AppSettingsImpl implements _AppSettings {
   final bool enableDebugLogs;
   @override
   final bool enableWebDavDebug;
+  @override
+  final bool audioPanelCollapsed;
+  @override
+  final String libraryViewMode;
+  final List<String> _searchHistory;
+  @override
+  List<String> get searchHistory {
+    if (_searchHistory is EqualUnmodifiableListView) return _searchHistory;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_searchHistory);
+  }
 
   @override
   String toString() {
-    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug)';
+    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, paragraphIndent: $paragraphIndent, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavAutoSync: $webDavAutoSync, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug, audioPanelCollapsed: $audioPanelCollapsed, libraryViewMode: $libraryViewMode, searchHistory: $searchHistory)';
   }
 
   @override
@@ -1079,6 +1164,8 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.lineHeight == lineHeight) &&
             (identical(other.paragraphSpacing, paragraphSpacing) ||
                 other.paragraphSpacing == paragraphSpacing) &&
+            (identical(other.paragraphIndent, paragraphIndent) ||
+                other.paragraphIndent == paragraphIndent) &&
             (identical(other.textAlignment, textAlignment) ||
                 other.textAlignment == textAlignment) &&
             (identical(other.sideMargin, sideMargin) ||
@@ -1091,6 +1178,8 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.primaryColorHex == primaryColorHex) &&
             (identical(other.webDavEnabled, webDavEnabled) ||
                 other.webDavEnabled == webDavEnabled) &&
+            (identical(other.webDavAutoSync, webDavAutoSync) ||
+                other.webDavAutoSync == webDavAutoSync) &&
             (identical(other.webDavUrl, webDavUrl) ||
                 other.webDavUrl == webDavUrl) &&
             (identical(other.webDavUsername, webDavUsername) ||
@@ -1174,7 +1263,15 @@ class _$AppSettingsImpl implements _AppSettings {
             (identical(other.enableDebugLogs, enableDebugLogs) ||
                 other.enableDebugLogs == enableDebugLogs) &&
             (identical(other.enableWebDavDebug, enableWebDavDebug) ||
-                other.enableWebDavDebug == enableWebDavDebug));
+                other.enableWebDavDebug == enableWebDavDebug) &&
+            (identical(other.audioPanelCollapsed, audioPanelCollapsed) ||
+                other.audioPanelCollapsed == audioPanelCollapsed) &&
+            (identical(other.libraryViewMode, libraryViewMode) ||
+                other.libraryViewMode == libraryViewMode) &&
+            const DeepCollectionEquality().equals(
+              other._searchHistory,
+              _searchHistory,
+            ));
   }
 
   @override
@@ -1195,12 +1292,14 @@ class _$AppSettingsImpl implements _AppSettings {
     appLocale,
     lineHeight,
     paragraphSpacing,
+    paragraphIndent,
     textAlignment,
     sideMargin,
     customBackgroundColor,
     customTextColor,
     primaryColorHex,
     webDavEnabled,
+    webDavAutoSync,
     webDavUrl,
     webDavUsername,
     webDavLastSync,
@@ -1239,6 +1338,9 @@ class _$AppSettingsImpl implements _AppSettings {
     developerMode,
     enableDebugLogs,
     enableWebDavDebug,
+    audioPanelCollapsed,
+    libraryViewMode,
+    const DeepCollectionEquality().hash(_searchHistory),
   ]);
 
   @JsonKey(ignore: true)
@@ -1265,12 +1367,14 @@ abstract class _AppSettings implements AppSettings {
     required final String appLocale,
     required final double lineHeight,
     required final double paragraphSpacing,
+    required final double paragraphIndent,
     required final String textAlignment,
     required final double sideMargin,
     final String? customBackgroundColor,
     final String? customTextColor,
     final String? primaryColorHex,
     required final bool webDavEnabled,
+    required final bool webDavAutoSync,
     required final String webDavUrl,
     required final String webDavUsername,
     final int? webDavLastSync,
@@ -1309,6 +1413,9 @@ abstract class _AppSettings implements AppSettings {
     required final bool developerMode,
     required final bool enableDebugLogs,
     required final bool enableWebDavDebug,
+    required final bool audioPanelCollapsed,
+    required final String libraryViewMode,
+    required final List<String> searchHistory,
   }) = _$AppSettingsImpl;
 
   @override
@@ -1342,6 +1449,8 @@ abstract class _AppSettings implements AppSettings {
   @override
   double get paragraphSpacing;
   @override
+  double get paragraphIndent;
+  @override
   String get textAlignment;
   @override
   double get sideMargin;
@@ -1353,6 +1462,8 @@ abstract class _AppSettings implements AppSettings {
   String? get primaryColorHex;
   @override
   bool get webDavEnabled;
+  @override
+  bool get webDavAutoSync;
   @override
   String get webDavUrl;
   @override
@@ -1429,6 +1540,12 @@ abstract class _AppSettings implements AppSettings {
   bool get enableDebugLogs;
   @override
   bool get enableWebDavDebug;
+  @override
+  bool get audioPanelCollapsed;
+  @override
+  String get libraryViewMode;
+  @override
+  List<String> get searchHistory;
   @override
   @JsonKey(ignore: true)
   _$$AppSettingsImplCopyWith<_$AppSettingsImpl> get copyWith =>
@@ -2427,6 +2544,270 @@ abstract class _Chapter implements Chapter {
 }
 
 /// @nodoc
+mixin _$CloudBook {
+  String get uuid => throw _privateConstructorUsedError;
+  String get title => throw _privateConstructorUsedError;
+  String get author => throw _privateConstructorUsedError;
+  int get totalChapters => throw _privateConstructorUsedError;
+  String? get coverExtension => throw _privateConstructorUsedError;
+  bool get hasCover => throw _privateConstructorUsedError;
+  String get dateAdded => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $CloudBookCopyWith<CloudBook> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $CloudBookCopyWith<$Res> {
+  factory $CloudBookCopyWith(CloudBook value, $Res Function(CloudBook) then) =
+      _$CloudBookCopyWithImpl<$Res, CloudBook>;
+  @useResult
+  $Res call({
+    String uuid,
+    String title,
+    String author,
+    int totalChapters,
+    String? coverExtension,
+    bool hasCover,
+    String dateAdded,
+  });
+}
+
+/// @nodoc
+class _$CloudBookCopyWithImpl<$Res, $Val extends CloudBook>
+    implements $CloudBookCopyWith<$Res> {
+  _$CloudBookCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? uuid = null,
+    Object? title = null,
+    Object? author = null,
+    Object? totalChapters = null,
+    Object? coverExtension = freezed,
+    Object? hasCover = null,
+    Object? dateAdded = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            uuid: null == uuid
+                ? _value.uuid
+                : uuid // ignore: cast_nullable_to_non_nullable
+                      as String,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            author: null == author
+                ? _value.author
+                : author // ignore: cast_nullable_to_non_nullable
+                      as String,
+            totalChapters: null == totalChapters
+                ? _value.totalChapters
+                : totalChapters // ignore: cast_nullable_to_non_nullable
+                      as int,
+            coverExtension: freezed == coverExtension
+                ? _value.coverExtension
+                : coverExtension // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            hasCover: null == hasCover
+                ? _value.hasCover
+                : hasCover // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            dateAdded: null == dateAdded
+                ? _value.dateAdded
+                : dateAdded // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$CloudBookImplCopyWith<$Res>
+    implements $CloudBookCopyWith<$Res> {
+  factory _$$CloudBookImplCopyWith(
+    _$CloudBookImpl value,
+    $Res Function(_$CloudBookImpl) then,
+  ) = __$$CloudBookImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String uuid,
+    String title,
+    String author,
+    int totalChapters,
+    String? coverExtension,
+    bool hasCover,
+    String dateAdded,
+  });
+}
+
+/// @nodoc
+class __$$CloudBookImplCopyWithImpl<$Res>
+    extends _$CloudBookCopyWithImpl<$Res, _$CloudBookImpl>
+    implements _$$CloudBookImplCopyWith<$Res> {
+  __$$CloudBookImplCopyWithImpl(
+    _$CloudBookImpl _value,
+    $Res Function(_$CloudBookImpl) _then,
+  ) : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? uuid = null,
+    Object? title = null,
+    Object? author = null,
+    Object? totalChapters = null,
+    Object? coverExtension = freezed,
+    Object? hasCover = null,
+    Object? dateAdded = null,
+  }) {
+    return _then(
+      _$CloudBookImpl(
+        uuid: null == uuid
+            ? _value.uuid
+            : uuid // ignore: cast_nullable_to_non_nullable
+                  as String,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        author: null == author
+            ? _value.author
+            : author // ignore: cast_nullable_to_non_nullable
+                  as String,
+        totalChapters: null == totalChapters
+            ? _value.totalChapters
+            : totalChapters // ignore: cast_nullable_to_non_nullable
+                  as int,
+        coverExtension: freezed == coverExtension
+            ? _value.coverExtension
+            : coverExtension // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        hasCover: null == hasCover
+            ? _value.hasCover
+            : hasCover // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        dateAdded: null == dateAdded
+            ? _value.dateAdded
+            : dateAdded // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$CloudBookImpl implements _CloudBook {
+  const _$CloudBookImpl({
+    required this.uuid,
+    required this.title,
+    required this.author,
+    required this.totalChapters,
+    this.coverExtension,
+    required this.hasCover,
+    required this.dateAdded,
+  });
+
+  @override
+  final String uuid;
+  @override
+  final String title;
+  @override
+  final String author;
+  @override
+  final int totalChapters;
+  @override
+  final String? coverExtension;
+  @override
+  final bool hasCover;
+  @override
+  final String dateAdded;
+
+  @override
+  String toString() {
+    return 'CloudBook(uuid: $uuid, title: $title, author: $author, totalChapters: $totalChapters, coverExtension: $coverExtension, hasCover: $hasCover, dateAdded: $dateAdded)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CloudBookImpl &&
+            (identical(other.uuid, uuid) || other.uuid == uuid) &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.author, author) || other.author == author) &&
+            (identical(other.totalChapters, totalChapters) ||
+                other.totalChapters == totalChapters) &&
+            (identical(other.coverExtension, coverExtension) ||
+                other.coverExtension == coverExtension) &&
+            (identical(other.hasCover, hasCover) ||
+                other.hasCover == hasCover) &&
+            (identical(other.dateAdded, dateAdded) ||
+                other.dateAdded == dateAdded));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    uuid,
+    title,
+    author,
+    totalChapters,
+    coverExtension,
+    hasCover,
+    dateAdded,
+  );
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CloudBookImplCopyWith<_$CloudBookImpl> get copyWith =>
+      __$$CloudBookImplCopyWithImpl<_$CloudBookImpl>(this, _$identity);
+}
+
+abstract class _CloudBook implements CloudBook {
+  const factory _CloudBook({
+    required final String uuid,
+    required final String title,
+    required final String author,
+    required final int totalChapters,
+    final String? coverExtension,
+    required final bool hasCover,
+    required final String dateAdded,
+  }) = _$CloudBookImpl;
+
+  @override
+  String get uuid;
+  @override
+  String get title;
+  @override
+  String get author;
+  @override
+  int get totalChapters;
+  @override
+  String? get coverExtension;
+  @override
+  bool get hasCover;
+  @override
+  String get dateAdded;
+  @override
+  @JsonKey(ignore: true)
+  _$$CloudBookImplCopyWith<_$CloudBookImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
 mixin _$Highlight {
   int? get id => throw _privateConstructorUsedError;
   String get bookUuid => throw _privateConstructorUsedError;
@@ -3116,6 +3497,254 @@ abstract class _OfflineTtsRecord implements OfflineTtsRecord {
 }
 
 /// @nodoc
+mixin _$ProgressSyncResult {
+  String get status => throw _privateConstructorUsedError;
+  int? get cloudChapterIndex => throw _privateConstructorUsedError;
+  int? get cloudParagraphIndex => throw _privateConstructorUsedError;
+  int? get cloudCharacterOffset => throw _privateConstructorUsedError;
+  int? get cloudLastRead => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $ProgressSyncResultCopyWith<ProgressSyncResult> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ProgressSyncResultCopyWith<$Res> {
+  factory $ProgressSyncResultCopyWith(
+    ProgressSyncResult value,
+    $Res Function(ProgressSyncResult) then,
+  ) = _$ProgressSyncResultCopyWithImpl<$Res, ProgressSyncResult>;
+  @useResult
+  $Res call({
+    String status,
+    int? cloudChapterIndex,
+    int? cloudParagraphIndex,
+    int? cloudCharacterOffset,
+    int? cloudLastRead,
+    String? message,
+  });
+}
+
+/// @nodoc
+class _$ProgressSyncResultCopyWithImpl<$Res, $Val extends ProgressSyncResult>
+    implements $ProgressSyncResultCopyWith<$Res> {
+  _$ProgressSyncResultCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? status = null,
+    Object? cloudChapterIndex = freezed,
+    Object? cloudParagraphIndex = freezed,
+    Object? cloudCharacterOffset = freezed,
+    Object? cloudLastRead = freezed,
+    Object? message = freezed,
+  }) {
+    return _then(
+      _value.copyWith(
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String,
+            cloudChapterIndex: freezed == cloudChapterIndex
+                ? _value.cloudChapterIndex
+                : cloudChapterIndex // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            cloudParagraphIndex: freezed == cloudParagraphIndex
+                ? _value.cloudParagraphIndex
+                : cloudParagraphIndex // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            cloudCharacterOffset: freezed == cloudCharacterOffset
+                ? _value.cloudCharacterOffset
+                : cloudCharacterOffset // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            cloudLastRead: freezed == cloudLastRead
+                ? _value.cloudLastRead
+                : cloudLastRead // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            message: freezed == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$ProgressSyncResultImplCopyWith<$Res>
+    implements $ProgressSyncResultCopyWith<$Res> {
+  factory _$$ProgressSyncResultImplCopyWith(
+    _$ProgressSyncResultImpl value,
+    $Res Function(_$ProgressSyncResultImpl) then,
+  ) = __$$ProgressSyncResultImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String status,
+    int? cloudChapterIndex,
+    int? cloudParagraphIndex,
+    int? cloudCharacterOffset,
+    int? cloudLastRead,
+    String? message,
+  });
+}
+
+/// @nodoc
+class __$$ProgressSyncResultImplCopyWithImpl<$Res>
+    extends _$ProgressSyncResultCopyWithImpl<$Res, _$ProgressSyncResultImpl>
+    implements _$$ProgressSyncResultImplCopyWith<$Res> {
+  __$$ProgressSyncResultImplCopyWithImpl(
+    _$ProgressSyncResultImpl _value,
+    $Res Function(_$ProgressSyncResultImpl) _then,
+  ) : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? status = null,
+    Object? cloudChapterIndex = freezed,
+    Object? cloudParagraphIndex = freezed,
+    Object? cloudCharacterOffset = freezed,
+    Object? cloudLastRead = freezed,
+    Object? message = freezed,
+  }) {
+    return _then(
+      _$ProgressSyncResultImpl(
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String,
+        cloudChapterIndex: freezed == cloudChapterIndex
+            ? _value.cloudChapterIndex
+            : cloudChapterIndex // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        cloudParagraphIndex: freezed == cloudParagraphIndex
+            ? _value.cloudParagraphIndex
+            : cloudParagraphIndex // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        cloudCharacterOffset: freezed == cloudCharacterOffset
+            ? _value.cloudCharacterOffset
+            : cloudCharacterOffset // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        cloudLastRead: freezed == cloudLastRead
+            ? _value.cloudLastRead
+            : cloudLastRead // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        message: freezed == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$ProgressSyncResultImpl implements _ProgressSyncResult {
+  const _$ProgressSyncResultImpl({
+    required this.status,
+    this.cloudChapterIndex,
+    this.cloudParagraphIndex,
+    this.cloudCharacterOffset,
+    this.cloudLastRead,
+    this.message,
+  });
+
+  @override
+  final String status;
+  @override
+  final int? cloudChapterIndex;
+  @override
+  final int? cloudParagraphIndex;
+  @override
+  final int? cloudCharacterOffset;
+  @override
+  final int? cloudLastRead;
+  @override
+  final String? message;
+
+  @override
+  String toString() {
+    return 'ProgressSyncResult(status: $status, cloudChapterIndex: $cloudChapterIndex, cloudParagraphIndex: $cloudParagraphIndex, cloudCharacterOffset: $cloudCharacterOffset, cloudLastRead: $cloudLastRead, message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ProgressSyncResultImpl &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.cloudChapterIndex, cloudChapterIndex) ||
+                other.cloudChapterIndex == cloudChapterIndex) &&
+            (identical(other.cloudParagraphIndex, cloudParagraphIndex) ||
+                other.cloudParagraphIndex == cloudParagraphIndex) &&
+            (identical(other.cloudCharacterOffset, cloudCharacterOffset) ||
+                other.cloudCharacterOffset == cloudCharacterOffset) &&
+            (identical(other.cloudLastRead, cloudLastRead) ||
+                other.cloudLastRead == cloudLastRead) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    status,
+    cloudChapterIndex,
+    cloudParagraphIndex,
+    cloudCharacterOffset,
+    cloudLastRead,
+    message,
+  );
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ProgressSyncResultImplCopyWith<_$ProgressSyncResultImpl> get copyWith =>
+      __$$ProgressSyncResultImplCopyWithImpl<_$ProgressSyncResultImpl>(
+        this,
+        _$identity,
+      );
+}
+
+abstract class _ProgressSyncResult implements ProgressSyncResult {
+  const factory _ProgressSyncResult({
+    required final String status,
+    final int? cloudChapterIndex,
+    final int? cloudParagraphIndex,
+    final int? cloudCharacterOffset,
+    final int? cloudLastRead,
+    final String? message,
+  }) = _$ProgressSyncResultImpl;
+
+  @override
+  String get status;
+  @override
+  int? get cloudChapterIndex;
+  @override
+  int? get cloudParagraphIndex;
+  @override
+  int? get cloudCharacterOffset;
+  @override
+  int? get cloudLastRead;
+  @override
+  String? get message;
+  @override
+  @JsonKey(ignore: true)
+  _$$ProgressSyncResultImplCopyWith<_$ProgressSyncResultImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
 mixin _$PronunciationRule {
   int? get id => throw _privateConstructorUsedError;
   String get target => throw _privateConstructorUsedError;
@@ -3579,5 +4208,635 @@ abstract class _ReadingProgress implements ReadingProgress {
   @override
   @JsonKey(ignore: true)
   _$$ReadingProgressImplCopyWith<_$ReadingProgressImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+mixin _$SyncHistoryEntry {
+  int? get id => throw _privateConstructorUsedError;
+  int get timestamp => throw _privateConstructorUsedError;
+  String get action => throw _privateConstructorUsedError;
+  String get status => throw _privateConstructorUsedError;
+  String get details => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $SyncHistoryEntryCopyWith<SyncHistoryEntry> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SyncHistoryEntryCopyWith<$Res> {
+  factory $SyncHistoryEntryCopyWith(
+    SyncHistoryEntry value,
+    $Res Function(SyncHistoryEntry) then,
+  ) = _$SyncHistoryEntryCopyWithImpl<$Res, SyncHistoryEntry>;
+  @useResult
+  $Res call({
+    int? id,
+    int timestamp,
+    String action,
+    String status,
+    String details,
+  });
+}
+
+/// @nodoc
+class _$SyncHistoryEntryCopyWithImpl<$Res, $Val extends SyncHistoryEntry>
+    implements $SyncHistoryEntryCopyWith<$Res> {
+  _$SyncHistoryEntryCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = freezed,
+    Object? timestamp = null,
+    Object? action = null,
+    Object? status = null,
+    Object? details = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            id: freezed == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            timestamp: null == timestamp
+                ? _value.timestamp
+                : timestamp // ignore: cast_nullable_to_non_nullable
+                      as int,
+            action: null == action
+                ? _value.action
+                : action // ignore: cast_nullable_to_non_nullable
+                      as String,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String,
+            details: null == details
+                ? _value.details
+                : details // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$SyncHistoryEntryImplCopyWith<$Res>
+    implements $SyncHistoryEntryCopyWith<$Res> {
+  factory _$$SyncHistoryEntryImplCopyWith(
+    _$SyncHistoryEntryImpl value,
+    $Res Function(_$SyncHistoryEntryImpl) then,
+  ) = __$$SyncHistoryEntryImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    int? id,
+    int timestamp,
+    String action,
+    String status,
+    String details,
+  });
+}
+
+/// @nodoc
+class __$$SyncHistoryEntryImplCopyWithImpl<$Res>
+    extends _$SyncHistoryEntryCopyWithImpl<$Res, _$SyncHistoryEntryImpl>
+    implements _$$SyncHistoryEntryImplCopyWith<$Res> {
+  __$$SyncHistoryEntryImplCopyWithImpl(
+    _$SyncHistoryEntryImpl _value,
+    $Res Function(_$SyncHistoryEntryImpl) _then,
+  ) : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = freezed,
+    Object? timestamp = null,
+    Object? action = null,
+    Object? status = null,
+    Object? details = null,
+  }) {
+    return _then(
+      _$SyncHistoryEntryImpl(
+        id: freezed == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        timestamp: null == timestamp
+            ? _value.timestamp
+            : timestamp // ignore: cast_nullable_to_non_nullable
+                  as int,
+        action: null == action
+            ? _value.action
+            : action // ignore: cast_nullable_to_non_nullable
+                  as String,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String,
+        details: null == details
+            ? _value.details
+            : details // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SyncHistoryEntryImpl implements _SyncHistoryEntry {
+  const _$SyncHistoryEntryImpl({
+    this.id,
+    required this.timestamp,
+    required this.action,
+    required this.status,
+    required this.details,
+  });
+
+  @override
+  final int? id;
+  @override
+  final int timestamp;
+  @override
+  final String action;
+  @override
+  final String status;
+  @override
+  final String details;
+
+  @override
+  String toString() {
+    return 'SyncHistoryEntry(id: $id, timestamp: $timestamp, action: $action, status: $status, details: $details)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SyncHistoryEntryImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.timestamp, timestamp) ||
+                other.timestamp == timestamp) &&
+            (identical(other.action, action) || other.action == action) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.details, details) || other.details == details));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, id, timestamp, action, status, details);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SyncHistoryEntryImplCopyWith<_$SyncHistoryEntryImpl> get copyWith =>
+      __$$SyncHistoryEntryImplCopyWithImpl<_$SyncHistoryEntryImpl>(
+        this,
+        _$identity,
+      );
+}
+
+abstract class _SyncHistoryEntry implements SyncHistoryEntry {
+  const factory _SyncHistoryEntry({
+    final int? id,
+    required final int timestamp,
+    required final String action,
+    required final String status,
+    required final String details,
+  }) = _$SyncHistoryEntryImpl;
+
+  @override
+  int? get id;
+  @override
+  int get timestamp;
+  @override
+  String get action;
+  @override
+  String get status;
+  @override
+  String get details;
+  @override
+  @JsonKey(ignore: true)
+  _$$SyncHistoryEntryImplCopyWith<_$SyncHistoryEntryImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+mixin _$SyncProgressEvent {
+  String get eventType => throw _privateConstructorUsedError;
+  String? get bookUuid => throw _privateConstructorUsedError;
+  String? get status => throw _privateConstructorUsedError;
+  int get current => throw _privateConstructorUsedError;
+  int get total => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $SyncProgressEventCopyWith<SyncProgressEvent> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SyncProgressEventCopyWith<$Res> {
+  factory $SyncProgressEventCopyWith(
+    SyncProgressEvent value,
+    $Res Function(SyncProgressEvent) then,
+  ) = _$SyncProgressEventCopyWithImpl<$Res, SyncProgressEvent>;
+  @useResult
+  $Res call({
+    String eventType,
+    String? bookUuid,
+    String? status,
+    int current,
+    int total,
+    String? message,
+  });
+}
+
+/// @nodoc
+class _$SyncProgressEventCopyWithImpl<$Res, $Val extends SyncProgressEvent>
+    implements $SyncProgressEventCopyWith<$Res> {
+  _$SyncProgressEventCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? eventType = null,
+    Object? bookUuid = freezed,
+    Object? status = freezed,
+    Object? current = null,
+    Object? total = null,
+    Object? message = freezed,
+  }) {
+    return _then(
+      _value.copyWith(
+            eventType: null == eventType
+                ? _value.eventType
+                : eventType // ignore: cast_nullable_to_non_nullable
+                      as String,
+            bookUuid: freezed == bookUuid
+                ? _value.bookUuid
+                : bookUuid // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            status: freezed == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            current: null == current
+                ? _value.current
+                : current // ignore: cast_nullable_to_non_nullable
+                      as int,
+            total: null == total
+                ? _value.total
+                : total // ignore: cast_nullable_to_non_nullable
+                      as int,
+            message: freezed == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$SyncProgressEventImplCopyWith<$Res>
+    implements $SyncProgressEventCopyWith<$Res> {
+  factory _$$SyncProgressEventImplCopyWith(
+    _$SyncProgressEventImpl value,
+    $Res Function(_$SyncProgressEventImpl) then,
+  ) = __$$SyncProgressEventImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String eventType,
+    String? bookUuid,
+    String? status,
+    int current,
+    int total,
+    String? message,
+  });
+}
+
+/// @nodoc
+class __$$SyncProgressEventImplCopyWithImpl<$Res>
+    extends _$SyncProgressEventCopyWithImpl<$Res, _$SyncProgressEventImpl>
+    implements _$$SyncProgressEventImplCopyWith<$Res> {
+  __$$SyncProgressEventImplCopyWithImpl(
+    _$SyncProgressEventImpl _value,
+    $Res Function(_$SyncProgressEventImpl) _then,
+  ) : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? eventType = null,
+    Object? bookUuid = freezed,
+    Object? status = freezed,
+    Object? current = null,
+    Object? total = null,
+    Object? message = freezed,
+  }) {
+    return _then(
+      _$SyncProgressEventImpl(
+        eventType: null == eventType
+            ? _value.eventType
+            : eventType // ignore: cast_nullable_to_non_nullable
+                  as String,
+        bookUuid: freezed == bookUuid
+            ? _value.bookUuid
+            : bookUuid // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        status: freezed == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        current: null == current
+            ? _value.current
+            : current // ignore: cast_nullable_to_non_nullable
+                  as int,
+        total: null == total
+            ? _value.total
+            : total // ignore: cast_nullable_to_non_nullable
+                  as int,
+        message: freezed == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SyncProgressEventImpl implements _SyncProgressEvent {
+  const _$SyncProgressEventImpl({
+    required this.eventType,
+    this.bookUuid,
+    this.status,
+    required this.current,
+    required this.total,
+    this.message,
+  });
+
+  @override
+  final String eventType;
+  @override
+  final String? bookUuid;
+  @override
+  final String? status;
+  @override
+  final int current;
+  @override
+  final int total;
+  @override
+  final String? message;
+
+  @override
+  String toString() {
+    return 'SyncProgressEvent(eventType: $eventType, bookUuid: $bookUuid, status: $status, current: $current, total: $total, message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SyncProgressEventImpl &&
+            (identical(other.eventType, eventType) ||
+                other.eventType == eventType) &&
+            (identical(other.bookUuid, bookUuid) ||
+                other.bookUuid == bookUuid) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.current, current) || other.current == current) &&
+            (identical(other.total, total) || other.total == total) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    eventType,
+    bookUuid,
+    status,
+    current,
+    total,
+    message,
+  );
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SyncProgressEventImplCopyWith<_$SyncProgressEventImpl> get copyWith =>
+      __$$SyncProgressEventImplCopyWithImpl<_$SyncProgressEventImpl>(
+        this,
+        _$identity,
+      );
+}
+
+abstract class _SyncProgressEvent implements SyncProgressEvent {
+  const factory _SyncProgressEvent({
+    required final String eventType,
+    final String? bookUuid,
+    final String? status,
+    required final int current,
+    required final int total,
+    final String? message,
+  }) = _$SyncProgressEventImpl;
+
+  @override
+  String get eventType;
+  @override
+  String? get bookUuid;
+  @override
+  String? get status;
+  @override
+  int get current;
+  @override
+  int get total;
+  @override
+  String? get message;
+  @override
+  @JsonKey(ignore: true)
+  _$$SyncProgressEventImplCopyWith<_$SyncProgressEventImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+mixin _$SyncResult {
+  bool get success => throw _privateConstructorUsedError;
+  String get message => throw _privateConstructorUsedError;
+  bool get localChanged => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $SyncResultCopyWith<SyncResult> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SyncResultCopyWith<$Res> {
+  factory $SyncResultCopyWith(
+    SyncResult value,
+    $Res Function(SyncResult) then,
+  ) = _$SyncResultCopyWithImpl<$Res, SyncResult>;
+  @useResult
+  $Res call({bool success, String message, bool localChanged});
+}
+
+/// @nodoc
+class _$SyncResultCopyWithImpl<$Res, $Val extends SyncResult>
+    implements $SyncResultCopyWith<$Res> {
+  _$SyncResultCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = null,
+    Object? message = null,
+    Object? localChanged = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            success: null == success
+                ? _value.success
+                : success // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            message: null == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String,
+            localChanged: null == localChanged
+                ? _value.localChanged
+                : localChanged // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$SyncResultImplCopyWith<$Res>
+    implements $SyncResultCopyWith<$Res> {
+  factory _$$SyncResultImplCopyWith(
+    _$SyncResultImpl value,
+    $Res Function(_$SyncResultImpl) then,
+  ) = __$$SyncResultImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({bool success, String message, bool localChanged});
+}
+
+/// @nodoc
+class __$$SyncResultImplCopyWithImpl<$Res>
+    extends _$SyncResultCopyWithImpl<$Res, _$SyncResultImpl>
+    implements _$$SyncResultImplCopyWith<$Res> {
+  __$$SyncResultImplCopyWithImpl(
+    _$SyncResultImpl _value,
+    $Res Function(_$SyncResultImpl) _then,
+  ) : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = null,
+    Object? message = null,
+    Object? localChanged = null,
+  }) {
+    return _then(
+      _$SyncResultImpl(
+        success: null == success
+            ? _value.success
+            : success // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String,
+        localChanged: null == localChanged
+            ? _value.localChanged
+            : localChanged // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SyncResultImpl implements _SyncResult {
+  const _$SyncResultImpl({
+    required this.success,
+    required this.message,
+    required this.localChanged,
+  });
+
+  @override
+  final bool success;
+  @override
+  final String message;
+  @override
+  final bool localChanged;
+
+  @override
+  String toString() {
+    return 'SyncResult(success: $success, message: $message, localChanged: $localChanged)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SyncResultImpl &&
+            (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.localChanged, localChanged) ||
+                other.localChanged == localChanged));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, success, message, localChanged);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SyncResultImplCopyWith<_$SyncResultImpl> get copyWith =>
+      __$$SyncResultImplCopyWithImpl<_$SyncResultImpl>(this, _$identity);
+}
+
+abstract class _SyncResult implements SyncResult {
+  const factory _SyncResult({
+    required final bool success,
+    required final String message,
+    required final bool localChanged,
+  }) = _$SyncResultImpl;
+
+  @override
+  bool get success;
+  @override
+  String get message;
+  @override
+  bool get localChanged;
+  @override
+  @JsonKey(ignore: true)
+  _$$SyncResultImplCopyWith<_$SyncResultImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
