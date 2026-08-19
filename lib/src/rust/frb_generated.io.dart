@@ -81,6 +81,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Bookmark dco_decode_box_autoadd_bookmark(dynamic raw);
 
   @protected
+  Chapter dco_decode_box_autoadd_chapter(dynamic raw);
+
+  @protected
   Highlight dco_decode_box_autoadd_highlight(dynamic raw);
 
   @protected
@@ -177,6 +180,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ReadingProgress> dco_decode_list_reading_progress(dynamic raw);
 
   @protected
+  List<SearchResultItem> dco_decode_list_search_result_item(dynamic raw);
+
+  @protected
   List<WebDavFile> dco_decode_list_web_dav_file(dynamic raw);
 
   @protected
@@ -187,6 +193,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AppSettings? dco_decode_opt_box_autoadd_app_settings(dynamic raw);
+
+  @protected
+  Book? dco_decode_opt_box_autoadd_book(dynamic raw);
+
+  @protected
+  Chapter? dco_decode_opt_box_autoadd_chapter(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
@@ -208,6 +220,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ReadingProgress dco_decode_reading_progress(dynamic raw);
+
+  @protected
+  SearchResultItem dco_decode_search_result_item(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -277,6 +292,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Bookmark sse_decode_box_autoadd_bookmark(SseDeserializer deserializer);
+
+  @protected
+  Chapter sse_decode_box_autoadd_chapter(SseDeserializer deserializer);
 
   @protected
   Highlight sse_decode_box_autoadd_highlight(SseDeserializer deserializer);
@@ -393,6 +411,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<SearchResultItem> sse_decode_list_search_result_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<WebDavFile> sse_decode_list_web_dav_file(SseDeserializer deserializer);
 
   @protected
@@ -405,6 +428,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AppSettings? sse_decode_opt_box_autoadd_app_settings(
     SseDeserializer deserializer,
   );
+
+  @protected
+  Book? sse_decode_opt_box_autoadd_book(SseDeserializer deserializer);
+
+  @protected
+  Chapter? sse_decode_opt_box_autoadd_chapter(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
@@ -430,6 +459,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ReadingProgress sse_decode_reading_progress(SseDeserializer deserializer);
+
+  @protected
+  SearchResultItem sse_decode_search_result_item(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -511,6 +543,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_box_autoadd_bookmark(Bookmark self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_chapter(Chapter self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_highlight(
@@ -663,6 +698,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_search_result_item(
+    List<SearchResultItem> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_web_dav_file(
     List<WebDavFile> self,
     SseSerializer serializer,
@@ -680,6 +721,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_app_settings(
     AppSettings? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_book(Book? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_chapter(
+    Chapter? self,
     SseSerializer serializer,
   );
 
@@ -719,6 +769,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_reading_progress(
     ReadingProgress self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_search_result_item(
+    SearchResultItem self,
     SseSerializer serializer,
   );
 

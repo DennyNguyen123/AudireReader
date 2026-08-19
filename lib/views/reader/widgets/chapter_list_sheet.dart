@@ -131,33 +131,22 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
 
     return DefaultTabController(
       length: 3,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  widget.sheetBg.withValues(alpha: widget.isDark ? 0.75 : 0.85),
-                  widget.sheetBg.withValues(alpha: widget.isDark ? 0.85 : 0.95),
-                ],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: widget.isDark
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : Colors.black.withValues(alpha: 0.06),
-                  width: 1.5,
-                ),
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.sheetBg.withValues(alpha: widget.isDark ? 0.96 : 0.98),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+          border: Border(
+            top: BorderSide(
+              color: widget.isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.06),
+              width: 1.5,
             ),
-            child: Column(
+          ),
+        ),
+        child: Column(
               children: [
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 12),
@@ -654,8 +643,6 @@ class _ChapterListSheetState extends State<ChapterListSheet> {
               ],
             ),
           ),
-        ),
-      ),
     );
   }
 }

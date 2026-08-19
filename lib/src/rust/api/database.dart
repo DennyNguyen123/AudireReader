@@ -15,6 +15,9 @@ void initDatabase({required String dbPath}) =>
 Future<List<Book>> getAllBooks() =>
     RustLib.instance.api.crateApiDatabaseGetAllBooks();
 
+Future<Book?> getBookByUuid({required String uuid}) =>
+    RustLib.instance.api.crateApiDatabaseGetBookByUuid(uuid: uuid);
+
 Future<PlatformInt64> insertBook({required Book book}) =>
     RustLib.instance.api.crateApiDatabaseInsertBook(book: book);
 
@@ -23,6 +26,25 @@ Future<void> deleteBook({required String uuid}) =>
 
 Future<void> vacuumDatabase() =>
     RustLib.instance.api.crateApiDatabaseVacuumDatabase();
+
+Future<List<SearchResultItem>> searchInsideBook({
+  required String bookUuid,
+  required String query,
+}) => RustLib.instance.api.crateApiDatabaseSearchInsideBook(
+  bookUuid: bookUuid,
+  query: query,
+);
+
+Future<Chapter?> getChapter({
+  required String bookUuid,
+  required int chapterIndex,
+}) => RustLib.instance.api.crateApiDatabaseGetChapter(
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+);
+
+Future<List<Chapter>> getChapterHeaders({required String bookUuid}) =>
+    RustLib.instance.api.crateApiDatabaseGetChapterHeaders(bookUuid: bookUuid);
 
 Future<List<Chapter>> getChapters({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseGetChapters(bookUuid: bookUuid);
@@ -134,3 +156,34 @@ Future<void> deleteOfflineTtsRecordsForBook({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseDeleteOfflineTtsRecordsForBook(
       bookUuid: bookUuid,
     );
+
+class SearchResultItem {
+  final int chapterIndex;
+  final String chapterTitle;
+  final int paragraphIndex;
+  final String text;
+
+  const SearchResultItem({
+    required this.chapterIndex,
+    required this.chapterTitle,
+    required this.paragraphIndex,
+    required this.text,
+  });
+
+  @override
+  int get hashCode =>
+      chapterIndex.hashCode ^
+      chapterTitle.hashCode ^
+      paragraphIndex.hashCode ^
+      text.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SearchResultItem &&
+          runtimeType == other.runtimeType &&
+          chapterIndex == other.chapterIndex &&
+          chapterTitle == other.chapterTitle &&
+          paragraphIndex == other.paragraphIndex &&
+          text == other.text;
+}

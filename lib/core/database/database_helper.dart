@@ -79,11 +79,7 @@ class DatabaseHelper {
   }
 
   Future<Book?> getBookByUuid(String uuid) async {
-    final books = await rust_db.getAllBooks();
-    for (var b in books) {
-      if (b.uuid == uuid) return b;
-    }
-    return null;
+    return await rust_db.getBookByUuid(uuid: uuid);
   }
 
   Future<void> deleteBook(String uuid) async {
@@ -131,16 +127,16 @@ class DatabaseHelper {
     await rust_db.insertChapters(chapters: chapters);
   }
 
+  Future<List<Chapter>> getChapterHeaders(String bookUuid) async {
+    return await rust_db.getChapterHeaders(bookUuid: bookUuid);
+  }
+
   Future<List<Chapter>> getChaptersForBook(String bookUuid) async {
     return await rust_db.getChapters(bookUuid: bookUuid);
   }
 
   Future<Chapter?> getChapter(String bookUuid, int chapterIndex) async {
-    final chapters = await rust_db.getChapters(bookUuid: bookUuid);
-    for (var c in chapters) {
-      if (c.chapterIndex == chapterIndex) return c;
-    }
-    return null;
+    return await rust_db.getChapter(bookUuid: bookUuid, chapterIndex: chapterIndex);
   }
 
   // --- Reading Progress Operations ---

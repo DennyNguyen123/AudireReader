@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../core/database/database_helper.dart';
@@ -14,7 +14,7 @@ import 'bgm/open_lofi_provider.dart';
 
 class BgmService extends ChangeNotifier {
   static BgmService? _instance;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final ja.AudioPlayer _audioPlayer = ja.AudioPlayer();
   final Completer<void> _initCompleter = Completer<void>();
 
   bool _bgmEnabled = false;
@@ -59,8 +59,10 @@ class BgmService extends ChangeNotifier {
     if (_isInit) return;
 
     // Lắng nghe sự kiện phát hết nhạc
-    _audioPlayer.onPlayerComplete.listen((_) {
-      _onTrackComplete();
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ja.ProcessingState.completed) {
+        _onTrackComplete();
+      }
     });
 
     try {
@@ -427,7 +429,8 @@ class BgmService extends ChangeNotifier {
         final fileName = p.basename(track.sourcePath);
         final file = File(p.join(appDir.path, 'bgm', fileName));
         if (await file.exists()) {
-          await _audioPlayer.play(DeviceFileSource(file.path));
+          await _audioPlayer.setFilePath(file.path);
+          await _audioPlayer.play();
           _hasSource = true;
         } else {
           throw Exception("Local BGM file does not exist: ${file.path}");
@@ -436,7 +439,8 @@ class BgmService extends ChangeNotifier {
           track.sourceType == 'openlofi' ||
           track.sourceType == 'direct_url') {
         // Stream from internet
-        await _audioPlayer.play(UrlSource(track.sourcePath));
+        await _audioPlayer.setUrl(track.sourcePath);
+        await _audioPlayer.play();
         _hasSource = true;
       } else {
         throw Exception("Unsupported BGM source type: ${track.sourceType}");
@@ -484,7 +488,7 @@ class BgmService extends ChangeNotifier {
         if (await file.exists()) {
           if (_hasSource) {
             _isPlaying = true;
-            await _audioPlayer.resume();
+            await _audioPlayer.play();
             notifyListeners();
           } else {
             // Lần đầu tiên phát nhạc nền, nạp nguồn âm thanh từ đầu

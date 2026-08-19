@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
-import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';
+import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
 
 class BookSearchDialog extends StatefulWidget {
-  final List<Chapter> chapters;
+  final String bookUuid;
   final TtsService ttsService;
   final bool isDark;
   final Color textColor;
 
   const BookSearchDialog({
     super.key,
-    required this.chapters,
+    required this.bookUuid,
     required this.ttsService,
     required this.isDark,
     required this.textColor,
@@ -23,7 +23,7 @@ class BookSearchDialog extends StatefulWidget {
 
 class _BookSearchDialogState extends State<BookSearchDialog> {
   final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _results = [];
+  List<rust_db.SearchResultItem> _results = [];
   bool _isSearching = false;
 
   @override
@@ -32,7 +32,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
     super.dispose();
   }
 
-  void _performSearch(String query) {
+  Future<void> _performSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
       setState(() {
@@ -44,26 +44,26 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
     setState(() {
       _isSearching = true;
     });
-    final list = <Map<String, dynamic>>[];
-    final queryLower = trimmed.toLowerCase();
-    for (int cIdx = 0; cIdx < widget.chapters.length; cIdx++) {
-      final ch = widget.chapters[cIdx];
-      for (int pIdx = 0; pIdx < ch.paragraphs.length; pIdx++) {
-        final paragraph = ch.paragraphs[pIdx];
-        if (paragraph.toLowerCase().contains(queryLower)) {
-          list.add({
-            'chapterIndex': cIdx,
-            'chapterTitle': ch.title,
-            'paragraphIndex': pIdx,
-            'text': paragraph,
-          });
-        }
+
+    try {
+      final list = await rust_db.searchInsideBook(
+        bookUuid: widget.bookUuid,
+        query: trimmed,
+      );
+      if (mounted) {
+        setState(() {
+          _results = list;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _results = [];
+          _isSearching = false;
+        });
       }
     }
-    setState(() {
-      _results = list;
-      _isSearching = false;
-    });
   }
 
   @override
@@ -120,7 +120,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                       itemCount: _results.length,
                       itemBuilder: (context, index) {
                         final res = _results[index];
-                        final text = res['text'] as String;
+                        final text = res.text;
                         final query = _searchController.text;
 
                         final queryLower = query.toLowerCase();
@@ -183,7 +183,7 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                             horizontal: 8,
                           ),
                           title: Text(
-                            res['chapterTitle'],
+                            res.chapterTitle,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -197,10 +197,10 @@ class _BookSearchDialogState extends State<BookSearchDialog> {
                           onTap: () {
                             Navigator.pop(context);
                             widget.ttsService.jumpToChapter(
-                              res['chapterIndex'],
+                              res.chapterIndex,
                             );
                             widget.ttsService.jumpToParagraph(
-                              res['paragraphIndex'],
+                              res.paragraphIndex,
                             );
                           },
                         );

@@ -10,10 +10,8 @@ import '../../core/database/database_helper.dart';
 import '../../core/shortcut_helper.dart';
 import '../../core/utils/path_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
-import '../../services/epub_parser.dart';
-import '../../services/txt_parser.dart';
-import '../../services/pdf_parser.dart';
-import '../../services/docx_parser.dart';
+import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
+import 'package:audire_reader/src/rust/api/parsers.dart' as rust_parsers;
 import '../../services/tts_service.dart' hide print;
 import '../reader/reader_screen.dart';
 import '../../services/sync_service.dart' hide print;
@@ -61,10 +59,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
   bool _syncFailed = false;
   bool _isGridView = true;
   TtsService? _ttsService;
+  Map<ShortcutActivator, VoidCallback> _libraryShortcuts = {};
 
   @override
   void initState() {
     super.initState();
+    _initShortcuts();
     _loadSyncStatus();
     _loadAppVersion();
     _loadViewMode();
@@ -1171,28 +1171,76 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  Future<void> _initShortcuts() async {
+    try {
+      final db = await DatabaseHelper.getInstance();
+      final settings = await db.getSettings();
+      if (mounted) {
+        setState(() {
+          _libraryShortcuts = {
+            ShortcutHelper.parse(settings.hotkeyOpenSetting):
+                _handleOpenSettingShortcut,
+          };
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadBooks() async {
     final db = await DatabaseHelper.getInstance();
-    final settings = await db.getSettings();
+    await PathHelper.getAppDirectory();
+    PathHelper.invalidateCoverCache();
 
-    // Lấy sách local
-    final List<Book> books = await db.getBooks(
-      tag: (_selectedTag == 'All' || _selectedTag == null)
-          ? null
-          : _selectedTag,
-      status: (_selectedStatus == 'All' || _selectedStatus == null)
-          ? null
-          : _selectedStatus,
-      sortBy: settings.sortBy,
-    );
+    final settingsFuture = db.getSettings();
+    final allLocalBooksFuture = rust_db.getAllBooks();
+    final allProgressFuture = rust_db.getAllReadingProgress();
 
-    final tags = await db.getAllBookTags();
+    final settings = await settingsFuture;
+    final allLocalBooks = await allLocalBooksFuture;
+    final allProgress = await allProgressFuture;
+
+    // Cache cover paths into PathHelper
+    for (final b in allLocalBooks) {
+      PathHelper.resolveCoverPathSync(b.coverPath, uuid: b.uuid);
+    }
+
+    // Build progressMap & lastReadMap in 1 pass
+    final Map<String, double> pMap = {};
+    final Map<String, int> lastReadMap = {};
+    final Map<String, ReadingProgress> progMap = {};
+    for (final p in allProgress) {
+      lastReadMap[p.bookUuid] = p.lastRead.toInt();
+      progMap[p.bookUuid] = p;
+    }
+
+    final Set<String> tagSet = {};
+    for (final b in allLocalBooks) {
+      tagSet.addAll(b.tags);
+      final prog = progMap[b.uuid];
+      if (prog != null && b.totalChapters > 0 && prog.currentChapterIndex > 0) {
+        final percent = (prog.currentChapterIndex / b.totalChapters) * 100;
+        pMap[b.uuid] = percent.clamp(0.0, 100.0);
+      } else {
+        pMap[b.uuid] = 0.0;
+      }
+    }
+
+    // Lọc local books
+    List<Book> books = allLocalBooks;
+    if (_selectedTag != null && _selectedTag != 'All') {
+      books = books.where((b) => b.tags.contains(_selectedTag)).toList();
+    }
+    if (_selectedStatus != null && _selectedStatus != 'All') {
+      books = books.where((b) {
+        final bStatus = b.status.trim().isEmpty ? 'unread' : b.status;
+        return bStatus.toLowerCase() == _selectedStatus!.toLowerCase();
+      }).toList();
+    }
 
     // Lấy sách ảo trên Cloud (nếu WebDAV được bật)
     final List<Book> cloudBooks = [];
     if (_webDavEnabled) {
       final docDir = await PathHelper.getAppDirectory();
-      final allLocalBooks = await db.getAllBooks();
       final allLocalUuids = allLocalBooks.map((b) => b.uuid).toSet();
 
       final cloudBooksMetadata =
@@ -1200,7 +1248,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       for (final cb in cloudBooksMetadata) {
         final String cuuid = cb['uuid'] ?? '';
         if (cuuid.isNotEmpty && !allLocalUuids.contains(cuuid)) {
-          // Lọc theo tag (sách ảo chưa có tag) và status (sách ảo luôn là unread)
           if (_selectedTag != 'All' && _selectedTag != null) continue;
           if (_selectedStatus != 'All' && _selectedStatus != 'unread') continue;
 
@@ -1212,7 +1259,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 )
               : null;
 
-          final virtualBook = Book(uuid: cuuid, title: cb['title'] ?? 'Unknown', author: cb['author'] ?? 'Unknown', coverPath: coverPath, totalChapters: cb['totalChapters'] ?? 0, dateAdded: (DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch, status: 'unread', tags: []);
+          final virtualBook = Book(
+            uuid: cuuid,
+            title: cb['title'] ?? 'Unknown',
+            author: cb['author'] ?? 'Unknown',
+            coverPath: coverPath,
+            totalChapters: cb['totalChapters'] ?? 0,
+            dateAdded: (DateTime.tryParse(cb['dateAdded'] ?? '') ?? DateTime.now()).millisecondsSinceEpoch,
+            status: 'unread',
+            tags: [],
+          );
           cloudBooks.add(virtualBook);
         }
       }
@@ -1236,39 +1292,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
       allBooks.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
     } else {
       // 'lastRead':
-      final Map<String, int> lastReadMap = {};
-      for (final book in allBooks) {
-        final progress = await db.getProgress(book.uuid);
-        lastReadMap[book.uuid] = (progress?.lastRead ?? book.dateAdded).toInt();
-      }
       allBooks.sort((a, b) {
-        final timeA = lastReadMap[a.uuid]!;
-        final timeB = lastReadMap[b.uuid]!;
+        final timeA = lastReadMap[a.uuid] ?? a.dateAdded;
+        final timeB = lastReadMap[b.uuid] ?? b.dateAdded;
         return timeB.compareTo(timeA);
       });
     }
 
-    final Map<String, double> pMap = {};
-    for (final book in allBooks) {
-      final progress = await db.getProgress(book.uuid);
-      if (progress != null && book.totalChapters > 0) {
-        final percent =
-            (progress.currentChapterIndex / book.totalChapters) * 100;
-        pMap[book.uuid] = percent.clamp(0.0, 100.0);
-      } else {
-        pMap[book.uuid] = 0.0;
-      }
-    }
-
-    final localBookUuids = books.map((b) => b.uuid).toSet();
+    final localBookUuids = allLocalBooks.map((b) => b.uuid).toSet();
 
     if (mounted) {
       setState(() {
         _books = allBooks;
         _localBookUuids = localBookUuids;
         _sortBy = settings.sortBy;
-        _allTags = ['All', ...tags];
+        _allTags = ['All', ...tagSet];
         _progressMap = pMap;
+        _libraryShortcuts = {
+          ShortcutHelper.parse(settings.hotkeyOpenSetting):
+              _handleOpenSettingShortcut,
+        };
       });
     }
   }
@@ -1369,15 +1412,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       final filePath = result.files.single.path!;
       final docDir = await PathHelper.getAppDirectory();
 
-      // Chạy parser trong background isolate để tránh đơ giao diện
-      final parsedData = await compute(_parseBookIsolate, {
-        'filePath': filePath,
-        'docDirPath': docDir.path,
-      });
-
-      final db = await DatabaseHelper.getInstance();
-      await db.saveBook(parsedData.book);
-      await db.saveChapters(parsedData.chapters);
+      final parsedBook = await rust_parsers.importBookFile(
+        filePath: filePath,
+        documentsDirPath: docDir.path,
+      );
 
       await _loadBooks();
       _triggerAutoSync();
@@ -1388,8 +1426,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
             content: Text(
               AppLocalizations.of(
                     context,
-                  )?.successfullyImported(parsedData.book.title) ??
-                  'Successfully imported "${parsedData.book.title}"!',
+                  )?.successfullyImported(parsedBook.title) ??
+                  'Successfully imported "${parsedBook.title}"!',
             ),
           ),
         );
@@ -1411,27 +1449,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
           _isLoading = false;
         });
       }
-    }
-  }
-
-  // Hàm chạy riêng trong isolate
-  static Future<ParsedBookData> _parseBookIsolate(
-    Map<String, String> args,
-  ) async {
-    final filePath = args['filePath']!;
-    final docDirPath = args['docDirPath']!;
-    final extension = path.extension(filePath).toLowerCase();
-
-    if (extension == '.epub') {
-      return await EpubParser.parseEpubFile(filePath, docDirPath);
-    } else if (extension == '.txt') {
-      return await TxtParser.parseTxtFile(filePath);
-    } else if (extension == '.pdf') {
-      return await PdfParser.parsePdfFile(filePath);
-    } else if (extension == '.docx') {
-      return await DocxParser.parseDocxFile(filePath);
-    } else {
-      throw Exception("Unsupported file format");
     }
   }
 
@@ -1466,48 +1483,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  Future<void> _openBook(Book book) async {
-    final db = await DatabaseHelper.getInstance();
-
+  void _openBook(Book book) {
     if (book.status == 'unread') {
-      book = book.copyWith(status: 'reading');
-      await db.saveBook(book);
+      final updatedBook = book.copyWith(status: 'reading');
+      DatabaseHelper.getInstance().then((db) => db.saveBook(updatedBook));
+      book = updatedBook;
     }
 
-    final chapters = await db.getChaptersForBook(book.uuid);
-    final progress = await db.getProgress(book.uuid);
-
-    final ttsService = await TtsService.getInstance();
-
-    int startChapter = progress?.currentChapterIndex ?? 0;
-    int startParagraph = progress?.currentParagraphIndex ?? 0;
-
-    // Đảm bảo chỉ số nằm trong phạm vi hợp lệ
-    if (startChapter >= chapters.length) {
-      startChapter = 0;
-      startParagraph = 0;
-    } else if (chapters.isNotEmpty &&
-        startParagraph >= chapters[startChapter].paragraphs.length) {
-      startParagraph = 0;
-    }
-
-    await ttsService.loadBook(
-      book,
-      chapters,
-      startChapter: startChapter,
-      startParagraph: startParagraph,
-    );
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ReaderScreen()),
-      ).then((_) {
-        // Tải lại sách để cập nhật tiến độ đọc
-        _loadBooks();
-        _triggerAutoSync();
-      });
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ReaderScreen(initialBook: book)),
+    ).then((_) {
+      // Tải lại sách để cập nhật tiến độ đọc
+      _loadBooks();
+      _triggerAutoSync();
+    });
   }
 
   // --- Hotkeys & Boss Key Handlers ---
@@ -1521,15 +1511,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
       _loadSyncStatus();
       _triggerAutoSync();
     });
-  }
-
-  Future<Map<ShortcutActivator, VoidCallback>> _buildLibraryShortcuts() async {
-    final db = await DatabaseHelper.getInstance();
-    final settings = await db.getSettings();
-    return {
-      ShortcutHelper.parse(settings.hotkeyOpenSetting):
-          _handleOpenSettingShortcut,
-    };
   }
 
   @override
@@ -1900,6 +1881,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       _selectedSource = 'Cloud';
                                     });
                                     _loadBooks();
+                                    SyncService.getInstance().fetchCloudBooks();
                                   }
                                 },
                               ),
@@ -1913,6 +1895,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                       _selectedSource = 'All';
                                     });
                                     _loadBooks();
+                                    SyncService.getInstance().fetchCloudBooks();
                                   }
                                 },
                               ),
@@ -2111,19 +2094,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    return FutureBuilder<Map<ShortcutActivator, VoidCallback>>(
-      future: _buildLibraryShortcuts(),
-      builder: (context, snapshot) {
-        final bindings = snapshot.data;
-        if (bindings == null) {
-          return scaffoldContent;
-        }
+    if (_libraryShortcuts.isEmpty) {
+      return scaffoldContent;
+    }
 
-        return CallbackShortcuts(
-          bindings: bindings,
-          child: Focus(autofocus: true, child: scaffoldContent),
-        );
-      },
+    return CallbackShortcuts(
+      bindings: _libraryShortcuts,
+      child: Focus(autofocus: true, child: scaffoldContent),
     );
   }
 
@@ -2174,6 +2151,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       return Image.file(
                         File(resolvedPath),
                         fit: BoxFit.cover,
+                        cacheWidth: 320,
+                        cacheHeight: 480,
                         errorBuilder: (context, error, stackTrace) {
                           print(
                             '[LibraryScreen] Error loading image for "${book.title}": $error',
@@ -2553,20 +2532,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    return GestureDetector(
-      onTap: () {
-        if (isVirtual) {
-          _showDownloadConfirm(book);
-        } else {
-          _openBook(book);
-        }
-      },
-      child: isVirtual ? Opacity(opacity: 0.65, child: card) : card,
+    return RepaintBoundary(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            if (isVirtual) {
+              _showDownloadConfirm(book);
+            } else {
+              _openBook(book);
+            }
+          },
+          child: isVirtual ? Opacity(opacity: 0.65, child: card) : card,
+        ),
+      ),
     );
   }
 
   void _showDeleteConfirm(Book book) {
-    if (_webDavEnabled) {
+    final bool isOnCloud = _webDavEnabled &&
+        SyncService.getInstance().cloudBookUuidsNotifier.value.contains(
+          book.uuid,
+        );
+    final bool isLocal = _localBookUuids.contains(book.uuid);
+
+    if (isOnCloud && isLocal) {
+      // Sách tồn tại ở cả Local & Cloud -> Cho lựa chọn xóa Local hoặc cả hai
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -2607,7 +2600,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ],
         ),
       );
+    } else if (isOnCloud && !isLocal) {
+      // Sách chỉ tồn tại trên Cloud -> Chỉ cho tùy chọn xóa khỏi Cloud
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            AppLocalizations.of(context)?.deleteFromCloudTitle ?? 'Delete from Cloud',
+          ),
+          content: Text(
+            AppLocalizations.of(context)?.confirmDeleteFromCloud(book.title) ??
+                'Are you sure you want to delete "${book.title}" from WebDAV Cloud?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteBook(book, deleteFromCloud: true);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(
+                AppLocalizations.of(context)?.delete ?? 'Delete',
+              ),
+            ),
+          ],
+        ),
+      );
     } else {
+      // Sách chỉ tồn tại ở Local
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -2616,7 +2640,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
           content: Text(
             AppLocalizations.of(context)?.confirmDeleteBook(book.title) ??
-                'Are you sure you want to delete "${book.title}"? This will erase all chapter caches and reading progress.',
+                'Are you sure you want to delete "${book.title}"?',
           ),
           actions: [
             TextButton(
@@ -2887,6 +2911,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             return Image.file(
                               File(resolvedPath),
                               fit: BoxFit.cover,
+                              cacheWidth: 150,
+                              cacheHeight: 210,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: isDark
@@ -3252,6 +3278,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    return isVirtual ? Opacity(opacity: 0.65, child: listItem) : listItem;
+    return RepaintBoundary(
+      child: isVirtual ? Opacity(opacity: 0.65, child: listItem) : listItem,
+    );
   }
 }

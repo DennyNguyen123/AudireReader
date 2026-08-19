@@ -20,6 +20,11 @@ import 'core/utils/path_helper.dart';
 void main() async {
   // Đảm bảo bindings được khởi tạo hoàn chỉnh trước khi chạy các service chạy nền
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Giới hạn bộ nhớ đệm hình ảnh để tối ưu Startup RAM cho app đọc sách
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 25 << 20; // 25 MB (thay vì 100MB mặc định)
+  PaintingBinding.instance.imageCache.maximumSize = 60; // 60 ảnh (thay vì 1000 mặc định)
+
   await RustLib.init();
 
   // Khởi tạo Database SQLite từ Rust
@@ -37,8 +42,8 @@ void main() async {
     await GlobalHotkeyManager.init();
   }
 
-  // Khởi tạo dịch vụ Audio Service & TTS toàn cục trước khi ứng dụng chạy
-  await TtsService.getInstance();
+  // Khởi tạo dịch vụ Audio Service & TTS toàn cục ngầm
+  final ttsFuture = TtsService.getInstance();
 
   // Khởi tạo trạng thái themeMode từ Database
   final db = await DatabaseHelper.getInstance();
@@ -53,6 +58,7 @@ void main() async {
     enableWebDavDebug: settings.enableWebDavDebug,
   );
 
+  // Không await ttsFuture để app khởi động ngay lập tức
   runApp(const AudireReaderApp());
 }
 

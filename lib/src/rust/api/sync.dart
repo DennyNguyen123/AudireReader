@@ -4,9 +4,11 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `headers`, `parse_webdav_xml`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SyncBookPayload`, `SyncChapterPayload`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
 
 Future<void> webdavInit({
@@ -62,6 +64,17 @@ Future<bool> webdavRemove({required String remotePath}) =>
 
 Future<bool> webdavFileExists({required String remotePath}) =>
     RustLib.instance.api.crateApiSyncWebdavFileExists(remotePath: remotePath);
+
+Future<bool> exportAndUploadBook({required String bookUuid}) =>
+    RustLib.instance.api.crateApiSyncExportAndUploadBook(bookUuid: bookUuid);
+
+Future<Book> downloadAndImportBook({
+  required String bookUuid,
+  required String documentsDir,
+}) => RustLib.instance.api.crateApiSyncDownloadAndImportBook(
+  bookUuid: bookUuid,
+  documentsDir: documentsDir,
+);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WebDavClient>>
 abstract class WebDavClient implements RustOpaqueInterface {

@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -945915457;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -114833584;
 
 // Section: executor
 
@@ -1234,6 +1234,47 @@ fn wire__crate__api__supertonic__detect_language_impl(
         },
     )
 }
+fn wire__crate__api__sync__download_and_import_book_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "download_and_import_book",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_book_uuid = <String>::sse_decode(&mut deserializer);
+            let api_documents_dir = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::sync::download_and_import_book(
+                            api_book_uuid,
+                            api_documents_dir,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__supertonic__download_supertonic_models_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1305,6 +1346,43 @@ fn wire__crate__api__supertonic__encode_wav_impl(
                     ))?;
                     Ok(output_ok)
                 })())
+            }
+        },
+    )
+}
+fn wire__crate__api__sync__export_and_upload_book_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "export_and_upload_book",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_book_uuid = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::sync::export_and_upload_book(api_book_uuid).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
             }
         },
     )
@@ -1469,6 +1547,39 @@ fn wire__crate__api__database__get_bgm_tracks_impl(
         },
     )
 }
+fn wire__crate__api__database__get_book_by_uuid_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_book_by_uuid",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_uuid = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::database::get_book_by_uuid(api_uuid)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__offline_downloader__get_book_storage_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1535,6 +1646,74 @@ fn wire__crate__api__database__get_bookmarks_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::database::get_bookmarks(api_book_uuid)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__database__get_chapter_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_chapter",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_book_uuid = <String>::sse_decode(&mut deserializer);
+            let api_chapter_index = <i32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::database::get_chapter(api_book_uuid, api_chapter_index)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__database__get_chapter_headers_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_chapter_headers",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_book_uuid = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::database::get_chapter_headers(api_book_uuid)?;
                     Ok(output_ok)
                 })())
             }
@@ -1874,6 +2053,43 @@ fn wire__crate__api__simple__greet_impl(
                 let output_ok = Result::<_, ()>::Ok(crate::api::simple::greet(api_name))?;
                 Ok(output_ok)
             })())
+        },
+    )
+}
+fn wire__crate__api__parsers__import_book_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "import_book_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_path = <String>::sse_decode(&mut deserializer);
+            let api_documents_dir_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::parsers::import_book_file(
+                        api_file_path,
+                        api_documents_dir_path,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
         },
     )
 }
@@ -2598,6 +2814,41 @@ fn wire__crate__api__database__save_settings_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::database::save_settings(api_settings)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__database__search_inside_book_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "search_inside_book",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_book_uuid = <String>::sse_decode(&mut deserializer);
+            let api_query = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::database::search_inside_book(api_book_uuid, api_query)?;
                     Ok(output_ok)
                 })())
             }
@@ -3793,6 +4044,20 @@ impl SseDecode for Vec<crate::api::models::ReadingProgress> {
     }
 }
 
+impl SseDecode for Vec<crate::api::database::SearchResultItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::database::SearchResultItem>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::api::sync::WebDavFile> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3851,6 +4116,28 @@ impl SseDecode for Option<crate::api::models::AppSettings> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<crate::api::models::AppSettings>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::models::Book> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::models::Book>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::models::Chapter> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::models::Chapter>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -3951,6 +4238,22 @@ impl SseDecode for crate::api::models::ReadingProgress {
             current_paragraph_index: var_currentParagraphIndex,
             current_character_offset: var_currentCharacterOffset,
             last_read: var_lastRead,
+        };
+    }
+}
+
+impl SseDecode for crate::api::database::SearchResultItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_chapterIndex = <i32>::sse_decode(deserializer);
+        let mut var_chapterTitle = <String>::sse_decode(deserializer);
+        let mut var_paragraphIndex = <i32>::sse_decode(deserializer);
+        let mut var_text = <String>::sse_decode(deserializer);
+        return crate::api::database::SearchResultItem {
+            chapter_index: var_chapterIndex,
+            chapter_title: var_chapterTitle,
+            paragraph_index: var_paragraphIndex,
+            text: var_text,
         };
     }
 }
@@ -4114,153 +4417,168 @@ fn pde_ffi_dispatcher_primary_impl(
             data_len,
         ),
         28 => wire__crate__api__supertonic__detect_language_impl(port, ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__supertonic__download_supertonic_models_impl(
+        29 => {
+            wire__crate__api__sync__download_and_import_book_impl(port, ptr, rust_vec_len, data_len)
+        }
+        30 => wire__crate__api__supertonic__download_supertonic_models_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__supertonic__encode_wav_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__database__get_all_bookmarks_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__database__get_all_books_impl(port, ptr, rust_vec_len, data_len),
-        33 => {
+        31 => wire__crate__api__supertonic__encode_wav_impl(port, ptr, rust_vec_len, data_len),
+        32 => {
+            wire__crate__api__sync__export_and_upload_book_impl(port, ptr, rust_vec_len, data_len)
+        }
+        33 => wire__crate__api__database__get_all_bookmarks_impl(port, ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__database__get_all_books_impl(port, ptr, rust_vec_len, data_len),
+        35 => {
             wire__crate__api__database__get_all_highlights_impl(port, ptr, rust_vec_len, data_len)
         }
-        34 => wire__crate__api__database__get_all_reading_progress_impl(
+        36 => wire__crate__api__database__get_all_reading_progress_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__database__get_bgm_tracks_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__offline_downloader__get_book_storage_info_impl(
+        37 => wire__crate__api__database__get_bgm_tracks_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__database__get_book_by_uuid_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__offline_downloader__get_book_storage_info_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        37 => wire__crate__api__database__get_bookmarks_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__database__get_chapters_impl(port, ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__offline_downloader__get_download_status_impl(
+        40 => wire__crate__api__database__get_bookmarks_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__database__get_chapter_impl(port, ptr, rust_vec_len, data_len),
+        42 => {
+            wire__crate__api__database__get_chapter_headers_impl(port, ptr, rust_vec_len, data_len)
+        }
+        43 => wire__crate__api__database__get_chapters_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__offline_downloader__get_download_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        40 => wire__crate__api__tts__get_edge_voices_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__database__get_highlights_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__database__get_offline_tts_record_impl(
+        45 => wire__crate__api__tts__get_edge_voices_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__database__get_highlights_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__database__get_offline_tts_record_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        43 => wire__crate__api__database__get_offline_tts_records_impl(
+        48 => wire__crate__api__database__get_offline_tts_records_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        44 => wire__crate__api__database__get_pronunciation_rules_impl(
+        49 => wire__crate__api__database__get_pronunciation_rules_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        45 => {
+        50 => {
             wire__crate__api__database__get_reading_progress_impl(port, ptr, rust_vec_len, data_len)
         }
-        46 => wire__crate__api__database__get_settings_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__tts__init_offline_tts_impl(port, ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__supertonic__init_supertonic_engine_impl(
+        51 => wire__crate__api__database__get_settings_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__parsers__import_book_file_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__tts__init_offline_tts_impl(port, ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__supertonic__init_supertonic_engine_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        52 => wire__crate__api__database__insert_book_impl(port, ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__database__insert_chapters_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__offline_downloader__is_download_running_impl(
+        58 => wire__crate__api__database__insert_book_impl(port, ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__database__insert_chapters_impl(port, ptr, rust_vec_len, data_len),
+        60 => wire__crate__api__offline_downloader__is_download_running_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        55 => wire__crate__api__supertonic__is_valid_lang_impl(port, ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__tts__offline_tts_speak_impl(port, ptr, rust_vec_len, data_len),
-        57 => wire__crate__api__tts__offline_tts_stop_impl(port, ptr, rust_vec_len, data_len),
-        62 => wire__crate__api__offline_downloader__pause_offline_download_impl(
+        61 => wire__crate__api__supertonic__is_valid_lang_impl(port, ptr, rust_vec_len, data_len),
+        62 => wire__crate__api__tts__offline_tts_speak_impl(port, ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__tts__offline_tts_stop_impl(port, ptr, rust_vec_len, data_len),
+        68 => wire__crate__api__offline_downloader__pause_offline_download_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        63 => wire__crate__api__supertonic__preprocess_text_impl(port, ptr, rust_vec_len, data_len),
-        64 => wire__crate__api__supertonic__release_supertonic_engine_impl(
+        69 => wire__crate__api__supertonic__preprocess_text_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__supertonic__release_supertonic_engine_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        65 => wire__crate__api__offline_downloader__resume_offline_download_impl(
+        71 => wire__crate__api__offline_downloader__resume_offline_download_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        66 => wire__crate__api__database__save_offline_tts_record_impl(
+        72 => wire__crate__api__database__save_offline_tts_record_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        67 => wire__crate__api__database__save_pronunciation_rule_impl(
+        73 => wire__crate__api__database__save_pronunciation_rule_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        68 => wire__crate__api__database__save_reading_progress_impl(
+        74 => wire__crate__api__database__save_reading_progress_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        69 => wire__crate__api__database__save_settings_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__offline_downloader__start_offline_download_job_impl(
+        75 => wire__crate__api__database__save_settings_impl(port, ptr, rust_vec_len, data_len),
+        76 => {
+            wire__crate__api__database__search_inside_book_impl(port, ptr, rust_vec_len, data_len)
+        }
+        77 => wire__crate__api__offline_downloader__start_offline_download_job_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        71 => wire__crate__api__tts__synthesize_edge_tts_impl(port, ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__tts__synthesize_openai_tts_impl(port, ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__supertonic__synthesize_supertonic_impl(
+        78 => wire__crate__api__tts__synthesize_edge_tts_impl(port, ptr, rust_vec_len, data_len),
+        79 => wire__crate__api__tts__synthesize_openai_tts_impl(port, ptr, rust_vec_len, data_len),
+        80 => wire__crate__api__supertonic__synthesize_supertonic_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        74 => wire__crate__api__tts__synthesize_system_tts_to_wav_impl(
+        81 => wire__crate__api__tts__synthesize_system_tts_to_wav_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        75 => wire__crate__api__database__vacuum_database_impl(port, ptr, rust_vec_len, data_len),
-        76 => wire__crate__api__sync__webdav_download_bytes_impl(port, ptr, rust_vec_len, data_len),
-        77 => wire__crate__api__sync__webdav_download_file_impl(port, ptr, rust_vec_len, data_len),
-        78 => wire__crate__api__sync__webdav_file_exists_impl(port, ptr, rust_vec_len, data_len),
-        79 => wire__crate__api__sync__webdav_init_impl(port, ptr, rust_vec_len, data_len),
-        80 => wire__crate__api__sync__webdav_list_files_impl(port, ptr, rust_vec_len, data_len),
-        81 => wire__crate__api__sync__webdav_mkdir_impl(port, ptr, rust_vec_len, data_len),
-        82 => wire__crate__api__sync__webdav_remove_impl(port, ptr, rust_vec_len, data_len),
-        83 => {
+        82 => wire__crate__api__database__vacuum_database_impl(port, ptr, rust_vec_len, data_len),
+        83 => wire__crate__api__sync__webdav_download_bytes_impl(port, ptr, rust_vec_len, data_len),
+        84 => wire__crate__api__sync__webdav_download_file_impl(port, ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__sync__webdav_file_exists_impl(port, ptr, rust_vec_len, data_len),
+        86 => wire__crate__api__sync__webdav_init_impl(port, ptr, rust_vec_len, data_len),
+        87 => wire__crate__api__sync__webdav_list_files_impl(port, ptr, rust_vec_len, data_len),
+        88 => wire__crate__api__sync__webdav_mkdir_impl(port, ptr, rust_vec_len, data_len),
+        89 => wire__crate__api__sync__webdav_remove_impl(port, ptr, rust_vec_len, data_len),
+        90 => {
             wire__crate__api__sync__webdav_test_connection_impl(port, ptr, rust_vec_len, data_len)
         }
-        84 => wire__crate__api__sync__webdav_upload_bytes_impl(port, ptr, rust_vec_len, data_len),
-        85 => wire__crate__api__sync__webdav_upload_file_impl(port, ptr, rust_vec_len, data_len),
+        91 => wire__crate__api__sync__webdav_upload_bytes_impl(port, ptr, rust_vec_len, data_len),
+        92 => wire__crate__api__sync__webdav_upload_file_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -4273,12 +4591,12 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        47 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__database__init_database_impl(ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__parsers__parse_docx_file_impl(ptr, rust_vec_len, data_len),
-        59 => wire__crate__api__parsers__parse_epub_file_impl(ptr, rust_vec_len, data_len),
-        60 => wire__crate__api__parsers__parse_pdf_file_impl(ptr, rust_vec_len, data_len),
-        61 => wire__crate__api__parsers__parse_txt_file_impl(ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__database__init_database_impl(ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__parsers__parse_docx_file_impl(ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__parsers__parse_epub_file_impl(ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__parsers__parse_pdf_file_impl(ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__parsers__parse_txt_file_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -4688,6 +5006,29 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::models::ReadingProgress>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::database::SearchResultItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.chapter_index.into_into_dart().into_dart(),
+            self.chapter_title.into_into_dart().into_dart(),
+            self.paragraph_index.into_into_dart().into_dart(),
+            self.text.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::database::SearchResultItem
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::database::SearchResultItem>
+    for crate::api::database::SearchResultItem
+{
+    fn into_into_dart(self) -> crate::api::database::SearchResultItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::sync::WebDavFile {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -5088,6 +5429,16 @@ impl SseEncode for Vec<crate::api::models::ReadingProgress> {
     }
 }
 
+impl SseEncode for Vec<crate::api::database::SearchResultItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::database::SearchResultItem>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::api::sync::WebDavFile> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -5131,6 +5482,26 @@ impl SseEncode for Option<crate::api::models::AppSettings> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::api::models::AppSettings>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::models::Book> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::models::Book>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::models::Chapter> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::models::Chapter>::sse_encode(value, serializer);
         }
     }
 }
@@ -5203,6 +5574,16 @@ impl SseEncode for crate::api::models::ReadingProgress {
         <i32>::sse_encode(self.current_paragraph_index, serializer);
         <i32>::sse_encode(self.current_character_offset, serializer);
         <i64>::sse_encode(self.last_read, serializer);
+    }
+}
+
+impl SseEncode for crate::api::database::SearchResultItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.chapter_index, serializer);
+        <String>::sse_encode(self.chapter_title, serializer);
+        <i32>::sse_encode(self.paragraph_index, serializer);
+        <String>::sse_encode(self.text, serializer);
     }
 }
 

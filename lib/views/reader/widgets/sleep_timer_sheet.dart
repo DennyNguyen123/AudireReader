@@ -132,13 +132,9 @@ class _SleepTimerSheetState extends State<SleepTimerSheet> {
         (isDark ? Colors.white70 : Colors.black87);
     final accentColor = theme.colorScheme.primary;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: sheetBg.withValues(alpha: isDark ? 0.9 : 0.95),
+    return Container(
+      decoration: BoxDecoration(
+        color: sheetBg.withValues(alpha: 0.96),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
@@ -394,8 +390,6 @@ class _SleepTimerSheetState extends State<SleepTimerSheet> {
               );
             },
           ),
-        ),
-      ),
     );
   }
 }

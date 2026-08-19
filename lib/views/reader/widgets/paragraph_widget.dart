@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:audire_reader/services/tts_service.dart';
 
 class ParagraphWidget extends StatefulWidget {
   final String text;
@@ -12,6 +13,7 @@ class ParagraphWidget extends StatefulWidget {
   final TextAlign textAlign;
   final int wordStart;
   final int wordEnd;
+  final ValueNotifier<WordProgress>? wordProgressNotifier;
   final bool isDark;
   final String fontFamily;
   final Color textColor;
@@ -30,8 +32,9 @@ class ParagraphWidget extends StatefulWidget {
     required this.paragraphSpacing,
     this.paragraphIndent = 0.0,
     required this.textAlign,
-    required this.wordStart,
-    required this.wordEnd,
+    this.wordStart = 0,
+    this.wordEnd = 0,
+    this.wordProgressNotifier,
     required this.isDark,
     required this.fontFamily,
     required this.textColor,
@@ -83,15 +86,24 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     });
   }
 
+  static final Map<String, Color> _hexColorCache = {};
+
   Color _parseHexColor(String hexStr) {
+    final cached = _hexColorCache[hexStr];
+    if (cached != null) return cached;
+
     String cleanHex = hexStr.replaceAll('#', '');
     if (cleanHex.length == 8) {
-      return Color(int.parse(cleanHex, radix: 16));
+      final color = Color(int.parse(cleanHex, radix: 16));
+      _hexColorCache[hexStr] = color;
+      return color;
     }
     if (cleanHex.length == 6) {
       cleanHex = 'FF$cleanHex';
     }
-    return Color(int.parse(cleanHex, radix: 16));
+    final color = Color(int.parse(cleanHex, radix: 16));
+    _hexColorCache[hexStr] = color;
+    return color;
   }
 
   @override
@@ -100,8 +112,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+      child: Container(
         margin: EdgeInsets.only(bottom: widget.paragraphSpacing),
         padding: EdgeInsets.zero,
         decoration: const BoxDecoration(color: Colors.transparent),
@@ -184,11 +195,8 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       backgroundColor: textBgColor,
     );
 
-    if (!widget.isActive ||
-        widget.wordStart >= widget.wordEnd ||
-        widget.wordEnd > widget.text.length) {
-      return AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 300),
+    if (!widget.isActive) {
+      return DefaultTextStyle(
         style: style,
         textAlign: widget.textAlign,
         child: Text.rich(
@@ -203,12 +211,52 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
       );
     }
 
-    final before = widget.text.substring(0, widget.wordStart);
-    final word = widget.text.substring(widget.wordStart, widget.wordEnd);
-    final after = widget.text.substring(widget.wordEnd);
+    if (widget.wordProgressNotifier != null) {
+      return ValueListenableBuilder<WordProgress>(
+        valueListenable: widget.wordProgressNotifier!,
+        builder: (context, progress, _) {
+          return _buildTextWithWordHighlight(
+            style: style,
+            wordStart: progress.start,
+            wordEnd: progress.end,
+          );
+        },
+      );
+    }
 
-    return AnimatedDefaultTextStyle(
-      duration: const Duration(milliseconds: 300),
+    return _buildTextWithWordHighlight(
+      style: style,
+      wordStart: widget.wordStart,
+      wordEnd: widget.wordEnd,
+    );
+  }
+
+  Widget _buildTextWithWordHighlight({
+    required TextStyle style,
+    required int wordStart,
+    required int wordEnd,
+  }) {
+    if (wordStart >= wordEnd || wordEnd > widget.text.length) {
+      return DefaultTextStyle(
+        style: style,
+        textAlign: widget.textAlign,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              if (widget.paragraphIndent > 0)
+                WidgetSpan(child: SizedBox(width: widget.paragraphIndent)),
+              TextSpan(text: widget.text),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final before = widget.text.substring(0, wordStart);
+    final word = widget.text.substring(wordStart, wordEnd);
+    final after = widget.text.substring(wordEnd);
+
+    return DefaultTextStyle(
       style: style,
       textAlign: widget.textAlign,
       child: Text.rich(

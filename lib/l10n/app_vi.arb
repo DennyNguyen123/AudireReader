@@ -457,5 +457,9 @@
   "rewindParagraphTooltip": "Lùi đoạn",
   "forwardParagraphTooltip": "Tới đoạn",
   "changeCover": "Đổi ảnh bìa",
-  "tapToChange": "Chạm để đổi"
+  "tapToChange": "Chạm để đổi",
+  "fromBeginningToCurrent": "Từ đầu đến hiện tại",
+  "filterDownloading": "Đang tải",
+  "ttsProviderLabel": "Nhà cung cấp TTS",
+  "voiceLabel": "Giọng đọc"
 }

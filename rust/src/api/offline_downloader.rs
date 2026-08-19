@@ -145,13 +145,25 @@ pub fn get_book_storage_info(base_dir: String, book_uuid: String) -> BookStorage
     }
 }
 
+static LIVE_DOWNLOADED_CHAPTERS: Lazy<parking_lot::Mutex<HashSet<i32>>> =
+    Lazy::new(|| parking_lot::Mutex::new(HashSet::new()));
+static LIVE_TOTAL_BYTES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 pub fn get_download_status(base_dir: String, book_uuid: String) -> DownloadStatusInfo {
     let is_running = IS_RUNNING.load(Ordering::Relaxed);
     let is_paused = IS_PAUSED.load(Ordering::Relaxed);
 
     let active_chapter_indices: Vec<i32> = ACTIVE_CHAPTERS.lock().iter().copied().collect();
     let failed_chapter_indices: Vec<i32> = FAILED_CHAPTERS.lock().iter().copied().collect();
-    let storage_info = get_book_storage_info(base_dir, book_uuid);
+
+    let (downloaded_chapter_indices, total_bytes, chapter_sizes) = if is_running {
+        let downloaded: Vec<i32> = LIVE_DOWNLOADED_CHAPTERS.lock().iter().copied().collect();
+        let bytes = LIVE_TOTAL_BYTES.load(Ordering::Relaxed);
+        (downloaded, bytes, Vec::new())
+    } else {
+        let storage_info = get_book_storage_info(base_dir, book_uuid);
+        (storage_info.chapter_indices, storage_info.total_bytes, storage_info.chapter_sizes)
+    };
 
     let recent_logs: Vec<String> = {
         let mut logs = RECENT_LOGS.lock();
@@ -164,12 +176,12 @@ pub fn get_download_status(base_dir: String, book_uuid: String) -> DownloadStatu
         is_running,
         is_paused,
         total_chapters: 0,
-        completed_chapters: storage_info.chapter_indices.len(),
-        total_bytes: storage_info.total_bytes,
+        completed_chapters: downloaded_chapter_indices.len(),
+        total_bytes,
         active_chapter_indices,
-        downloaded_chapter_indices: storage_info.chapter_indices,
+        downloaded_chapter_indices,
         failed_chapter_indices,
-        chapter_sizes: storage_info.chapter_sizes,
+        chapter_sizes,
         recent_logs,
     }
 }
@@ -221,6 +233,16 @@ pub async fn start_offline_download_job(
     FAILED_CHAPTERS.lock().clear();
 
     tokio::spawn(async move {
+        let initial_storage = get_book_storage_info(base_dir.clone(), book_uuid.clone());
+        {
+            let mut dl_chapters = LIVE_DOWNLOADED_CHAPTERS.lock();
+            dl_chapters.clear();
+            for ch in initial_storage.chapter_indices {
+                dl_chapters.insert(ch);
+            }
+        }
+        LIVE_TOTAL_BYTES.store(initial_storage.total_bytes, Ordering::Relaxed);
+
         let all_chapters = match get_chapters(book_uuid.clone()) {
             Ok(c) => c,
             Err(e) => {
@@ -371,6 +393,7 @@ pub async fn start_offline_download_job(
                         match res {
                             Ok(bytes) => {
                                 if tokio::fs::write(&audio_path, &bytes).await.is_ok() {
+                                    LIVE_TOTAL_BYTES.fetch_add(bytes.len() as u64, Ordering::Relaxed);
                                     success = true;
                                 } else {
                                     last_err = "Disk write failed".to_string();
@@ -383,9 +406,7 @@ pub async fn start_offline_download_job(
                                 push_log(format!(
                                     "[Retry {}/20] Chapter {} p_{}: {}",
                                     retries, task.chapter_index + 1, task.paragraph_index, e
-                                ));
-                                sleep(Duration::from_secs(1)).await;
-                            }
+                                ))}
                         }
                     }
                 }
@@ -400,6 +421,7 @@ pub async fn start_offline_download_job(
                             let mut c_count = completed_c_inner.lock();
                             *c_count += 1;
                             ACTIVE_CHAPTERS.lock().remove(&task.chapter_index);
+                            LIVE_DOWNLOADED_CHAPTERS.lock().insert(task.chapter_index);
                             true
                         } else {
                             false

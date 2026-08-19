@@ -592,6 +592,12 @@ pub async fn synthesize_supertonic(
         let steps = if denoise_steps <= 0 { 16 } else { denoise_steps as usize };
         let total_step_arr = Array1::from_elem(1, steps as f32);
 
+        let (text_emb_shape, text_emb_slice) = text_enc_outputs[0].try_extract_tensor::<f32>().map_err(|e| e.to_string())?;
+        let text_emb_arr = Array3::from_shape_vec(
+            (text_emb_shape[0] as usize, text_emb_shape[1] as usize, text_emb_shape[2] as usize),
+            text_emb_slice.to_vec()
+        ).map_err(|e| e.to_string())?;
+
         for step in 0..steps {
             let current_step_arr = Array1::from_elem(1, step as f32);
             let current_step_val = array1_f32_to_value(current_step_arr)?;
@@ -600,13 +606,7 @@ pub async fn synthesize_supertonic(
             let noisy_latent_val = array3_f32_to_value(noisy_latent.clone())?;
             let style_ttl_val_loop = array3_f32_to_value(state.style_ttl.clone())?;
             let text_mask_val_loop = array3_f32_to_value(text_mask.clone())?;
-
-            let (text_emb_shape, text_emb_slice) = text_enc_outputs[0].try_extract_tensor::<f32>().map_err(|e| e.to_string())?;
-            let text_emb_arr = Array3::from_shape_vec(
-                (text_emb_shape[0] as usize, text_emb_shape[1] as usize, text_emb_shape[2] as usize),
-                text_emb_slice.to_vec()
-            ).map_err(|e| e.to_string())?;
-            let text_emb_val_loop = array3_f32_to_value(text_emb_arr)?;
+            let text_emb_val_loop = array3_f32_to_value(text_emb_arr.clone())?;
 
             let vector_outputs = state
                 .vector_est_session

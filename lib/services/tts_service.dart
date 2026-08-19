@@ -24,8 +24,23 @@ void print(Object? object) {
   LoggerService().log(message, tag: 'TTS', level: level);
 }
 
+class WordProgress {
+  final String text;
+  final int start;
+  final int end;
+  final String word;
+
+  const WordProgress({
+    this.text = '',
+    this.start = 0,
+    this.end = 0,
+    this.word = '',
+  });
+}
+
 class TtsService extends ChangeNotifier {
   static TtsService? _instance;
+  static Future<TtsService>? _initFuture;
   late final MyAudioHandler audioHandler;
 
   Book? _activeBook;
@@ -38,6 +53,9 @@ class TtsService extends ChangeNotifier {
   int wordStart = 0;
   int wordEnd = 0;
   String currentWord = "";
+  final ValueNotifier<WordProgress> wordProgressNotifier = ValueNotifier(
+    const WordProgress(),
+  );
 
   // Hẹn giờ tắt (Sleep Timer)
   Timer? _sleepTimer;
@@ -61,9 +79,21 @@ class TtsService extends ChangeNotifier {
   TtsService._();
 
   static Future<TtsService> getInstance() async {
-    if (_instance == null) {
-      _instance = TtsService._();
-      await _instance!._init();
+    if (_instance != null) return _instance!;
+    if (_initFuture != null) return _initFuture!;
+
+    final completer = Completer<TtsService>();
+    _initFuture = completer.future;
+
+    try {
+      final service = TtsService._();
+      await service._init();
+      _instance = service;
+      completer.complete(service);
+    } catch (e) {
+      _initFuture = null;
+      completer.completeError(e);
+      rethrow;
     }
     return _instance!;
   }
@@ -88,7 +118,12 @@ class TtsService extends ChangeNotifier {
       wordStart = start;
       wordEnd = end;
       currentWord = word;
-      notifyListeners();
+      wordProgressNotifier.value = WordProgress(
+        text: text,
+        start: start,
+        end: end,
+        word: word,
+      );
     };
 
     audioHandler.onParagraphComplete = () {
@@ -124,11 +159,7 @@ class TtsService extends ChangeNotifier {
 
       final provider = settings.ttsProvider;
       if (provider == 'supertonic') {
-        final supertonic = SupertonicService.getInstance();
-        final voiceName = settings.selectedVoiceName ?? 'M1';
-        if (await supertonic.checkModelExists()) {
-          unawaited(supertonic.initializeEngine(voiceStyle: voiceName));
-        }
+        // Lazy-load Supertonic engine when playback starts to save startup RAM
       } else if (provider == 'system' &&
           settings.selectedVoiceName != null &&
           settings.selectedVoiceLocale != null) {
@@ -232,6 +263,28 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Chapter> ensureChapterLoaded(int chapterIndex) async {
+    if (_activeBook == null || _chapters.isEmpty) {
+      throw StateError('No active book or chapters loaded');
+    }
+    if (chapterIndex < 0 || chapterIndex >= _chapters.length) {
+      throw RangeError('Chapter index $chapterIndex out of bounds (0..${_chapters.length - 1})');
+    }
+
+    final current = _chapters[chapterIndex];
+    if (current.paragraphs.isNotEmpty) {
+      return current;
+    }
+
+    final db = await DatabaseHelper.getInstance();
+    final fullChapter = await db.getChapter(_activeBook!.uuid, chapterIndex);
+    if (fullChapter != null && fullChapter.paragraphs.isNotEmpty) {
+      _chapters[chapterIndex] = fullChapter;
+      return fullChapter;
+    }
+    return current;
+  }
+
   Future<void> loadBook(
     Book book,
     List<Chapter> chapters, {
@@ -250,6 +303,11 @@ class TtsService extends ChangeNotifier {
     wordStart = 0;
     wordEnd = 0;
     currentWord = "";
+
+    if (_chapters.isNotEmpty && _currentChapterIndex < _chapters.length) {
+      await ensureChapterLoaded(_currentChapterIndex);
+    }
+
     notifyListeners();
   }
 
@@ -291,12 +349,12 @@ class TtsService extends ChangeNotifier {
     wordEnd = 0;
     currentWord = "";
 
+    if (_activeBook == null || _chapters.isEmpty) return;
+    final chapter = await ensureChapterLoaded(_currentChapterIndex);
+
     if (isPlaying || forceSpeak) {
       await startSpeaking();
     } else {
-      if (_activeBook == null || _chapters.isEmpty) return;
-      final chapter = _chapters[_currentChapterIndex];
-
       final charPerSec = getCharsPerSecond();
       final chapterDuration = getChapterDuration();
       final startPos = getParagraphStartPos(_currentParagraphIndex);

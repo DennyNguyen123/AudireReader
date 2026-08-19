@@ -116,7 +116,11 @@ class _EditBookDialogState extends State<EditBookDialog> {
                         borderRadius: BorderRadius.circular(8),
                         image: hasValidCover
                             ? DecorationImage(
-                                image: FileImage(File(resolvedCover)),
+                                image: ResizeImage(
+                                  FileImage(File(resolvedCover)),
+                                  width: 240,
+                                  height: 320,
+                                ),
                                 fit: BoxFit.cover,
                               )
                             : null,

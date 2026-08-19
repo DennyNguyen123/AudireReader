@@ -7,7 +7,15 @@ import '../frb_generated.dart';
 import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `clean_and_merge_lines`, `parse_html_to_paragraphs`, `sanitize_text`, `segment_fallback`, `segment_text_into_chapters`
+// These functions are ignored because they are not marked as `pub`: `clean_and_merge_lines`, `extract_title_from_html`, `natural_sort_compare`, `parse_html_to_paragraphs`, `sanitize_text`, `save_cover_image`, `segment_fallback`, `segment_text_into_chapters`
+
+Future<Book> importBookFile({
+  required String filePath,
+  required String documentsDirPath,
+}) => RustLib.instance.api.crateApiParsersImportBookFile(
+  filePath: filePath,
+  documentsDirPath: documentsDirPath,
+);
 
 ParsedBookData parseTxtFile({required String filePath}) =>
     RustLib.instance.api.crateApiParsersParseTxtFile(filePath: filePath);

@@ -93,20 +93,37 @@ class PathHelper {
     return null;
   }
 
+  static final Map<String, String?> _coverCache = {};
+
+  static void invalidateCoverCache([String? key]) {
+    if (key != null) {
+      _coverCache.remove(key);
+    } else {
+      _coverCache.clear();
+    }
+  }
+
   /// Phiên bản đồng bộ để dùng trong Widget UI (sử dụng _appDir đã cache)
   static String? resolveCoverPathSync(String? rawCoverPath, {String? uuid}) {
     if ((rawCoverPath == null || rawCoverPath.isEmpty) && (uuid == null || uuid.isEmpty)) {
       return null;
     }
 
+    final cacheKey = '${rawCoverPath ?? ""}_${uuid ?? ""}';
+    if (_coverCache[cacheKey] != null) {
+      return _coverCache[cacheKey];
+    }
+
     if (rawCoverPath != null &&
         (rawCoverPath.startsWith('http://') || rawCoverPath.startsWith('https://'))) {
+      _coverCache[cacheKey] = rawCoverPath;
       return rawCoverPath;
     }
 
     if (rawCoverPath != null && rawCoverPath.isNotEmpty) {
       final directFile = File(rawCoverPath);
       if (directFile.existsSync()) {
+        _coverCache[cacheKey] = directFile.path;
         return directFile.path;
       }
     }
@@ -118,15 +135,17 @@ class PathHelper {
         final fileName = p.basename(rawCoverPath);
         final candidate = File(p.join(coversDirPath, fileName));
         if (candidate.existsSync()) {
+          _coverCache[cacheKey] = candidate.path;
           return candidate.path;
         }
       }
 
       if (uuid != null && uuid.isNotEmpty) {
-        final extensions = ['.png', '.jpg', '.jpeg', '.webp'];
+        final extensions = ['.jpg', '.png', '.jpeg', '.webp'];
         for (final ext in extensions) {
           final candidate = File(p.join(coversDirPath, '$uuid$ext'));
           if (candidate.existsSync()) {
+            _coverCache[cacheKey] = candidate.path;
             return candidate.path;
           }
         }

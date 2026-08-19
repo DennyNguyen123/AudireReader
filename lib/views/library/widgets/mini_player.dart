@@ -59,46 +59,45 @@ class _MiniPlayerState extends State<MiniPlayer> {
               return const SizedBox.shrink();
             }
 
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReaderScreen()),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: ClipRRect(
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              child: Container(
+                height: 64,
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF2C2C2C).withValues(alpha: 0.75)
-                            : Colors.white.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.05),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.2 : 0.05,
-                            ),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.08),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.08,
                       ),
-                      child: Row(
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: isDark
+                      ? const Color(0xFF2C2C2C).withValues(alpha: 0.95)
+                      : Colors.white.withValues(alpha: 0.96),
+                  borderRadius: BorderRadius.circular(15),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ReaderScreen()),
+                      );
+                    },
+                    child: Row(
                         children: [
                           // Cover image
                           Builder(
@@ -126,8 +125,12 @@ class _MiniPlayerState extends State<MiniPlayer> {
                                       : Colors.grey[300],
                                   image: hasValidImage
                                       ? DecorationImage(
-                                          image: FileImage(
-                                            File(resolvedPath),
+                                          image: ResizeImage(
+                                            FileImage(
+                                              File(resolvedPath),
+                                            ),
+                                            width: 96,
+                                            height: 96,
                                           ),
                                           fit: BoxFit.cover,
                                         )
@@ -212,10 +215,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        );
+              );
+            },
+          );
       },
     );
   }

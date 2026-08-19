@@ -165,21 +165,10 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
         (isDark ? Colors.white70 : Colors.black87);
     final accentColor = theme.colorScheme.primary;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                sheetBg.withValues(alpha: isDark ? 0.75 : 0.85),
-                sheetBg.withValues(alpha: isDark ? 0.85 : 0.95),
-              ],
-            ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+    return Container(
+      decoration: BoxDecoration(
+        color: sheetBg.withValues(alpha: 0.96),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
                 color: isDark
@@ -362,8 +351,6 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
               );
             },
           ),
-        ),
-      ),
     );
   }
 }

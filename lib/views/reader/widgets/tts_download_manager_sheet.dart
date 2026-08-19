@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import '../../../services/offline_tts_service.dart';
+import '../../../services/tts_service.dart';
 
 class TtsDownloadManagerSheet extends StatefulWidget {
   final Book book;
@@ -44,6 +45,9 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
   final AutoScrollController _autoScrollController = AutoScrollController();
 
   String _filterMode = 'all';
+  TtsService? _ttsService;
+  List<dynamic> _voices = [];
+  bool _loadingVoices = false;
 
   List<Chapter> get _displayChapters {
     List<Chapter> list = widget.chapters;
@@ -68,6 +72,10 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
         return a.chapterIndex.compareTo(b.chapterIndex);
       });
       return notDownloaded;
+    } else if (_filterMode == 'downloading') {
+      return list
+          .where((ch) => _offlineService.activeChapterIndices.contains(ch.chapterIndex))
+          .toList();
     }
     return list;
   }
@@ -121,15 +129,77 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     if (progress != null) {
       _currentChapterIndex = progress.currentChapterIndex;
     }
+    _ttsService = await TtsService.getInstance();
     setState(() {
       _settings = settings;
     });
+    if (settings.ttsProvider.isNotEmpty) {
+      await _loadVoices(settings.ttsProvider);
+    }
     await _loadStorageAndStatus();
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadVoices(String provider) async {
+    if (_ttsService == null) return;
+    setState(() {
+      _loadingVoices = true;
+    });
+    try {
+      final list = await _ttsService!.getVoicesForProvider(provider);
+      if (mounted) {
+        setState(() {
+          _voices = list;
+        });
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print("Failed to load voices in download manager: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingVoices = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateTtsProvider(String provider) async {
+    if (_settings == null) return;
+    final updated = _settings!.copyWith(ttsProvider: provider);
+    setState(() {
+      _settings = updated;
+    });
+    final db = await DatabaseHelper.getInstance();
+    await db.saveSettings(updated);
+    await _loadVoices(provider);
+  }
+
+  Future<void> _updateSelectedVoice(Map<String, String> voice) async {
+    if (_settings == null) return;
+    final updated = _settings!.copyWith(
+      selectedVoiceName: voice['name'],
+      selectedVoiceLocale: voice['locale'],
+    );
+    setState(() {
+      _settings = updated;
+    });
+    final db = await DatabaseHelper.getInstance();
+    await db.saveSettings(updated);
+  }
+
+  Future<void> _updateOpenAiModel(String model) async {
+    if (_settings == null) return;
+    final updated = _settings!.copyWith(openAiTtsModel: model);
+    setState(() {
+      _settings = updated;
+    });
+    final db = await DatabaseHelper.getInstance();
+    await db.saveSettings(updated);
   }
 
   Future<void> _loadStorageAndStatus() async {
@@ -276,6 +346,18 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     });
   }
 
+  void _selectFromBeginningToCurrent() {
+    setState(() {
+      _selectedChapterIndices.clear();
+      for (final ch in widget.chapters) {
+        if (ch.chapterIndex <= _currentChapterIndex &&
+            !_downloadedChapterIndices.contains(ch.chapterIndex)) {
+          _selectedChapterIndices.add(ch.chapterIndex);
+        }
+      }
+    });
+  }
+
   void _deselectAll() {
     setState(() {
       _selectedChapterIndices.clear();
@@ -369,18 +451,14 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.93,
-          decoration: BoxDecoration(
-            color: widget.sheetBg.withValues(alpha: widget.isDark ? 0.9 : 0.95),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.93,
+      decoration: BoxDecoration(
+        color: widget.sheetBg.withValues(alpha: widget.isDark ? 0.96 : 0.98),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
               // Handle bar
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -630,6 +708,171 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                               ),
                                             ),
                                           ),
+                                        const Divider(height: 16),
+                                        // TTS Provider Selector
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                AppLocalizations.of(context)!.ttsProviderLabel,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: widget.textColor,
+                                                ),
+                                              ),
+                                            ),
+                                            DropdownButton<String>(
+                                              value: _settings?.ttsProvider ?? 'system',
+                                              dropdownColor: widget.sheetBg,
+                                              style: TextStyle(
+                                                color: widget.textColor,
+                                                fontSize: 12,
+                                              ),
+                                              underline: const SizedBox(),
+                                              onChanged: (val) {
+                                                if (val != null) {
+                                                  _updateTtsProvider(val);
+                                                }
+                                              },
+                                              items: const [
+                                                DropdownMenuItem(
+                                                  value: 'system',
+                                                  child: Text('System TTS'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'microsoft_edge',
+                                                  child: Text('Microsoft Edge'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'openai',
+                                                  child: Text('OpenAI TTS'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'supertonic',
+                                                  child: Text('Supertonic'),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // Voice Selection
+                                        if (_loadingVoices)
+                                          const Center(
+                                            child: SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          )
+                                        else if (_settings?.ttsProvider == 'openai')
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  AppLocalizations.of(context)!.voiceLabel,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: widget.textColor,
+                                                  ),
+                                                ),
+                                              ),
+                                              DropdownButton<String>(
+                                                value: _settings?.openAiTtsModel ?? 'tts-1',
+                                                dropdownColor: widget.sheetBg,
+                                                style: TextStyle(
+                                                  color: widget.textColor,
+                                                  fontSize: 12,
+                                                ),
+                                                underline: const SizedBox(),
+                                                onChanged: (val) {
+                                                  if (val != null) {
+                                                    _updateOpenAiModel(val);
+                                                  }
+                                                },
+                                                items: const [
+                                                  DropdownMenuItem(
+                                                    value: 'tts-1',
+                                                    child: Text('tts-1'),
+                                                  ),
+                                                  DropdownMenuItem(
+                                                    value: 'tts-1-hd',
+                                                    child: Text('tts-1-hd'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          )
+                                        else if (_voices.isNotEmpty)
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  AppLocalizations.of(context)!.voiceLabel,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: widget.textColor,
+                                                  ),
+                                                ),
+                                              ),
+                                              DropdownButton<String>(
+                                                value: (() {
+                                                  dynamic match;
+                                                  for (final v in _voices) {
+                                                    if (v['name']?.toString() == _settings?.selectedVoiceName &&
+                                                        v['locale']?.toString() == _settings?.selectedVoiceLocale) {
+                                                      match = v;
+                                                      break;
+                                                    }
+                                                  }
+                                                  if (match != null) {
+                                                    return '${match['locale']}|${match['name']}';
+                                                  }
+                                                  if (_voices.isNotEmpty) {
+                                                    return '${_voices.first['locale']}|${_voices.first['name']}';
+                                                  }
+                                                  return '';
+                                                })(),
+                                                dropdownColor: widget.sheetBg,
+                                                style: TextStyle(
+                                                  color: widget.textColor,
+                                                  fontSize: 12,
+                                                ),
+                                                underline: const SizedBox(),
+                                                onChanged: (val) {
+                                                  if (val != null) {
+                                                    final parts = val.split('|');
+                                                    if (parts.length >= 2) {
+                                                      _updateSelectedVoice({
+                                                        'locale': parts[0],
+                                                        'name': parts[1],
+                                                      });
+                                                    }
+                                                  }
+                                                },
+                                                items: _voices.map((v) {
+                                                  final name = v['name']?.toString() ?? '';
+                                                  final locale = v['locale']?.toString() ?? '';
+                                                  final valueString = '$locale|$name';
+                                                  return DropdownMenuItem<String>(
+                                                    value: valueString,
+                                                    child: SizedBox(
+                                                      width: 150,
+                                                      child: Text(
+                                                        name,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ],
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -810,6 +1053,27 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                             ],
                                           ),
                                         ),
+                                        PopupMenuItem(
+                                          value: 'downloading',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode == 'downloading')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterDownloading,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     TextButton.icon(
@@ -900,6 +1164,9 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                             if (val == 'missing') {
                                               _selectMissing();
                                             }
+                                            if (val == 'from_beginning') {
+                                              _selectFromBeginningToCurrent();
+                                            }
                                             if (val == 'from_current') {
                                               _selectFromCurrentToEnd();
                                             }
@@ -925,6 +1192,14 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                                 AppLocalizations.of(
                                                   context,
                                                 )!.selectMissing,
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'from_beginning',
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.fromBeginningToCurrent,
                                               ),
                                             ),
                                             PopupMenuItem(
@@ -1250,8 +1525,6 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                 ),
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 }

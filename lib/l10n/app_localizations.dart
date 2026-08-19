@@ -2442,6 +2442,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to change'**
   String get tapToChange;
+
+  /// No description provided for @fromBeginningToCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'From Beginning to Current'**
+  String get fromBeginningToCurrent;
+
+  /// No description provided for @filterDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get filterDownloading;
+
+  /// No description provided for @ttsProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS Provider'**
+  String get ttsProviderLabel;
+
+  /// No description provided for @voiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get voiceLabel;
 }
 
 class _AppLocalizationsDelegate

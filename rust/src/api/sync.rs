@@ -377,3 +377,172 @@ pub async fn webdav_file_exists(remote_path: String) -> Result<bool, String> {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct SyncBookPayload {
+    uuid: String,
+    title: String,
+    author: String,
+    #[serde(rename = "totalChapters")]
+    total_chapters: i32,
+    #[serde(rename = "coverExtension")]
+    cover_extension: Option<String>,
+    #[serde(rename = "dateAdded")]
+    date_added: String,
+    chapters: Vec<SyncChapterPayload>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct SyncChapterPayload {
+    #[serde(rename = "chapterIndex")]
+    chapter_index: i32,
+    title: String,
+    paragraphs: Vec<String>,
+}
+
+pub async fn export_and_upload_book(book_uuid: String) -> Result<bool, String> {
+    use std::io::Write;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+
+    // 1. Get book and chapters from SQLite
+    let book = crate::api::database::get_book_by_uuid(book_uuid.clone())?
+        .ok_or_else(|| format!("Book not found: {}", book_uuid))?;
+    
+    let chapters = crate::api::database::get_chapters(book_uuid.clone())?;
+
+    // 2. Build payload
+    let date_added_iso = chrono::DateTime::from_timestamp_millis(book.date_added)
+        .map(|dt| dt.to_rfc3339())
+        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+
+    let cover_extension = book.cover_path.as_ref().map(|p| {
+        Path::new(p)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| format!(".{}", ext))
+            .unwrap_or_else(|| ".jpg".to_string())
+    });
+
+    let sync_chapters = chapters.into_iter().map(|c| SyncChapterPayload {
+        chapter_index: c.chapter_index,
+        title: c.title,
+        paragraphs: c.paragraphs,
+    }).collect();
+
+    let payload = SyncBookPayload {
+        uuid: book.uuid.clone(),
+        title: book.title,
+        author: book.author,
+        total_chapters: book.total_chapters,
+        cover_extension,
+        date_added: date_added_iso,
+        chapters: sync_chapters,
+    };
+
+    // 3. Serialize and Compress Gzip
+    let json_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+    
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&json_bytes).map_err(|e| e.to_string())?;
+    let compressed_bytes = encoder.finish().map_err(|e| e.to_string())?;
+
+    // 4. Upload book to WebDAV
+    let client = {
+        let opt = WEBDAV_CLIENT.lock();
+        opt.clone()
+    };
+    let c = client.ok_or_else(|| "WebDAV client not initialized".to_string())?;
+    
+    let remote_path = format!("/AudireReader/books/{}.json.gz", book_uuid);
+    c.upload_bytes(&remote_path, compressed_bytes).await?;
+
+    // 5. Upload cover if exists
+    if let Some(ref cover_path_str) = book.cover_path {
+        let cover_path = Path::new(cover_path_str);
+        if cover_path.exists() {
+            let ext = cover_path.extension().and_then(|s| s.to_str()).unwrap_or("jpg");
+            let remote_cover = format!("/AudireReader/covers/{}.{}", book_uuid, ext);
+            let _ = c.upload_file(&remote_cover, cover_path_str).await;
+        }
+    }
+
+    Ok(true)
+}
+
+pub async fn download_and_import_book(book_uuid: String, documents_dir: String) -> Result<crate::api::models::Book, String> {
+    use flate2::read::GzDecoder;
+    use std::fs;
+
+    let client = {
+        let opt = WEBDAV_CLIENT.lock();
+        opt.clone()
+    };
+    let c = client.ok_or_else(|| "WebDAV client not initialized".to_string())?;
+
+    // 1. Download bytes from WebDAV
+    let remote_path = format!("/AudireReader/books/{}.json.gz", book_uuid);
+    let compressed_bytes = c.download_bytes(&remote_path).await?;
+
+    // 2. Decompress Gzip
+    let mut decoder = GzDecoder::new(&compressed_bytes[..]);
+    let mut json_bytes = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut json_bytes).map_err(|e| e.to_string())?;
+
+    // 3. Deserialize JSON
+    let payload: SyncBookPayload = serde_json::from_slice(&json_bytes).map_err(|e| e.to_string())?;
+
+    // 4. Save Cover if exists on WebDAV
+    let mut cover_path = None;
+    if let Some(ref ext) = payload.cover_extension {
+        let remote_cover = format!("/AudireReader/covers/{}{}", book_uuid, ext);
+        if let Ok(exists) = c.file_exists(&remote_cover).await {
+            if exists {
+                let local_cover_dir = Path::new(&documents_dir).join("covers");
+                if !local_cover_dir.exists() {
+                    let _ = fs::create_dir_all(&local_cover_dir);
+                }
+                let local_cover_path = local_cover_dir.join(format!("{}{}", book_uuid, ext));
+                let local_cover_str = local_cover_path.to_string_lossy().to_string();
+                if c.download_file(&remote_cover, &local_cover_str).await.is_ok() {
+                    cover_path = Some(local_cover_str);
+                }
+            }
+        }
+    }
+
+    // 5. Convert to models & Insert into SQLite
+    let date_added_millis = chrono::DateTime::parse_from_rfc3339(&payload.date_added)
+        .map(|dt| dt.timestamp_millis())
+        .unwrap_or_else(|_| chrono::Utc::now().timestamp_millis());
+
+    let book = crate::api::models::Book {
+        id: None,
+        uuid: payload.uuid.clone(),
+        title: payload.title,
+        author: payload.author,
+        cover_path,
+        total_chapters: payload.total_chapters,
+        date_added: date_added_millis,
+        status: "unread".to_string(),
+        tags: vec![],
+    };
+
+    let chapters: Vec<crate::api::models::Chapter> = payload.chapters.into_iter().map(|c| crate::api::models::Chapter {
+        id: None,
+        book_uuid: payload.uuid.clone(),
+        chapter_index: c.chapter_index,
+        title: c.title,
+        paragraphs: c.paragraphs,
+    }).collect();
+
+    // 6. DB operations
+    crate::api::database::insert_book(book.clone())?;
+    crate::api::database::insert_chapters(chapters)?;
+
+    if let Ok(conn) = crate::api::database::get_conn() {
+        let _ = conn.execute_batch("PRAGMA shrink_memory;");
+    }
+
+    Ok(book)
+}
+

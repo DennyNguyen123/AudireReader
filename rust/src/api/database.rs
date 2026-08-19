@@ -26,7 +26,7 @@ pub fn init_database(db_path: String) -> Result<(), String> {
     Ok(())
 }
 
-fn get_conn() -> Result<r2d2::PooledConnection<SqliteConnectionManager>, String> {
+pub(crate) fn get_conn() -> Result<r2d2::PooledConnection<SqliteConnectionManager>, String> {
     DB_POOL
         .get()
         .ok_or_else(|| "Database not initialized".to_string())?
@@ -42,6 +42,9 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
         PRAGMA auto_vacuum = FULL;
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = NORMAL;
+        PRAGMA cache_size = -2000;
+        PRAGMA temp_store = MEMORY;
+        PRAGMA mmap_size = 0;
         PRAGMA foreign_keys = ON;
 
         CREATE TABLE IF NOT EXISTS books (
@@ -68,6 +71,7 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
             paragraphs_json TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_chapters_book_uuid ON chapters(book_uuid);
+        CREATE INDEX IF NOT EXISTS idx_chapters_book_uuid_index ON chapters(book_uuid, chapter_index);
 
         CREATE TABLE IF NOT EXISTS bookmarks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,10 +152,21 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
 
 pub fn get_all_books() -> Result<Vec<Book>, String> {
     let conn = get_conn()?;
-    let mut stmt = conn.prepare("SELECT id, uuid, title, author, cover_path, total_chapters, date_added, status FROM books")
-        .map_err(|e| format!("Query error: {}", e))?;
+    let mut stmt = conn.prepare(
+        "SELECT b.id, b.uuid, b.title, b.author, b.cover_path, b.total_chapters, b.date_added, b.status,
+                GROUP_CONCAT(t.tag, '|||') as tags
+         FROM books b
+         LEFT JOIN book_tags t ON b.id = t.book_id
+         GROUP BY b.id
+         ORDER BY b.date_added DESC"
+    ).map_err(|e| format!("Query error: {}", e))?;
     
     let book_iter = stmt.query_map([], |row| {
+        let tags_str: Option<String> = row.get(8)?;
+        let tags = tags_str
+            .map(|s| s.split("|||").filter(|t| !t.is_empty()).map(|t| t.to_string()).collect())
+            .unwrap_or_default();
+
         Ok(Book {
             id: row.get(0)?,
             uuid: row.get(1)?,
@@ -161,22 +176,49 @@ pub fn get_all_books() -> Result<Vec<Book>, String> {
             total_chapters: row.get(5)?,
             date_added: row.get(6)?,
             status: row.get(7)?,
-            tags: vec![],
+            tags,
         })
     }).map_err(|e| format!("Query map error: {}", e))?;
 
     let mut books = Vec::new();
     for book in book_iter {
-        let mut b = book.map_err(|e| format!("Row error: {}", e))?;
-        let mut tag_stmt = conn.prepare("SELECT tag FROM book_tags WHERE book_id = ?").unwrap();
-        let tags_iter = tag_stmt.query_map(params![b.id], |row| row.get::<_, String>(0)).unwrap();
-        for tag in tags_iter {
-            b.tags.push(tag.unwrap());
-        }
-        books.push(b);
+        books.push(book.map_err(|e| format!("Row error: {}", e))?);
     }
     
     Ok(books)
+}
+
+pub fn get_book_by_uuid(uuid: String) -> Result<Option<Book>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare(
+        "SELECT b.id, b.uuid, b.title, b.author, b.cover_path, b.total_chapters, b.date_added, b.status,
+                GROUP_CONCAT(t.tag, '|||') as tags
+         FROM books b
+         LEFT JOIN book_tags t ON b.id = t.book_id
+         WHERE b.uuid = ?1
+         GROUP BY b.id LIMIT 1"
+    ).map_err(|e| format!("Query error: {}", e))?;
+
+    let book = stmt.query_row(params![uuid], |row| {
+        let tags_str: Option<String> = row.get(8)?;
+        let tags = tags_str
+            .map(|s| s.split("|||").filter(|t| !t.is_empty()).map(|t| t.to_string()).collect())
+            .unwrap_or_default();
+
+        Ok(Book {
+            id: row.get(0)?,
+            uuid: row.get(1)?,
+            title: row.get(2)?,
+            author: row.get(3)?,
+            cover_path: row.get(4)?,
+            total_chapters: row.get(5)?,
+            date_added: row.get(6)?,
+            status: row.get(7)?,
+            tags,
+        })
+    }).optional().map_err(|e| format!("Query row error: {}", e))?;
+
+    Ok(book)
 }
 
 pub fn insert_book(book: Book) -> Result<i64, String> {
@@ -219,12 +261,6 @@ pub fn delete_book(uuid: String) -> Result<(), String> {
     }
 
     tx.commit().map_err(|e| e.to_string())?;
-
-    // Instantly reclaim disk space by running WAL checkpoint + VACUUM + WAL checkpoint
-    let _ = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []);
-    let _ = conn.execute("VACUUM", []);
-    let _ = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []);
-
     Ok(())
 }
 
@@ -235,8 +271,97 @@ pub fn vacuum_database() -> Result<(), String> {
     conn.execute("PRAGMA wal_checkpoint(TRUNCATE)", []).map_err(|e| e.to_string())?;
     Ok(())
 }
+pub struct SearchResultItem {
+    pub chapter_index: i32,
+    pub chapter_title: String,
+    pub paragraph_index: i32,
+    pub text: String,
+}
+
+pub fn search_inside_book(book_uuid: String, query: String) -> Result<Vec<SearchResultItem>, String> {
+    let conn = get_conn()?;
+    let query_lower = query.trim().to_lowercase();
+    if query_lower.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut stmt = conn.prepare(
+        "SELECT chapter_index, title, paragraphs_json FROM chapters WHERE book_uuid = ? ORDER BY chapter_index ASC"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([book_uuid], |row| {
+        let chapter_index: i32 = row.get(0)?;
+        let title: String = row.get(1)?;
+        let paragraphs_json: String = row.get(2)?;
+        Ok((chapter_index, title, paragraphs_json))
+    }).map_err(|e| e.to_string())?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        if let Ok((chapter_index, title, paragraphs_json)) = row {
+            if let Ok(paragraphs) = serde_json::from_str::<Vec<String>>(&paragraphs_json) {
+                for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
+                    if paragraph.to_lowercase().contains(&query_lower) {
+                        results.push(SearchResultItem {
+                            chapter_index,
+                            chapter_title: title.clone(),
+                            paragraph_index: paragraph_index as i32,
+                            text: paragraph.clone(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(results)
+}
 
 // --- Chapter CRUD ---
+
+pub fn get_chapter(book_uuid: String, chapter_index: i32) -> Result<Option<Chapter>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, book_uuid, chapter_index, title, paragraphs_json FROM chapters WHERE book_uuid = ?1 AND chapter_index = ?2 LIMIT 1"
+    ).map_err(|e| format!("Query error: {}", e))?;
+
+    let chapter = stmt.query_row(params![book_uuid, chapter_index], |row| {
+        let paragraphs_json: String = row.get(4)?;
+        let paragraphs: Vec<String> = serde_json::from_str(&paragraphs_json).unwrap_or_default();
+        Ok(Chapter {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            title: row.get(3)?,
+            paragraphs,
+        })
+    }).optional().map_err(|e| format!("Query row error: {}", e))?;
+
+    Ok(chapter)
+}
+
+pub fn get_chapter_headers(book_uuid: String) -> Result<Vec<Chapter>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, title FROM chapters WHERE book_uuid = ?1 ORDER BY chapter_index ASC")
+        .map_err(|e| format!("Query error: {}", e))?;
+    
+    let chapter_iter = stmt.query_map(params![book_uuid], |row| {
+        Ok(Chapter {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            title: row.get(3)?,
+            paragraphs: Vec::new(),
+        })
+    }).map_err(|e| format!("Query map error: {}", e))?;
+
+    let mut chapters = Vec::new();
+    for chapter in chapter_iter {
+        chapters.push(chapter.map_err(|e| format!("Row error: {}", e))?);
+    }
+    
+    Ok(chapters)
+}
 
 pub fn get_chapters(book_uuid: String) -> Result<Vec<Chapter>, String> {
     let conn = get_conn()?;

@@ -37,6 +37,33 @@ fn current_time_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64
 }
 
+fn get_silent_wav() -> Vec<u8> {
+    let mut header = vec![0u8; 44];
+    header[0..4].copy_from_slice(b"RIFF");
+    let file_size: u32 = 36;
+    header[4..8].copy_from_slice(&file_size.to_le_bytes());
+    header[8..12].copy_from_slice(b"WAVE");
+    header[12..16].copy_from_slice(b"fmt ");
+    let chunk_size: u32 = 16;
+    header[16..20].copy_from_slice(&chunk_size.to_le_bytes());
+    let format_type: u16 = 1;
+    header[20..22].copy_from_slice(&format_type.to_le_bytes());
+    let channels: u16 = 1;
+    header[22..24].copy_from_slice(&channels.to_le_bytes());
+    let sample_rate: u32 = 16000;
+    header[24..28].copy_from_slice(&sample_rate.to_le_bytes());
+    let byte_rate: u32 = 32000;
+    header[28..32].copy_from_slice(&byte_rate.to_le_bytes());
+    let block_align: u16 = 2;
+    header[32..34].copy_from_slice(&block_align.to_le_bytes());
+    let bits_per_sample: u16 = 16;
+    header[34..36].copy_from_slice(&bits_per_sample.to_le_bytes());
+    header[36..40].copy_from_slice(b"data");
+    let data_size: u32 = 0;
+    header[40..44].copy_from_slice(&data_size.to_le_bytes());
+    header
+}
+
 async fn fetch_bing_token_internal(client: &Client) -> Result<EdgeToken, String> {
     let mut retries = 0;
     let mut last_err = String::new();
@@ -177,18 +204,35 @@ pub async fn get_edge_voices() -> Result<Vec<EdgeVoice>, String> {
 }
 
 pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> Result<Vec<u8>, String> {
+    if !text.chars().any(|c| c.is_alphanumeric()) {
+        return Ok(get_silent_wav());
+    }
+
     let client = &*REQWEST_CLIENT;
     let mut token = get_token(&client).await?;
     
+    let mut actual_voice_id = voice_id.clone();
+    if actual_voice_id.starts_with('{') && actual_voice_id.contains("name:") {
+        if let Some(name_start) = actual_voice_id.find("name:") {
+            let name_sub = &actual_voice_id[name_start + 5..];
+            let name_sub_trimmed = name_sub.trim();
+            if let Some(comma_pos) = name_sub_trimmed.find(',') {
+                actual_voice_id = name_sub_trimmed[..comma_pos].trim().to_string();
+            } else if let Some(brace_pos) = name_sub_trimmed.find('}') {
+                actual_voice_id = name_sub_trimmed[..brace_pos].trim().to_string();
+            }
+        }
+    }
+
     let rate_str = convert_rate(rate);
-    let parts: Vec<&str> = voice_id.split('-').collect();
+    let parts: Vec<&str> = actual_voice_id.split('-').collect();
     let xml_lang = if parts.len() >= 2 {
         format!("{}-{}", parts[0], parts[1])
     } else {
         "en-US".to_string()
     };
     
-    let gender = if voice_id.to_lowercase().contains("male") { "Male" } else { "Female" };
+    let gender = if actual_voice_id.to_lowercase().contains("male") { "Male" } else { "Female" };
     
     let escaped_text = text
         .replace('&', "&amp;")
@@ -199,7 +243,7 @@ pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> R
         
     let ssml = format!(
         "<speak version='1.0' xml:lang='{}'><voice xml:lang='{}' xml:gender='{}' name='{}'><prosody rate='{}'>{}</prosody></voice></speak>",
-        xml_lang, xml_lang, gender, voice_id, rate_str, escaped_text
+        xml_lang, xml_lang, gender, actual_voice_id, rate_str, escaped_text
     );
     
     let url = "https://www.bing.com/tfettts?isVertical=1&&IG=1&IID=translator.5023&SFX=1";
@@ -239,9 +283,11 @@ pub async fn synthesize_edge_tts(text: String, voice_id: String, rate: f64) -> R
         res = get_req(&token).send().await.map_err(|e| e.to_string())?;
         
         if !res.status().is_success() {
+            println!("[Edge TTS Error] Retry failed. Status: {}, SSML: {}", res.status(), ssml);
             return Err(format!("Bing TTS failed on retry: {}", res.status()));
         }
     } else if !res.status().is_success() {
+        println!("[Edge TTS Error] First try failed. Status: {}, SSML: {}", res.status(), ssml);
         return Err(format!("Bing TTS failed: {}", res.status()));
     }
     
@@ -265,6 +311,10 @@ pub async fn synthesize_openai_tts(
     endpoint: Option<String>,
     model: Option<String>,
 ) -> Result<Vec<u8>, String> {
+    if !text.chars().any(|c| c.is_alphanumeric()) {
+        return Ok(get_silent_wav());
+    }
+
     let client = &*REQWEST_CLIENT;
 
     let base_endpoint = endpoint

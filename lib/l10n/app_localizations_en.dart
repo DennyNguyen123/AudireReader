@@ -1310,4 +1310,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToChange => 'Tap to change';
+
+  @override
+  String get fromBeginningToCurrent => 'From Beginning to Current';
+
+  @override
+  String get filterDownloading => 'Downloading';
+
+  @override
+  String get ttsProviderLabel => 'TTS Provider';
+
+  @override
+  String get voiceLabel => 'Voice';
 }

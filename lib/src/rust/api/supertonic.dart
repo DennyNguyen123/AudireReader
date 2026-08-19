@@ -6,24 +6,21 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `process_unicode_indexer`, `sample_noisy_latent`
+// These functions are ignored because they are not marked as `pub`: `array1_f32_to_value`, `array2_f32_to_value`, `array2_i64_to_value`, `array3_f32_to_value`, `process_unicode_indexer`, `sample_noisy_latent`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `SupertonicState`
 
 Future<bool> isValidLang({required String lang}) =>
     RustLib.instance.api.crateApiSupertonicIsValidLang(lang: lang);
 
-/// Phát hiện ngôn ngữ dựa vào đặc trưng ký tự
 Future<String> detectLanguage({required String text}) =>
     RustLib.instance.api.crateApiSupertonicDetectLanguage(text: text);
 
-/// Tiền xử lý văn bản (Port từ preprocessText)
 Future<String> preprocessText({required String text, required String lang}) =>
     RustLib.instance.api.crateApiSupertonicPreprocessText(
       text: text,
       lang: lang,
     );
 
-/// Chunking văn bản thành các đoạn nhỏ
 Future<List<String>> chunkText({
   required String text,
   required BigInt maxLen,
@@ -32,7 +29,6 @@ Future<List<String>> chunkText({
   maxLen: maxLen,
 );
 
-/// Ghi audio samples (f32 [-1.0, 1.0]) ra vector bytes dạng WAV 16-bit PCM
 Future<Uint8List> encodeWav({
   required List<double> audioData,
   required int sampleRate,
@@ -41,25 +37,21 @@ Future<Uint8List> encodeWav({
   sampleRate: sampleRate,
 );
 
-/// Kiểm tra các tệp tin model Supertonic tồn tại
 Future<bool> checkSupertonicModelExists({required String baseDir}) => RustLib
     .instance
     .api
     .crateApiSupertonicCheckSupertonicModelExists(baseDir: baseDir);
 
-/// Xóa các tệp mô hình Supertonic
 Future<void> deleteSupertonicModels({required String baseDir}) => RustLib
     .instance
     .api
     .crateApiSupertonicDeleteSupertonicModels(baseDir: baseDir);
 
-/// Tải các tệp mô hình từ HuggingFace CDN
 Future<void> downloadSupertonicModels({required String baseDir}) => RustLib
     .instance
     .api
     .crateApiSupertonicDownloadSupertonicModels(baseDir: baseDir);
 
-/// Khởi tạo Supertonic Engine
 Future<bool> initSupertonicEngine({
   required String baseDir,
   required String voiceStyle,
@@ -68,11 +60,9 @@ Future<bool> initSupertonicEngine({
   voiceStyle: voiceStyle,
 );
 
-/// Giải phóng Supertonic Engine khỏi bộ nhớ
 Future<void> releaseSupertonicEngine() =>
     RustLib.instance.api.crateApiSupertonicReleaseSupertonicEngine();
 
-/// Tổng hợp đoạn văn bản thành audio WAV bytes
 Future<Uint8List> synthesizeSupertonic({
   required String text,
   required String lang,

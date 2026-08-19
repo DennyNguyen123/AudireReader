@@ -10,7 +10,6 @@ import '../../services/webdav_service.dart';
 import '../../services/sync_service.dart' hide print;
 import '../../services/tts_service.dart' hide print;
 import '../../services/update_service.dart';
-import 'package:audire_reader/src/rust/api/models.dart';
 import '../../core/global_hotkey_manager.dart';
 import '../../core/theme_notifier.dart';
 import '../../core/locale_notifier.dart';

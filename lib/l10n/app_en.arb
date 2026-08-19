@@ -703,5 +703,9 @@
   "rewindParagraphTooltip": "Rewind Paragraph",
   "forwardParagraphTooltip": "Forward Paragraph",
   "changeCover": "Change Cover",
-  "tapToChange": "Tap to change"
+  "tapToChange": "Tap to change",
+  "fromBeginningToCurrent": "From Beginning to Current",
+  "filterDownloading": "Downloading",
+  "ttsProviderLabel": "TTS Provider",
+  "voiceLabel": "Voice"
 }

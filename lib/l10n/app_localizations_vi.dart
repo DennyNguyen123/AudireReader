@@ -1311,4 +1311,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get tapToChange => 'Chạm để đổi';
+
+  @override
+  String get fromBeginningToCurrent => 'Từ đầu đến hiện tại';
+
+  @override
+  String get filterDownloading => 'Đang tải';
+
+  @override
+  String get ttsProviderLabel => 'Nhà cung cấp TTS';
+
+  @override
+  String get voiceLabel => 'Giọng đọc';
 }

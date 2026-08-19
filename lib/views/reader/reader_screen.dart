@@ -18,7 +18,8 @@ import 'widgets/chapter_list_sheet.dart';
 import 'widgets/assistive_button.dart';
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({super.key});
+  final Book? initialBook;
+  const ReaderScreen({super.key, this.initialBook});
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -38,7 +39,6 @@ class _ReaderScreenState extends State<ReaderScreen>
   double _paragraphSpacing = 14.0;
   double _paragraphIndent = 0.0;
   bool _showSystemUI = true;
-  double _scrollProgress = 0.0;
   String _textAlignment = 'left';
   double _sideMargin = 20.0;
   String? _customBackgroundColor;
@@ -50,6 +50,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   int? _lastSyncedChapterIndex;
   int? _lastSyncedParagraphIndex;
   bool _wasPlaying = false;
+  AppSettings? _settings;
 
   final ScrollController _scrollController = ScrollController();
 
@@ -66,17 +67,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     _initTtsService();
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
-    if (maxScroll > 0) {
-      setState(() {
-        _scrollProgress = (currentScroll / maxScroll).clamp(0.0, 1.0);
-      });
-    }
-  }
-
   @override
   void dispose() {
     _periodicSyncTimer?.cancel();
@@ -84,7 +74,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (_isInitialized) {
       _ttsService.removeListener(_onTtsServiceChanged);
     }
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _speedController.dispose();
     _syncActiveBookProgressOnExit();
@@ -616,12 +605,14 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _showSearchInsideBook() {
+    final book = _ttsService.activeBook ?? widget.initialBook;
+    if (book == null) return;
     final isDark = _getIsDark(context);
     final textColor = _getTextColor(isDark);
     showDialog(
       context: context,
       builder: (context) => BookSearchDialog(
-        chapters: _ttsService.chapters,
+        bookUuid: book.uuid,
         ttsService: _ttsService,
         isDark: isDark,
         textColor: textColor,
@@ -927,6 +918,28 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   Future<void> _initTtsService() async {
     _ttsService = await TtsService.getInstance();
+    
+    if (widget.initialBook != null) {
+      final db = await DatabaseHelper.getInstance();
+      final chapters = await db.getChapterHeaders(widget.initialBook!.uuid);
+      final progress = await db.getProgress(widget.initialBook!.uuid);
+
+      int startChapter = progress?.currentChapterIndex ?? 0;
+      int startParagraph = progress?.currentParagraphIndex ?? 0;
+
+      if (startChapter >= chapters.length) {
+        startChapter = 0;
+        startParagraph = 0;
+      }
+
+      await _ttsService.loadBook(
+        widget.initialBook!,
+        chapters,
+        startChapter: startChapter,
+        startParagraph: startParagraph,
+      );
+    }
+
     final settings = await _ttsService.getSettings();
 
     const storage = FlutterSecureStorage();
@@ -935,6 +948,7 @@ class _ReaderScreenState extends State<ReaderScreen>
         await storage.read(key: 'reader_paragraph_indent') ?? '0.0';
 
     setState(() {
+      _settings = settings;
       _fontSize = settings.fontSize;
       _speechRate = settings.speechRate;
       _speedController.text = (_speechRate * 2).toStringAsFixed(3);
@@ -963,7 +977,6 @@ class _ReaderScreenState extends State<ReaderScreen>
     });
 
     _ttsService.addListener(_onTtsServiceChanged);
-    _scrollController.addListener(_onScroll);
     await _loadBookmarksAndHighlights();
     await _updateBookmarkState();
 
@@ -1055,7 +1068,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
     if (_themeMode == 'Sepia') return const Color(0xFFF4ECD8);
     if (_themeMode == 'Mint') return const Color(0xFFE8F5E9);
-    if (_themeMode == 'Parchment') return const Color(0xFFF5F2EB);
+    if (_themeMode == 'Parchment') return const Color(0xFFFAF3E0);
     if (_themeMode == 'Navy') return const Color(0xFF0F172A);
     return isDark ? const Color(0xFF121212) : const Color(0xFFFAF9F6);
   }
@@ -1140,7 +1153,14 @@ class _ReaderScreenState extends State<ReaderScreen>
           });
         },
       ),
-    );
+    ).then((_) async {
+      final updatedSettings = await _ttsService.getSettings();
+      if (mounted) {
+        setState(() {
+          _settings = updatedSettings;
+        });
+      }
+    });
   }
 
   @override
@@ -1169,294 +1189,270 @@ class _ReaderScreenState extends State<ReaderScreen>
         }
 
         final chapter = chapters[activeChapterIndex];
+        final settings = _settings;
 
-        return FutureBuilder<AppSettings>(
-          future: _ttsService.getSettings(),
-          builder: (context, snapshot) {
-            final settings = snapshot.data;
-            final Widget scaffoldContent = Scaffold(
-              backgroundColor: backgroundColor,
-              appBar: _showSystemUI
-                  ? AppBar(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      foregroundColor: textColor,
-                      title: Text(
-                        book.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+        final Widget scaffoldContent = Scaffold(
+          backgroundColor: backgroundColor,
+          appBar: _showSystemUI
+              ? AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  foregroundColor: textColor,
+                  title: Text(
+                    book.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  actions: [
+                    if (_ttsService.isSleepTimerActive &&
+                        _ttsService.sleepTimerDuration != null)
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber, width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.bedtime_rounded,
+                                size: 14,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      actions: [
-                        if (_ttsService.isSleepTimerActive &&
-                            _ttsService.sleepTimerDuration != null)
-                          Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.bedtime,
-                                    size: 14,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${(_ttsService.sleepTimerDuration! ~/ 60).toString().padLeft(2, '0')}:${(_ttsService.sleepTimerDuration! % 60).toString().padLeft(2, '0')}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        if (_webDavEnabled)
-                          IconButton(
-                            icon: const Icon(Icons.sync_rounded),
-                            onPressed: () => _showSyncBottomSheet(context),
-                          ),
-                        IconButton(
-                          icon: const Icon(Icons.search_rounded),
-                          onPressed: _showSearchInsideBook,
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _isBookmarked
-                                ? Icons.bookmark_rounded
-                                : Icons.bookmark_border_rounded,
-                          ),
-                          color: _isBookmarked
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                          onPressed: _toggleBookmark,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.format_list_bulleted_rounded),
-                          onPressed: () => _showChapterList(context),
-                        ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded),
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'settings':
-                                _showSettings();
-                                break;
-                              case 'fullscreen':
-                                setState(() {
-                                  _showSystemUI = !_showSystemUI;
-                                  SystemChrome.setEnabledSystemUIMode(
-                                    _showSystemUI
-                                        ? SystemUiMode.edgeToEdge
-                                        : SystemUiMode.immersiveSticky,
-                                  );
-                                });
-                                break;
+                    IconButton(
+                      icon: const Icon(Icons.search_rounded),
+                      tooltip: AppLocalizations.of(context)?.searchInsideBook ?? 'Search inside book',
+                      onPressed: _showSearchInsideBook,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isBookmarked
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        color: _isBookmarked ? Colors.amber : null,
+                      ),
+                      tooltip: AppLocalizations.of(context)?.bookmarksTab ?? 'Bookmarks',
+                      onPressed: _toggleBookmark,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined),
+                      tooltip: AppLocalizations.of(context)?.readerSettings ?? 'Reader Settings',
+                      onPressed: _showSettings,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_list_bulleted_rounded),
+                      tooltip: AppLocalizations.of(context)?.chapterList ?? 'Chapter List',
+                      onPressed: () => _showChapterList(context),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded),
+                      onSelected: (value) async {
+                        if (value == 'sync') {
+                          _showSyncBottomSheet(context);
+                        } else if (value == 'fullscreen') {
+                          setState(() {
+                            _showSystemUI = !_showSystemUI;
+                            if (!_showSystemUI) {
+                              SystemChrome.setEnabledSystemUIMode(
+                                SystemUiMode.immersiveSticky,
+                              );
+                            } else {
+                              SystemChrome.setEnabledSystemUIMode(
+                                SystemUiMode.edgeToEdge,
+                              );
                             }
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<String>>[
-                                const PopupMenuItem<String>(
-                                  value: 'settings',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.palette_rounded),
-                                      SizedBox(width: 12),
-                                      Text('Appearance Settings'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  value: 'fullscreen',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _showSystemUI
-                                            ? Icons.fullscreen_rounded
-                                            : Icons.fullscreen_exit_rounded,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text('Toggle Fullscreen'),
-                                    ],
-                                  ),
+                          });
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        if (_webDavEnabled)
+                          PopupMenuItem<String>(
+                            value: 'sync',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cloud_sync_rounded),
+                                const SizedBox(width: 12),
+                                Text(
+                                  AppLocalizations.of(
+                                        context,
+                                      )?.syncProgress ??
+                                      'Đồng bộ tiến trình',
                                 ),
                               ],
-                        ),
-                      ],
-                    )
-                  : null,
-              body: GestureDetector(
-                onTap: () {
-                  if (!_showSystemUI) {
-                    setState(() {
-                      _showSystemUI = true;
-                      SystemChrome.setEnabledSystemUIMode(
-                        SystemUiMode.edgeToEdge,
-                      );
-                    });
-                  }
-                },
-                behavior: HitTestBehavior.translucent,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: _sideMargin,
-                        vertical: 10,
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          chapter.title,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontFamily: _fontFamily == 'System'
-                                ? null
-                                : _fontFamily,
+                            ),
+                          ),
+                        PopupMenuItem<String>(
+                          value: 'fullscreen',
+                          child: Row(
+                            children: [
+                              Icon(
+                                _showSystemUI
+                                    ? Icons.fullscreen_rounded
+                                    : Icons.fullscreen_exit_rounded,
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Toggle Fullscreen'),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        cacheExtent: 100000,
-                        padding: EdgeInsets.fromLTRB(
-                          _sideMargin,
-                          10,
-                          _sideMargin,
-                          100,
-                        ),
-                        itemCount: chapter.paragraphs.length,
-                        itemBuilder: (context, index) {
-                          final paragraphText = chapter.paragraphs[index];
-                          final isActive =
-                              index == _ttsService.currentParagraphIndex;
-
-                          final key = '${activeChapterIndex}_$index';
-                          final highlight = _highlightsMap[key];
-
-                          return ParagraphWidget(
-                            key: ValueKey(key),
-                            text: paragraphText,
-                            isActive: isActive,
-                            isPlaying: _ttsService.isPlaying,
-                            fontSize: _fontSize,
-                            lineHeight: _lineHeight,
-                            paragraphSpacing: _paragraphSpacing,
-                            paragraphIndent: _paragraphIndent,
-                            textAlign: _textAlignment == 'justify'
-                                ? TextAlign.justify
-                                : TextAlign.left,
-                            wordStart: isActive ? _ttsService.wordStart : 0,
-                            wordEnd: isActive ? _ttsService.wordEnd : 0,
-                            isDark: isDark,
-                            fontFamily: _fontFamily,
-                            textColor: textColor,
-                            highlightColorHex: highlight?.colorHex,
-                            hasNote:
-                                highlight?.note != null &&
-                                highlight!.note!.isNotEmpty,
-                            onTap: () {
-                              if (!_showSystemUI) {
-                                setState(() {
-                                  _showSystemUI = true;
-                                  SystemChrome.setEnabledSystemUIMode(
-                                    SystemUiMode.edgeToEdge,
-                                  );
-                                });
-                              } else {
-                                _ttsService.jumpToParagraph(index);
-                              }
-                            },
-                            onLongPress: () {
-                              _showParagraphMenu(
-                                activeChapterIndex,
-                                index,
-                                paragraphText,
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    // Scroll Progress Indicator
-                    Container(
-                      height: 2,
-                      width: double.infinity,
-                      color: Colors.transparent,
-                      child: LinearProgressIndicator(
-                        value: _scrollProgress,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.8),
-                        ),
-                      ),
+                      ],
                     ),
                   ],
+                )
+              : null,
+          body: GestureDetector(
+            onTap: () {
+              if (!_showSystemUI) {
+                setState(() {
+                  _showSystemUI = true;
+                  SystemChrome.setEnabledSystemUIMode(
+                    SystemUiMode.edgeToEdge,
+                  );
+                });
+              }
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _sideMargin,
+                    vertical: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      chapter.title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontFamily: _fontFamily == 'System'
+                            ? null
+                            : _fontFamily,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              bottomNavigationBar: _showSystemUI
-                  ? _buildBottomAudioPanel(chapter, isDark, textColor)
-                  : null,
-            );
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    cacheExtent: 350.0,
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
+                    padding: EdgeInsets.fromLTRB(
+                      _sideMargin,
+                      10,
+                      _sideMargin,
+                      100,
+                    ),
+                    itemCount: chapter.paragraphs.length,
+                    itemBuilder: (context, index) {
+                      final paragraphText = chapter.paragraphs[index];
+                      final isActive =
+                          index == _ttsService.currentParagraphIndex;
 
-            Widget mainWidget = scaffoldContent;
-            if (settings != null && settings.showAssistiveButton) {
-              mainWidget = Stack(
-                children: [
-                  scaffoldContent,
-                  AssistiveButton(
-                    ttsService: _ttsService,
-                    settings: settings,
-                    isDark: isDark,
-                    onPositionChanged: (x, y) {
-                      _ttsService.updateSettings(
-                        assistiveButtonX: x,
-                        assistiveButtonY: y,
+                      final key = '${activeChapterIndex}_$index';
+                      final highlight = _highlightsMap[key];
+
+                      return ParagraphWidget(
+                        key: ValueKey(key),
+                        text: paragraphText,
+                        isActive: isActive,
+                        isPlaying: _ttsService.isPlaying,
+                        fontSize: _fontSize,
+                        lineHeight: _lineHeight,
+                        paragraphSpacing: _paragraphSpacing,
+                        paragraphIndent: _paragraphIndent,
+                        textAlign: _textAlignment == 'justify'
+                            ? TextAlign.justify
+                            : TextAlign.left,
+                        wordProgressNotifier: isActive ? _ttsService.wordProgressNotifier : null,
+                        isDark: isDark,
+                        fontFamily: _fontFamily,
+                        textColor: textColor,
+                        highlightColorHex: highlight?.colorHex,
+                        hasNote:
+                            highlight?.note != null &&
+                            highlight!.note!.isNotEmpty,
+                        onTap: () {
+                          if (!_showSystemUI) {
+                            setState(() {
+                              _showSystemUI = true;
+                              SystemChrome.setEnabledSystemUIMode(
+                                SystemUiMode.edgeToEdge,
+                              );
+                            });
+                          } else {
+                            _ttsService.jumpToParagraph(index);
+                          }
+                        },
+                        onLongPress: () {
+                          _showParagraphMenu(
+                            activeChapterIndex,
+                            index,
+                            paragraphText,
+                          );
+                        },
                       );
                     },
                   ),
-                ],
-              );
-            }
+                ),
+              ],
+            ),
+          ),
+          bottomSheet: _buildBottomAudioPanel(chapter, isDark, textColor),
+        );
 
-            if (settings == null) {
-              return mainWidget;
-            }
+        Widget mainWidget = scaffoldContent;
+        if (settings != null && settings.showAssistiveButton) {
+          mainWidget = Stack(
+            children: [
+              scaffoldContent,
+              AssistiveButton(
+                ttsService: _ttsService,
+                settings: settings,
+                isDark: isDark,
+                onPositionChanged: (x, y) {
+                  _ttsService.updateSettings(
+                    assistiveButtonX: x,
+                    assistiveButtonY: y,
+                  );
+                },
+              ),
+            ],
+          );
+        }
 
-            return CallbackShortcuts(
-              bindings: _buildShortcuts(settings),
-              child: Focus(autofocus: true, child: mainWidget),
-            );
-          },
+        if (settings == null) {
+          return mainWidget;
+        }
+
+        return CallbackShortcuts(
+          bindings: _buildShortcuts(settings),
+          child: Focus(autofocus: true, child: mainWidget),
         );
       },
     );
