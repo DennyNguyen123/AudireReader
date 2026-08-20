@@ -15,6 +15,7 @@ import 'widgets/reader_settings_sheet.dart';
 import 'widgets/bottom_audio_panel.dart';
 import 'widgets/chapter_list_sheet.dart';
 import 'widgets/assistive_button.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 
 class ReaderScreen extends StatefulWidget {
   final Book? initialBook;
@@ -51,7 +52,11 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _wasPlaying = false;
   AppSettings? _settings;
 
-  final ScrollController _scrollController = ScrollController();
+  final AutoScrollController _scrollController = AutoScrollController(
+    suggestedRowHeight: 80.0,
+  );
+  int? _lastScrollChapterIndex;
+  int? _lastScrollParagraphIndex;
 
   // Bookmarks, Highlights & Notes
   bool _isBookmarked = false;
@@ -153,6 +158,7 @@ class _ReaderScreenState extends State<ReaderScreen>
             startChapter: progress.currentChapterIndex,
             startParagraph: progress.currentParagraphIndex,
           );
+          _scrollToCurrentParagraph(animated: false);
         }
       }
     }
@@ -203,6 +209,39 @@ class _ReaderScreenState extends State<ReaderScreen>
       _checkAndTriggerPeriodicSync();
     }
     _wasPlaying = isPlayingNow;
+
+    if (_lastScrollChapterIndex != _ttsService.currentChapterIndex ||
+        _lastScrollParagraphIndex != _ttsService.currentParagraphIndex) {
+      _scrollToCurrentParagraph(animated: true);
+    }
+  }
+
+  void _scrollToCurrentParagraph({bool animated = true}) {
+    if (!_scrollController.hasClients) return;
+    final targetIndex = _ttsService.currentParagraphIndex;
+    _lastScrollChapterIndex = _ttsService.currentChapterIndex;
+    _lastScrollParagraphIndex = targetIndex;
+
+    if (targetIndex <= 0) {
+      if (animated) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _scrollController.jumpTo(0);
+      }
+      return;
+    }
+
+    _scrollController.scrollToIndex(
+      targetIndex,
+      preferPosition: AutoScrollPosition.middle,
+      duration: animated
+          ? const Duration(milliseconds: 300)
+          : const Duration(milliseconds: 1),
+    );
   }
 
 
@@ -919,6 +958,12 @@ class _ReaderScreenState extends State<ReaderScreen>
       _isInitialized = true;
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollToCurrentParagraph(animated: false);
+      }
+    });
+
     // Tự động đồng bộ tiến trình đọc từ mây về khi mở màn hình đọc
     _syncActiveBookProgressOnEntry();
 
@@ -1313,45 +1358,50 @@ class _ReaderScreenState extends State<ReaderScreen>
                       final key = '${activeChapterIndex}_$index';
                       final highlight = _highlightsMap[key];
 
-                      return ParagraphWidget(
+                      return AutoScrollTag(
                         key: ValueKey(key),
-                        text: paragraphText,
-                        isActive: isActive,
-                        isPlaying: _ttsService.isPlaying,
-                        fontSize: _fontSize,
-                        lineHeight: _lineHeight,
-                        paragraphSpacing: _paragraphSpacing,
-                        paragraphIndent: _paragraphIndent,
-                        textAlign: _textAlignment == 'justify'
-                            ? TextAlign.justify
-                            : TextAlign.left,
-                        wordProgressNotifier: isActive ? _ttsService.wordProgressNotifier : null,
-                        isDark: isDark,
-                        fontFamily: _fontFamily,
-                        textColor: textColor,
-                        highlightColorHex: highlight?.colorHex,
-                        hasNote:
-                            highlight?.note != null &&
-                            highlight!.note!.isNotEmpty,
-                        onTap: () {
-                          if (!_showSystemUI) {
-                            setState(() {
-                              _showSystemUI = true;
-                              SystemChrome.setEnabledSystemUIMode(
-                                SystemUiMode.edgeToEdge,
-                              );
-                            });
-                          } else {
-                            _ttsService.jumpToParagraph(index);
-                          }
-                        },
-                        onLongPress: () {
-                          _showParagraphMenu(
-                            activeChapterIndex,
-                            index,
-                            paragraphText,
-                          );
-                        },
+                        controller: _scrollController,
+                        index: index,
+                        child: ParagraphWidget(
+                          key: ValueKey(key),
+                          text: paragraphText,
+                          isActive: isActive,
+                          isPlaying: _ttsService.isPlaying,
+                          fontSize: _fontSize,
+                          lineHeight: _lineHeight,
+                          paragraphSpacing: _paragraphSpacing,
+                          paragraphIndent: _paragraphIndent,
+                          textAlign: _textAlignment == 'justify'
+                              ? TextAlign.justify
+                              : TextAlign.left,
+                          wordProgressNotifier: isActive ? _ttsService.wordProgressNotifier : null,
+                          isDark: isDark,
+                          fontFamily: _fontFamily,
+                          textColor: textColor,
+                          highlightColorHex: highlight?.colorHex,
+                          hasNote:
+                              highlight?.note != null &&
+                              highlight!.note!.isNotEmpty,
+                          onTap: () {
+                            if (!_showSystemUI) {
+                              setState(() {
+                                _showSystemUI = true;
+                                SystemChrome.setEnabledSystemUIMode(
+                                  SystemUiMode.edgeToEdge,
+                                );
+                              });
+                            } else {
+                              _ttsService.jumpToParagraph(index);
+                            }
+                          },
+                          onLongPress: () {
+                            _showParagraphMenu(
+                              activeChapterIndex,
+                              index,
+                              paragraphText,
+                            );
+                          },
+                        ),
                       );
                     },
                   ),

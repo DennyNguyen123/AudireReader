@@ -49,43 +49,6 @@ class ParagraphWidget extends StatefulWidget {
 }
 
 class _ParagraphWidgetState extends State<ParagraphWidget> {
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isActive) {
-      _scrollToVisible();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant ParagraphWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // Tự động cuộn khi:
-    // 1. Đoạn văn này vừa trở thành active (isActive: false -> true)
-    // 2. Đoạn văn này đang active và TTS bắt đầu phát (isPlaying: false -> true)
-    final becameActive = widget.isActive && !oldWidget.isActive;
-    final startedPlayingWhileActive =
-        widget.isActive && widget.isPlaying && !oldWidget.isPlaying;
-
-    if (becameActive || startedPlayingWhileActive) {
-      _scrollToVisible();
-    }
-  }
-
-  void _scrollToVisible() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          alignment: 0.3,
-        );
-      }
-    });
-  }
-
   static final Map<String, Color> _hexColorCache = {};
 
   Color _parseHexColor(String hexStr) {
