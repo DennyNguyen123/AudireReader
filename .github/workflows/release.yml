@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   # ==========================================
-  # JOB 1: CHUẨN BỊ & KIỂM TRA CODE (Chạy 1 lần)
+  # JOB 1: CHUẨN BỊ & KIỂM TRA CODE (Chạy 1 lần trên Linux)
   # ==========================================
   prepare-and-test:
     runs-on: ubuntu-latest
@@ -23,7 +23,7 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
-          cache: true
+          cache: false
 
       - name: Install dependencies
         run: flutter pub get
@@ -33,11 +33,17 @@ jobs:
         with:
           workspaces: rust
 
-      - name: Run Code Generation Check
+      - name: Run Code Generation
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Run Tests
         run: flutter test
+
+      - name: Upload Generated Code
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-dart-code
+          path: lib/
 
   # ==========================================
   # JOB 2: BUILD PARALLEL QUA MATRIX
@@ -60,8 +66,23 @@ jobs:
             artifact_name: AudireReader-iOS-IPA
 
     steps:
+      # --- TỐI ƯU HỆ THỐNG WINDOWS ---
+      - name: Optimize Windows Runner (Disable Defender & Search Indexer)
+        if: matrix.target == 'windows'
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true -DisableArchiveScanning $true -DisableBehaviorMonitoring $true -DisableIntrusionPreventionSystem $true -DisableScriptScanning $true
+          Stop-Service wsearch -ErrorAction SilentlyContinue
+          Set-Service wsearch -StartupType Disabled -ErrorAction SilentlyContinue
+        shell: powershell
+
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download Generated Code
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-dart-code
+          path: lib
 
       # --- SETUP CHO TỪNG OS ---
       - name: Setup Java (Android)
@@ -86,7 +107,7 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
-          cache: true
+          cache: false
 
       - name: Install dependencies
         run: flutter pub get
@@ -96,10 +117,8 @@ jobs:
         with:
           workspaces: rust
 
-      - name: Run Code Generation
-        run: dart run build_runner build --delete-conflicting-outputs
-
       - name: Setup Shorebird
+        if: matrix.target != 'windows'
         uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
@@ -113,17 +132,17 @@ jobs:
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      - name: Build Windows via Shorebird
+      - name: Build Windows
         if: matrix.target == 'windows'
         run: |
           git config --system core.longpaths true
-          shorebird release windows --flutter-version=3.41.9
+          flutter build windows --release
           dart run inno_bundle --no-app
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath AudireReader-Windows.zip
+          7z a -mx=4 AudireReader-Windows.zip .\build\windows\x64\runner\Release\*
           Move-Item build\windows\x64\installer\Release\*.exe AudireReader-Windows-Setup.exe
         shell: pwsh
         env:
-          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          CARGO_INCREMENTAL: "0"
 
       - name: Build iOS via Shorebird
         if: matrix.target == 'ios'
