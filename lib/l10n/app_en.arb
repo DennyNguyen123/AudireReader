@@ -719,5 +719,11 @@
   "rememberChoice": "Remember my choice (Set as default)",
   "whenClosingWindow": "When closing window",
   "whenClosingWindowDesc": "Choose behavior when clicking the close button (X) on Desktop.",
-  "alwaysAsk": "Always ask"
+  "alwaysAsk": "Always ask",
+  "downloadingUpdate": "Downloading update...",
+  "installUpdate": "Update Now",
+  "copyIpaLink": "Copy IPA Link",
+  "ipaLinkCopied": "IPA download link copied to clipboard!",
+  "openInSigner": "Download & Open in Signer",
+  "openInBrowser": "Open in Browser"
 }

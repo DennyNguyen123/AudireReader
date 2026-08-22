@@ -473,5 +473,11 @@
   "rememberChoice": "Ghi nhớ lựa chọn này (Đặt làm mặc định)",
   "whenClosingWindow": "Khi đóng cửa sổ ứng dụng",
   "whenClosingWindowDesc": "Tùy chọn hành động khi nhấn nút đóng (X) trên thanh tiêu đề cửa sổ Desktop.",
-  "alwaysAsk": "Hỏi mỗi lần"
+  "alwaysAsk": "Hỏi mỗi lần",
+  "downloadingUpdate": "Đang tải bản cập nhật...",
+  "installUpdate": "Cập nhật ngay",
+  "copyIpaLink": "Sao chép link IPA",
+  "ipaLinkCopied": "Đã sao chép link tải IPA vào bộ nhớ tạm!",
+  "openInSigner": "Tải & Mở vào App ký",
+  "openInBrowser": "Mở trên trình duyệt"
 }

@@ -1361,4 +1361,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alwaysAsk => 'Always ask';
+
+  @override
+  String get downloadingUpdate => 'Downloading update...';
+
+  @override
+  String get installUpdate => 'Update Now';
+
+  @override
+  String get copyIpaLink => 'Copy IPA Link';
+
+  @override
+  String get ipaLinkCopied => 'IPA download link copied to clipboard!';
+
+  @override
+  String get openInSigner => 'Download & Open in Signer';
+
+  @override
+  String get openInBrowser => 'Open in Browser';
 }

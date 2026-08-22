@@ -1362,4 +1362,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get alwaysAsk => 'Hỏi mỗi lần';
+
+  @override
+  String get downloadingUpdate => 'Đang tải bản cập nhật...';
+
+  @override
+  String get installUpdate => 'Cập nhật ngay';
+
+  @override
+  String get copyIpaLink => 'Sao chép link IPA';
+
+  @override
+  String get ipaLinkCopied => 'Đã sao chép link tải IPA vào bộ nhớ tạm!';
+
+  @override
+  String get openInSigner => 'Tải & Mở vào App ký';
+
+  @override
+  String get openInBrowser => 'Mở trên trình duyệt';
 }

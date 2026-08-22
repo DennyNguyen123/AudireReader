@@ -2538,6 +2538,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Always ask'**
   String get alwaysAsk;
+
+  /// No description provided for @downloadingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update...'**
+  String get downloadingUpdate;
+
+  /// No description provided for @installUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get installUpdate;
+
+  /// No description provided for @copyIpaLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy IPA Link'**
+  String get copyIpaLink;
+
+  /// No description provided for @ipaLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'IPA download link copied to clipboard!'**
+  String get ipaLinkCopied;
+
+  /// No description provided for @openInSigner.
+  ///
+  /// In en, this message translates to:
+  /// **'Download & Open in Signer'**
+  String get openInSigner;
+
+  /// No description provided for @openInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Browser'**
+  String get openInBrowser;
 }
 
 class _AppLocalizationsDelegate
