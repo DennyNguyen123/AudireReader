@@ -50,3 +50,8 @@ app.*.map.json
 %TEMP%
 .trellis/workspace/DennyNguyen123/index.md
 .trellis/workspace/DennyNguyen123/journal-1.md
+
+# Keystore & Signing files
+*.jks
+*.keystore
+key.properties

@@ -30,28 +30,28 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        create("release") {
-            val keystorePath = System.getenv("KEYSTORE_FILE") ?: "debug.keystore"
-            val keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: "android"
-            val keyAliasStr = System.getenv("KEY_ALIAS") ?: "androiddebugkey"
-            val keyPasswordStr = System.getenv("KEY_PASSWORD") ?: "android"
+    val keystorePath = System.getenv("KEYSTORE_FILE") ?: if (file("release.jks").exists()) "release.jks" else null
+    val keystoreFile = if (keystorePath != null) file(keystorePath) else null
+    val hasReleaseKeystore = keystoreFile != null && keystoreFile.exists()
 
-            val keystoreFile = file(keystorePath)
-            if (keystoreFile.exists()) {
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
                 storeFile = keystoreFile
-                storePassword = keystorePassword
-                keyAlias = keyAliasStr
-                keyPassword = keyPasswordStr
-            } else {
-                initWith(getByName("debug"))
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "12345678"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "audire"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "12345678"
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
