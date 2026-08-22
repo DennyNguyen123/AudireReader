@@ -369,6 +369,7 @@ AppSettings defaultAppSettings({String? deviceId, String? deviceName}) {
     audioPanelCollapsed: false,
     libraryViewMode: 'grid',
     searchHistory: const [],
+    closeAction: 'ask',
   );
 }
 

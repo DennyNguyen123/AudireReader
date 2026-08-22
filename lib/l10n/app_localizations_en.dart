@@ -1318,8 +1318,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterDownloading => 'Downloading';
 
   @override
+  String get filterCurrentToEnd => 'Current to End';
+
+  @override
+  String get filterError => 'Error';
+
+  @override
   String get ttsProviderLabel => 'TTS Provider';
 
   @override
   String get voiceLabel => 'Voice';
+
+  @override
+  String get closeAppDialogTitle => 'Close Application';
+
+  @override
+  String get closeAppDialogMessage =>
+      'Do you want to minimize to system tray or exit the application?';
+
+  @override
+  String get minimizeToTray => 'Minimize to System Tray';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'App will keep running in the background and can be reopened from the tray.';
+
+  @override
+  String get exitApp => 'Exit Application';
+
+  @override
+  String get exitAppDesc => 'Completely terminate the application process.';
+
+  @override
+  String get rememberChoice => 'Remember my choice (Set as default)';
+
+  @override
+  String get whenClosingWindow => 'When closing window';
+
+  @override
+  String get whenClosingWindowDesc =>
+      'Choose behavior when clicking the close button (X) on Desktop.';
+
+  @override
+  String get alwaysAsk => 'Always ask';
 }

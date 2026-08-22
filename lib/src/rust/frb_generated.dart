@@ -4162,8 +4162,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   AppSettings dco_decode_app_settings(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 64)
-      throw Exception('unexpected arr length: expect 64 but see ${arr.length}');
+    if (arr.length != 65)
+      throw Exception('unexpected arr length: expect 65 but see ${arr.length}');
     return AppSettings(
       id: dco_decode_i_64(arr[0]),
       fontSize: dco_decode_f_64(arr[1]),
@@ -4229,6 +4229,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       audioPanelCollapsed: dco_decode_bool(arr[61]),
       libraryViewMode: dco_decode_String(arr[62]),
       searchHistory: dco_decode_list_String(arr[63]),
+      closeAction: dco_decode_String(arr[64]),
     );
   }
 
@@ -4976,6 +4977,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_audioPanelCollapsed = sse_decode_bool(deserializer);
     var var_libraryViewMode = sse_decode_String(deserializer);
     var var_searchHistory = sse_decode_list_String(deserializer);
+    var var_closeAction = sse_decode_String(deserializer);
     return AppSettings(
       id: var_id,
       fontSize: var_fontSize,
@@ -5041,6 +5043,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       audioPanelCollapsed: var_audioPanelCollapsed,
       libraryViewMode: var_libraryViewMode,
       searchHistory: var_searchHistory,
+      closeAction: var_closeAction,
     );
   }
 
@@ -6031,6 +6034,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.audioPanelCollapsed, serializer);
     sse_encode_String(self.libraryViewMode, serializer);
     sse_encode_list_String(self.searchHistory, serializer);
+    sse_encode_String(self.closeAction, serializer);
   }
 
   @protected

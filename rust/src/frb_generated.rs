@@ -4331,6 +4331,7 @@ impl SseDecode for crate::api::models::AppSettings {
         let mut var_audioPanelCollapsed = <bool>::sse_decode(deserializer);
         let mut var_libraryViewMode = <String>::sse_decode(deserializer);
         let mut var_searchHistory = <Vec<String>>::sse_decode(deserializer);
+        let mut var_closeAction = <String>::sse_decode(deserializer);
         return crate::api::models::AppSettings {
             id: var_id,
             font_size: var_fontSize,
@@ -4396,6 +4397,7 @@ impl SseDecode for crate::api::models::AppSettings {
             audio_panel_collapsed: var_audioPanelCollapsed,
             library_view_mode: var_libraryViewMode,
             search_history: var_searchHistory,
+            close_action: var_closeAction,
         };
     }
 }
@@ -5620,6 +5622,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::models::AppSettings {
             self.audio_panel_collapsed.into_into_dart().into_dart(),
             self.library_view_mode.into_into_dart().into_dart(),
             self.search_history.into_into_dart().into_dart(),
+            self.close_action.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -6213,6 +6216,7 @@ impl SseEncode for crate::api::models::AppSettings {
         <bool>::sse_encode(self.audio_panel_collapsed, serializer);
         <String>::sse_encode(self.library_view_mode, serializer);
         <Vec<String>>::sse_encode(self.search_history, serializer);
+        <String>::sse_encode(self.close_action, serializer);
     }
 }
 

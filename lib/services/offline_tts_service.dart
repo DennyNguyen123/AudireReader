@@ -8,6 +8,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../core/database/database_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import '../core/utils/path_helper.dart';
+import '../core/utils/memory_helper.dart';
+import 'supertonic_service.dart';
 import 'package:audire_reader/src/rust/api/offline_downloader.dart'
     as rust_downloader;
 
@@ -235,6 +237,14 @@ class OfflineTtsService extends ChangeNotifier {
           _state = DownloadState.completed;
           _pollTimer?.cancel();
           WakelockPlus.disable();
+
+          // Dọn dẹp AI engine và thu hồi RAM khi tải xong
+          try {
+            SupertonicService.getInstance().releaseEngine();
+          } catch (_) {}
+          Future.delayed(const Duration(milliseconds: 600), () {
+            MemoryHelper.trimMemory();
+          });
         }
 
         notifyListeners();
@@ -265,13 +275,25 @@ class OfflineTtsService extends ChangeNotifier {
     }
   }
 
-  void cancelDownload() {
+  Future<void> cancelDownload() async {
     _pollTimer?.cancel();
     _pollTimer = null;
-    rust_downloader.cancelOfflineDownload();
+    try {
+      rust_downloader.cancelOfflineDownload();
+    } catch (e) {
+      debugPrint('[OfflineTtsService] cancelOfflineDownload error: $e');
+    }
     _state = DownloadState.idle;
     _activeChapterIndices.clear();
     WakelockPlus.disable();
     notifyListeners();
+
+    // Dọn dẹp Supertonic AI Engine và thu hồi RAM sau khi Rust workers đã dừng
+    Future.delayed(const Duration(milliseconds: 600), () async {
+      try {
+        await SupertonicService.getInstance().releaseEngine();
+      } catch (_) {}
+      MemoryHelper.trimMemory();
+    });
   }
 }

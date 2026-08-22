@@ -8,7 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'models.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `default_grid`, `default_true`
+// These functions are ignored because they are not marked as `pub`: `default_close_action`, `default_grid`, `default_true`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `BookBookmarksFile`, `BookHighlightsFile`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
@@ -79,6 +79,7 @@ sealed class AppSettings with _$AppSettings {
     required bool audioPanelCollapsed,
     required String libraryViewMode,
     required List<String> searchHistory,
+    required String closeAction,
   }) = _AppSettings;
 }
 

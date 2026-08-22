@@ -2455,6 +2455,18 @@ abstract class AppLocalizations {
   /// **'Downloading'**
   String get filterDownloading;
 
+  /// No description provided for @filterCurrentToEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Current to End'**
+  String get filterCurrentToEnd;
+
+  /// No description provided for @filterError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get filterError;
+
   /// No description provided for @ttsProviderLabel.
   ///
   /// In en, this message translates to:
@@ -2466,6 +2478,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Voice'**
   String get voiceLabel;
+
+  /// No description provided for @closeAppDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Application'**
+  String get closeAppDialogTitle;
+
+  /// No description provided for @closeAppDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to minimize to system tray or exit the application?'**
+  String get closeAppDialogMessage;
+
+  /// No description provided for @minimizeToTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to System Tray'**
+  String get minimizeToTray;
+
+  /// No description provided for @minimizeToTrayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'App will keep running in the background and can be reopened from the tray.'**
+  String get minimizeToTrayDesc;
+
+  /// No description provided for @exitApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit Application'**
+  String get exitApp;
+
+  /// No description provided for @exitAppDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Completely terminate the application process.'**
+  String get exitAppDesc;
+
+  /// No description provided for @rememberChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember my choice (Set as default)'**
+  String get rememberChoice;
+
+  /// No description provided for @whenClosingWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'When closing window'**
+  String get whenClosingWindow;
+
+  /// No description provided for @whenClosingWindowDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose behavior when clicking the close button (X) on Desktop.'**
+  String get whenClosingWindowDesc;
+
+  /// No description provided for @alwaysAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Always ask'**
+  String get alwaysAsk;
 }
 
 class _AppLocalizationsDelegate

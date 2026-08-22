@@ -1319,8 +1319,47 @@ class AppLocalizationsVi extends AppLocalizations {
   String get filterDownloading => 'Đang tải';
 
   @override
+  String get filterCurrentToEnd => 'Từ hiện tại đến hết';
+
+  @override
+  String get filterError => 'Lỗi';
+
+  @override
   String get ttsProviderLabel => 'Nhà cung cấp TTS';
 
   @override
   String get voiceLabel => 'Giọng đọc';
+
+  @override
+  String get closeAppDialogTitle => 'Đóng ứng dụng';
+
+  @override
+  String get closeAppDialogMessage =>
+      'Bạn muốn ẩn ứng dụng xuống khay hệ thống hay thoát hoàn toàn?';
+
+  @override
+  String get minimizeToTray => 'Ẩn xuống khay hệ thống';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Ứng dụng sẽ tiếp tục chạy ngầm và có thể mở lại từ khay hệ thống.';
+
+  @override
+  String get exitApp => 'Thoát ứng dụng';
+
+  @override
+  String get exitAppDesc => 'Thoát hoàn toàn tiến trình ứng dụng.';
+
+  @override
+  String get rememberChoice => 'Ghi nhớ lựa chọn này (Đặt làm mặc định)';
+
+  @override
+  String get whenClosingWindow => 'Khi đóng cửa sổ ứng dụng';
+
+  @override
+  String get whenClosingWindowDesc =>
+      'Tùy chọn hành động khi nhấn nút đóng (X) trên thanh tiêu đề cửa sổ Desktop.';
+
+  @override
+  String get alwaysAsk => 'Hỏi mỗi lần';
 }

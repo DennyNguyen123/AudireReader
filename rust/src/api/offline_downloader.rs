@@ -351,6 +351,9 @@ pub async fn start_offline_download_job(
 
             worker_handles.push(tokio::spawn(async move {
                 let _permit = permit;
+                if IS_CANCELED.load(Ordering::Relaxed) {
+                    return;
+                }
                 let raw_text = task.text.trim();
 
                 let mut success = true;
@@ -437,7 +440,7 @@ pub async fn start_offline_download_job(
                             .join(".done");
                         let _ = tokio::fs::write(&done_file, "").await;
                     }
-                } else {
+                } else if !IS_CANCELED.load(Ordering::Relaxed) {
                     FAILED_CHAPTERS.lock().insert(task.chapter_index);
                     ACTIVE_CHAPTERS.lock().remove(&task.chapter_index);
                     let err_msg = format!(
@@ -445,12 +448,18 @@ pub async fn start_offline_download_job(
                         task.chapter_index + 1, task.paragraph_index, last_err
                     );
                     log_to_file(&base_dir_inner, &err_msg).await;
+                } else {
+                    ACTIVE_CHAPTERS.lock().remove(&task.chapter_index);
                 }
             }));
         }
 
         for handle in worker_handles {
             let _ = handle.await;
+        }
+
+        if provider == "supertonic" {
+            let _ = crate::api::supertonic::release_supertonic_engine().await;
         }
 
         IS_RUNNING.store(false, Ordering::Relaxed);

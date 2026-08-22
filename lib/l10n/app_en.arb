@@ -706,6 +706,18 @@
   "tapToChange": "Tap to change",
   "fromBeginningToCurrent": "From Beginning to Current",
   "filterDownloading": "Downloading",
+  "filterCurrentToEnd": "Current to End",
+  "filterError": "Error",
   "ttsProviderLabel": "TTS Provider",
-  "voiceLabel": "Voice"
+  "voiceLabel": "Voice",
+  "closeAppDialogTitle": "Close Application",
+  "closeAppDialogMessage": "Do you want to minimize to system tray or exit the application?",
+  "minimizeToTray": "Minimize to System Tray",
+  "minimizeToTrayDesc": "App will keep running in the background and can be reopened from the tray.",
+  "exitApp": "Exit Application",
+  "exitAppDesc": "Completely terminate the application process.",
+  "rememberChoice": "Remember my choice (Set as default)",
+  "whenClosingWindow": "When closing window",
+  "whenClosingWindowDesc": "Choose behavior when clicking the close button (X) on Desktop.",
+  "alwaysAsk": "Always ask"
 }

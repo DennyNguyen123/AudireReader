@@ -73,6 +73,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
   String _hotkeyOpenSetting = 'Control+comma';
   String _hotkeyBossKey = 'Control+b';
   String _bossKeyAction = 'minimize';
+  String _closeAction = 'ask';
 
   @override
   void initState() {
@@ -103,6 +104,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _autoSyncEnabled = settings.webDavAutoSync;
       _openLastReadOnLaunch = settings.openLastReadOnLaunch;
       _autoCheckUpdate = settings.autoCheckUpdate;
+      _closeAction = settings.closeAction;
       _appLocaleCode =
           (settings.appLocale == 'vi' || settings.appLocale == 'en')
           ? settings.appLocale
@@ -184,6 +186,13 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
     final updated = settings.copyWith(autoCheckUpdate: val);
+    await db.saveSettings(updated);
+  }
+
+  Future<void> _saveCloseActionPreference(String val) async {
+    final db = await DatabaseHelper.getInstance();
+    final settings = await db.getSettings();
+    final updated = settings.copyWith(closeAction: val);
     await db.saveSettings(updated);
   }
 
@@ -1027,6 +1036,7 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                           openLastReadOnLaunch: _openLastReadOnLaunch,
                           autoCheckUpdate: _autoCheckUpdate,
                           appLocaleCode: _appLocaleCode,
+                          closeAction: _closeAction,
                           isCheckingUpdate: _isCheckingUpdate,
                           onOpenLastReadChanged: (val) {
                             setState(() {
@@ -1039,6 +1049,14 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
                               _autoCheckUpdate = val;
                             });
                             _saveAutoCheckUpdatePreference(val);
+                          },
+                          onCloseActionChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _closeAction = val;
+                              });
+                              _saveCloseActionPreference(val);
+                            }
                           },
                           onLocaleChanged: (val) async {
                             if (val != null) {

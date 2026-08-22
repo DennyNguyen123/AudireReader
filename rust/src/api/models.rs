@@ -120,6 +120,10 @@ fn default_grid() -> String {
     "grid".to_string()
 }
 
+fn default_close_action() -> String {
+    "ask".to_string()
+}
+
 #[frb(dart_metadata = ("freezed"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -192,6 +196,8 @@ pub struct AppSettings {
     pub library_view_mode: String,
     #[serde(default)]
     pub search_history: Vec<String>,
+    #[serde(default = "default_close_action")]
+    pub close_action: String,
 }
 
 #[frb(dart_metadata = ("freezed"))]

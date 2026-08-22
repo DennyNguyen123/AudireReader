@@ -460,6 +460,18 @@
   "tapToChange": "Chạm để đổi",
   "fromBeginningToCurrent": "Từ đầu đến hiện tại",
   "filterDownloading": "Đang tải",
+  "filterCurrentToEnd": "Từ hiện tại đến hết",
+  "filterError": "Lỗi",
   "ttsProviderLabel": "Nhà cung cấp TTS",
-  "voiceLabel": "Giọng đọc"
+  "voiceLabel": "Giọng đọc",
+  "closeAppDialogTitle": "Đóng ứng dụng",
+  "closeAppDialogMessage": "Bạn muốn ẩn ứng dụng xuống khay hệ thống hay thoát hoàn toàn?",
+  "minimizeToTray": "Ẩn xuống khay hệ thống",
+  "minimizeToTrayDesc": "Ứng dụng sẽ tiếp tục chạy ngầm và có thể mở lại từ khay hệ thống.",
+  "exitApp": "Thoát ứng dụng",
+  "exitAppDesc": "Thoát hoàn toàn tiến trình ứng dụng.",
+  "rememberChoice": "Ghi nhớ lựa chọn này (Đặt làm mặc định)",
+  "whenClosingWindow": "Khi đóng cửa sổ ứng dụng",
+  "whenClosingWindowDesc": "Tùy chọn hành động khi nhấn nút đóng (X) trên thanh tiêu đề cửa sổ Desktop.",
+  "alwaysAsk": "Hỏi mỗi lần"
 }

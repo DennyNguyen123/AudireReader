@@ -81,6 +81,7 @@ mixin _$AppSettings {
   bool get audioPanelCollapsed => throw _privateConstructorUsedError;
   String get libraryViewMode => throw _privateConstructorUsedError;
   List<String> get searchHistory => throw _privateConstructorUsedError;
+  String get closeAction => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppSettingsCopyWith<AppSettings> get copyWith =>
@@ -159,6 +160,7 @@ abstract class $AppSettingsCopyWith<$Res> {
     bool audioPanelCollapsed,
     String libraryViewMode,
     List<String> searchHistory,
+    String closeAction,
   });
 }
 
@@ -239,6 +241,7 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? audioPanelCollapsed = null,
     Object? libraryViewMode = null,
     Object? searchHistory = null,
+    Object? closeAction = null,
   }) {
     return _then(
       _value.copyWith(
@@ -498,6 +501,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
                 ? _value.searchHistory
                 : searchHistory // ignore: cast_nullable_to_non_nullable
                       as List<String>,
+            closeAction: null == closeAction
+                ? _value.closeAction
+                : closeAction // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -578,6 +585,7 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
     bool audioPanelCollapsed,
     String libraryViewMode,
     List<String> searchHistory,
+    String closeAction,
   });
 }
 
@@ -657,6 +665,7 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? audioPanelCollapsed = null,
     Object? libraryViewMode = null,
     Object? searchHistory = null,
+    Object? closeAction = null,
   }) {
     return _then(
       _$AppSettingsImpl(
@@ -916,6 +925,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
             ? _value._searchHistory
             : searchHistory // ignore: cast_nullable_to_non_nullable
                   as List<String>,
+        closeAction: null == closeAction
+            ? _value.closeAction
+            : closeAction // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -989,6 +1002,7 @@ class _$AppSettingsImpl implements _AppSettings {
     required this.audioPanelCollapsed,
     required this.libraryViewMode,
     required final List<String> searchHistory,
+    required this.closeAction,
   }) : _searchHistory = searchHistory;
 
   @override
@@ -1126,8 +1140,11 @@ class _$AppSettingsImpl implements _AppSettings {
   }
 
   @override
+  final String closeAction;
+
+  @override
   String toString() {
-    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, paragraphIndent: $paragraphIndent, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavAutoSync: $webDavAutoSync, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug, audioPanelCollapsed: $audioPanelCollapsed, libraryViewMode: $libraryViewMode, searchHistory: $searchHistory)';
+    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, paragraphIndent: $paragraphIndent, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavAutoSync: $webDavAutoSync, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug, audioPanelCollapsed: $audioPanelCollapsed, libraryViewMode: $libraryViewMode, searchHistory: $searchHistory, closeAction: $closeAction)';
   }
 
   @override
@@ -1271,7 +1288,9 @@ class _$AppSettingsImpl implements _AppSettings {
             const DeepCollectionEquality().equals(
               other._searchHistory,
               _searchHistory,
-            ));
+            ) &&
+            (identical(other.closeAction, closeAction) ||
+                other.closeAction == closeAction));
   }
 
   @override
@@ -1341,6 +1360,7 @@ class _$AppSettingsImpl implements _AppSettings {
     audioPanelCollapsed,
     libraryViewMode,
     const DeepCollectionEquality().hash(_searchHistory),
+    closeAction,
   ]);
 
   @JsonKey(ignore: true)
@@ -1416,6 +1436,7 @@ abstract class _AppSettings implements AppSettings {
     required final bool audioPanelCollapsed,
     required final String libraryViewMode,
     required final List<String> searchHistory,
+    required final String closeAction,
   }) = _$AppSettingsImpl;
 
   @override
@@ -1546,6 +1567,8 @@ abstract class _AppSettings implements AppSettings {
   String get libraryViewMode;
   @override
   List<String> get searchHistory;
+  @override
+  String get closeAction;
   @override
   @JsonKey(ignore: true)
   _$$AppSettingsImplCopyWith<_$AppSettingsImpl> get copyWith =>

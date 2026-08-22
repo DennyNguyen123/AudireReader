@@ -76,6 +76,14 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
       return list
           .where((ch) => _offlineService.activeChapterIndices.contains(ch.chapterIndex))
           .toList();
+    } else if (_filterMode == 'current_to_end') {
+      return list
+          .where((ch) => ch.chapterIndex >= widget.currentChapterIndex)
+          .toList();
+    } else if (_filterMode == 'error') {
+      return list
+          .where((ch) => _offlineService.failedChapterIndices.contains(ch.chapterIndex))
+          .toList();
     }
     return list;
   }
@@ -1070,6 +1078,48 @@ class _TtsDownloadManagerSheetState extends State<TtsDownloadManagerSheet> {
                                                 AppLocalizations.of(
                                                   context,
                                                 )!.filterDownloading,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'current_to_end',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode == 'current_to_end')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterCurrentToEnd,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'error',
+                                          child: Row(
+                                            children: [
+                                              if (_filterMode == 'error')
+                                                Icon(
+                                                  Icons.check_rounded,
+                                                  size: 18,
+                                                  color: primaryColor,
+                                                )
+                                              else
+                                                const SizedBox(width: 18),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.filterError,
                                               ),
                                             ],
                                           ),

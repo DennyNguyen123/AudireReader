@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'core/system_tray_manager.dart';
 import 'core/global_hotkey_manager.dart';
+import 'core/app_window_manager.dart';
 import 'core/theme_notifier.dart';
 import 'core/locale_notifier.dart';
 import 'core/database/database_helper.dart';
@@ -16,6 +17,7 @@ import 'services/logger_service.dart';
 import 'package:audire_reader/src/rust/frb_generated.dart';
 import 'package:audire_reader/src/rust/api/database.dart' as rust_db;
 import 'core/utils/path_helper.dart';
+import 'core/utils/memory_helper.dart';
 
 void main() async {
   // Đảm bảo bindings được khởi tạo hoàn chỉnh trước khi chạy các service chạy nền
@@ -37,7 +39,7 @@ void main() async {
 
   // Khởi tạo Window Manager cho Desktop để quản lý cửa sổ (như ẩn/hiện/thu nhỏ cho Boss Key)
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-    await windowManager.ensureInitialized();
+    await AppWindowManager.init();
     await AppTrayManager.init();
     await GlobalHotkeyManager.init();
   }
@@ -60,6 +62,10 @@ void main() async {
 
   // Không await ttsFuture để app khởi động ngay lập tức
   runApp(const AudireReaderApp());
+
+  // Lên lịch dọn dẹp RAM thừa phát sinh lúc khởi tạo sau khi UI đã ổn định
+  MemoryHelper.schedulePostStartupCleanup();
+  MemoryHelper.initLifecycleListener();
 }
 
 Color _parseColor(String? hexString, Color defaultColor) {
@@ -205,6 +211,8 @@ class AudireReaderApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const [Locale('en'), Locale('vi')],
+              navigatorKey: AppWindowManager.navigatorKey,
+              navigatorObservers: [MemoryNavObserver()],
               home: const LibraryScreen(),
             );
           },

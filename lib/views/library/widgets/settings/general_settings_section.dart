@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'settings_card.dart';
@@ -6,10 +8,12 @@ class GeneralSettingsSection extends StatelessWidget {
   final bool openLastReadOnLaunch;
   final bool autoCheckUpdate;
   final String appLocaleCode;
+  final String closeAction;
   final bool isCheckingUpdate;
   final ValueChanged<bool> onOpenLastReadChanged;
   final ValueChanged<bool> onAutoCheckUpdateChanged;
   final ValueChanged<String?> onLocaleChanged;
+  final ValueChanged<String?> onCloseActionChanged;
   final VoidCallback onCheckUpdates;
 
   const GeneralSettingsSection({
@@ -17,10 +21,12 @@ class GeneralSettingsSection extends StatelessWidget {
     required this.openLastReadOnLaunch,
     required this.autoCheckUpdate,
     required this.appLocaleCode,
+    required this.closeAction,
     required this.isCheckingUpdate,
     required this.onOpenLastReadChanged,
     required this.onAutoCheckUpdateChanged,
     required this.onLocaleChanged,
+    required this.onCloseActionChanged,
     required this.onCheckUpdates,
   });
 
@@ -126,7 +132,66 @@ class GeneralSettingsSection extends StatelessWidget {
             ],
             onChanged: onLocaleChanged,
           ),
-          const SizedBox(height: 12),
+          if (!kIsWeb &&
+              (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, thickness: 1),
+            const SizedBox(height: 12),
+            Text(
+              AppLocalizations.of(context)?.whenClosingWindow ??
+                  'When closing window',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppLocalizations.of(context)?.whenClosingWindowDesc ??
+                  'Choose behavior when clicking the close button (X) on Desktop.',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: closeAction,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white10 : Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              items: [
+                DropdownMenuItem<String>(
+                  value: 'ask',
+                  child: Text(
+                    AppLocalizations.of(context)?.alwaysAsk ?? 'Always ask',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+                DropdownMenuItem<String>(
+                  value: 'tray',
+                  child: Text(
+                    AppLocalizations.of(context)?.minimizeToTray ??
+                        'Minimize to System Tray',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+                DropdownMenuItem<String>(
+                  value: 'exit',
+                  child: Text(
+                    AppLocalizations.of(context)?.exitApp ?? 'Exit Application',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+              onChanged: onCloseActionChanged,
+            ),
+          ],
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
