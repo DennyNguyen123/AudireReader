@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use, avoid_print
 import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:file_picker/file_picker.dart';
@@ -77,9 +76,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         });
       }
     });
-
-    _loadViewMode();
-    _loadSearchHistory();
 
     TtsService.getInstance().then((instance) {
       if (mounted) {
@@ -231,8 +227,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   String _formatLastSyncTime() {
-    if (_lastSyncTime == null)
+    if (_lastSyncTime == null) {
       return AppLocalizations.of(context)?.neverSynced ?? 'Never synced';
+    }
     final now = DateTime.now();
     final difference = now.difference(_lastSyncTime!);
 
@@ -1110,7 +1107,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (settings.openLastReadOnLaunch) {
       // Tìm tiến trình đọc gần đây nhất
       final progressList = await db.getAllReadingProgress();
-      progressList.sort((a, b) => (b.lastRead ?? 0).compareTo(a.lastRead ?? 0));
+      progressList.sort((a, b) => b.lastRead.compareTo(a.lastRead));
 
       if (progressList.isNotEmpty) {
         final lastProgress = progressList.first;
@@ -2850,9 +2847,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final isVirtual = !_localBookUuids.contains(book.uuid);
 
     Color statusColor = Colors.grey;
-    if (bookStatus == 'reading')
+    if (bookStatus == 'reading') {
       statusColor = Theme.of(context).colorScheme.primary;
-    if (bookStatus == 'completed') statusColor = Colors.green;
+    }
+    if (bookStatus == 'completed') {
+      statusColor = Colors.green;
+    }
 
     final listItem = Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2990,8 +2990,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             valueListenable: SyncService.getInstance()
                                 .cloudBookUuidsNotifier,
                             builder: (context, cloudBookUuids, child) {
-                              if (!_webDavEnabled)
+                              if (!_webDavEnabled) {
                                 return const SizedBox.shrink();
+                              }
 
                               final bool isSynced = cloudBookUuids.contains(
                                 book.uuid,

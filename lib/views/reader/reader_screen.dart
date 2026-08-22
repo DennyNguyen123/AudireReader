@@ -33,6 +33,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   double _speechRate = 0.5; // FlutterTts standard rate is 0.5 for normal speed
   final _speedController = TextEditingController();
   String _fontFamily = 'System';
+  String _fontWeight = 'normal';
   String _themeMode = 'System';
 
   double _lineHeight = 1.6;
@@ -57,6 +58,9 @@ class _ReaderScreenState extends State<ReaderScreen>
   );
   int? _lastScrollChapterIndex;
   int? _lastScrollParagraphIndex;
+  int? _lastObservedChapterIndex;
+  int? _lastObservedParagraphIndex;
+  bool? _lastObservedPlayingState;
 
   // Bookmarks, Highlights & Notes
   bool _isBookmarked = false;
@@ -201,17 +205,32 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _onTtsServiceChanged() {
-    _updateBookmarkState();
-    _loadBookmarksAndHighlights();
-
+    final currentChap = _ttsService.currentChapterIndex;
+    final currentPara = _ttsService.currentParagraphIndex;
     final isPlayingNow = _ttsService.isPlaying;
+
+    final hasPositionChanged =
+        currentChap != _lastObservedChapterIndex ||
+        currentPara != _lastObservedParagraphIndex;
+    final hasPlayStateChanged = isPlayingNow != _lastObservedPlayingState;
+
+    if (!hasPositionChanged && !hasPlayStateChanged) return;
+
+    _lastObservedChapterIndex = currentChap;
+    _lastObservedParagraphIndex = currentPara;
+    _lastObservedPlayingState = isPlayingNow;
+
+    if (hasPositionChanged) {
+      _updateBookmarkState();
+    }
+
     if (_wasPlaying && !isPlayingNow) {
       _checkAndTriggerPeriodicSync();
     }
     _wasPlaying = isPlayingNow;
 
-    if (_lastScrollChapterIndex != _ttsService.currentChapterIndex ||
-        _lastScrollParagraphIndex != _ttsService.currentParagraphIndex) {
+    if (_lastScrollChapterIndex != currentChap ||
+        _lastScrollParagraphIndex != currentPara) {
       _scrollToCurrentParagraph(animated: true);
     }
   }
@@ -932,6 +951,11 @@ class _ReaderScreenState extends State<ReaderScreen>
           ? 'System'
           : rawFont.toString();
 
+      dynamic rawWeight = settings.fontWeight;
+      _fontWeight = (rawWeight == null || rawWeight.toString().trim().isEmpty)
+          ? 'normal'
+          : rawWeight.toString();
+
       dynamic rawTheme = settings.themeMode;
       _themeMode = (rawTheme == null || rawTheme.toString().trim().isEmpty)
           ? 'System'
@@ -1077,6 +1101,7 @@ class _ReaderScreenState extends State<ReaderScreen>
         themeMode: _themeMode,
         fontSize: _fontSize,
         fontFamily: _fontFamily,
+        fontWeight: _fontWeight,
         lineHeight: _lineHeight,
         paragraphSpacing: _paragraphSpacing,
         paragraphIndent: _paragraphIndent,
@@ -1097,6 +1122,11 @@ class _ReaderScreenState extends State<ReaderScreen>
         onFontFamilyChanged: (val) {
           setState(() {
             _fontFamily = val;
+          });
+        },
+        onFontWeightChanged: (val) {
+          setState(() {
+            _fontWeight = val;
           });
         },
         onLineHeightChanged: (val) {
@@ -1377,6 +1407,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                           wordProgressNotifier: isActive ? _ttsService.wordProgressNotifier : null,
                           isDark: isDark,
                           fontFamily: _fontFamily,
+                          fontWeight: _fontWeight,
                           textColor: textColor,
                           highlightColorHex: highlight?.colorHex,
                           hasNote:

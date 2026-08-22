@@ -214,10 +214,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AppSettings? dco_decode_opt_box_autoadd_app_settings(dynamic raw);
 
   @protected
+  BgmTrack? dco_decode_opt_box_autoadd_bgm_track(dynamic raw);
+
+  @protected
   Book? dco_decode_opt_box_autoadd_book(dynamic raw);
 
   @protected
+  Bookmark? dco_decode_opt_box_autoadd_bookmark(dynamic raw);
+
+  @protected
   Chapter? dco_decode_opt_box_autoadd_chapter(dynamic raw);
+
+  @protected
+  Highlight? dco_decode_opt_box_autoadd_highlight(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
@@ -484,10 +493,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  BgmTrack? sse_decode_opt_box_autoadd_bgm_track(SseDeserializer deserializer);
+
+  @protected
   Book? sse_decode_opt_box_autoadd_book(SseDeserializer deserializer);
 
   @protected
+  Bookmark? sse_decode_opt_box_autoadd_bookmark(SseDeserializer deserializer);
+
+  @protected
   Chapter? sse_decode_opt_box_autoadd_chapter(SseDeserializer deserializer);
+
+  @protected
+  Highlight? sse_decode_opt_box_autoadd_highlight(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
@@ -828,11 +846,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_bgm_track(
+    BgmTrack? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_book(Book? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_bookmark(
+    Bookmark? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_chapter(
     Chapter? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_highlight(
+    Highlight? self,
     SseSerializer serializer,
   );
 

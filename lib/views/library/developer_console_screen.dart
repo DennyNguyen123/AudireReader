@@ -252,22 +252,30 @@ class _DeveloperConsoleScreenState extends State<DeveloperConsoleScreen> {
                   }
 
                   // 2. Select Filter type
-                  if (_selectedFilter == 'ALL') return true;
-                  if (_selectedFilter == 'INFO')
+                  if (_selectedFilter == 'ALL') {
+                    return true;
+                  }
+                  if (_selectedFilter == 'INFO') {
                     return log.level == LogLevel.info;
-                  if (_selectedFilter == 'WARNING')
+                  }
+                  if (_selectedFilter == 'WARNING') {
                     return log.level == LogLevel.warning;
-                  if (_selectedFilter == 'ERROR')
+                  }
+                  if (_selectedFilter == 'ERROR') {
                     return log.level == LogLevel.error;
-                  if (_selectedFilter == 'TTS')
+                  }
+                  if (_selectedFilter == 'TTS') {
                     return log.level == LogLevel.tts ||
                         log.tag.toUpperCase() == 'TTS';
-                  if (_selectedFilter == 'SYNC')
+                  }
+                  if (_selectedFilter == 'SYNC') {
                     return log.level == LogLevel.sync ||
                         log.tag.toUpperCase() == 'SYNC';
-                  if (_selectedFilter == 'WEBDAV')
+                  }
+                  if (_selectedFilter == 'WEBDAV') {
                     return log.level == LogLevel.webdav ||
                         log.tag.toUpperCase() == 'WEBDAV';
+                  }
 
                   return true;
                 }).toList();

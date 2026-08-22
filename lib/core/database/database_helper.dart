@@ -31,12 +31,7 @@ class DatabaseHelper {
   }
 
   Future<List<String>> getAllBookTags() async {
-    final books = await rust_db.getAllBooks();
-    final Set<String> tags = {};
-    for (final book in books) {
-      tags.addAll(book.tags);
-    }
-    return tags.toList();
+    return await rust_db.getAllBookTags();
   }
 
   Future<List<Book>> getBooks({
@@ -183,13 +178,11 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    final bookmarks = await rust_db.getBookmarks(bookUuid: bookUuid);
-    for (var b in bookmarks) {
-      if (b.chapterIndex == chapterIndex && b.paragraphIndex == paragraphIndex) {
-        return b;
-      }
-    }
-    return null;
+    return await rust_db.getBookmarkAt(
+      bookUuid: bookUuid,
+      chapterIndex: chapterIndex,
+      paragraphIndex: paragraphIndex,
+    );
   }
 
   Future<void> deleteBookmark(int id) async {
@@ -227,13 +220,11 @@ class DatabaseHelper {
     int chapterIndex,
     int paragraphIndex,
   ) async {
-    final list = await rust_db.getHighlights(bookUuid: bookUuid);
-    for (var h in list) {
-      if (h.chapterIndex == chapterIndex && h.paragraphIndex == paragraphIndex) {
-        return h;
-      }
-    }
-    return null;
+    return await rust_db.getHighlightAt(
+      bookUuid: bookUuid,
+      chapterIndex: chapterIndex,
+      paragraphIndex: paragraphIndex,
+    );
   }
 
   Future<void> deleteHighlight(int id) async {
@@ -263,11 +254,7 @@ class DatabaseHelper {
   }
 
   Future<BgmTrack?> getBgmTrack(int id) async {
-    final tracks = await rust_db.getBgmTracks();
-    for (var t in tracks) {
-      if (t.id != null && t.id == id) return t;
-    }
-    return null;
+    return await rust_db.getBgmTrackById(id: id);
   }
 
   Future<void> deleteBgmTrack(int id) async {
@@ -316,6 +303,7 @@ AppSettings defaultAppSettings({String? deviceId, String? deviceName}) {
     openAiTtsModel: 'tts-1',
     ttsDownloadConcurrency: 3,
     fontFamily: 'System',
+    fontWeight: 'normal',
     themeMode: 'System',
     appLocale: 'en',
     lineHeight: 1.6,

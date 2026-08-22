@@ -43,7 +43,7 @@ class AppWindowManager with WindowListener {
 
       // 'ask' - Hiển thị hộp thoại xác nhận
       final context = navigatorKey.currentContext;
-      if (context == null) {
+      if (context == null || !context.mounted) {
         exit(0);
       }
 

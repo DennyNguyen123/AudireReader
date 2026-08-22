@@ -13,6 +13,7 @@ import 'edge_tts_models.dart';
 import 'supertonic_service.dart';
 import 'package:audire_reader/src/rust/api/tts.dart' as rust_tts;
 import 'bgm_service.dart';
+import 'logger_service.dart';
 
 enum TtsEngineType { system, edge, supertonic, openai }
 
@@ -624,7 +625,11 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       processingState: AudioProcessingState.ready,
     ));
 
-    print("--- [AudioHandler] speak() called. provider: $provider, text: ${text.substring(0, text.length > 20 ? 20 : text.length)} ---");
+    LoggerService().log(
+      "--- [AudioHandler] speak() called. provider: $provider, text: ${text.substring(0, text.length > 20 ? 20 : text.length)} ---",
+      tag: 'TTS',
+      level: LogLevel.tts,
+    );
 
     if (provider == 'microsoft_edge' || provider == 'supertonic' || provider == 'openai' || (provider == 'system' && Platform.isWindows)) {
       _activeEngine = (provider == 'microsoft_edge') 

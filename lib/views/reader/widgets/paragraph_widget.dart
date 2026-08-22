@@ -16,6 +16,7 @@ class ParagraphWidget extends StatefulWidget {
   final ValueNotifier<WordProgress>? wordProgressNotifier;
   final bool isDark;
   final String fontFamily;
+  final String? fontWeight;
   final Color textColor;
   final String? highlightColorHex;
   final bool hasNote;
@@ -37,6 +38,7 @@ class ParagraphWidget extends StatefulWidget {
     this.wordProgressNotifier,
     required this.isDark,
     required this.fontFamily,
+    this.fontWeight = 'normal',
     required this.textColor,
     this.highlightColorHex,
     this.hasNote = false,
@@ -67,6 +69,30 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     final color = Color(int.parse(cleanHex, radix: 16));
     _hexColorCache[hexStr] = color;
     return color;
+  }
+
+  static FontWeight _parseFontWeight(String? weight) {
+    switch (weight) {
+      case 'w300':
+      case 'light':
+        return FontWeight.w300;
+      case 'w500':
+      case 'medium':
+        return FontWeight.w500;
+      case 'w600':
+      case 'semiBold':
+        return FontWeight.w600;
+      case 'w700':
+      case 'bold':
+        return FontWeight.w700;
+      case 'w800':
+      case 'extraBold':
+        return FontWeight.w800;
+      case 'w400':
+      case 'normal':
+      default:
+        return FontWeight.w400;
+    }
   }
 
   @override
@@ -109,28 +135,27 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
     );
   }
 
+  static final Map<String, TextStyle> _fontStyleCache = {};
+
   TextStyle _getFontFamilyStyle() {
-    if (widget.fontFamily == 'System' || widget.fontFamily.isEmpty) {
+    final family = widget.fontFamily;
+    if (family == 'System' || family.isEmpty) {
       return const TextStyle();
     }
-    if ([
-      'Lora',
-      'Merriweather',
-      'Inter',
-      'Nunito',
-      'Roboto',
-      'Open Sans',
-      'Playfair Display',
-      'PT Serif',
-      'Quicksand',
-    ].contains(widget.fontFamily)) {
-      try {
-        return GoogleFonts.getFont(widget.fontFamily);
-      } catch (e) {
-        return TextStyle(fontFamily: widget.fontFamily);
-      }
+    if (family == 'Serif' || family == 'Sans-Serif' || family == 'Monospace') {
+      return TextStyle(fontFamily: family.toLowerCase());
     }
-    return TextStyle(fontFamily: widget.fontFamily);
+    final cached = _fontStyleCache[family];
+    if (cached != null) return cached;
+
+    TextStyle style;
+    try {
+      style = GoogleFonts.getFont(family);
+    } catch (_) {
+      style = TextStyle(fontFamily: family);
+    }
+    _fontStyleCache[family] = style;
+    return style;
   }
 
   Widget _buildRichText(Color defaultColor) {
@@ -152,6 +177,7 @@ class _ParagraphWidgetState extends State<ParagraphWidget> {
 
     final style = _getFontFamilyStyle().copyWith(
       fontSize: widget.fontSize,
+      fontWeight: _parseFontWeight(widget.fontWeight),
       height: widget.lineHeight,
       color: defaultColor,
       letterSpacing: 0.2,

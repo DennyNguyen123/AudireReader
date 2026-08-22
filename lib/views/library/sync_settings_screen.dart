@@ -986,6 +986,8 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       },
     );
 
+    if (!mounted) return;
+
     if (option == 'receive') {
       final updated = await Navigator.push<bool>(
         context,

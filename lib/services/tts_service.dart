@@ -61,6 +61,12 @@ class TtsService extends ChangeNotifier {
   Timer? _sleepTimer;
   int? _sleepTimerDuration; // giây
   bool _stopAtEndOfChapter = false;
+  final ValueNotifier<int?> sleepTimerDurationNotifier = ValueNotifier(null);
+  final ValueNotifier<bool> stopAtEndOfChapterNotifier = ValueNotifier(false);
+
+  // Quản lý LRU bộ nhớ đệm nội dung các chương đã nạp
+  final List<int> _loadedChapterIndices = [];
+  static const int _maxLoadedChapters = 10;
 
   // Từ điển phát âm
   List<PronunciationRule> _activeRules = [];
@@ -236,13 +242,15 @@ class TtsService extends ChangeNotifier {
   void startSleepTimer(int minutes) {
     cancelSleepTimer();
     _stopAtEndOfChapter = false;
+    stopAtEndOfChapterNotifier.value = false;
     _sleepTimerDuration = minutes * 60;
+    sleepTimerDurationNotifier.value = _sleepTimerDuration;
     notifyListeners();
 
     _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_sleepTimerDuration != null && _sleepTimerDuration! > 0) {
         _sleepTimerDuration = _sleepTimerDuration! - 1;
-        notifyListeners();
+        sleepTimerDurationNotifier.value = _sleepTimerDuration;
       } else {
         cancelSleepTimer();
         pauseSpeaking();
@@ -254,12 +262,14 @@ class TtsService extends ChangeNotifier {
     _sleepTimer?.cancel();
     _sleepTimer = null;
     _sleepTimerDuration = null;
+    sleepTimerDurationNotifier.value = null;
     notifyListeners();
   }
 
   void enableStopAtEndOfChapter(bool enable) {
     cancelSleepTimer();
     _stopAtEndOfChapter = enable;
+    stopAtEndOfChapterNotifier.value = enable;
     notifyListeners();
   }
 
@@ -273,6 +283,8 @@ class TtsService extends ChangeNotifier {
 
     final current = _chapters[chapterIndex];
     if (current.paragraphs.isNotEmpty) {
+      _loadedChapterIndices.remove(chapterIndex);
+      _loadedChapterIndices.add(chapterIndex);
       return current;
     }
 
@@ -280,6 +292,18 @@ class TtsService extends ChangeNotifier {
     final fullChapter = await db.getChapter(_activeBook!.uuid, chapterIndex);
     if (fullChapter != null && fullChapter.paragraphs.isNotEmpty) {
       _chapters[chapterIndex] = fullChapter;
+      _loadedChapterIndices.remove(chapterIndex);
+      _loadedChapterIndices.add(chapterIndex);
+
+      // LRU Eviction: Tự động giải phóng nội dung văn bản của các chương cũ nếu vượt quá giới hạn
+      if (_loadedChapterIndices.length > _maxLoadedChapters) {
+        final oldestIndex = _loadedChapterIndices.removeAt(0);
+        if (oldestIndex != _currentChapterIndex && oldestIndex < _chapters.length) {
+          final oldChap = _chapters[oldestIndex];
+          _chapters[oldestIndex] = oldChap.copyWith(paragraphs: const []);
+        }
+      }
+
       return fullChapter;
     }
     return current;
@@ -296,6 +320,7 @@ class TtsService extends ChangeNotifier {
       tag: 'TTS',
       level: LogLevel.tts,
     );
+    _loadedChapterIndices.clear();
     _activeBook = book;
     _chapters = chapters;
     _currentChapterIndex = startChapter;
@@ -586,6 +611,7 @@ class TtsService extends ChangeNotifier {
     double? speechRate,
     Map<String, String>? voice,
     String? fontFamily,
+    String? fontWeight,
     String? themeMode,
     String? ttsProvider,
     String? openAiTtsEndpoint,
@@ -652,6 +678,7 @@ class TtsService extends ChangeNotifier {
       selectedVoiceName: selectedVoiceName,
       selectedVoiceLocale: selectedVoiceLocale,
       fontFamily: fontFamily ?? settings.fontFamily,
+      fontWeight: fontWeight ?? settings.fontWeight,
       themeMode: themeMode ?? settings.themeMode,
       ttsProvider: ttsProvider ?? settings.ttsProvider,
       lineHeight: lineHeight ?? settings.lineHeight,

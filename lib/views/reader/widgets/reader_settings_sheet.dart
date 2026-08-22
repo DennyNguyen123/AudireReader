@@ -4,12 +4,14 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/theme_notifier.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'font_picker_sheet.dart';
 
 class ReaderSettingsSheet extends StatefulWidget {
   final TtsService ttsService;
   final String themeMode;
   final double fontSize;
   final String fontFamily;
+  final String fontWeight;
 
   final double lineHeight;
   final double paragraphSpacing;
@@ -22,6 +24,7 @@ class ReaderSettingsSheet extends StatefulWidget {
   final ValueChanged<String> onThemeModeChanged;
   final ValueChanged<double> onFontSizeChanged;
   final ValueChanged<String> onFontFamilyChanged;
+  final ValueChanged<String> onFontWeightChanged;
   final ValueChanged<double> onLineHeightChanged;
   final ValueChanged<double> onParagraphSpacingChanged;
   final ValueChanged<double> onParagraphIndentChanged;
@@ -35,6 +38,7 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.themeMode,
     required this.fontSize,
     required this.fontFamily,
+    this.fontWeight = 'normal',
     required this.lineHeight,
     required this.paragraphSpacing,
     required this.paragraphIndent,
@@ -45,6 +49,7 @@ class ReaderSettingsSheet extends StatefulWidget {
     required this.onThemeModeChanged,
     required this.onFontSizeChanged,
     required this.onFontFamilyChanged,
+    required this.onFontWeightChanged,
     required this.onLineHeightChanged,
     required this.onParagraphSpacingChanged,
     required this.onParagraphIndentChanged,
@@ -61,6 +66,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
   late String _themeMode;
   late double _fontSize;
   late String _fontFamily;
+  late String _fontWeight;
 
   late double _lineHeight;
   late double _paragraphSpacing;
@@ -84,6 +90,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     _themeMode = widget.themeMode;
     _fontSize = widget.fontSize;
     _fontFamily = widget.fontFamily;
+    _fontWeight = widget.fontWeight;
 
     _lineHeight = widget.lineHeight;
     _paragraphSpacing = widget.paragraphSpacing;
@@ -118,13 +125,37 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
     super.dispose();
   }
 
+  String _getWeightLabel(String weight) {
+    switch (weight) {
+      case 'light':
+      case 'w300':
+        return 'Light (300)';
+      case 'medium':
+      case 'w500':
+        return 'Medium (500)';
+      case 'semiBold':
+      case 'w600':
+        return 'Semi-Bold (600)';
+      case 'bold':
+      case 'w700':
+        return 'Bold (700)';
+      case 'normal':
+      case 'w400':
+      default:
+        return 'Regular (400)';
+    }
+  }
+
   bool _getIsDark(BuildContext context) {
-    if (_themeMode == 'Dark' || _themeMode == 'Navy') return true;
+    if (_themeMode == 'Dark' || _themeMode == 'Navy') {
+      return true;
+    }
     if (_themeMode == 'Light' ||
         _themeMode == 'Sepia' ||
         _themeMode == 'Mint' ||
-        _themeMode == 'Parchment')
+        _themeMode == 'Parchment') {
       return false;
+    }
     return Theme.of(context).brightness == Brightness.dark;
   }
 
@@ -363,77 +394,7 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 ),
                 const SizedBox(height: 20),
 
-                // CỠ CHỮ VÀ FONT
-                Text(
-                  AppLocalizations.of(context)!.fontStyle,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: labelColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue:
-                      [
-                        'System',
-                        'Serif',
-                        'Sans-Serif',
-                        'Monospace',
-                        'Lora',
-                        'Merriweather',
-                        'Inter',
-                        'Nunito',
-                      ].contains(_fontFamily)
-                      ? _fontFamily
-                      : 'System',
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: isDark ? Colors.white10 : Colors.black12,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  dropdownColor: sheetBg,
-                  items:
-                      [
-                        'System',
-                        'Serif',
-                        'Sans-Serif',
-                        'Monospace',
-                        'Lora',
-                        'Merriweather',
-                        'Inter',
-                        'Nunito',
-                      ].map((font) {
-                        return DropdownMenuItem<String>(
-                          value: font,
-                          child: Text(
-                            font,
-                            style: TextStyle(
-                              color: labelColor,
-                              fontFamily: font == 'System'
-                                  ? null
-                                  : font.toLowerCase(),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _fontFamily = val;
-                      });
-                      widget.onFontFamilyChanged(val);
-                      widget.ttsService.updateSettings(fontFamily: val);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
+                // CỠ CHỮ (FONT SIZE)
 
                 Row(
                   children: [
@@ -581,13 +542,13 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                 ),
                 const SizedBox(height: 16),
 
-                // CHỌN PHÔNG CHỮ (Font Family Dropdown)
+                // CHỌN PHÔNG CHỮ & ĐỘ ĐẬM NHẠT (Font Picker & Font Weight)
                 Row(
                   children: [
                     const Icon(Icons.font_download_rounded),
                     const SizedBox(width: 12),
                     Text(
-                      AppLocalizations.of(context)!.fontStyle,
+                      AppLocalizations.of(context)?.fontStyle ?? 'Phông chữ & Kiểu chữ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: labelColor,
@@ -595,84 +556,135 @@ class _ReaderSettingsSheetState extends State<ReaderSettingsSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue:
-                      [
-                        'System',
-                        'Serif',
-                        'Sans-Serif',
-                        'Monospace',
-                        'Lora',
-                        'Merriweather',
-                        'Inter',
-                        'Nunito',
-                        'Roboto',
-                        'Open Sans',
-                        'Playfair Display',
-                        'PT Serif',
-                        'Quicksand',
-                      ].contains(_fontFamily)
-                      ? _fontFamily
-                      : 'System',
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: isDark ? Colors.white10 : Colors.black12,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () {
+                    FontPickerSheet.show(
+                      context: context,
+                      currentFontFamily: _fontFamily,
+                      currentFontWeight: _fontWeight,
+                      onFontFamilyChanged: (val) {
+                        setState(() {
+                          _fontFamily = val;
+                        });
+                        widget.onFontFamilyChanged(val);
+                        widget.ttsService.updateSettings(fontFamily: val);
+                      },
+                      onFontWeightChanged: (val) {
+                        setState(() {
+                          _fontWeight = val;
+                        });
+                        widget.onFontWeightChanged(val);
+                        widget.ttsService.updateSettings(fontWeight: val);
+                      },
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    _fontFamily,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: accentColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: accentColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      _getWeightLabel(_fontWeight),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Bấm để tìm kiếm & duyệt 1.500+ Google Fonts',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white54 : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.search_rounded, color: accentColor, size: 20),
+                      ],
                     ),
                   ),
-                  dropdownColor: sheetBg,
-                  items:
-                      [
-                        'System',
-                        'Serif',
-                        'Sans-Serif',
-                        'Monospace',
-                        'Lora',
-                        'Merriweather',
-                        'Inter',
-                        'Nunito',
-                        'Roboto',
-                        'Open Sans',
-                        'Playfair Display',
-                        'PT Serif',
-                        'Quicksand',
-                      ].map((font) {
-                        return DropdownMenuItem<String>(
-                          value: font,
-                          child: Text(
-                            font,
-                            style: TextStyle(
-                              fontFamily:
-                                  [
-                                    'System',
-                                    'Serif',
-                                    'Sans-Serif',
-                                    'Monospace',
-                                  ].contains(font)
-                                  ? (font == 'System'
-                                        ? null
-                                        : font.toLowerCase())
-                                  : font,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Độ đậm chữ (Font Weight)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: labelColor,
+                      ),
+                    ),
+                    Text(
+                      _getWeightLabel(_fontWeight),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'light', label: Text('300')),
+                      ButtonSegment(value: 'normal', label: Text('400')),
+                      ButtonSegment(value: 'medium', label: Text('500')),
+                      ButtonSegment(value: 'semiBold', label: Text('600')),
+                      ButtonSegment(value: 'bold', label: Text('700')),
+                    ],
+                    selected: {_fontWeight},
+                    onSelectionChanged: (newSet) {
+                      final val = newSet.first;
                       setState(() {
-                        _fontFamily = val;
+                        _fontWeight = val;
                       });
-                      widget.onFontFamilyChanged(val);
-                      widget.ttsService.updateSettings(fontFamily: val);
-                    }
-                  },
+                      widget.onFontWeightChanged(val);
+                      widget.ttsService.updateSettings(fontWeight: val);
+                    },
+                    style: ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 

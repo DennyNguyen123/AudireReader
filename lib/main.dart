@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'core/system_tray_manager.dart';
@@ -45,7 +44,7 @@ void main() async {
   }
 
   // Khởi tạo dịch vụ Audio Service & TTS toàn cục ngầm
-  final ttsFuture = TtsService.getInstance();
+  unawaited(TtsService.getInstance());
 
   // Khởi tạo trạng thái themeMode từ Database
   final db = await DatabaseHelper.getInstance();

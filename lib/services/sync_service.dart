@@ -26,6 +26,12 @@ class SyncService {
   }
 
   bool get isSyncing => _isSyncing;
+  StreamSubscription<SyncProgressEvent>? get eventSubscription => _eventSub;
+
+  void dispose() {
+    _eventSub?.cancel();
+    _eventSub = null;
+  }
 
   void _initEventListener() {
     try {

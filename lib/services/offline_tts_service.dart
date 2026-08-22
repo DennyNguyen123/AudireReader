@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../core/database/database_helper.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import '../core/utils/path_helper.dart';
 import '../core/utils/memory_helper.dart';

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
@@ -160,9 +159,6 @@ class _ReaderTtsSettingsSheetState extends State<ReaderTtsSettingsSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final sheetBg = theme.scaffoldBackgroundColor;
-    final labelColor =
-        theme.textTheme.bodyLarge?.color ??
-        (isDark ? Colors.white70 : Colors.black87);
     final accentColor = theme.colorScheme.primary;
 
     return Container(

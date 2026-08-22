@@ -267,13 +267,13 @@ class WebdavSettingsSection extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: accentColor.withOpacity(0.12),
+                        backgroundColor: accentColor.withValues(alpha: 0.12),
                         foregroundColor: accentColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
-                            color: accentColor.withOpacity(0.3),
+                            color: accentColor.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),

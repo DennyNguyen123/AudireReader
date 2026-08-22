@@ -42,6 +42,7 @@ void main() {
           }
         } else {
           // Warning if empty, though could happen in CI without internet
+          // ignore: avoid_print
           print(
             'Warning: RadioBrowser returned empty list. Check internet connection.',
           );

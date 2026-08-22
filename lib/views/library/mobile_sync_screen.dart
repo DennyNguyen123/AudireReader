@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../core/database/database_helper.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:audire_reader/src/rust/api/sync.dart' as rust_sync;
+import '../../services/logger_service.dart';
 
 class MobileSyncScreen extends StatefulWidget {
   const MobileSyncScreen({super.key});
@@ -47,7 +48,7 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
       final rawValue = barcode.rawValue;
       if (rawValue != null &&
           rawValue.startsWith('http') &&
-          rawValue.endsWith('/config')) {
+          rawValue.contains('/config')) {
         HapticFeedback.lightImpact();
         setState(() {
           _scannedUrl = rawValue;
@@ -55,6 +56,82 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         _sendConfig();
         break;
       }
+    }
+  }
+
+  Future<void> _showManualUrlDialog() async {
+    final textController = TextEditingController();
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    if (clipboardData?.text != null &&
+        clipboardData!.text!.startsWith('http') &&
+        clipboardData.text!.contains('/config')) {
+      textController.text = clipboardData.text!;
+    }
+
+    if (!mounted) return;
+
+    final url = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Nhập liên kết máy nhận', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Nhập hoặc dán địa chỉ endpoint từ màn hình "Nhận cấu hình" của máy nhận (ví dụ: http://192.168.1.15:16021/config)',
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: textController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'http://192.168.x.x:port/config',
+                  hintStyle: const TextStyle(fontSize: 12),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.paste_rounded, size: 20),
+                    onPressed: () async {
+                      final data = await Clipboard.getData(Clipboard.kTextPlain);
+                      if (data?.text != null) {
+                        textController.text = data!.text!.trim();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final input = textController.text.trim();
+                if (input.isNotEmpty && input.startsWith('http')) {
+                  Navigator.pop(context, input);
+                }
+              },
+              child: const Text('Gửi cấu hình'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (url != null && url.isNotEmpty) {
+      setState(() {
+        _scannedUrl = url;
+      });
+      _sendConfig();
     }
   }
 
@@ -85,6 +162,7 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
           'openAiTtsApiKey': settings.openAiTtsApiKey,
           'openAiTtsModel': settings.openAiTtsModel,
           'fontFamily': settings.fontFamily,
+          'fontWeight': settings.fontWeight,
           'themeMode': settings.themeMode,
           'appLocale': settings.appLocale,
           'lineHeight': settings.lineHeight,
@@ -116,7 +194,7 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         },
       };
 
-      print('MobileSyncScreen: Đang gửi config tới $_scannedUrl...');
+      LoggerService().log('Đang gửi config tới $_scannedUrl...', tag: 'SYNC');
       final response = await http
           .post(
             Uri.parse(_scannedUrl!),
@@ -149,7 +227,7 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         }
       }
     } catch (e) {
-      print('MobileSyncScreen: Lỗi gửi cấu hình: $e');
+      LoggerService().log('Lỗi gửi cấu hình: $e', tag: 'SYNC', level: LogLevel.error);
       if (mounted) {
         showDialog(
           context: context,
@@ -198,6 +276,13 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.link_rounded),
+            tooltip: 'Nhập / Dán liên kết thủ công',
+            onPressed: _isLoading ? null : _showManualUrlDialog,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -254,6 +339,15 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
                           child: Text(
                             AppLocalizations.of(context)?.openSettings ??
                                 'Mở Cài đặt',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _showManualUrlDialog,
+                          icon: const Icon(Icons.link_rounded, color: Colors.white),
+                          label: const Text(
+                            'Nhập / Dán liên kết thủ công',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/tts_service.dart';
@@ -152,7 +151,11 @@ class _SleepTimerSheetState extends State<SleepTimerSheet> {
             MediaQuery.of(context).viewInsets.bottom + 20,
           ),
           child: ListenableBuilder(
-            listenable: widget.ttsService,
+            listenable: Listenable.merge([
+              widget.ttsService,
+              widget.ttsService.sleepTimerDurationNotifier,
+              widget.ttsService.stopAtEndOfChapterNotifier,
+            ]),
             builder: (context, _) {
               final isTimerActive = widget.ttsService.isSleepTimerActive;
               final isStopAtEnd = widget.ttsService.stopAtEndOfChapter;

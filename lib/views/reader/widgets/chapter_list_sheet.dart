@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audire_reader/src/rust/api/models.dart';
 import '../../../services/tts_service.dart';

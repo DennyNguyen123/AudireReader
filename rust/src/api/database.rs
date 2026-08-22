@@ -278,6 +278,25 @@ pub fn get_books_filtered(
     Ok(books)
 }
 
+pub fn get_all_book_tags() -> Result<Vec<String>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT DISTINCT tag FROM book_tags WHERE TRIM(tag) != '' ORDER BY tag ASC")
+        .map_err(|e| format!("Query error: {}", e))?;
+
+    let rows = stmt.query_map([], |row| {
+        let tag: String = row.get(0)?;
+        Ok(tag)
+    }).map_err(|e| format!("Query map error: {}", e))?;
+
+    let mut list = Vec::new();
+    for row in rows {
+        if let Ok(t) = row {
+            list.push(t);
+        }
+    }
+    Ok(list)
+}
+
 pub fn get_book_by_uuid(uuid: String) -> Result<Option<Book>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare(
@@ -650,6 +669,25 @@ pub fn get_bookmarks(book_uuid: String) -> Result<Vec<Bookmark>, String> {
     Ok(list)
 }
 
+pub fn get_bookmark_at(book_uuid: String, chapter_index: i32, paragraph_index: i32) -> Result<Option<Bookmark>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, content_snippet, date_added FROM bookmarks WHERE book_uuid = ?1 AND chapter_index = ?2 AND paragraph_index = ?3 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+
+    let bookmark = stmt.query_row(params![book_uuid, chapter_index, paragraph_index], |row| {
+        Ok(Bookmark {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            content_snippet: row.get(4)?,
+            date_added: row.get(5)?,
+        })
+    }).optional().map_err(|e| e.to_string())?;
+
+    Ok(bookmark)
+}
+
 pub fn get_all_bookmarks() -> Result<Vec<Bookmark>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, content_snippet, date_added FROM bookmarks ORDER BY date_added DESC")
@@ -755,6 +793,29 @@ pub fn get_highlights(book_uuid: String) -> Result<Vec<Highlight>, String> {
         list.push(row.map_err(|e| e.to_string())?);
     }
     Ok(list)
+}
+
+pub fn get_highlight_at(book_uuid: String, chapter_index: i32, paragraph_index: i32) -> Result<Option<Highlight>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, book_uuid, chapter_index, paragraph_index, start_offset, end_offset, text, color_hex, note, date_added FROM highlights WHERE book_uuid = ?1 AND chapter_index = ?2 AND paragraph_index = ?3 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+
+    let highlight = stmt.query_row(params![book_uuid, chapter_index, paragraph_index], |row| {
+        Ok(Highlight {
+            id: row.get(0)?,
+            book_uuid: row.get(1)?,
+            chapter_index: row.get(2)?,
+            paragraph_index: row.get(3)?,
+            start_offset: row.get(4)?,
+            end_offset: row.get(5)?,
+            text: row.get(6)?,
+            color_hex: row.get(7)?,
+            note: row.get(8)?,
+            date_added: row.get(9)?,
+        })
+    }).optional().map_err(|e| e.to_string())?;
+
+    Ok(highlight)
 }
 
 pub fn get_all_highlights() -> Result<Vec<Highlight>, String> {
@@ -922,6 +983,24 @@ pub fn get_bgm_tracks() -> Result<Vec<BgmTrack>, String> {
         list.push(row.map_err(|e| e.to_string())?);
     }
     Ok(list)
+}
+
+pub fn get_bgm_track_by_id(id: i64) -> Result<Option<BgmTrack>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT id, name, source_type, source_path, date_added FROM bgm_tracks WHERE id = ?1 LIMIT 1")
+        .map_err(|e| e.to_string())?;
+
+    let track = stmt.query_row(params![id], |row| {
+        Ok(BgmTrack {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            source_type: row.get(2)?,
+            source_path: row.get(3)?,
+            date_added: row.get(4)?,
+        })
+    }).optional().map_err(|e| e.to_string())?;
+
+    Ok(track)
 }
 
 pub fn add_bgm_track(track: BgmTrack) -> Result<i64, String> {

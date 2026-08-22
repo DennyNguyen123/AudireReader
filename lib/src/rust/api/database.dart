@@ -25,6 +25,9 @@ Future<List<Book>> getBooksFiltered({
   sortBy: sortBy,
 );
 
+Future<List<String>> getAllBookTags() =>
+    RustLib.instance.api.crateApiDatabaseGetAllBookTags();
+
 Future<Book?> getBookByUuid({required String uuid}) =>
     RustLib.instance.api.crateApiDatabaseGetBookByUuid(uuid: uuid);
 
@@ -93,6 +96,16 @@ Future<void> deleteReadingProgress({required String bookUuid}) => RustLib
 Future<List<Bookmark>> getBookmarks({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseGetBookmarks(bookUuid: bookUuid);
 
+Future<Bookmark?> getBookmarkAt({
+  required String bookUuid,
+  required int chapterIndex,
+  required int paragraphIndex,
+}) => RustLib.instance.api.crateApiDatabaseGetBookmarkAt(
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+  paragraphIndex: paragraphIndex,
+);
+
 Future<List<Bookmark>> getAllBookmarks() =>
     RustLib.instance.api.crateApiDatabaseGetAllBookmarks();
 
@@ -117,6 +130,16 @@ Future<void> replaceAllBookmarks({
 
 Future<List<Highlight>> getHighlights({required String bookUuid}) =>
     RustLib.instance.api.crateApiDatabaseGetHighlights(bookUuid: bookUuid);
+
+Future<Highlight?> getHighlightAt({
+  required String bookUuid,
+  required int chapterIndex,
+  required int paragraphIndex,
+}) => RustLib.instance.api.crateApiDatabaseGetHighlightAt(
+  bookUuid: bookUuid,
+  chapterIndex: chapterIndex,
+  paragraphIndex: paragraphIndex,
+);
 
 Future<List<Highlight>> getAllHighlights() =>
     RustLib.instance.api.crateApiDatabaseGetAllHighlights();
@@ -152,6 +175,9 @@ Future<void> deletePronunciationRule({required PlatformInt64 id}) =>
 
 Future<List<BgmTrack>> getBgmTracks() =>
     RustLib.instance.api.crateApiDatabaseGetBgmTracks();
+
+Future<BgmTrack?> getBgmTrackById({required PlatformInt64 id}) =>
+    RustLib.instance.api.crateApiDatabaseGetBgmTrackById(id: id);
 
 Future<PlatformInt64> addBgmTrack({required BgmTrack track}) =>
     RustLib.instance.api.crateApiDatabaseAddBgmTrack(track: track);

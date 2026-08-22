@@ -124,6 +124,10 @@ fn default_close_action() -> String {
     "ask".to_string()
 }
 
+fn default_font_weight() -> String {
+    "normal".to_string()
+}
+
 #[frb(dart_metadata = ("freezed"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
@@ -138,6 +142,8 @@ pub struct AppSettings {
     pub open_ai_tts_model: String,
     pub tts_download_concurrency: i32,
     pub font_family: String,
+    #[serde(default = "default_font_weight")]
+    pub font_weight: String,
     pub theme_mode: String,
     pub app_locale: String,
     pub line_height: f64,

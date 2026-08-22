@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -723,8 +722,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                           .clear();
                                                       _bgmLocalPath = null;
                                                     });
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                       context,
                                                     ).showSnackBar(
@@ -743,8 +743,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                       ),
                                                     );
                                                   } catch (e) {
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                       context,
                                                     ).showSnackBar(
@@ -909,8 +910,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                           .clear();
                                                       _bgmUrlController.clear();
                                                     });
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                       context,
                                                     ).showSnackBar(
@@ -929,8 +931,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                       ),
                                                     );
                                                   } catch (e) {
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                       context,
                                                     ).showSnackBar(
@@ -1157,8 +1160,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                               sourceType:
                                                                   'radio',
                                                             );
-                                                        if (!context.mounted)
+                                                        if (!context.mounted) {
                                                           return;
+                                                        }
                                                         ScaffoldMessenger.of(
                                                           context,
                                                         ).showSnackBar(
@@ -1178,8 +1182,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                           ),
                                                         );
                                                       } catch (e) {
-                                                        if (!context.mounted)
+                                                        if (!context.mounted) {
                                                           return;
+                                                        }
                                                         ScaffoldMessenger.of(
                                                           context,
                                                         ).showSnackBar(
@@ -1288,8 +1293,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                               sourceType:
                                                                   'openlofi',
                                                             );
-                                                        if (!context.mounted)
+                                                        if (!context.mounted) {
                                                           return;
+                                                        }
                                                         ScaffoldMessenger.of(
                                                           context,
                                                         ).showSnackBar(
@@ -1309,8 +1315,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                           ),
                                                         );
                                                       } catch (e) {
-                                                        if (!context.mounted)
+                                                        if (!context.mounted) {
                                                           return;
+                                                        }
                                                         ScaffoldMessenger.of(
                                                           context,
                                                         ).showSnackBar(
@@ -1608,8 +1615,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                                   .text
                                                             : null,
                                                       );
-                                                      if (!context.mounted)
+                                                      if (!context.mounted) {
                                                         return;
+                                                      }
                                                       Navigator.pop(context);
                                                       ScaffoldMessenger.of(
                                                         context,
@@ -1629,8 +1637,9 @@ class _BgmPlayerSheetState extends State<BgmPlayerSheet> {
                                                         ),
                                                       );
                                                     } catch (e) {
-                                                      if (!context.mounted)
+                                                      if (!context.mounted) {
                                                         return;
+                                                      }
                                                       ScaffoldMessenger.of(
                                                         context,
                                                       ).showSnackBar(

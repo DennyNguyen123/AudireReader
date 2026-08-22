@@ -28,6 +28,7 @@ mixin _$AppSettings {
   String get openAiTtsModel => throw _privateConstructorUsedError;
   int get ttsDownloadConcurrency => throw _privateConstructorUsedError;
   String get fontFamily => throw _privateConstructorUsedError;
+  String get fontWeight => throw _privateConstructorUsedError;
   String get themeMode => throw _privateConstructorUsedError;
   String get appLocale => throw _privateConstructorUsedError;
   double get lineHeight => throw _privateConstructorUsedError;
@@ -107,6 +108,7 @@ abstract class $AppSettingsCopyWith<$Res> {
     String openAiTtsModel,
     int ttsDownloadConcurrency,
     String fontFamily,
+    String fontWeight,
     String themeMode,
     String appLocale,
     double lineHeight,
@@ -188,6 +190,7 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
     Object? openAiTtsModel = null,
     Object? ttsDownloadConcurrency = null,
     Object? fontFamily = null,
+    Object? fontWeight = null,
     Object? themeMode = null,
     Object? appLocale = null,
     Object? lineHeight = null,
@@ -288,6 +291,10 @@ class _$AppSettingsCopyWithImpl<$Res, $Val extends AppSettings>
             fontFamily: null == fontFamily
                 ? _value.fontFamily
                 : fontFamily // ignore: cast_nullable_to_non_nullable
+                      as String,
+            fontWeight: null == fontWeight
+                ? _value.fontWeight
+                : fontWeight // ignore: cast_nullable_to_non_nullable
                       as String,
             themeMode: null == themeMode
                 ? _value.themeMode
@@ -532,6 +539,7 @@ abstract class _$$AppSettingsImplCopyWith<$Res>
     String openAiTtsModel,
     int ttsDownloadConcurrency,
     String fontFamily,
+    String fontWeight,
     String themeMode,
     String appLocale,
     double lineHeight,
@@ -612,6 +620,7 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
     Object? openAiTtsModel = null,
     Object? ttsDownloadConcurrency = null,
     Object? fontFamily = null,
+    Object? fontWeight = null,
     Object? themeMode = null,
     Object? appLocale = null,
     Object? lineHeight = null,
@@ -712,6 +721,10 @@ class __$$AppSettingsImplCopyWithImpl<$Res>
         fontFamily: null == fontFamily
             ? _value.fontFamily
             : fontFamily // ignore: cast_nullable_to_non_nullable
+                  as String,
+        fontWeight: null == fontWeight
+            ? _value.fontWeight
+            : fontWeight // ignore: cast_nullable_to_non_nullable
                   as String,
         themeMode: null == themeMode
             ? _value.themeMode
@@ -949,6 +962,7 @@ class _$AppSettingsImpl implements _AppSettings {
     required this.openAiTtsModel,
     required this.ttsDownloadConcurrency,
     required this.fontFamily,
+    required this.fontWeight,
     required this.themeMode,
     required this.appLocale,
     required this.lineHeight,
@@ -1027,6 +1041,8 @@ class _$AppSettingsImpl implements _AppSettings {
   final int ttsDownloadConcurrency;
   @override
   final String fontFamily;
+  @override
+  final String fontWeight;
   @override
   final String themeMode;
   @override
@@ -1144,7 +1160,7 @@ class _$AppSettingsImpl implements _AppSettings {
 
   @override
   String toString() {
-    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, paragraphIndent: $paragraphIndent, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavAutoSync: $webDavAutoSync, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug, audioPanelCollapsed: $audioPanelCollapsed, libraryViewMode: $libraryViewMode, searchHistory: $searchHistory, closeAction: $closeAction)';
+    return 'AppSettings(id: $id, fontSize: $fontSize, speechRate: $speechRate, selectedVoiceName: $selectedVoiceName, selectedVoiceLocale: $selectedVoiceLocale, ttsProvider: $ttsProvider, openAiTtsEndpoint: $openAiTtsEndpoint, openAiTtsApiKey: $openAiTtsApiKey, openAiTtsModel: $openAiTtsModel, ttsDownloadConcurrency: $ttsDownloadConcurrency, fontFamily: $fontFamily, fontWeight: $fontWeight, themeMode: $themeMode, appLocale: $appLocale, lineHeight: $lineHeight, paragraphSpacing: $paragraphSpacing, paragraphIndent: $paragraphIndent, textAlignment: $textAlignment, sideMargin: $sideMargin, customBackgroundColor: $customBackgroundColor, customTextColor: $customTextColor, primaryColorHex: $primaryColorHex, webDavEnabled: $webDavEnabled, webDavAutoSync: $webDavAutoSync, webDavUrl: $webDavUrl, webDavUsername: $webDavUsername, webDavLastSync: $webDavLastSync, deviceId: $deviceId, deviceName: $deviceName, openLastReadOnLaunch: $openLastReadOnLaunch, hotkeyNextParagraph: $hotkeyNextParagraph, hotkeyPrevParagraph: $hotkeyPrevParagraph, hotkeyNextChapter: $hotkeyNextChapter, hotkeyPrevChapter: $hotkeyPrevChapter, hotkeyPlayPauseTts: $hotkeyPlayPauseTts, hotkeyOpenChapter: $hotkeyOpenChapter, hotkeyOpenSetting: $hotkeyOpenSetting, hotkeyBossKey: $hotkeyBossKey, bossKeyAction: $bossKeyAction, autoCheckUpdate: $autoCheckUpdate, bgmEnabled: $bgmEnabled, bgmVolume: $bgmVolume, currentBgmTrackId: $currentBgmTrackId, currentBgmTrackUrl: $currentBgmTrackUrl, currentBgmTrackName: $currentBgmTrackName, bgmLoopMode: $bgmLoopMode, bgmProviderId: $bgmProviderId, lastLocalTrackUrl: $lastLocalTrackUrl, lastRadioTrackUrl: $lastRadioTrackUrl, lastRadioTrackName: $lastRadioTrackName, lastLofiTrackUrl: $lastLofiTrackUrl, lastLofiTrackName: $lastLofiTrackName, sortBy: $sortBy, showAssistiveButton: $showAssistiveButton, assistiveButtonX: $assistiveButtonX, assistiveButtonY: $assistiveButtonY, assistiveSingleTapAction: $assistiveSingleTapAction, assistiveDoubleTapAction: $assistiveDoubleTapAction, assistiveLongPressAction: $assistiveLongPressAction, developerMode: $developerMode, enableDebugLogs: $enableDebugLogs, enableWebDavDebug: $enableWebDavDebug, audioPanelCollapsed: $audioPanelCollapsed, libraryViewMode: $libraryViewMode, searchHistory: $searchHistory, closeAction: $closeAction)';
   }
 
   @override
@@ -1173,6 +1189,8 @@ class _$AppSettingsImpl implements _AppSettings {
                 other.ttsDownloadConcurrency == ttsDownloadConcurrency) &&
             (identical(other.fontFamily, fontFamily) ||
                 other.fontFamily == fontFamily) &&
+            (identical(other.fontWeight, fontWeight) ||
+                other.fontWeight == fontWeight) &&
             (identical(other.themeMode, themeMode) ||
                 other.themeMode == themeMode) &&
             (identical(other.appLocale, appLocale) ||
@@ -1307,6 +1325,7 @@ class _$AppSettingsImpl implements _AppSettings {
     openAiTtsModel,
     ttsDownloadConcurrency,
     fontFamily,
+    fontWeight,
     themeMode,
     appLocale,
     lineHeight,
@@ -1383,6 +1402,7 @@ abstract class _AppSettings implements AppSettings {
     required final String openAiTtsModel,
     required final int ttsDownloadConcurrency,
     required final String fontFamily,
+    required final String fontWeight,
     required final String themeMode,
     required final String appLocale,
     required final double lineHeight,
@@ -1461,6 +1481,8 @@ abstract class _AppSettings implements AppSettings {
   int get ttsDownloadConcurrency;
   @override
   String get fontFamily;
+  @override
+  String get fontWeight;
   @override
   String get themeMode;
   @override
