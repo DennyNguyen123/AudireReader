@@ -144,7 +144,12 @@ class _MobileSyncScreenState extends State<MobileSyncScreen> {
     try {
       final db = await DatabaseHelper.getInstance();
       final settings = await db.getSettings();
-      final webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
+      String webDavPassword = '';
+      try {
+        webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
+      } catch (e) {
+        debugPrint('[MobileSyncScreen] Error loading WebDAV password: $e');
+      }
 
       // Đóng gói cấu hình hiện tại
       final payload = {

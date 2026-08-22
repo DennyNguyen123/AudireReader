@@ -97,7 +97,12 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
 
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    final webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
+    String webDavPassword = '';
+    try {
+      webDavPassword = (await rust_sync.getWebdavPassword()) ?? '';
+    } catch (e) {
+      debugPrint('[SyncSettingsScreen] Error loading WebDAV password: $e');
+    }
 
     setState(() {
       _webDavEnabled = settings.webDavEnabled;
@@ -719,11 +724,15 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
     );
     await db.saveSettings(updated);
 
-    await rust_sync.saveWebdavConfig(
-      url: _urlController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text,
-    );
+    try {
+      await rust_sync.saveWebdavConfig(
+        url: _urlController.text.trim(),
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
+    } catch (e) {
+      debugPrint('[SyncSettingsScreen] Error saving WebDAV config: $e');
+    }
   }
 
   // --- Hotkeys Settings Operations ---
@@ -823,24 +832,37 @@ class _SyncSettingsScreenState extends State<SyncSettingsScreen> {
       _testResult = null;
     });
 
-    final success = await rust_sync.testWebdavConnection(
-      url: _urlController.text.trim(),
-      username: _usernameController.text.trim(),
-      password: _passwordController.text,
-    );
+    try {
+      final success = await rust_sync.testWebdavConnection(
+        url: _urlController.text.trim(),
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    if (mounted) {
-      setState(() {
-        _isTestingConnection = false;
-        _testSuccess = success;
-        _testResult = success
-            ? (AppLocalizations.of(context)?.connectionSuccessDesc ??
-                  'Connection successful! WebDAV server is active.')
-            : (AppLocalizations.of(context)?.connectionFailedDesc ??
-                  'Connection failed. Please verify URL, username, and password.');
-      });
-      if (success) {
-        SyncService.getInstance().fetchCloudBooks();
+      if (mounted) {
+        setState(() {
+          _isTestingConnection = false;
+          _testSuccess = success;
+          _testResult = success
+              ? (AppLocalizations.of(context)?.connectionSuccessDesc ??
+                    'Connection successful! WebDAV server is active.')
+              : (AppLocalizations.of(context)?.connectionFailedDesc ??
+                    'Connection failed. Please verify URL, username, and password.');
+        });
+        if (success) {
+          try {
+            await _saveWebDavTextSettings();
+            SyncService.getInstance().fetchCloudBooks();
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isTestingConnection = false;
+          _testSuccess = false;
+          _testResult = '${AppLocalizations.of(context)?.connectionFailedDesc ?? "Connection failed."}\n$e';
+        });
       }
     }
   }

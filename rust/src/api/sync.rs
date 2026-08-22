@@ -10,35 +10,24 @@ use flate2::write::GzEncoder;
 use flate2::read::GzDecoder;
 use flate2::Compression;
 use std::io::Write;
-use keyring::Entry;
 use chrono::Utc;
 
 use crate::api::models::{CloudBook, SyncResult, ProgressSyncResult, SyncProgressEvent, SyncHistoryEntry, Book, Chapter, ReadingProgress, Bookmark, Highlight, BookBookmarksFile, BookHighlightsFile};
 
-const KEYRING_SERVICE: &str = "AudireReader";
-const KEYRING_USER: &str = "webdav_password";
+const SECRET_KEY_WEBDAV_PASSWORD: &str = "webdav_password";
 
-// --- Keyring Storage ---
+// --- Password Storage ---
 
 pub fn save_webdav_password(password: String) -> Result<(), String> {
-    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
-    entry.set_password(&password).map_err(|e| e.to_string())?;
-    Ok(())
+    crate::api::database::set_secret(SECRET_KEY_WEBDAV_PASSWORD, &password)
 }
 
 pub fn get_webdav_password() -> Result<Option<String>, String> {
-    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
-    match entry.get_password() {
-        Ok(p) => Ok(Some(p)),
-        Err(keyring::Error::NoEntry) => Ok(None),
-        Err(e) => Err(e.to_string()),
-    }
+    crate::api::database::get_secret(SECRET_KEY_WEBDAV_PASSWORD)
 }
 
 pub fn delete_webdav_password() -> Result<(), String> {
-    let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).map_err(|e| e.to_string())?;
-    let _ = entry.delete_credential();
-    Ok(())
+    crate::api::database::delete_secret(SECRET_KEY_WEBDAV_PASSWORD)
 }
 
 use crate::frb_generated::StreamSink;
@@ -1282,18 +1271,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_keyring_save_load() {
-        let entry = Entry::new(KEYRING_SERVICE, KEYRING_USER).unwrap();
-        let set_res = entry.set_password("secret_pass_123");
-        println!("entry.set_password: {:?}", set_res);
+    fn test_webdav_password_storage() {
+        let temp_dir = std::env::temp_dir().join("audire_reader_sync_test");
+        let _ = std::fs::create_dir_all(&temp_dir);
+        let _ = crate::api::database::init_database(temp_dir.to_string_lossy().to_string());
 
-        let get_res = entry.get_password();
-        println!("entry.get_password: {:?}", get_res);
+        let set_res = save_webdav_password("secret_pass_123".to_string());
+        assert!(set_res.is_ok());
 
         let loaded = get_webdav_password();
-        println!("get_webdav_password(): {:?}", loaded);
         assert_eq!(loaded.unwrap(), Some("secret_pass_123".to_string()));
 
-        let _ = delete_webdav_password();
+        let del_res = delete_webdav_password();
+        assert!(del_res.is_ok());
+
+        let after_delete = get_webdav_password();
+        assert_eq!(after_delete.unwrap(), None);
     }
 }

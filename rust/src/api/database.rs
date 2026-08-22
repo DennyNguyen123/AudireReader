@@ -151,6 +151,11 @@ fn run_migrations() -> Result<(), rusqlite::Error> {
             details TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_sync_history_timestamp ON sync_history(timestamp DESC);
+
+        CREATE TABLE IF NOT EXISTS app_secrets (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
         "
     )?;
 
@@ -571,6 +576,40 @@ pub fn save_settings(settings: AppSettings) -> Result<(), String> {
     conn.execute(
         "INSERT OR REPLACE INTO app_settings (id, settings_json) VALUES (1, ?1)",
         params![json_str],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+// --- AppSecrets CRUD ---
+
+pub fn get_secret(key: &str) -> Result<Option<String>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare("SELECT value FROM app_secrets WHERE key = ?1")
+        .map_err(|e| e.to_string())?;
+
+    let val: Option<String> = stmt.query_row(params![key], |row| row.get(0))
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    Ok(val)
+}
+
+pub fn set_secret(key: &str, value: &str) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT OR REPLACE INTO app_secrets (key, value) VALUES (?1, ?2)",
+        params![key, value],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+pub fn delete_secret(key: &str) -> Result<(), String> {
+    let conn = get_conn()?;
+    conn.execute(
+        "DELETE FROM app_secrets WHERE key = ?1",
+        params![key],
     ).map_err(|e| e.to_string())?;
 
     Ok(())

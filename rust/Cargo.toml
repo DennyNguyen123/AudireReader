@@ -41,7 +41,6 @@ rand = "0.8.5"
 futures = "0.3.31"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 flate2 = "1.0"
-keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service", "linux-native"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58.0", features = [

@@ -141,11 +141,16 @@ class _TvSyncScreenState extends State<TvSyncScreen> {
         username: webDavUsername,
         password: webDavPassword,
       );
-      final connected = await rust_sync.testWebdavConnection(
-        url: webDavUrl,
-        username: webDavUsername,
-        password: webDavPassword,
-      );
+      bool connected = false;
+      try {
+        connected = await rust_sync.testWebdavConnection(
+          url: webDavUrl,
+          username: webDavUsername,
+          password: webDavPassword,
+        );
+      } catch (e) {
+        LoggerService().log('Test WebDAV connection error: $e', tag: 'SYNC', level: LogLevel.warning);
+      }
 
       if (mounted) {
         if (connected) {

@@ -193,7 +193,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _loadSyncStatus() async {
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
-    final password = (await rust_sync.getWebdavPassword()) ?? '';
+    String password = '';
+    try {
+      password = (await rust_sync.getWebdavPassword()) ?? '';
+    } catch (e) {
+      debugPrint('[LibraryScreen] Error loading WebDAV password: $e');
+    }
     if (mounted) {
       setState(() {
         _lastSyncTime = settings.webDavLastSync != null
