@@ -10,46 +10,9 @@ permissions:
 
 jobs:
   # ==========================================
-  # JOB 1: CHUẨN BỊ & KIỂM TRA CODE (Chạy 1 lần trên Linux)
-  # ==========================================
-  prepare-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.9'
-          channel: 'stable'
-          cache: false
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-
-      - name: Run Code Generation
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run Tests
-        run: flutter test
-
-      - name: Upload Generated Code
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-dart-code
-          path: lib/
-
-  # ==========================================
-  # JOB 2: BUILD PARALLEL QUA MATRIX
+  # JOB 1: BUILD PARALLEL QUA MATRIX
   # ==========================================
   build:
-    needs: prepare-and-test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -78,12 +41,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Generated Code
-        uses: actions/download-artifact@v4
-        with:
-          name: generated-dart-code
-          path: lib
-
       # --- SETUP CHO TỪNG OS ---
       - name: Setup Java (Android)
         if: matrix.target == 'android'
@@ -107,7 +64,7 @@ jobs:
         with:
           flutter-version: '3.41.9'
           channel: 'stable'
-          cache: false
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -176,7 +133,7 @@ jobs:
           if-no-files-found: ignore
 
   # ==========================================
-  # JOB 3: TẠO RELEASE DRAFT/PUBLISH
+  # JOB 2: TẠO RELEASE DRAFT/PUBLISH
   # ==========================================
   release:
     needs: build
