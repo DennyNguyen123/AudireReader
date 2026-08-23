@@ -30,7 +30,7 @@ regex = "1.10.6"
 scraper = "0.20.0"
 chrono = "0.4.45"
 html2text = "0.17.1"
-reqwest = { version = "0.13.4", features = ["rustls", "json", "stream", "cookies", "form"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["rustls", "json", "stream", "cookies", "form"] }
 base64 = "0.22.1"
 tts = "0.26.3"
 serde_json = "1.0.151"

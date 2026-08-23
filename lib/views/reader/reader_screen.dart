@@ -56,6 +56,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   final AutoScrollController _scrollController = AutoScrollController(
     suggestedRowHeight: 80.0,
   );
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
   int? _lastScrollChapterIndex;
   int? _lastScrollParagraphIndex;
   int? _lastObservedChapterIndex;
@@ -91,8 +92,15 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
     if (state == AppLifecycleState.paused) {
       _syncActiveBookProgressOnExit();
+    } else if (state == AppLifecycleState.resumed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _lifecycleState == AppLifecycleState.resumed) {
+          _scrollToCurrentParagraph(animated: false);
+        }
+      });
     }
   }
 
@@ -231,12 +239,18 @@ class _ReaderScreenState extends State<ReaderScreen>
 
     if (_lastScrollChapterIndex != currentChap ||
         _lastScrollParagraphIndex != currentPara) {
-      _scrollToCurrentParagraph(animated: true);
+      if (_lifecycleState == AppLifecycleState.resumed) {
+        _scrollToCurrentParagraph(animated: true);
+      } else {
+        _lastScrollChapterIndex = currentChap;
+        _lastScrollParagraphIndex = currentPara;
+      }
     }
   }
 
   void _scrollToCurrentParagraph({bool animated = true}) {
-    if (!_scrollController.hasClients) return;
+    if (!mounted || !_scrollController.hasClients) return;
+    if (_lifecycleState != AppLifecycleState.resumed && animated) return;
     final targetIndex = _ttsService.currentParagraphIndex;
     _lastScrollChapterIndex = _ttsService.currentChapterIndex;
     _lastScrollParagraphIndex = targetIndex;
@@ -1421,9 +1435,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   SystemUiMode.edgeToEdge,
                                 );
                               });
-                            } else {
-                              _ttsService.jumpToParagraph(index);
                             }
+                            _ttsService.jumpToParagraph(index);
                           },
                           onLongPress: () {
                             _showParagraphMenu(

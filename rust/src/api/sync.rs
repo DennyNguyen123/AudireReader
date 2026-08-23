@@ -79,8 +79,14 @@ impl WebDavClient {
         let auth_b64 = b64.encode(auth);
         let auth_header = format!("Basic {}", auth_b64);
         
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(20))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
+
         Ok(WebDavClient {
-            client: Client::builder().build().map_err(|e| e.to_string())?,
+            client,
             base_url: formatted_url,
             auth_header,
         })
@@ -88,12 +94,14 @@ impl WebDavClient {
     
     fn headers(&self) -> HeaderMap {
         let mut h = HeaderMap::new();
-        h.insert(AUTHORIZATION, HeaderValue::from_str(&self.auth_header).unwrap());
+        if let Ok(val) = HeaderValue::from_str(&self.auth_header) {
+            h.insert(AUTHORIZATION, val);
+        }
         h
     }
 
     pub async fn test_connection(&self) -> Result<bool, String> {
-        let propfind = Method::from_bytes(b"PROPFIND").unwrap();
+        let propfind = Method::from_bytes(b"PROPFIND").map_err(|e| e.to_string())?;
         let mut h = self.headers();
         h.insert("Depth", HeaderValue::from_static("0"));
         
@@ -108,7 +116,7 @@ impl WebDavClient {
 
     pub async fn mkdir(&self, remote_path: &str) -> Result<bool, String> {
         let url = format!("{}/{}", self.base_url.trim_end_matches('/'), remote_path.trim_start_matches('/'));
-        let mkcol = Method::from_bytes(b"MKCOL").unwrap();
+        let mkcol = Method::from_bytes(b"MKCOL").map_err(|e| e.to_string())?;
         
         let res = self.client.request(mkcol, &url)
             .headers(self.headers())
@@ -173,7 +181,7 @@ impl WebDavClient {
 
     pub async fn list_files(&self, remote_path: &str) -> Result<Vec<WebDavFile>, String> {
         let url = format!("{}/{}", self.base_url.trim_end_matches('/'), remote_path.trim_start_matches('/'));
-        let propfind = Method::from_bytes(b"PROPFIND").unwrap();
+        let propfind = Method::from_bytes(b"PROPFIND").map_err(|e| e.to_string())?;
         let mut h = self.headers();
         h.insert("Depth", HeaderValue::from_static("1"));
         
@@ -205,8 +213,9 @@ impl WebDavClient {
 
     pub async fn file_exists(&self, remote_path: &str) -> Result<bool, String> {
         let url = format!("{}/{}", self.base_url.trim_end_matches('/'), remote_path.trim_start_matches('/'));
+        let propfind = Method::from_bytes(b"PROPFIND").map_err(|e| e.to_string())?;
         
-        let res = self.client.request(Method::from_bytes(b"PROPFIND").unwrap(), &url)
+        let res = self.client.request(propfind, &url)
             .headers(self.headers())
             .header("Depth", "0")
             .send()

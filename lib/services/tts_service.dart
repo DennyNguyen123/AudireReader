@@ -47,6 +47,8 @@ class TtsService extends ChangeNotifier {
   List<Chapter> _chapters = [];
   int _currentChapterIndex = 0;
   int _currentParagraphIndex = 0;
+  int? _lastPlayedChapterIndex;
+  int? _lastPlayedParagraphIndex;
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS
 
   // Highlight vị trí từ đang đọc
@@ -325,6 +327,8 @@ class TtsService extends ChangeNotifier {
     _chapters = chapters;
     _currentChapterIndex = startChapter;
     _currentParagraphIndex = startParagraph;
+    _lastPlayedChapterIndex = null;
+    _lastPlayedParagraphIndex = null;
     wordStart = 0;
     wordEnd = 0;
     currentWord = "";
@@ -444,6 +448,9 @@ class TtsService extends ChangeNotifier {
       chapterPosition: startPos,
     );
 
+    _lastPlayedChapterIndex = _currentChapterIndex;
+    _lastPlayedParagraphIndex = _currentParagraphIndex;
+
     // Áp dụng từ điển sửa phát âm
     final processedText = applyPronunciationRules(text);
     await audioHandler.speak(processedText);
@@ -467,17 +474,22 @@ class TtsService extends ChangeNotifier {
       await pauseSpeaking();
     } else {
       final state = audioHandler.playbackState.value;
+      final isSamePosition = _lastPlayedChapterIndex == _currentChapterIndex &&
+                             _lastPlayedParagraphIndex == _currentParagraphIndex;
+
       if (state.processingState == AudioProcessingState.ready &&
-          _activeBook != null) {
-        // Resume từ chỗ đang dừng
+          _activeBook != null &&
+          isSamePosition) {
+        // Resume từ chỗ đang dừng của đúng đoạn văn đó
         LoggerService().log(
-          'TTS resuming from pause',
+          'TTS resuming from pause on Chapter $_currentChapterIndex, Paragraph $_currentParagraphIndex',
           tag: 'TTS',
           level: LogLevel.tts,
         );
         await audioHandler.play();
         notifyListeners();
       } else {
+        // Nếu chuyển sang đoạn khác hoặc chưa có phiên phát, phát đoạn mới
         await startSpeaking();
       }
     }

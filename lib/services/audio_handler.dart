@@ -43,6 +43,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
 
   bool _isSpeaking = false;
   bool _isSystemTtsPaused = false; // Track trạng thái pause riêng cho System TTS native
+  int _speakSessionId = 0; // Generation ID để chống race-condition khi pause lúc đang tải âm thanh
   String _currentText = "";
   double _speechRate = 0.5; // Tốc độ nói hiện tại của TTS (0.5 tương đương 1.0x)
   Timer? _windowsTimer; // Timer giả lập hoàn thành trên Windows
@@ -501,6 +502,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   Future<void> speak(String text) async {
+    final sessionId = ++_speakSessionId;
     _playingBookTitle = _currentBookTitle;
     _playingChapterTitle = _currentChapterTitle;
     _playingParagraphIndex = _currentParagraphIndex;
@@ -512,7 +514,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     bool wasNativeTtsActive = _isSpeaking || _isSystemTtsPaused;
 
     // 1. Dừng mọi tác vụ phát cũ một cách an toàn và tuần tự
-    _isSpeaking = false;
+    _isSpeaking = true;
     _isSystemTtsPaused = false;
     _windowsTimer?.cancel();
     
@@ -524,6 +526,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     if (wasNativeTtsActive && !Platform.isWindows) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
+    if (sessionId != _speakSessionId || !_isSpeaking) return;
     
     _currentText = text;
     _lastHighlightIndex = 0;
@@ -535,6 +538,8 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     if (_currentBookUuid.isNotEmpty) {
       try {
         final appDir = await PathHelper.getAppDirectory();
+        if (sessionId != _speakSessionId || !_isSpeaking) return;
+
         File offlineAudioFile = File(
           '${appDir.path}/tts_offline/$_currentBookUuid/$_currentChapterIndex/p_$_currentParagraphIndex.wav',
         );
@@ -577,6 +582,8 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
             }
           }
 
+          if (sessionId != _speakSessionId || !_isSpeaking) return;
+
           playbackState.add(playbackState.value.copyWith(
             controls: [
               MediaControl.skipToPrevious,
@@ -591,8 +598,8 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
             processingState: AudioProcessingState.ready,
           ));
 
-          _isSpeaking = true;
           await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(offlineAudioFile.path)));
+          if (sessionId != _speakSessionId || !_isSpeaking) return;
           _edgePlayer.play();
           await _edgePlayer.setSpeed(_speechRate * 2.0);
           return;
@@ -602,9 +609,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       }
     }
 
+    if (sessionId != _speakSessionId || !_isSpeaking) return;
+
     // 2. Đọc cấu hình nhà cung cấp từ cơ sở dữ liệu Isar
     final db = await DatabaseHelper.getInstance();
     final settings = await db.getSettings();
+    if (sessionId != _speakSessionId || !_isSpeaking) return;
+
     final provider = (settings.ttsProvider == 'microsoft_edge') 
         ? 'microsoft_edge' 
         : (settings.ttsProvider == 'supertonic' 
@@ -636,7 +647,6 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
           ? TtsEngineType.edge 
           : (provider == 'supertonic' ? TtsEngineType.supertonic : (provider == 'openai' ? TtsEngineType.openai : TtsEngineType.system));
 
-      
       String voice = settings.selectedVoiceName ?? 
           (provider == 'microsoft_edge' 
               ? "vi-VN-HoaiMyNeural" 
@@ -679,6 +689,8 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
           }
         }
 
+        if (sessionId != _speakSessionId || !_isSpeaking) return;
+
         if (cached == null || cached.filePath == null) {
           throw Exception("Failed to obtain synthesized audio file path");
         }
@@ -686,8 +698,9 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
         _edgeMetadata.addAll(cached.metadata);
         
         // Bắt đầu phát âm thanh
-        _isSpeaking = true;
         await _edgePlayer.setAudioSource(ja.AudioSource.uri(Uri.file(cached.filePath!)));
+        if (sessionId != _speakSessionId || !_isSpeaking) return;
+
         _edgePlayer.play();
         if (provider == 'supertonic') {
           await _edgePlayer.setSpeed(1.0); // Supertonic WAV đã có tốc độ nhúng sẵn, phát tốc độ chuẩn 1.0
@@ -696,6 +709,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
         }
         
       } catch (e) {
+        if (sessionId != _speakSessionId || !_isSpeaking) return;
         debugPrint("TTS engine failed, falling back to System TTS: $e");
         
         if (Platform.isWindows) {
@@ -735,6 +749,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
             debugPrint("Edge TTS fallback: failed to set matching system voice: $voiceErr");
           }
 
+          if (sessionId != _speakSessionId || !_isSpeaking) return;
           await _tts.speak(text);
         }
       }
@@ -742,6 +757,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       // Luồng chạy mặc định sử dụng System TTS trên Mobile
       _activeEngine = TtsEngineType.system;
       _isSpeaking = true;
+      if (sessionId != _speakSessionId || !_isSpeaking) return;
       await _tts.speak(text);
     }
   }
@@ -816,6 +832,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> pause() async {
+    _speakSessionId++;
     BgmService.getInstance().pauseBgm();
     _isSpeaking = false;
     _windowsTimer?.cancel();
@@ -824,10 +841,13 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
     if (_activeEngine == TtsEngineType.edge || _activeEngine == TtsEngineType.supertonic || _activeEngine == TtsEngineType.openai || (Platform.isWindows && _activeEngine == TtsEngineType.system)) {
       await _edgePlayer.pause();
     } else {
-      // Sử dụng _tts.pause() thay vì _tts.stop() để giữ vị trí phát
-      // Hỗ trợ Android (SDK >= 26), iOS, Web
-      await _tts.pause();
-      _isSystemTtsPaused = true;
+      if (Platform.isAndroid) {
+        await _tts.stop();
+        _isSystemTtsPaused = true;
+      } else {
+        await _tts.pause();
+        _isSystemTtsPaused = true;
+      }
     }
     
     playbackState.add(playbackState.value.copyWith(
@@ -843,6 +863,7 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> stop() async {
+    _speakSessionId++;
     BgmService.getInstance().stopBgm();
     _isSpeaking = false;
     _isSystemTtsPaused = false;
@@ -860,6 +881,25 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler {
       playing: false,
       processingState: AudioProcessingState.idle,
     ));
+  }
+
+  @override
+  Future<void> click([MediaButton button = MediaButton.media]) async {
+    switch (button) {
+      case MediaButton.media:
+        if (playbackState.value.playing) {
+          await pause();
+        } else {
+          await play();
+        }
+        break;
+      case MediaButton.next:
+        await skipToNext();
+        break;
+      case MediaButton.previous:
+        await skipToPrevious();
+        break;
+    }
   }
 
   @override
