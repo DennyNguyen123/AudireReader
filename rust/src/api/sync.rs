@@ -163,7 +163,7 @@ impl WebDavClient {
             return Err(format!("Local file does not exist: {}", local_path));
         }
         
-        let bytes = tokio::fs::read(path).await.map_err(|e| e.to_string())?;
+        let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
         self.upload_bytes(remote_path, bytes).await
     }
 
@@ -172,10 +172,10 @@ impl WebDavClient {
         
         let path = Path::new(local_path);
         if let Some(parent) = path.parent() {
-            tokio::fs::create_dir_all(parent).await.map_err(|e| e.to_string())?;
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
         
-        tokio::fs::write(path, bytes).await.map_err(|e| e.to_string())?;
+        std::fs::write(path, bytes).map_err(|e| e.to_string())?;
         Ok(true)
     }
 
@@ -589,17 +589,23 @@ pub async fn fetch_cloud_books(documents_dir: Option<String>) -> Result<Vec<Clou
     if let Some(doc_dir) = documents_dir {
         let books_clone = cloud_books.clone();
         let client_clone = client.clone();
-        tokio::spawn(async move {
-            for cb in books_clone {
-                if cb.has_cover {
-                    let ext = cb.cover_extension.unwrap_or_else(|| ".jpg".to_string());
-                    let local_path = Path::new(&doc_dir).join("covers").join(format!("{}{}", cb.uuid, ext));
-                    if !local_path.exists() {
-                        let remote_cover = format!("/AudireReader/covers/{}{}", cb.uuid, ext);
-                        let _ = client_clone.download_file(&remote_cover, &local_path.to_string_lossy()).await;
+        std::thread::spawn(move || {
+            let rt = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+                Ok(r) => r,
+                Err(_) => return,
+            };
+            rt.block_on(async move {
+                for cb in books_clone {
+                    if cb.has_cover {
+                        let ext = cb.cover_extension.unwrap_or_else(|| ".jpg".to_string());
+                        let local_path = Path::new(&doc_dir).join("covers").join(format!("{}{}", cb.uuid, ext));
+                        if !local_path.exists() {
+                            let remote_cover = format!("/AudireReader/covers/{}{}", cb.uuid, ext);
+                            let _ = client_clone.download_file(&remote_cover, &local_path.to_string_lossy()).await;
+                        }
                     }
                 }
-            }
+            });
         });
     }
 
